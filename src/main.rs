@@ -15,9 +15,9 @@ fn prueba() -> io::Result<String> {
     hashed = hash_object::hash_string("Hello!");
     println!("{}", hashed);
 
-    let main_hash = directories::store_file("src/main.rs")?;
-    let hash_object_hash = directories::store_file("src/hash_object.rs")?;
-    let hash_txt = directories::store_file("src/hola.txt")?;
+    let main_hash = hash_object::store_file("src/main.rs")?;
+    let hash_object_hash = hash_object::store_file("src/hash_object.rs")?;
+    let hash_txt = hash_object::store_file("src/hola.txt")?;
 
     cat_file(&main_hash)?;
     println!("-------------------");
