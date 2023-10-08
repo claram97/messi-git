@@ -6,6 +6,15 @@ use std::{
     thread,
 };
 
+/// Función que recibe una dirección y espera a que clientes se conecten
+/// 
+/// Permite que múltiples clientes se conecten a la vez y envien datos al mismo tiempo
+/// 
+/// Cada dato que envía cada cliente se escribe en un archivo de log
+/// 
+/// Este archivo se lockea cada vez que es escrito, por lo que no hay problema en que
+///     multiples clientes escriban concurrentemente
+
 pub fn server_run(address: &str) -> std::io::Result<()> {
     let listener = TcpListener::bind(address)?;
     let log = OpenOptions::new().append(true).open("src/log.log")?;
@@ -24,6 +33,8 @@ pub fn server_run(address: &str) -> std::io::Result<()> {
 
     Ok(())
 }
+
+/// Función interna que lee las lineas que envía el cliente y escribe el archivo de log
 
 fn handle_client(stream: &mut dyn Read, log: Arc<Mutex<File>>) -> std::io::Result<()> {
     let reader = BufReader::new(stream);
