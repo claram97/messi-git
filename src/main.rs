@@ -19,11 +19,11 @@ fn prueba() -> io::Result<String> {
     let hash_object_hash = directories::store_file("src/hash_object.rs")?;
     let hash_txt = directories::store_file("src/hola.txt")?;
 
-    cat_file(&main_hash);
+    cat_file(&main_hash)?;
     println!("-------------------");
-    cat_file(&hash_object_hash);
+    cat_file(&hash_object_hash)?;
     println!("-------------------");
-    cat_file(&hash_txt);
+    cat_file(&hash_txt)?;
     Ok("Ok".to_string())
 }
 
