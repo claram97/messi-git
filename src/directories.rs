@@ -14,15 +14,6 @@ pub fn create_directory(name: &str) {
     }
 }
 
-// pub fn store_file(path: &str) -> io::Result<String> {
-//     let content_hash = hash_object::hash_file_content(path)?;
-//     let file_path = Path::new("objects").join(&content_hash);
-//     //let output_file_str = "objects/".to_string() + &content_hash;
-//     //compress_content(path, output_file_str.as_str())?;
-//     fs::copy(path, file_path)?;
-//     Ok(content_hash)
-// }
-
 fn compress_content(input_path: &str, output_path: &str) -> io::Result<()> {
     let mut input_file = File::open(input_path)?;
     let output_file = File::create(output_path)?;
@@ -35,9 +26,7 @@ fn compress_content(input_path: &str, output_path: &str) -> io::Result<()> {
 
 pub fn store_file(path: &str) -> io::Result<String> {
     let content_hash = hash_object::hash_file_content(path)?;
-    //let file_path = Path::new("objects").join(&content_hash);
     let output_file_str = "objects/".to_string() + &content_hash;
     compress_content(path, output_file_str.as_str())?;
-    // fs::copy(path, file_path)?;
     Ok(content_hash)
 }
