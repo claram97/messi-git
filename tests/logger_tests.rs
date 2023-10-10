@@ -29,7 +29,7 @@ fn test_write_single_many_times() -> std::io::Result<()> {
         assert_eq!(line_content, content);
     }
 
-    Ok(())
+    logger.clear()
 }
 
 #[test]
