@@ -1,6 +1,6 @@
 use std::{
     fs::{File, OpenOptions},
-    io:: Write,
+    io::Write,
     sync::{Arc, Mutex},
     thread,
 };
@@ -19,6 +19,19 @@ impl Logger {
         Ok(Self {
             file: Arc::new(Mutex::new(file)),
         })
+    }
+
+    pub fn clear(&mut self) -> std::io::Result<()> {
+        let file_clone = self.file.clone();
+
+        let _ = thread::spawn(move || -> std::io::Result<()> {
+            if let Ok(file) = file_clone.lock() {
+                file.set_len(0)?
+            }
+            Ok(())
+        })
+        .join();
+        Ok(())
     }
 }
 
@@ -41,7 +54,6 @@ impl Write for Logger {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-
         let file_clone = self.file.clone();
 
         let _ = thread::spawn(move || -> std::io::Result<()> {
@@ -49,7 +61,8 @@ impl Write for Logger {
                 file.flush()?;
             }
             Ok(())
-        }).join();
+        })
+        .join();
 
         Ok(())
     }
