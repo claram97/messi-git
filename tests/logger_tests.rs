@@ -26,7 +26,7 @@ fn test_write_single_many_times() -> std::io::Result<()> {
     writeln!(logger, "{content}")?;
     writeln!(logger, "{content}")?;
     writeln!(logger, "{content}")?;
-    
+
     for line_content in fs::read_to_string(path)?.lines() {
         assert_eq!(line_content, content);
     }
@@ -48,7 +48,11 @@ fn test_write_and_clear() -> std::io::Result<()> {
     Ok(())
 }
 
-fn write_in_thread(path: &str, content: &str, times: u64) -> JoinHandle<Result<(), std::io::Error>>{
+fn write_in_thread(
+    path: &str,
+    content: &str,
+    times: u64,
+) -> JoinHandle<Result<(), std::io::Error>> {
     let path_owned = path.to_owned();
     let content_owned = content.to_owned();
     thread::spawn(move || -> std::io::Result<()> {
@@ -79,6 +83,6 @@ fn test_write_many_threads() -> std::io::Result<()> {
     }
 
     assert_eq!(fs::read_to_string(path)?.lines().count(), 50);
-    
+
     Logger::new(path)?.clear()
 }
