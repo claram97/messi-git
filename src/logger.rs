@@ -5,7 +5,7 @@ use std::{
     thread,
 };
 
-struct Logger {
+pub struct Logger {
     file: Arc<Mutex<File>>,
 }
 
