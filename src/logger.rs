@@ -18,6 +18,25 @@ use std::{
 ///
 /// ALTERNATIVE: you could first format the desired string and then call "write!". In this way
 /// only one call to write will be performed.
+///
+/// ```
+/// use std::fs;
+/// use std::io::Write;
+///
+/// fn test() -> std::io::Result<()> {
+///     let path = "tests/logs/log.txt";
+///     let content = "testing log";
+///
+///     let mut logger = messi::logger::Logger::new(path)?;
+///     logger.write(content.as_bytes())?;
+///
+///     let file_content = fs::read_to_string(path)?;
+///     assert_eq!(file_content, content);
+///
+///     logger.clear()
+/// }
+/// test();
+/// ```
 pub struct Logger {
     file: Arc<Mutex<File>>,
 }
@@ -29,10 +48,7 @@ impl Logger {
     ///
     /// Will return a Ok(Logger) in case of success.
     pub fn new(path: &str) -> Result<Self, std::io::Error> {
-        let file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(path)?;
+        let file = OpenOptions::new().create(true).append(true).open(path)?;
 
         Ok(Self {
             file: Arc::new(Mutex::new(file)),
