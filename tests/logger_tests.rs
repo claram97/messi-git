@@ -6,7 +6,7 @@ use std::time::Duration;
 
 #[test]
 fn test_write_single() -> std::io::Result<()> {
-    let path = "tests/logs/log.txt";
+    let path = "tests/logs/test_write_single.txt";
     let content = "testing log";
     let mut logger = Logger::new(path)?;
 
@@ -19,7 +19,7 @@ fn test_write_single() -> std::io::Result<()> {
 
 #[test]
 fn test_write_single_many_times() -> std::io::Result<()> {
-    let path = "tests/logs/log.txt";
+    let path = "tests/logs/test_write_single_many_times.txt";
     let content = "testing log";
     let mut logger = Logger::new(path)?;
 
@@ -36,7 +36,7 @@ fn test_write_single_many_times() -> std::io::Result<()> {
 
 #[test]
 fn test_write_and_clear() -> std::io::Result<()> {
-    let path = "tests/logs/log.txt";
+    let path = "tests/logs/test_write_and_clear.txt";
     let content = "testing log";
     let mut logger = Logger::new(path)?;
 
@@ -68,7 +68,7 @@ fn write_in_thread(
 
 #[test]
 fn test_write_many_threads() -> std::io::Result<()> {
-    let path = "tests/logs/log.txt";
+    let path = "tests/logs/test_write_many_threads.txt";
     let content_thread_1 = "testing log thread 1";
     let content_thread_2 = "testing log thread 2";
 
