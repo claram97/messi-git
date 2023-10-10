@@ -115,6 +115,7 @@ fn create_temp_directory() -> Result<String, String> {
         Err("Failed to convert path to string".to_string())
     }
 }
+
 #[test]
 /// Tests the `create_directory_if_not_exists` function.
 fn test_create_directory_if_not_exists() {
