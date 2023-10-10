@@ -3,11 +3,14 @@ use std::{io::{self, BufReader, Read}, fs::File};
 use flate2::bufread::ZlibDecoder;
 
 pub fn cat_file(hash: &str) -> io::Result<String> {
-    let file = File::open(format!("objects/{}", hash))?;
-    //let content = std::fs::read(format!("objects/{}", hash))?;
-    // let content = std::fs::read_to_string(format!("objects/{}", hash))?;
+    let file_dir = format!("objects/{}", &hash[..2]);
+    let file = File::open(format!("{}/{}", file_dir, &hash[2..]))?;
     let content = decompress_file(file)?;
-    println!("{}", content);
+    let partes = content.split('\0').nth(1);
+    match partes {
+        Some(partes) => println!("{}", partes),
+        None => println!("{}", content),
+    }
     Ok(content)
 }
 
