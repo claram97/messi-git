@@ -33,11 +33,11 @@ pub fn cat_file(hash: &str) -> io::Result<String> {
         let partes = content.split('\0').nth(1);
         match partes {
             Some(partes) => {
-                println!("{}", partes);
+                // println!("{}", partes);
                 Ok(partes.to_string())
             },
             None => {
-                println!("{}", content);
+                // println!("{}", content);
                 Ok(content)
             }
         }
@@ -65,7 +65,7 @@ mod tests {
         let content = cat_file(hash).unwrap();
         assert_eq!(content, "Hello World!");
     }
-    
+
     // #[test]
     // fn test_decompress_file() {
     //     let file = std::fs::File::open(".git/objects/c5/7eff55ebc0c54973903af5f72bac72762cf4f4").unwrap();
