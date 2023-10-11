@@ -1,5 +1,7 @@
-use std::{path::Path, fs::{self}};
-
+use std::{
+    fs::{self},
+    path::Path,
+};
 
 pub fn create_directory(name: &str) {
     let path = Path::new(name);
@@ -10,4 +12,3 @@ pub fn create_directory(name: &str) {
         }
     }
 }
-
