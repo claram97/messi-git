@@ -1,5 +1,0 @@
-bf85cb27f6cdca729f3f96d2430c5e4f24172a89 src/cat_file.rs
-2f490d5f3ef2dad9fb0d7a2716a560d0c3ad6bb6 src/index.rs
-d58ea4ae1a0f8fb00fb74211a881616b53dba53d tests/logger_tests.rs
-29422aebc8c682fc88e11b1c654c2f2277fd92ea src/hash_object.rs
-c57eff55ebc0c54973903af5f72bac72762cf4f4 tests/hash_object/hash_object_hello.txt
