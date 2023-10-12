@@ -49,12 +49,14 @@ fn read_index_file(file: &mut File) -> io::Result<()> {
         match line {
             Ok(line_content) => {
                 let splitted_line: Vec<&str> = line_content.split_whitespace().collect();
-                // let file_path = "../".to_string() + splitted_line[1];
-                let file_path = splitted_line[1];
-                println!("file_path: {}", file_path);
-                let hash = hash_file_content(&file_path)?;
-                if !hash.eq(splitted_line[0]) {
-                    println!("File {} has changed since last commit.", splitted_line[1]);
+                if let Some(path) = find_git_directory() {
+                    if let Some(parent) = Path::new(&path).parent() {
+                        let file_path = parent.to_string_lossy().to_string() + "/" + splitted_line[1];
+                        let hash = hash_file_content(&file_path)?;
+                        if !hash.eq(splitted_line[0]) {
+                            println!("File {} has changed since last commit.", splitted_line[1]);
+                        }
+                    }
                 }
             }
             Err(e) => {
@@ -107,7 +109,6 @@ fn buscar_en_directorio(
         let elemento_path_str = elemento_path.to_string_lossy().to_string();
 
         if carpetas_ignoradas.iter().any(|ignorada| elemento_path_str.starts_with(ignorada)) {
-            // Ignorar esta carpeta y sus subdirectorios
             continue;
         }
 
