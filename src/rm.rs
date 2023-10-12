@@ -3,7 +3,7 @@ use std::fs;
 use std::fs::File;
 use std::io::Read;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 
 /// Removes a file from the file system.
 ///
@@ -257,9 +257,8 @@ fn process_files_for_removal(
 ) {
     for file in files {
         if remove_directories_recursively {
-            remove_file_or_directory(file);
-        } else {
-            if remove_from_index_only {
+            let _ = remove_file_or_directory(file);
+        } else if remove_from_index_only {
                 match remove_file_from_index(file) {
                     Ok(_) => {
                         println!("Removed from index: {}", file);
@@ -280,7 +279,7 @@ fn process_files_for_removal(
             }
         }
     }
-}
+
 
 /// Handles command-line options and arguments for the git_rm utility.
 ///
@@ -365,10 +364,10 @@ pub fn git_rm() {
     let mut ignore_non_matching = false;
 
     // Create an iterator to process command-line arguments, skipping the program name.
-    let mut iter = args.iter().skip(1);
+    let  iter = args.iter().skip(1);
 
-    while let Some(arg) = iter.next() {
-        if arg.starts_with("-") {
+    for arg in iter {
+        if arg.starts_with('-') {
             let (option_name, remove_dirs, remove_index, show, ignore) = parse_option(arg.as_str());
             options.push(option_name);
             remove_directories_recursively |= remove_dirs;
