@@ -1,9 +1,8 @@
 use std::env;
 use std::fs;
 use std::io;
-use std::path::Path;
 use std::io::Write;
-
+use std::path::Path;
 
 /// Process command-line arguments and options to perform various actions in a Git-like application.
 ///
@@ -141,7 +140,10 @@ fn create_and_checkout_branch(git_dir: &Path, branch_name: &str) {
 
     // Check if the branch already exists
     if branch_ref_file.exists() {
-        eprintln!("Branch '{}' already exists in the repository. Use '-B' to reset it.", branch_name);
+        eprintln!(
+            "Branch '{}' already exists in the repository. Use '-B' to reset it.",
+            branch_name
+        );
         return;
     }
 
@@ -375,7 +377,10 @@ fn force_checkout(git_dir: &Path, branch_or_commit: &str) {
 
             println!("Force switched to commit (detached mode): {}", commit_id);
         } else {
-            eprintln!("Branch or commit '{}' not found in the repository", branch_or_commit);
+            eprintln!(
+                "Branch or commit '{}' not found in the repository",
+                branch_or_commit
+            );
         }
     }
 }
@@ -383,9 +388,9 @@ fn force_checkout(git_dir: &Path, branch_or_commit: &str) {
 // Importa las bibliotecas necesarias para los tests
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-    use std::fs;
     use super::*;
+    use std::fs;
+    use std::path::Path;
 
     // Define a test directory for the Git repository
     const TEST_GIT_DIR: &str = "/tmp/test_git_repository";
@@ -417,9 +422,10 @@ mod tests {
         fs::write(&branch_ref_file, "commit_id").expect("Failed to write branch reference");
 
         let head_file = Path::new(TEST).join("HEAD");
-        fs::write(&head_file, format!("ref: refs/heads/{}", branch_name)).expect("Failed to write HEAD file");
+        fs::write(&head_file, format!("ref: refs/heads/{}", branch_name))
+            .expect("Failed to write HEAD file");
 
-       // Execute the checkout_branch function
+        // Execute the checkout_branch function
         checkout_branch(Path::new(TEST), branch_name);
 
         // Verify that the HEAD file has been updated correctly
@@ -479,26 +485,26 @@ mod tests {
         if !Path::new(TEST_GIT).exists() {
             fs::create_dir_all(TEST_GIT).expect("Failed to create test directory");
         }
-    
+
         // Create a sample branch and set the HEAD file
         let refs_dir = Path::new(TEST_GIT).join("refs").join("heads");
         let branch_name = "other_branch";
         let branch_ref_file = refs_dir.join(branch_name);
         fs::create_dir_all(&branch_ref_file.parent().unwrap()).expect("Failed to create dirs");
         fs::write(&branch_ref_file, "commit_id").expect("Failed to write branch reference");
-    
+
         let head_file = Path::new(TEST_GIT).join("HEAD");
-        fs::write(&head_file, format!("ref: refs/heads/other_branch\n")).expect("Failed to write HEAD file");
-    
+        fs::write(&head_file, format!("ref: refs/heads/other_branch\n"))
+            .expect("Failed to write HEAD file");
+
         // Execute the force_checkout function with an existing branch
         force_checkout(Path::new(TEST_GIT), branch_name);
-    
+
         // Verify that the HEAD file has been updated to force the branch change
         let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
         assert_eq!(head_contents, format!("ref: refs/heads/{}\n", branch_name));
-
     }
-    
+
     /// Unit test for the `checkout_commit_detached` function.
     ///
     /// This test validates the behavior of the `checkout_commit_detached` function when changing to
@@ -519,20 +525,20 @@ mod tests {
         if !Path::new(T).exists() {
             fs::create_dir_all(T).expect("Failed to create test directory");
         }
-    
+
         // Create a sample commit and set the HEAD file
         let objects_dir = Path::new(T).join("objects");
         let commit_id = "commit_id";
         let commit_file = objects_dir.join(&commit_id);
         fs::create_dir_all(&commit_file.parent().unwrap()).expect("Failed to create dirs");
         fs::write(&commit_file, "commit_content").expect("Failed to write commit object");
-    
+
         let head_file = Path::new(T).join("HEAD");
         fs::write(&head_file, "ref: refs/heads/main\n").expect("Failed to write HEAD file");
-    
+
         // Execute the checkout_commit_detached function with a commit in detached mode
         checkout_commit_detached(Path::new(T), commit_id);
-    
+
         // Verify that the HEAD file has been updated to point to the commit in detached mode
         let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
         assert_eq!(head_contents, format!("{} (commit)\n", commit_id));
@@ -557,7 +563,7 @@ mod tests {
     ///
     #[test]
     fn test_create_or_reset_branch() {
-       // Create a test directory if it does not exist
+        // Create a test directory if it does not exist
         if !Path::new(TEST_GIT).exists() {
             fs::create_dir_all(TEST_GIT).expect("Failed to create test directory");
         }
@@ -567,24 +573,28 @@ mod tests {
         let branch_ref_file = refs_dir.join(branch_name);
         fs::create_dir_all(&branch_ref_file.parent().unwrap()).expect("Failed to create dirs");
         fs::write(&branch_ref_file, "commit_id").expect("Failed to write branch reference");
-    
+
         let head_file = Path::new(TEST_GIT).join("HEAD");
-        fs::write(&head_file, format!("ref: refs/heads/other_branch\n")).expect("Failed to write HEAD file");
-    
-       // Execute the create_or_reset_branch function with an existing branch
+        fs::write(&head_file, format!("ref: refs/heads/other_branch\n"))
+            .expect("Failed to write HEAD file");
+
+        // Execute the create_or_reset_branch function with an existing branch
         create_or_reset_branch(Path::new(TEST_GIT), branch_name);
-    
+
         // Verify that the HEAD file has been updated to point to the new branch
         let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
         assert_eq!(head_contents, format!("ref: refs/heads/{}\n", branch_name));
-    
+
         // Execute the create_or_reset_branch function with a non-existent branch
         create_or_reset_branch(Path::new(TEST_GIT), "new_branch");
-    
+
         // Verify that the new branch has been created, and that the HEAD file has been updated
-        assert!(Path::new(TEST_GIT).join("refs").join("heads").join("new_branch").exists());
+        assert!(Path::new(TEST_GIT)
+            .join("refs")
+            .join("heads")
+            .join("new_branch")
+            .exists());
         let new_head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
         assert_eq!(new_head_contents, format!("ref: refs/heads/new_branch\n"));
     }
-
 }
