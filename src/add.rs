@@ -78,16 +78,16 @@ fn write_index(index: &mut Index) -> io::Result<()> {
 }
 
 /// This function receives a path to append/remove from the staging area
-/// 
+///
 /// If the path points to a directory, then all files inside will be added
-/// 
+///
 /// If any file does not exists in the working area, then will be removed from the
 /// staging area.
 /// If the file neither exists in the staging area, then an error is returned.
-/// 
+///
 /// Files inside repository directory will not be included.
 /// TODO: .gitignore
-/// 
+///
 /// IO errors may occurr while doing IO operations. In that cases, Error will be returned.
 pub fn add(path: &str) -> io::Result<()> {
     if path.contains(".git/") || path.ends_with(".git") {
