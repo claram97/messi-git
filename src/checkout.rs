@@ -43,15 +43,15 @@ pub fn process_args() {
 
     match option.as_str() {
         // Change to the specified branch
-        "" => checkout_branch(&git_dir, destination),
+        "" => checkout_branch(git_dir, destination),
         // Create and change to a new branch
-        "-b" => create_and_checkout_branch(&git_dir, destination),
+        "-b" => create_and_checkout_branch(git_dir, destination),
         // Create or reset a branch if it exists
-        "-B" => create_or_reset_branch(&git_dir, destination),
+        "-B" => create_or_reset_branch(git_dir, destination),
         // Change to a specific commit (detached mode)
-        "--detach" => checkout_commit_detached(&git_dir, destination),
+        "--detach" => checkout_commit_detached(git_dir, destination),
         // Force the change of branch or commit (discarding uncommitted changes)
-        "-f" => force_checkout(&git_dir, destination),
+        "-f" => force_checkout(git_dir, destination),
         _ => {
             eprintln!("Invalid option: {}", option);
             std::process::exit(1);
@@ -89,11 +89,11 @@ fn checkout_branch(git_dir: &Path, branch_name: &str) {
     // Check if the branch reference file exists
     if branch_ref_file.exists() {
         // Read the content of the reference file to get the commit it points to
-        if let Ok(branch_ref_content) = fs::read_to_string(&branch_ref_file) {
+        if let Ok(_branch_ref_content) = fs::read_to_string(&branch_ref_file) {
             // Update the HEAD file to point to the new branch
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
-            if let Err(err) = fs::write(&head_file, new_head_content) {
+            if let Err(err) = fs::write(head_file, new_head_content) {
                 eprintln!("Failed to update HEAD file: {}", err);
                 return;
             }
@@ -159,7 +159,7 @@ fn create_and_checkout_branch(git_dir: &Path, branch_name: &str) {
             // Update the HEAD file to point to the new branch
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
-            if let Err(err) = fs::write(&head_file, new_head_content) {
+            if let Err(err) = fs::write(head_file, new_head_content) {
                 eprintln!("Failed to update HEAD file: {}", err);
                 return;
             }
@@ -236,7 +236,7 @@ fn create_or_reset_branch(git_dir: &Path, branch_name: &str) {
     let branch_ref_file = refs_dir.join(branch_name);
 
     // Create a reference file for the branch
-    match fs::File::create(&branch_ref_file) {
+    match fs::File::create(branch_ref_file) {
         Ok(mut file) => {
             // Write an initial reference value (can be the ID of an initial commit)
             if let Err(err) = write_reference_value(&mut file, "initial_commit_id") {
@@ -247,7 +247,7 @@ fn create_or_reset_branch(git_dir: &Path, branch_name: &str) {
             // Update the HEAD file to point to the branch
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
-            if let Err(err) = fs::write(&head_file, new_head_content) {
+            if let Err(err) = fs::write(head_file, new_head_content) {
                 eprintln!("Failed to update HEAD file: {}", err);
                 return;
             }
@@ -258,7 +258,7 @@ fn create_or_reset_branch(git_dir: &Path, branch_name: &str) {
             // If the reference file already exists, simply update HEAD to point to the branch
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
-            if let Err(err) = fs::write(&head_file, new_head_content) {
+            if let Err(err) = fs::write(head_file, new_head_content) {
                 eprintln!("Failed to update HEAD file: {}", err);
                 return;
             }
@@ -295,13 +295,13 @@ fn create_or_reset_branch(git_dir: &Path, branch_name: &str) {
 fn checkout_commit_detached(git_dir: &Path, commit_id: &str) {
     // Check if the specified commit exists
     let objects_dir = git_dir.join("objects");
-    let commit_file = objects_dir.join(&commit_id);
+    let commit_file = objects_dir.join(commit_id);
 
     if commit_file.exists() {
         // Update the HEAD file to point to the commit in "detached" mode
         let head_file = git_dir.join("HEAD");
         let new_head_content = format!("{} (commit)\n", commit_id);
-        if let Err(err) = fs::write(&head_file, new_head_content) {
+        if let Err(err) = fs::write(head_file, new_head_content) {
             eprintln!("Failed to update HEAD file: {}", err);
             return;
         }
@@ -352,7 +352,7 @@ fn force_checkout(git_dir: &Path, branch_or_commit: &str) {
             // Update the HEAD file to force the branch change
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("ref: {}\n", branch_or_commit);
-            if let Err(err) = fs::write(&head_file, new_head_content) {
+            if let Err(err) = fs::write(head_file, new_head_content) {
                 eprintln!("Failed to update HEAD file: {}", err);
                 return;
             }
@@ -366,11 +366,11 @@ fn force_checkout(git_dir: &Path, branch_or_commit: &str) {
         let objects_dir = git_dir.join("objects");
         let commit_id = branch_or_commit;
 
-        if objects_dir.join(&commit_id).exists() {
+        if objects_dir.join(commit_id).exists() {
             // Update the HEAD file to force the commit change in "detached" mode
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("{} (commit)\n", commit_id);
-            if let Err(err) = fs::write(&head_file, new_head_content) {
+            if let Err(err) = fs::write(head_file, new_head_content) {
                 eprintln!("Failed to update HEAD file: {}", err);
                 return;
             }
