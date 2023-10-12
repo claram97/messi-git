@@ -8,12 +8,10 @@ use std::{
 
 type Index = HashMap<String, String>;
 
-// Err(io::Error::new(io::ErrorKind::NotFound, "File not found"))
-
 fn add_dir(path: &str, index: &mut Index) -> io::Result<()> {
     let _ = fs::read_dir(path)?.map(|entry| -> io::Result<()> {
         if let Some(inner_path) = entry?.path().to_str() {
-            add_path(inner_path, index);
+            add_path(inner_path, index)?;
         }
         Ok(())
     });
@@ -31,8 +29,22 @@ fn remove_file(path: &str, index: &mut Index) -> io::Result<()> {
         Some(_) => Ok(()),
         None => Err(Error::new(
             io::ErrorKind::NotFound,
-            "Path not found in index",
+            format!("Path not found in index: {}. Cannot remove", path),
         )),
+    }
+}
+
+fn add_path(path: &str, index: &mut Index) -> io::Result<()> {
+    match fs::metadata(path) {
+        Ok(metadata) => {
+            if metadata.is_dir() {
+                add_dir(path, index)
+            } else {
+                let new_hash = "";
+                add_file(path, new_hash, index)
+            }
+        }
+        Err(_) => remove_file(path, index),
     }
 }
 
@@ -52,21 +64,6 @@ fn map_index(index_content: &str) -> Index {
         .collect()
 }
 
-fn add_path(path: &str, index: &mut Index) -> io::Result<()> {
-    match fs::metadata(path) {
-        Ok(metadata) => {
-            // file existe
-            if metadata.is_dir() {
-                add_dir(path, index)
-            } else {
-                let new_hash = "";
-                add_file(path, new_hash, index)
-            }
-        }
-        Err(_) => remove_file(path, index), // file no existe
-    }
-}
-
 fn read_index() -> io::Result<Index> {
     let index_content = fs::read_to_string(".git/index")?;
     Ok(map_index(&index_content))
@@ -80,8 +77,20 @@ fn write_index(index: &mut Index) -> io::Result<()> {
     Ok(())
 }
 
+/// This function receives a path to append/remove from the staging area
+/// 
+/// If the path points to a directory, then all files inside will be added
+/// 
+/// If any file does not exists in the working area, then will be removed from the
+/// staging area.
+/// If the file neither exists in the staging area, then an error is returned.
+/// 
+/// Files inside repository directory will not be included.
+/// TODO: .gitignore
+/// 
+/// IO errors may occurr while doing IO operations. In that cases, Error will be returned.
 pub fn add(path: &str) -> io::Result<()> {
-    if path.contains(".git/") {
+    if path.contains(".git/") || path.ends_with(".git") {
         return Ok(());
     }
 
