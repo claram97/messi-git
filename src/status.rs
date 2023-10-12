@@ -1,18 +1,3 @@
-//These functions are already in hash_object branch.
-//Check them out to read some documentation about them.
-
-/*
-->Leo el index file
-->Busco los path
-->Comparo e imprimo por pantalla si cambió, sino no hago nada
-*/
-
-/*
-->Abro el directorio
-->
-->Buscar en el directorio todos los archivos que no estén en el index e imprimirlos
-*/
-
 pub(crate) const NAME_OF_INDEX_FILE: &str = "index-file";
 use sha1::{Digest, Sha1};
 use std::collections::HashSet;
