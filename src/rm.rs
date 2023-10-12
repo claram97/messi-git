@@ -431,37 +431,6 @@ mod tests {
         assert_eq!(result.unwrap_err().kind(), io::ErrorKind::NotFound);
     }
     
-    /// Test removing a file from the Git index when the entry exists.
-    ///
-    /// This test simulates the scenario where a file is removed from the Git index using the
-    /// `remove_file_from_index` function. The test first creates a temporary Git index file
-    /// named `test_remove_file_from_index_existing.idx` for testing purposes. Then, it calls the
-    /// `remove_file_from_index` function to attempt removal of an entry from the index, specifying
-    /// the path of the temporary index file.
-    ///
-    /// The test asserts that the result of the removal operation is a success (`Ok`) by using
-    /// `assert!(result.is_ok())`. This indicates that the removal operation was successful, as expected.
-    /// It's important to note that this test does not verify whether the entry is removed from the index
-    /// since it's not easy to inspect the index file directly.
-    ///
-    /// This test focuses on validating that the `remove_file_from_index` function handles the case
-    /// of successfully removing a file from the Git index. It's important to conduct additional tests
-    /// to verify the index's actual contents and interactions.
-    ///
-    // #[test]
-    // fn test_remove_file_from_index_existing() {
-    //     // Create a temporary Git index file for testing.
-    //     let index_file_name = "test_remove_file_from_index_existing.idx";
-    //     let mut index_file = File::create(index_file_name).expect("Failed to create test index file.");
-
-    //     // Test the remove_file_from_index function.
-    //     let result = remove_file_from_index(index_file_name);
-
-    //     assert!(result.is_ok());
-
-    //     // Ensure the entry is removed from the index, which may require reading the index file.
-    // }
-
     /// Test the removal of a non-existing file from the Git index.
     ///
     /// This test attempts to remove a file from the Git index that does not exist using the
