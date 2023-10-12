@@ -3,7 +3,7 @@
 use std::{
     collections::HashMap,
     fs,
-    io::{self, Write},
+    io::{self, Write, Error},
 };
 
 type Index = HashMap<String, String>;
@@ -22,11 +22,16 @@ fn add_dir(path: &str, index: &mut Index) -> io::Result<()> {
     Ok(())
 }
 
-fn add_file(path: &str, hash: &str, index: &mut Index) {
+fn add_file(path: &str, hash: &str, index: &mut Index) -> io::Result<()> {
     index.insert(path.to_string(), hash.to_string());
+    Ok(())
 }
-fn remove_file(path: &str, index: &mut Index) {
-    index.remove(path);
+
+fn remove_file(path: &str, index: &mut Index) -> io::Result<()> {
+    match index.remove(path) {
+        Some(_) => Ok(()),
+        None => Err(Error::new(io::ErrorKind::NotFound, "Path not found in index")),
+    }
 }
 
 fn map_index(index_content: &str) -> Index {
@@ -44,20 +49,20 @@ fn map_index(index_content: &str) -> Index {
         .collect()
 }
 
-fn add_path(path: &str, index: &mut Index) {
+fn add_path(path: &str, index: &mut Index) -> io::Result<()> {
     match fs::metadata(path) {
         Ok(metadata) => {
             // file existe
             if metadata.is_dir() {
-                let _ = add_dir(path, index);
+                add_dir(path, index)
             } else {
                 let new_hash = "";
-                add_file(path, new_hash, index);
+                add_file(path, new_hash, index)
             }
             
         }
         Err(_) => remove_file(path, index), // file no existe
-    };
+    }
 }
 
 fn write_index(index: &mut Index) -> io::Result<()> {
@@ -78,7 +83,7 @@ pub fn add(path: &str) -> io::Result<()> {
 
     // let gitignore_content = rc::Rc::new(fs::read_to_string(".gitignore")?.lines().collect::<Vec<&str>>());
 
-    add_path(path, &mut index);
+    add_path(path, &mut index)?;
 
     write_index(&mut index)?;
 
@@ -118,37 +123,40 @@ mod tests {
     }
 
     #[test]
-    fn test_add_new_file() {
+    fn test_add_new_file() -> io::Result<()> {
         let index_content = "";
         let mut index = map_index(index_content);
         let path = "new.rs";
         let hash = "filehashed";
-        add_file(path, &hash, &mut index);
+        add_file(path, &hash, &mut index)?;
 
         assert!(index.contains_key(path));
+        Ok(())
     }
 
     #[test]
-    fn test_add_updated_file() {
+    fn test_add_updated_file() -> io::Result<()> {
         let index_content = "";
         let mut index = map_index(index_content);
         let path = "new.rs";
         let hash = "filehashed";
-        add_file(path, &hash, &mut index);
+        add_file(path, &hash, &mut index)?;
 
         let hash = "filehashedupdated";
-        add_file(path, &hash, &mut index);
+        add_file(path, &hash, &mut index)?;
         assert_eq!(index.get(path), Some(&hash.to_string()));
+        Ok(())
     }
 
     #[test]
-    fn test_remove_file() {
+    fn test_remove_file() -> io::Result<()> {
         let index_content = "hashed old.txt";
         let mut index = map_index(index_content);
         let path = "old.txt";
 
         assert!(index.contains_key(path));
-        remove_file(path, &mut index);
+        remove_file(path, &mut index)?;
         assert!(!index.contains_key(path));
+        Ok(())
     }
 }
