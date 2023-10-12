@@ -36,14 +36,11 @@ fn remove_file(path: &str, index: &mut Index) -> io::Result<()> {
 
 fn add_path(path: &str, index: &mut Index) -> io::Result<()> {
     match fs::metadata(path) {
-        Ok(metadata) => {
-            if metadata.is_dir() {
-                add_dir(path, index)
-            } else {
-                let new_hash = "";
-                add_file(path, new_hash, index)
-            }
-        }
+        Ok(metadata) if metadata.is_dir() => add_dir(path, index),
+        Ok(_) => {
+            let new_hash = "";
+            add_file(path, new_hash, index)
+        },
         Err(_) => remove_file(path, index),
     }
 }
@@ -102,6 +99,8 @@ pub fn add(path: &str) -> io::Result<()> {
     Ok(())
 }
 
+// falta testear add_dir, add_path y persistencia
+// tambien tests de integracion
 #[cfg(test)]
 mod tests {
     use super::*;
