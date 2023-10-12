@@ -3,7 +3,7 @@ use std::fs;
 use std::fs::File;
 use std::io::Read;
 use std::io::{self, Write};
-use std::path::{Path};
+use std::path::Path;
 
 /// Removes a file from the file system.
 ///
@@ -259,27 +259,26 @@ fn process_files_for_removal(
         if remove_directories_recursively {
             let _ = remove_file_or_directory(file);
         } else if remove_from_index_only {
-                match remove_file_from_index(file) {
-                    Ok(_) => {
-                        println!("Removed from index: {}", file);
-                    }
-                    Err(err) => {
-                        eprintln!("Error removing from index: {}", err);
-                    }
+            match remove_file_from_index(file) {
+                Ok(_) => {
+                    println!("Removed from index: {}", file);
                 }
-            } else {
-                match remove_file(file) {
-                    Ok(_) => {
-                        println!("Removed from file system: {}", file);
-                    }
-                    Err(err) => {
-                        eprintln!("Error removing from file system: {}", err);
-                    }
+                Err(err) => {
+                    eprintln!("Error removing from index: {}", err);
+                }
+            }
+        } else {
+            match remove_file(file) {
+                Ok(_) => {
+                    println!("Removed from file system: {}", file);
+                }
+                Err(err) => {
+                    eprintln!("Error removing from file system: {}", err);
                 }
             }
         }
     }
-
+}
 
 /// Handles command-line options and arguments for the git_rm utility.
 ///
@@ -364,7 +363,7 @@ pub fn git_rm() {
     let mut ignore_non_matching = false;
 
     // Create an iterator to process command-line arguments, skipping the program name.
-    let  iter = args.iter().skip(1);
+    let iter = args.iter().skip(1);
 
     for arg in iter {
         if arg.starts_with('-') {
@@ -479,7 +478,7 @@ mod tests {
     fn test_remove_file_or_directory_existing_file() {
         // Create a temporary file for testing.
         let file_name = "test_remove_file_or_directory_existing_file.txt";
-        let mut file = File::create(file_name).expect("Failed to create test file.");
+        let _file = File::create(file_name).expect("Failed to create test file.");
 
         // Test the remove_file_or_directory function.
         let result = remove_file_or_directory(file_name);
