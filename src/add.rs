@@ -3,7 +3,7 @@
 use std::{
     collections::HashMap,
     fs,
-    io::{self, Write, Error},
+    io::{self, Error, Write},
 };
 
 type Index = HashMap<String, String>;
@@ -11,8 +11,7 @@ type Index = HashMap<String, String>;
 // Err(io::Error::new(io::ErrorKind::NotFound, "File not found"))
 
 fn add_dir(path: &str, index: &mut Index) -> io::Result<()> {
-    let _ = fs::read_dir(path)?
-        .map(|entry| -> io::Result<()> {
+    let _ = fs::read_dir(path)?.map(|entry| -> io::Result<()> {
         if let Some(inner_path) = entry?.path().to_str() {
             add_path(inner_path, index);
         }
@@ -30,7 +29,10 @@ fn add_file(path: &str, hash: &str, index: &mut Index) -> io::Result<()> {
 fn remove_file(path: &str, index: &mut Index) -> io::Result<()> {
     match index.remove(path) {
         Some(_) => Ok(()),
-        None => Err(Error::new(io::ErrorKind::NotFound, "Path not found in index")),
+        None => Err(Error::new(
+            io::ErrorKind::NotFound,
+            "Path not found in index",
+        )),
     }
 }
 
@@ -39,7 +41,8 @@ fn map_index(index_content: &str) -> Index {
         .lines()
         .map(|line| -> (String, String) {
             let line_split: Vec<&str> = line.splitn(2, ' ').collect();
-            if line_split.len() < 2 { // tal vez manejar con Err aca, pero en el momento se me complicó un poco
+            if line_split.len() < 2 {
+                // tal vez manejar con Err aca, pero en el momento se me complicó un poco
                 return (String::new(), String::new());
             }
             // hash filename
@@ -59,10 +62,14 @@ fn add_path(path: &str, index: &mut Index) -> io::Result<()> {
                 let new_hash = "";
                 add_file(path, new_hash, index)
             }
-            
         }
         Err(_) => remove_file(path, index), // file no existe
     }
+}
+
+fn read_index() -> io::Result<Index> {
+    let index_content = fs::read_to_string(".git/index")?;
+    Ok(map_index(&index_content))
 }
 
 fn write_index(index: &mut Index) -> io::Result<()> {
@@ -78,13 +85,9 @@ pub fn add(path: &str) -> io::Result<()> {
         return Ok(());
     }
 
-    let index_content = fs::read_to_string(".git/index")?;
-    let mut index = map_index(&index_content);
-
+    let mut index = read_index()?;
     // let gitignore_content = rc::Rc::new(fs::read_to_string(".gitignore")?.lines().collect::<Vec<&str>>());
-
     add_path(path, &mut index)?;
-
     write_index(&mut index)?;
 
     Ok(())
