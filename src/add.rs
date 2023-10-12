@@ -102,6 +102,7 @@ pub fn add(path: &str) -> io::Result<()> {
     Ok(())
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
