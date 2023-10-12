@@ -10,16 +10,17 @@ type Index = HashMap<String, String>;
 
 // Err(io::Error::new(io::ErrorKind::NotFound, "File not found"))
 
-// fn add_dir(path: &str) -> io::Result<()> {
-//     let _ = fs::read_dir(path)?.map(|entry| -> io::Result<()> {
-//         if let Some(inner_path) = entry?.path().to_str() {
-//             add(inner_path)?;
-//         }
-//         Ok(())
-//     });
+fn add_dir(path: &str, index: &mut Index) -> io::Result<()> {
+    let _ = fs::read_dir(path)?
+        .map(|entry| -> io::Result<()> {
+        if let Some(inner_path) = entry?.path().to_str() {
+            add_path(inner_path, index);
+        }
+        Ok(())
+    });
 
-//     Ok(())
-// }
+    Ok(())
+}
 
 fn add_file(path: &str, hash: &str, index: &mut Index) {
     index.insert(path.to_string(), hash.to_string());
@@ -45,14 +46,15 @@ fn map_index(index_content: &str) -> Index {
 
 fn add_path(path: &str, index: &mut Index) {
     match fs::metadata(path) {
-        Ok(_metadata) => {
+        Ok(metadata) => {
             // file existe
-            // if metadata.is_dir() {
-            //     return add_dir(path);
-            // }
+            if metadata.is_dir() {
+                let _ = add_dir(path, index);
+            } else {
+                let new_hash = "";
+                add_file(path, new_hash, index);
+            }
             
-            let new_hash = "";
-            add_file(path, new_hash, index)
         }
         Err(_) => remove_file(path, index), // file no existe
     };
@@ -85,7 +87,6 @@ pub fn add(path: &str) -> io::Result<()> {
 
 mod tests {
     use super::*;
-    use std::io;
 
     #[test]
     fn test_map_empty() {
