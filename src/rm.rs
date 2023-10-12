@@ -1,6 +1,6 @@
-use std::fs::File;
 use std::env;
 use std::fs;
+use std::fs::File;
 use std::io::Read;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -404,7 +404,8 @@ mod tests {
         // Create a temporary file for testing.
         let file_name = "test_remove_file_existing.txt";
         let mut file = File::create(file_name).expect("Failed to create test file.");
-        file.write_all(b"Test data").expect("Failed to write to test file.");
+        file.write_all(b"Test data")
+            .expect("Failed to write to test file.");
 
         // Test the remove_file function.
         let result = remove_file(file_name);
@@ -430,7 +431,7 @@ mod tests {
         // Ensure an error with "Not Found" kind.
         assert_eq!(result.unwrap_err().kind(), io::ErrorKind::NotFound);
     }
-    
+
     /// Test the removal of a non-existing file from the Git index.
     ///
     /// This test attempts to remove a file from the Git index that does not exist using the
