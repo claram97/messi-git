@@ -11,73 +11,98 @@ use std::{
     io::{self, Error, Write},
 };
 
-type Index = HashMap<String, String>;
+struct Index  {
+    map: HashMap<String, String>
+}
 
-fn add_dir(path: &str, index: &mut Index) -> io::Result<()> {
+impl Index {
 
-    for entry in fs::read_dir(path)? {
-        if let Some(inner_path) = entry?.path().to_str() {
-            dbg!(inner_path);
-            add_path(inner_path, index)?;
-        }
+    fn new() -> Self {
+        Self { map: HashMap::new() }
     }
 
-    Ok(())
-}
-
-fn add_file(path: &str, hash: &str, index: &mut Index) -> io::Result<()> {
-    index.insert(path.to_string(), hash.to_string());
-    Ok(())
-}
-
-fn remove_file(path: &str, index: &mut Index) -> io::Result<()> {
-    match index.remove(path) {
-        Some(_) => Ok(()),
-        None => Err(Error::new(
-            io::ErrorKind::NotFound,
-            format!("Path not found in index: {}. Cannot remove", path),
-        )),
+    #[cfg(test)]
+    fn with(index_content: &str) -> Self {
+        let mut index = Self::new();
+        index.load_content(index_content);
+        index
     }
-}
 
-fn add_path(path: &str, index: &mut Index) -> io::Result<()> {
-    match fs::metadata(path) {
-        Ok(metadata) if metadata.is_dir() => add_dir(path, index),
-        Ok(_) => {
-            let new_hash = "";
-            add_file(path, new_hash, index)
-        }
-        Err(_) => remove_file(path, index),
+    fn load_index(&mut self) -> io::Result<()> {
+        let index_content = fs::read_to_string(INDEX_PATH)?;
+        self.load_content(&index_content);
+        Ok(())
     }
-}
 
-fn map_index(index_content: &str) -> Index {
-    index_content
-        .lines()
-        .map(|line| -> (String, String) {
+    fn load_content(&mut self, index_content: &str) {
+
+        for line in index_content.lines() {
             let line_split: Vec<&str> = line.splitn(2, ' ').collect();
             if line_split.len() < 2 {
-                // tal vez manejar con Err aca, pero en el momento se me complicó un poco
-                return (String::new(), String::new());
+                continue;
             }
-            // hash filename
-            (line_split[1].to_string(), line_split[0].to_string())
-        })
-        .filter(|line| *line != (String::new(), String::new()))
-        .collect()
-}
-
-fn read_index() -> io::Result<Index> {
-    let index_content = fs::read_to_string(INDEX_PATH)?;
-    Ok(map_index(&index_content))
-}
-
-fn write_index(index: &mut Index) -> io::Result<()> {
-    let mut index_file = fs::File::create(INDEX_PATH)?;
-    for line in index {
-        writeln!(index_file, "{} {}", line.1, line.0)?;
+            self.map.insert(line_split[1].to_string(), line_split[0].to_string());
+        }
     }
-    Ok(())
+
+    fn add_path(&mut self, path: &str) -> io::Result<()> {
+        match fs::metadata(path) {
+            Ok(metadata) if metadata.is_dir() => self.add_dir(path),
+            Ok(_) => {
+                let new_hash = "";
+                self.add_file(path, new_hash)
+            }
+            Err(_) => self.remove_file(path),
+        }
+    }
+
+    fn add_dir(&mut self, path: &str) -> io::Result<()> {
+        for entry in fs::read_dir(path)? {
+            if let Some(inner_path) = entry?.path().to_str() {
+                self.add_path(inner_path)?;
+            }
+        }
+    
+        Ok(())
+    }
+
+    fn add_file(&mut self, path: &str, hash: &str) -> io::Result<()> {
+        self.map.insert(path.to_string(), hash.to_string());
+        Ok(())
+    }
+
+    fn remove_file(&mut self, path: &str) -> io::Result<()> {
+        match self.map.remove(path) {
+            Some(_) => Ok(()),
+            None => Err(Error::new(
+                io::ErrorKind::NotFound,
+                format!("Path not found in index: {}. Cannot remove", path),
+            )),
+        }
+    }
+
+    fn write_file(&self) -> io::Result<()> {
+        let mut index_file = fs::File::create(INDEX_PATH)?;
+        for line in &self.map {
+            writeln!(index_file, "{} {}", line.1, line.0)?;
+        }
+        Ok(())
+    }
+
+    #[cfg(test)]
+    fn is_empty(&self) -> bool {
+        self.map.is_empty()
+    }
+
+    #[cfg(test)]
+    fn contains(&self, path: &str) -> bool {
+        self.map.contains_key(path)
+    }
+
+    #[cfg(test)]
+    fn get_hash(&self, path: &str) -> Option<&String> {
+        self.map.get(path)
+    }
 }
 
 /// This function receives a path to append/remove from the staging area
@@ -97,106 +122,106 @@ pub fn add(path: &str) -> io::Result<()> {
         return Ok(());
     }
 
-    let mut index = read_index()?;
-    // let gitignore_content = rc::Rc::new(fs::read_to_string(".gitignore")?.lines().collect::<Vec<&str>>());
-    add_path(path, &mut index)?;
-    write_index(&mut index)?;
+    let mut index = Index::new();
+    index.load_index()?;
+    index.add_path(path)?;
+    index.write_file()?;
+
+    // let mut index = read_index()?;
+    // // let gitignore_content = rc::Rc::new(fs::read_to_string(".gitignore")?.lines().collect::<Vec<&str>>());
+    // add_path(path, &mut index)?;
+    // write_index(&mut index)?;
 
     Ok(())
 }
 
-// falta testear add_dir, add_path y persistencia
-// tambien tests de integracion
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_map_empty() {
-        let index_content = "";
-        let index = map_index(index_content);
+        let index = Index::new();
         assert!(index.is_empty())
     }
 
     #[test]
     fn test_map_keys() {
         let index_content = "123456789 a.txt\n12388798 b.txt\n88321767 c.txt\n123817237 d.txt\n";
-        let index = map_index(index_content);
+        let index = Index::with(index_content);
 
-        assert!(index.contains_key("a.txt"));
-        assert!(index.contains_key("b.txt"));
-        assert!(index.contains_key("c.txt"));
-        assert!(index.contains_key("d.txt"));
+        assert!(index.contains("a.txt"));
+        assert!(index.contains("b.txt"));
+        assert!(index.contains("c.txt"));
+        assert!(index.contains("d.txt"));
     }
 
     #[test]
     fn test_map_values() {
         let index_content = "123456789 a.txt\n12388798 b.txt\n88321767 c.txt\n123817237 d.txt\n";
-        let index = map_index(index_content);
+        let index = Index::with(index_content);
 
-        assert_eq!(index.get("a.txt"), Some(&"123456789".to_string()));
-        assert_eq!(index.get("b.txt"), Some(&"12388798".to_string()));
-        assert_eq!(index.get("c.txt"), Some(&"88321767".to_string()));
-        assert_eq!(index.get("d.txt"), Some(&"123817237".to_string()));
+        assert_eq!(index.get_hash("a.txt"), Some(&"123456789".to_string()));
+        assert_eq!(index.get_hash("b.txt"), Some(&"12388798".to_string()));
+        assert_eq!(index.get_hash("c.txt"), Some(&"88321767".to_string()));
+        assert_eq!(index.get_hash("d.txt"), Some(&"123817237".to_string()));
     }
 
     #[test]
     fn test_add_new_file() -> io::Result<()> {
-        let index_content = "";
-        let mut index = map_index(index_content);
+        let mut index = Index::new();
         let path = "new.rs";
         let hash = "filehashed";
-        add_file(path, &hash, &mut index)?;
+        index.add_file(path, &hash)?;
 
-        assert!(index.contains_key(path));
+        assert!(index.contains(path));
         Ok(())
     }
 
     #[test]
     fn test_add_updated_file() -> io::Result<()> {
-        let index_content = "";
-        let mut index = map_index(index_content);
+        let mut index = Index::new();
         let path = "new.rs";
         let hash = "filehashed";
-        add_file(path, &hash, &mut index)?;
+        index.add_file(path, &hash)?;
 
         let hash = "filehashedupdated";
-        add_file(path, &hash, &mut index)?;
-        assert_eq!(index.get(path), Some(&hash.to_string()));
+        index.add_file(path, &hash)?;
+        assert_eq!(index.get_hash(path), Some(&hash.to_string()));
         Ok(())
     }
 
     #[test]
     fn test_remove_file() -> io::Result<()> {
         let index_content = "hashed old.txt";
-        let mut index = map_index(index_content);
+        let mut index = Index::with(index_content);
         let path = "old.txt";
 
-        assert!(index.contains_key(path));
-        remove_file(path, &mut index)?;
-        assert!(!index.contains_key(path));
+        assert!(index.contains(path));
+        index.remove_file(path)?;
+
+        assert!(!index.contains(path));
         Ok(())
     }
 
     #[test]
     fn test_add_path_file() -> io::Result<()> {
-        let index_content = "";
-        let mut index = map_index(index_content);
+        let mut index = Index::new();
+
         let path = "tests/dir_to_add/non_empty/a.txt";
 
-        add_path(path, &mut index)?;
+        index.add_path(path)?;
 
-        assert!(index.contains_key(path));
+        assert!(index.contains(path));
         Ok(())
     }
 
     #[test]
     fn test_add_path_empty_dir() -> io::Result<()> {
-        let index_content = "";
-        let mut index = map_index(index_content);
+        let mut index = Index::new();
         let empty_dir_path = "tests/dir_to_add/empty";
 
-        add_path(empty_dir_path, &mut index)?;
+        index.add_path(empty_dir_path)?;
 
         assert!(index.is_empty());
         Ok(())
@@ -204,28 +229,26 @@ mod tests {
 
     #[test]
     fn test_add_non_empty_dir() -> io::Result<()> {
-        let index_content = "";
-        let mut index = map_index(index_content);
+        let mut index = Index::new();
         let dir_path = "tests/dir_to_add/non_empty";
 
-        add_path(dir_path, &mut index)?;
+        index.add_path(dir_path)?;
 
-        assert!(index.contains_key("tests/dir_to_add/non_empty/a.txt"));
-        assert!(index.contains_key("tests/dir_to_add/non_empty/b.txt"));
+        assert!(index.contains("tests/dir_to_add/non_empty/a.txt"));
+        assert!(index.contains("tests/dir_to_add/non_empty/b.txt"));
         Ok(())
     }
 
     #[test]
     fn test_add_non_empty_recursive_dirs() -> io::Result<()> {
-        let index_content = "";
-        let mut index = map_index(index_content);
+        let mut index = Index::new();
         let dir_path = "tests/dir_to_add/recursive";
 
-        add_path(dir_path, &mut index)?;
+        index.add_path(dir_path)?;
 
-        assert!(index.contains_key("tests/dir_to_add/recursive/a.txt"));
-        assert!(index.contains_key("tests/dir_to_add/recursive/recursive/a.txt"));
-        assert!(index.contains_key("tests/dir_to_add/recursive/recursive/recursive/a.txt"));
+        assert!(index.contains("tests/dir_to_add/recursive/a.txt"));
+        assert!(index.contains("tests/dir_to_add/recursive/recursive/a.txt"));
+        assert!(index.contains("tests/dir_to_add/recursive/recursive/recursive/a.txt"));
         Ok(())
     }
 }
