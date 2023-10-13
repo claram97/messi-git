@@ -14,12 +14,13 @@ use std::{
 type Index = HashMap<String, String>;
 
 fn add_dir(path: &str, index: &mut Index) -> io::Result<()> {
-    let _ = fs::read_dir(path)?.map(|entry| -> io::Result<()> {
+
+    for entry in fs::read_dir(path)? {
         if let Some(inner_path) = entry?.path().to_str() {
+            dbg!(inner_path);
             add_path(inner_path, index)?;
         }
-        Ok(())
-    });
+    }
 
     Ok(())
 }
@@ -45,7 +46,7 @@ fn add_path(path: &str, index: &mut Index) -> io::Result<()> {
         Ok(_) => {
             let new_hash = "";
             add_file(path, new_hash, index)
-        },
+        }
         Err(_) => remove_file(path, index),
     }
 }
@@ -174,6 +175,57 @@ mod tests {
         assert!(index.contains_key(path));
         remove_file(path, &mut index)?;
         assert!(!index.contains_key(path));
+        Ok(())
+    }
+
+    #[test]
+    fn test_add_path_file() -> io::Result<()> {
+        let index_content = "";
+        let mut index = map_index(index_content);
+        let path = "tests/dir_to_add/non_empty/a.txt";
+
+        add_path(path, &mut index)?;
+
+        assert!(index.contains_key(path));
+        Ok(())
+    }
+
+    #[test]
+    fn test_add_path_empty_dir() -> io::Result<()> {
+        let index_content = "";
+        let mut index = map_index(index_content);
+        let empty_dir_path = "tests/dir_to_add/empty";
+
+        add_path(empty_dir_path, &mut index)?;
+
+        assert!(index.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn test_add_non_empty_dir() -> io::Result<()> {
+        let index_content = "";
+        let mut index = map_index(index_content);
+        let dir_path = "tests/dir_to_add/non_empty";
+
+        add_path(dir_path, &mut index)?;
+
+        assert!(index.contains_key("tests/dir_to_add/non_empty/a.txt"));
+        assert!(index.contains_key("tests/dir_to_add/non_empty/b.txt"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_add_non_empty_recursive_dirs() -> io::Result<()> {
+        let index_content = "";
+        let mut index = map_index(index_content);
+        let dir_path = "tests/dir_to_add/recursive";
+
+        add_path(dir_path, &mut index)?;
+
+        assert!(index.contains_key("tests/dir_to_add/recursive/a.txt"));
+        assert!(index.contains_key("tests/dir_to_add/recursive/recursive/a.txt"));
+        assert!(index.contains_key("tests/dir_to_add/recursive/recursive/recursive/a.txt"));
         Ok(())
     }
 }
