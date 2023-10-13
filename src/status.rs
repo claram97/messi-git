@@ -342,7 +342,7 @@ mod tests {
     use std::{
         fs::{create_dir, remove_dir_all},
         io::Write,
-        time::{SystemTime, UNIX_EPOCH}
+        time::{SystemTime, UNIX_EPOCH},
     };
 
     use super::*;
@@ -459,5 +459,4 @@ mod tests {
         assert!(result.is_none(), "Git directory should not exist");
         cleanup_test_directory_without_git();
     }
-   
 }
