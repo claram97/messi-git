@@ -1,9 +1,7 @@
-// use messi::hash_object::store_file;
+// use crate::hash_object::store_file;
 
 const MGIT: &str = ".mgit";
-const MGIT_DIR: &str = ".mgit/";
 const INDEX_PATH: &str = ".mgit/index";
-// const MGIT_IGNORE: &str = ".mgitignore";
 const OPTIONS_ALL: &str = "-u";
 
 use std::{
@@ -12,14 +10,19 @@ use std::{
     io::{self, Error, Write},
 };
 
-struct Index  {
-    map: HashMap<String, String>
+use crate::ignorer::{Ignorer, is_subpath};
+
+struct Index {
+    map: HashMap<String, String>,
+    ignorer: Ignorer,
 }
 
 impl Index {
-
     fn new() -> Self {
-        Self { map: HashMap::new() }
+        Self {
+            map: HashMap::new(),
+            ignorer: Ignorer::load()
+        }
     }
 
     #[cfg(test)]
@@ -36,7 +39,6 @@ impl Index {
     }
 
     fn load_content(&mut self, index_content: &str) {
-
         for line in index_content.lines() {
             if let Some((hash, path)) = line.split_once(' ') {
                 self.map.insert(path.to_string(), hash.to_string());
@@ -45,6 +47,10 @@ impl Index {
     }
 
     fn add_path(&mut self, path: &str) -> io::Result<()> {
+        if self.ignorer.ignore(path) {
+            return Err(Error::new(io::ErrorKind::InvalidData, "The path is ignored by ignore file"))
+        }
+
         match fs::metadata(path) {
             Ok(metadata) if metadata.is_dir() => self.add_dir(path),
             Ok(_) => {
@@ -61,7 +67,7 @@ impl Index {
                 self.add_path(inner_path)?;
             }
         }
-    
+
         Ok(())
     }
 
@@ -117,7 +123,7 @@ impl Index {
 ///
 /// IO errors may occurr while doing IO operations. In that cases, Error will be returned.
 pub fn add(path: &str, options: Option<Vec<String>>) -> io::Result<()> {
-    if path.contains(MGIT_DIR) || path == MGIT {
+    if is_subpath(path, MGIT) {
         return Ok(());
     }
 
