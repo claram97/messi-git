@@ -234,7 +234,7 @@ mod tests {
         if !Path::new(empty_dir_path).exists() {
             fs::create_dir_all(empty_dir_path)?;
         }
-        
+
         index.add_path(empty_dir_path)?;
 
         assert!(index.is_empty());
