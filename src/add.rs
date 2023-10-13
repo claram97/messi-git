@@ -4,6 +4,7 @@ const MGIT: &str = ".mgit";
 const MGIT_DIR: &str = ".mgit/";
 const INDEX_PATH: &str = ".mgit/index";
 // const MGIT_IGNORE: &str = ".mgitignore";
+const OPTIONS_ALL: &str = "-u";
 
 use std::{
     collections::HashMap,
@@ -117,20 +118,21 @@ impl Index {
 /// TODO: .gitignore
 ///
 /// IO errors may occurr while doing IO operations. In that cases, Error will be returned.
-pub fn add(path: &str) -> io::Result<()> {
+pub fn add(path: &str, options: Option<Vec<String>>) -> io::Result<()> {
     if path.contains(MGIT_DIR) || path == MGIT {
         return Ok(());
+    }
+
+    if let Some(params) = options {
+        if params.contains(&OPTIONS_ALL.to_string()) {
+            return add(".", None);
+        }
     }
 
     let mut index = Index::new();
     index.load_index()?;
     index.add_path(path)?;
     index.write_file()?;
-
-    // let mut index = read_index()?;
-    // // let gitignore_content = rc::Rc::new(fs::read_to_string(".gitignore")?.lines().collect::<Vec<&str>>());
-    // add_path(path, &mut index)?;
-    // write_index(&mut index)?;
 
     Ok(())
 }
