@@ -1,5 +1,10 @@
 // use messi::hash_object::store_file;
 
+const MGIT: &str = ".mgit";
+const MGIT_DIR: &str = ".mgit/";
+const INDEX_PATH: &str = ".mgit/index";
+// const MGIT_IGNORE: &str = ".mgitignore";
+
 use std::{
     collections::HashMap,
     fs,
@@ -62,12 +67,12 @@ fn map_index(index_content: &str) -> Index {
 }
 
 fn read_index() -> io::Result<Index> {
-    let index_content = fs::read_to_string(".git/index")?;
+    let index_content = fs::read_to_string(INDEX_PATH)?;
     Ok(map_index(&index_content))
 }
 
 fn write_index(index: &mut Index) -> io::Result<()> {
-    let mut index_file = fs::File::create(".git/index")?;
+    let mut index_file = fs::File::create(INDEX_PATH)?;
     for line in index {
         writeln!(index_file, "{} {}", line.1, line.0)?;
     }
@@ -87,7 +92,7 @@ fn write_index(index: &mut Index) -> io::Result<()> {
 ///
 /// IO errors may occurr while doing IO operations. In that cases, Error will be returned.
 pub fn add(path: &str) -> io::Result<()> {
-    if path.contains(".git/") || path.ends_with(".git") {
+    if path.contains(MGIT_DIR) || path.ends_with(MGIT) {
         return Ok(());
     }
 
