@@ -34,7 +34,7 @@ fn find_git_directory() -> Option<String> {
 /// Returns the sha1 hash of the given content.
 /// It does not add any type information to the content.
 /// Do not use for git objects search. Use hash_file_content instead !!!!!
-pub fn hash_string(content: &str) -> String {
+fn hash_string(content: &str) -> String {
     let mut hasher = Sha1::new();
     hasher.update(content.as_bytes());
     let result = hasher.finalize();
@@ -45,7 +45,7 @@ pub fn hash_string(content: &str) -> String {
 /// The type information is added as a header to the content.
 /// The header is of the form: <type> <size>\0
 /// Use this function when searching for a file git object.
-/// This function does not return the path to the object in the objects folder.
+/// This function does not return the path to the object in the objects folder, it returns the complete string.
 pub fn hash_file_content(path: &str) -> io::Result<String> {
     let content = std::fs::read_to_string(path)?;
     let header = format!("blob {}\0", content.len());
@@ -104,6 +104,9 @@ pub fn store_file(path: &str) -> io::Result<String> {
     }
 }
 
+/// Compresses the content of the file at the given input path and stores it in the file at the given output path.
+/// The content is compressed using zlib.
+/// The content is prepended with the header: blob <size>\0. The size is the size of the content.
 fn compress_content(input_path: &str, output_path: &str) -> io::Result<()> {
     let output_file = File::create(output_path)?;
     let mut encoder = ZlibEncoder::new(output_file, Compression::default());
