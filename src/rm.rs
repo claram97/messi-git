@@ -29,6 +29,43 @@ fn remove_file(file: &str) -> io::Result<()> {
     Ok(())
 }
 
+/// Searches for and removes an entry with a specified filename from the provided index contents.
+///
+/// This function iterates through the index contents and removes the entry that matches the given filename,
+/// if it exists. It operates on a mutable reference to the index contents to allow in-place removal.
+///
+/// # Arguments
+///
+/// * `index_contents` - A mutable reference to the index contents (byte vector) that may contain entries.
+/// * `file` - The filename of the entry to be removed.
+///
+/// # Returns
+///
+/// Returns `true` if the entry with the specified filename was found and successfully removed.
+/// Returns `false` if the entry was not found.
+///
+fn find_and_remove_entry(index_contents: &mut Vec<u8>, file: &str) -> bool {
+    let mut offset = 0;
+    let mut found = false;
+
+    while offset < index_contents.len() {
+        let entry_size = read_u32(&index_contents[offset..offset + 4]) as usize;
+        let entry_path = String::from_utf8_lossy(&index_contents[offset + 62..])
+            .trim_matches(char::from(0))
+            .to_string();
+
+        if entry_path == file {
+            index_contents.drain(offset..offset + entry_size);
+            found = true;
+            break;
+        }
+
+        offset += entry_size;
+    }
+
+    found
+}
+
 /// Removes a file from the Git index.
 ///
 /// This function attempts to remove a file from the Git index, simulating the process of
@@ -47,33 +84,14 @@ fn remove_file(file: &str) -> io::Result<()> {
 /// during the removal process.
 ///
 pub fn remove_file_from_index(file: &str) -> io::Result<()> {
-    // Open the Git index file (".git/index")
     let index_path = Path::new(".git").join("index");
     let mut index_file = File::open(&index_path)?;
 
-    // Read the entire index file into memory
     let mut index_contents = Vec::new();
     index_file.read_to_end(&mut index_contents)?;
+    let  found = false;
 
-    // Find and remove the entry corresponding to the specified file
-    let mut offset = 12; // Skip the header
-    let mut found = false;
-
-    while offset < index_contents.len() {
-        let entry_size = read_u32(&index_contents[offset..offset + 4]) as usize;
-        let entry_path = String::from_utf8_lossy(&index_contents[offset + 62..])
-            .trim_matches(char::from(0))
-            .to_string();
-
-        if entry_path == file {
-            // Skip this entry to effectively remove it
-            index_contents.drain(offset..offset + entry_size);
-            found = true;
-            break;
-        }
-
-        offset += entry_size;
-    }
+    find_and_remove_entry(&mut index_contents, file);
 
     if !found {
         return Err(io::Error::new(
@@ -82,7 +100,6 @@ pub fn remove_file_from_index(file: &str) -> io::Result<()> {
         ));
     }
 
-    // Write the modified index contents back to the index file
     let mut new_index_file = File::create(&index_path)?;
     new_index_file.write_all(&index_contents)?;
 
@@ -199,7 +216,7 @@ fn parse_option(arg: &str) -> (String, bool, bool, bool, bool) {
     let mut ignore_non_matching = false;
 
     match arg {
-        "--" => {} // Separator between options and files
+        "--" => {} 
         "-f" | "--force" => {
             option_name = arg.to_string();
         }
@@ -302,7 +319,6 @@ fn handle_options_and_args(files: &Vec<String>, show_files_to_remove: bool) -> b
         eprintln!("You must provide at least one file to remove.");
         return false;
     }
-    // Process options
     if show_files_to_remove {
         println!("Files that would be removed:");
         for file in files {
@@ -362,9 +378,7 @@ pub fn git_rm() {
     let mut show_files_to_remove = false;
     let mut ignore_non_matching = false;
 
-    // Create an iterator to process command-line arguments, skipping the program name.
     let iter = args.iter().skip(1);
-
     for arg in iter {
         if arg.starts_with('-') {
             let (option_name, remove_dirs, remove_index, show, ignore) = parse_option(arg.as_str());
@@ -399,17 +413,14 @@ mod tests {
     /// and then asserts that the removal operation was successful and that the file no longer exists.
     #[test]
     fn test_remove_file_existing() {
-        // Create a temporary file for testing.
         let file_name = "test_remove_file_existing.txt";
         let mut file = File::create(file_name).expect("Failed to create test file.");
         file.write_all(b"Test data")
             .expect("Failed to write to test file.");
 
-        // Test the remove_file function.
         let result = remove_file(file_name);
         assert!(result.is_ok());
 
-        // Ensure the file no longer exists.
         assert!(!Path::new(file_name).exists());
     }
 
@@ -419,14 +430,11 @@ mod tests {
     /// It then asserts that the removal operation results in an error with the "Not Found" kind.
     #[test]
     fn test_remove_file_non_existing() {
-        // Test removing a non-existing file.
         let file_name = "non_existing_file.txt";
 
-        // Test the remove_file function.
         let result = remove_file(file_name);
         assert!(result.is_err());
 
-        // Ensure an error with "Not Found" kind.
         assert_eq!(result.unwrap_err().kind(), io::ErrorKind::NotFound);
     }
 
@@ -438,14 +446,11 @@ mod tests {
     /// from the Git index.
     #[test]
     fn test_remove_file_from_index_non_existing() {
-        // Test removing a non-existing file from the index.
         let file_name = "non_existing_file.txt";
 
-        // Test the remove_file_from_index function.
         let result = remove_file_from_index(file_name);
         assert!(result.is_err());
 
-        // Ensure an error with "Not Found" kind.
         assert_eq!(result.unwrap_err().kind(), io::ErrorKind::NotFound);
     }
 
@@ -476,15 +481,12 @@ mod tests {
     /// This test validates that the `remove_file_or_directory` function can successfully remove an existing file.
     #[test]
     fn test_remove_file_or_directory_existing_file() {
-        // Create a temporary file for testing.
         let file_name = "test_remove_file_or_directory_existing_file.txt";
         let _file = File::create(file_name).expect("Failed to create test file.");
 
-        // Test the remove_file_or_directory function.
         let result = remove_file_or_directory(file_name);
         assert!(result.is_ok());
 
-        // Ensure the file no longer exists.
         assert!(!Path::new(file_name).exists());
     }
 
@@ -500,15 +502,12 @@ mod tests {
     /// This test validates that the `remove_file_or_directory` function can successfully remove an existing directory.
     #[test]
     fn test_remove_file_or_directory_existing_directory() {
-        // Create a temporary directory for testing.
         let dir_name = "test_remove_file_or_directory_existing_directory";
         fs::create_dir(dir_name).expect("Failed to create test directory.");
 
-        // Test the remove_file_or_directory function.
         let result = remove_file_or_directory(dir_name);
         assert!(result.is_ok());
 
-        // Ensure the directory no longer exists.
         assert!(!Path::new(dir_name).exists());
     }
 
@@ -530,14 +529,11 @@ mod tests {
     /// attempting to remove a non-existing file or directory.
     #[test]
     fn test_remove_file_or_directory_non_existing() {
-        // Test removing a non-existing file or directory.
         let name = "non_existing_path";
 
-        // Test the remove_file_or_directory function.
         let result = remove_file_or_directory(name);
         assert!(result.is_err());
 
-        // Ensure an error with "Not Found" kind.
         assert_eq!(result.unwrap_err().kind(), io::ErrorKind::NotFound);
     }
 }
