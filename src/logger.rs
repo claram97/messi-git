@@ -1,8 +1,9 @@
 use std::{
     fs::{File, OpenOptions},
     io::Write,
+    path::Path,
     sync::{Arc, Mutex},
-    thread, path::Path,
+    thread,
 };
 /// Logger is a struct that allows to write a logging file while
 /// working with multiple threads
@@ -85,7 +86,7 @@ impl Write for Logger {
         let _ = thread::spawn(move || -> std::io::Result<()> {
             if let Ok(mut file) = file_clone.lock() {
                 file.write_all(&buf_owned)?;
-                file.write("\n".as_bytes())?;
+                file.write_all("\n".as_bytes())?;
                 file.flush()?;
             }
             Ok(())
