@@ -1,8 +1,4 @@
-use crate::init::fs::File;
-use rand::random;
-use std::env;
 use std::fs;
-use std::io::Read;
 use std::io::{self, Write};
 use std::path::Path;
 
@@ -33,7 +29,7 @@ fn create_directory_if_not_exists(directory: &str) -> io::Result<()> {
 /// Returns an `io::Result<()>` indicating whether the file creation and write operation were successful or if an error occurred.
 ///
 fn create_file_if_not_exists(file: &str, content: &str) -> io::Result<()> {
-    if !fs::metadata(file).is_ok() {
+    if fs::metadata(file).is_err() {
         let mut file = fs::File::create(file)?;
         file.write_all(content.as_bytes())?;
     }
@@ -107,6 +103,17 @@ pub fn git_init(
 ///   of the created directory as a string.
 /// - `Err(String)`: If any step of the process fails, contains an error message.
 ///
+/// 
+
+#[cfg(test)]
+mod test {
+
+use super::*;
+use crate::init::fs::File;
+use rand::random;
+use std::fs;
+use std::io::Read;
+
 fn create_temp_directory() -> Result<String, String> {
     let mut directory = std::env::temp_dir();
     directory.push(format!("git_init_test_{}", random::<u32>()));
@@ -337,4 +344,5 @@ fn test_git_init_existing_directory() {
     if let Err(err) = fs::remove_dir_all(&temp_dir) {
         panic!("Failed to remove temp directory: {}", err);
     }
+}
 }
