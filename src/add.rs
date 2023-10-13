@@ -92,7 +92,7 @@ fn write_index(index: &mut Index) -> io::Result<()> {
 ///
 /// IO errors may occurr while doing IO operations. In that cases, Error will be returned.
 pub fn add(path: &str) -> io::Result<()> {
-    if path.contains(MGIT_DIR) || path.ends_with(MGIT) {
+    if path.contains(MGIT_DIR) || path == MGIT {
         return Ok(());
     }
 
