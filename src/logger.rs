@@ -2,7 +2,7 @@ use std::{
     fs::{File, OpenOptions},
     io::Write,
     sync::{Arc, Mutex},
-    thread,
+    thread, path::Path,
 };
 /// Logger is a struct that allows to write a logging file while
 /// working with multiple threads
@@ -48,6 +48,11 @@ impl Logger {
     ///
     /// Will return a Ok(Logger) in case of success.
     pub fn new(path: &str) -> Result<Self, std::io::Error> {
+        if !Path::new(path).exists() {
+            if let Some((dir, _file)) = path.rsplit_once('/') {
+                std::fs::create_dir_all(dir)?;
+            }
+        }
         let file = OpenOptions::new().create(true).append(true).open(path)?;
 
         Ok(Self {
@@ -80,6 +85,7 @@ impl Write for Logger {
         let _ = thread::spawn(move || -> std::io::Result<()> {
             if let Ok(mut file) = file_clone.lock() {
                 file.write_all(&buf_owned)?;
+                file.write("\n".as_bytes())?;
                 file.flush()?;
             }
             Ok(())

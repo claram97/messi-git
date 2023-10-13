@@ -12,7 +12,7 @@ fn test_write_single() -> std::io::Result<()> {
 
     write!(logger, "{content}")?;
     let file_content = fs::read_to_string(path)?;
-    assert_eq!(file_content, content);
+    assert!(file_content.starts_with(content));
 
     logger.clear()
 }
@@ -23,9 +23,9 @@ fn test_write_single_many_times() -> std::io::Result<()> {
     let content = "testing log";
     let mut logger = Logger::new(path)?;
 
-    writeln!(logger, "{content}")?;
-    writeln!(logger, "{content}")?;
-    writeln!(logger, "{content}")?;
+    write!(logger, "{content}")?;
+    write!(logger, "{content}")?;
+    write!(logger, "{content}")?;
 
     for line_content in fs::read_to_string(path)?.lines() {
         assert_eq!(line_content, content);
@@ -40,7 +40,7 @@ fn test_write_and_clear() -> std::io::Result<()> {
     let content = "testing log";
     let mut logger = Logger::new(path)?;
 
-    writeln!(logger, "{content}")?;
+    write!(logger, "{content}")?;
     logger.clear()?;
     let file_content = fs::read_to_string(path)?;
     assert_eq!(file_content, "");
@@ -58,7 +58,7 @@ fn write_in_thread(
     thread::spawn(move || -> std::io::Result<()> {
         let mut logger = Logger::new(&path_owned)?;
         for i in 0..times {
-            let content = format!("{} - {}\n", content_owned, i);
+            let content = format!("{} - {}", content_owned, i);
             write!(logger, "{content}")?;
             thread::sleep(Duration::from_millis(1 * times));
         }
