@@ -1,4 +1,6 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, io};
+
+use crate::commit;
 
 /// Recursively searches for a directory named "name_of_git_directory" in the file system
 /// starting from the location specified by "current_dir."
@@ -28,6 +30,24 @@ pub fn find_git_directory(
     }
     None
 }
+
+pub fn get_branch_commit_history_with_messages(commit_hash: &str, git_dir: &str) -> io::Result<Vec<(String, String)>> {
+    let mut parents: Vec<(String, String)> = Vec::new();
+    let commit_message: String = commit::get_commit_message(commit_hash, git_dir)?;
+    parents.push((commit_hash.to_string(), commit_message.to_string()));
+    let mut commit_parent = commit::get_parent_hash(commit_hash, git_dir);
+    while let Ok(parent) = commit_parent {
+        println!("{}", parent);
+        let commit_message = match commit::get_commit_message(&parent, git_dir) {
+            Ok(message) => message,
+            Err(_) => break,
+        };
+        parents.push((parent.clone(), commit_message.to_string()));
+        commit_parent = commit::get_parent_hash(&parent, git_dir);
+    }
+    Ok(parents)
+}
+
 
 #[cfg(test)]
 mod tests {
