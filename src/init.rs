@@ -1,11 +1,10 @@
+use crate::init::fs::File;
+use rand::random;
 use std::env;
 use std::fs;
+use std::io::Read;
 use std::io::{self, Write};
 use std::path::Path;
-use crate::init::fs::File;
-use std::io::Read;
-use rand::random;
-
 
 /// `create_directory_if_not_exists` is a utility function that creates a directory if it doesn't exist.
 ///
@@ -53,7 +52,11 @@ fn create_file_if_not_exists(file: &str, content: &str) -> io::Result<()> {
 ///
 /// Returns an `io::Result<()>` indicating whether the operation was successful or if an error occurred.
 ///
-pub fn git_init(directory: &str, initial_branch: &str, template_directory: Option<&str>) -> io::Result<()> {
+pub fn git_init(
+    directory: &str,
+    initial_branch: &str,
+    template_directory: Option<&str>,
+) -> io::Result<()> {
     // Create directory if it doesn't exist
     if !Path::new(directory).exists() {
         fs::create_dir_all(directory)?;
@@ -84,7 +87,10 @@ pub fn git_init(directory: &str, initial_branch: &str, template_directory: Optio
         }
     }
 
-    println!("Git repository initialized successfully in '{}'.", directory);
+    println!(
+        "Git repository initialized successfully in '{}'.",
+        directory
+    );
     Ok(())
 }
 
@@ -154,8 +160,8 @@ fn test_create_file_if_not_exists() {
     // Check if the file exists and has the expected content
     assert!(Path::new(&file_path).exists());
     let mut file_content = String::new();
-    if let Err(err) = File::open(&file_path)
-        .and_then(|mut file| file.read_to_string(&mut file_content))
+    if let Err(err) =
+        File::open(&file_path).and_then(|mut file| file.read_to_string(&mut file_content))
     {
         panic!("Failed to read file: {}", err);
     }
@@ -203,7 +209,9 @@ fn test_git_init_default_branch() {
             assert!(Path::new(&head_file_path).exists());
 
             let mut head_file_content = String::new();
-            match File::open(&head_file_path).and_then(|mut file| file.read_to_string(&mut head_file_content)) {
+            match File::open(&head_file_path)
+                .and_then(|mut file| file.read_to_string(&mut head_file_content))
+            {
                 Ok(_) => {
                     assert_eq!(head_file_content, "ref: refs/heads/main\n");
                 }
@@ -235,7 +243,9 @@ fn test_git_init_custom_branch() {
             assert!(Path::new(&head_file_path).exists());
 
             let mut head_file_content = String::new();
-            match File::open(&head_file_path).and_then(|mut file| file.read_to_string(&mut head_file_content)) {
+            match File::open(&head_file_path)
+                .and_then(|mut file| file.read_to_string(&mut head_file_content))
+            {
                 Ok(_) => {
                     assert_eq!(head_file_content, "ref: refs/heads/mybranch\n");
                 }
@@ -259,7 +269,8 @@ fn test_git_init_with_template() {
     // Create a template directory with a sample file
     let template_dir = create_temp_directory().expect("Failed to create template directory");
     let template_file_path = format!("{}/template_file.txt", template_dir);
-    create_file_if_not_exists(&template_file_path, "Template content").expect("Failed to create template file");
+    create_file_if_not_exists(&template_file_path, "Template content")
+        .expect("Failed to create template file");
 
     match git_init(&temp_dir, "main", Some(&template_dir)) {
         Ok(_) => {
@@ -272,7 +283,9 @@ fn test_git_init_with_template() {
             assert!(Path::new(&head_file_path).exists());
 
             let mut head_file_content = String::new();
-            match File::open(&head_file_path).and_then(|mut file| file.read_to_string(&mut head_file_content)) {
+            match File::open(&head_file_path)
+                .and_then(|mut file| file.read_to_string(&mut head_file_content))
+            {
                 Ok(_) => {
                     assert_eq!(head_file_content, "ref: refs/heads/main\n");
                 }
@@ -284,7 +297,9 @@ fn test_git_init_with_template() {
             assert!(Path::new(&copied_template_file_path).exists());
 
             let mut template_file_content = String::new();
-            match File::open(&copied_template_file_path).and_then(|mut file| file.read_to_string(&mut template_file_content)) {
+            match File::open(&copied_template_file_path)
+                .and_then(|mut file| file.read_to_string(&mut template_file_content))
+            {
                 Ok(_) => {
                     assert_eq!(template_file_content, "Template content");
                 }
@@ -323,4 +338,3 @@ fn test_git_init_existing_directory() {
         panic!("Failed to remove temp directory: {}", err);
     }
 }
-
