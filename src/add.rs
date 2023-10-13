@@ -38,11 +38,9 @@ impl Index {
     fn load_content(&mut self, index_content: &str) {
 
         for line in index_content.lines() {
-            let line_split: Vec<&str> = line.splitn(2, ' ').collect();
-            if line_split.len() < 2 {
-                continue;
+            if let Some((hash, path)) = line.split_once(' ') {
+                self.map.insert(path.to_string(), hash.to_string());
             }
-            self.map.insert(line_split[1].to_string(), line_split[0].to_string());
         }
     }
 
