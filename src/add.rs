@@ -146,6 +146,8 @@ pub fn add(path: &str, options: Option<Vec<String>>) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use super::*;
 
     #[test]
@@ -229,7 +231,10 @@ mod tests {
     fn test_add_path_empty_dir() -> io::Result<()> {
         let mut index = Index::new();
         let empty_dir_path = "tests/add/dir_to_add/empty";
-
+        if !Path::new(empty_dir_path).exists() {
+            fs::create_dir_all(empty_dir_path)?;
+        }
+        
         index.add_path(empty_dir_path)?;
 
         assert!(index.is_empty());
