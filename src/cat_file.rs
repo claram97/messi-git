@@ -1,6 +1,12 @@
-use std::{io::{self, BufReader, Read}, fs::File, env};
+use std::{
+    env,
+    fs::File,
+    io::{self, BufReader, Read},
+};
 
 use flate2::bufread::ZlibDecoder;
+
+const GIT_DIR: &str = ".mgit";
 
 /// Returns the path to the .git directory if it exists in the current directory or any of its parents.
 /// Returns None if the .git directory is not found.
@@ -9,7 +15,7 @@ fn find_git_directory() -> Option<String> {
         let mut current_dir = current_dir;
 
         loop {
-            let git_dir = current_dir.join(".git");
+            let git_dir = current_dir.join(GIT_DIR);
             if git_dir.exists() && git_dir.is_dir() {
                 return Some(git_dir.display().to_string());
             }
@@ -22,27 +28,36 @@ fn find_git_directory() -> Option<String> {
     None
 }
 
-/// Prints the content of a file given its hash
 /// It recieves the hash of the file to print, the complete hash.
-/// It returns the content of the file as a String.
-pub fn cat_file(hash: &str) -> io::Result<String> {
+/// It prints to stdout the content of the file.
+/// If the hash is not valid, it prints "Not a valid hash".
+pub fn cat_file(hash: &str) {
+    if let Ok(content) = cat_file_return_content(hash) {
+        println!("{}", content);
+    } else {
+        println!("Not a valid hash");
+    }
+}
+
+/// It recieves the hash of the file to print, the complete hash.
+/// If the hash is valid and the file is found, it returns the content of the file as a String.
+/// If the hash is not valid, it returns an error.
+/// If the hash is valid but the file is not found, it returns an error.
+pub fn cat_file_return_content(hash: &str) -> io::Result<String> {
     if let Some(git_dir) = find_git_directory() {
         let file_dir = format!("{}/objects/{}", git_dir, &hash[..2]);
         let file = File::open(format!("{}/{}", file_dir, &hash[2..]))?;
         let content = decompress_file(file)?;
         let partes = content.split('\0').nth(1);
         match partes {
-            Some(partes) => {
-                // println!("{}", partes);
-                Ok(partes.to_string())
-            },
-            None => {
-                // println!("{}", content);
-                Ok(content)
-            }
+            Some(partes) => Ok(partes.to_string()),
+            None => Ok(content),
         }
     } else {
-        Err(io::Error::new(io::ErrorKind::NotFound, "Not a git repository"))
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Not a git repository",
+        ))
     }
 }
 
@@ -62,14 +77,15 @@ mod tests {
     #[test]
     fn test_cat_file() {
         let hash = "c57eff55ebc0c54973903af5f72bac72762cf4f4";
-        let content = cat_file(hash).unwrap();
+        let content = cat_file_return_content(hash).unwrap();
         assert_eq!(content, "Hello World!");
     }
 
-    // #[test]
-    // fn test_decompress_file() {
-    //     let file = std::fs::File::open(".git/objects/c5/7eff55ebc0c54973903af5f72bac72762cf4f4").unwrap();
-    //     let content = super::decompress_file(file).unwrap();
-    //     assert_eq!(content, "blob 12\0Hello World!");
-    // }
+    #[test]
+    fn test_decompress_file() {
+        let file =
+            std::fs::File::open(".git/objects/c5/7eff55ebc0c54973903af5f72bac72762cf4f4").unwrap();
+        let content = super::decompress_file(file).unwrap();
+        assert_eq!(content, "blob 12\0Hello World!");
+    }
 }
