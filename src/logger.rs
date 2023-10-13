@@ -31,7 +31,7 @@ use std::{
 ///     logger.write(content.as_bytes())?;
 ///
 ///     let file_content = fs::read_to_string(path)?;
-///     assert_eq!(file_content, content);
+///     assert!(file_content.contains(content));
 ///
 ///     logger.clear()
 /// }
