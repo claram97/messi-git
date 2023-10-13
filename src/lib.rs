@@ -1,2 +1,2 @@
 pub mod hash_object;
-pub mod directories;
+pub mod cat_file;
