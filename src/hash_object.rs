@@ -8,6 +8,8 @@ use std::{
 use flate2::{write::ZlibEncoder, Compression};
 use sha1::{Digest, Sha1};
 
+pub const GIT_DIR: &str = ".mgit";
+
 /// Returns the path to the .git directory if it exists in the current directory or any of its parents.
 /// Returns None if the .git directory is not found.
 fn find_git_directory() -> Option<String> {
@@ -15,7 +17,7 @@ fn find_git_directory() -> Option<String> {
         let mut current_dir = current_dir;
 
         loop {
-            let git_dir = current_dir.join(".git");
+            let git_dir = current_dir.join(GIT_DIR);
             if git_dir.exists() && git_dir.is_dir() {
                 return Some(git_dir.display().to_string());
             }
