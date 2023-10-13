@@ -10,7 +10,7 @@ use std::{
     io::{self, Error, Write},
 };
 
-use crate::ignorer::{Ignorer, is_subpath};
+use crate::ignorer::{is_subpath, Ignorer};
 
 struct Index {
     map: HashMap<String, String>,
@@ -21,7 +21,7 @@ impl Index {
     fn new() -> Self {
         Self {
             map: HashMap::new(),
-            ignorer: Ignorer::load()
+            ignorer: Ignorer::load(),
         }
     }
 
@@ -48,7 +48,10 @@ impl Index {
 
     fn add_path(&mut self, path: &str) -> io::Result<()> {
         if self.ignorer.ignore(path) {
-            return Err(Error::new(io::ErrorKind::InvalidData, "The path is ignored by ignore file"))
+            return Err(Error::new(
+                io::ErrorKind::InvalidData,
+                "The path is ignored by ignore file",
+            ));
         }
 
         match fs::metadata(path) {
@@ -214,7 +217,7 @@ mod tests {
     fn test_add_path_file() -> io::Result<()> {
         let mut index = Index::new();
 
-        let path = "tests/dir_to_add/non_empty/a.txt";
+        let path = "tests/add/dir_to_add/non_empty/a.txt";
 
         index.add_path(path)?;
 
@@ -225,7 +228,7 @@ mod tests {
     #[test]
     fn test_add_path_empty_dir() -> io::Result<()> {
         let mut index = Index::new();
-        let empty_dir_path = "tests/dir_to_add/empty";
+        let empty_dir_path = "tests/add/dir_to_add/empty";
 
         index.add_path(empty_dir_path)?;
 
@@ -236,25 +239,25 @@ mod tests {
     #[test]
     fn test_add_non_empty_dir() -> io::Result<()> {
         let mut index = Index::new();
-        let dir_path = "tests/dir_to_add/non_empty";
+        let dir_path = "tests/add/dir_to_add/non_empty";
 
         index.add_path(dir_path)?;
 
-        assert!(index.contains("tests/dir_to_add/non_empty/a.txt"));
-        assert!(index.contains("tests/dir_to_add/non_empty/b.txt"));
+        assert!(index.contains("tests/add/dir_to_add/non_empty/a.txt"));
+        assert!(index.contains("tests/add/dir_to_add/non_empty/b.txt"));
         Ok(())
     }
 
     #[test]
     fn test_add_non_empty_recursive_dirs() -> io::Result<()> {
         let mut index = Index::new();
-        let dir_path = "tests/dir_to_add/recursive";
+        let dir_path = "tests/add/dir_to_add/recursive";
 
         index.add_path(dir_path)?;
 
-        assert!(index.contains("tests/dir_to_add/recursive/a.txt"));
-        assert!(index.contains("tests/dir_to_add/recursive/recursive/a.txt"));
-        assert!(index.contains("tests/dir_to_add/recursive/recursive/recursive/a.txt"));
+        assert!(index.contains("tests/add/dir_to_add/recursive/a.txt"));
+        assert!(index.contains("tests/add/dir_to_add/recursive/recursive/a.txt"));
+        assert!(index.contains("tests/add/dir_to_add/recursive/recursive/recursive/a.txt"));
         Ok(())
     }
 }

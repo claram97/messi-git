@@ -27,7 +27,9 @@ impl Ignorer {
 }
 
 fn get_subpaths(path: &str) -> Vec<&str> {
-    path.split('/').filter(|subpath| *subpath != "").collect()
+    path.split('/')
+        .filter(|subpath| !subpath.is_empty())
+        .collect()
 }
 
 pub fn is_subpath(subpath: &str, path: &str) -> bool {
