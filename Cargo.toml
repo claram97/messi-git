@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 sha1 = "0.10.6"
 flate2 = "1.0"
+rand = "0.8"
