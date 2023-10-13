@@ -1,7 +1,7 @@
 use std::{
     env,
     fs::File,
-    io::{self, BufReader, Read, Write, ErrorKind},
+    io::{self, BufReader, ErrorKind, Read, Write},
 };
 
 use flate2::bufread::ZlibDecoder;
@@ -33,11 +33,14 @@ fn find_git_directory() -> Option<String> {
 /// for example a file or a Vec<u8>
 /// For writing to stdout, io::stdout() can be used.
 /// If the hash is not valid, it prints "Not a valid hash".
-pub fn cat_file(hash: &str, output: &mut impl Write) -> io::Result<()>{
+pub fn cat_file(hash: &str, output: &mut impl Write) -> io::Result<()> {
     if let Ok(content) = cat_file_return_content(hash) {
         output.write_all(content.as_bytes())
     } else {
-        Err(io::Error::new(ErrorKind::NotFound, "File couldn't be found"))
+        Err(io::Error::new(
+            ErrorKind::NotFound,
+            "File couldn't be found",
+        ))
     }
 }
 
