@@ -1,15 +1,15 @@
 use std::{
     env,
     fs::File,
-    io::{self, BufReader, Read},
+    io::{self, BufReader, Read, Write, ErrorKind},
 };
 
 use flate2::bufread::ZlibDecoder;
 
 const GIT_DIR: &str = ".mgit";
 
-/// Returns the path to the .git directory if it exists in the current directory or any of its parents.
-/// Returns None if the .git directory is not found.
+/// Returns the path to the git directory if it exists in the current directory or any of its parents.
+/// Returns None if the git directory is not found.
 fn find_git_directory() -> Option<String> {
     if let Ok(current_dir) = env::current_dir() {
         let mut current_dir = current_dir;
@@ -28,18 +28,20 @@ fn find_git_directory() -> Option<String> {
     None
 }
 
-/// It recieves the hash of the file to print, the complete hash.
-/// It prints to stdout the content of the file.
+/// It recieves the complete hash of a file and writes the content of the file to output.
+/// output can be anything that implementes Write
+/// for example a file or a Vec<u8>
+/// For writing to stdout, io::stdout() can be used.
 /// If the hash is not valid, it prints "Not a valid hash".
-pub fn cat_file(hash: &str) {
+pub fn cat_file(hash: &str, output: &mut impl Write) -> io::Result<()>{
     if let Ok(content) = cat_file_return_content(hash) {
-        println!("{}", content);
+        output.write_all(content.as_bytes())
     } else {
-        println!("Not a valid hash");
+        Err(io::Error::new(ErrorKind::NotFound, "File couldn't be found"))
     }
 }
 
-/// It recieves the hash of the file to print, the complete hash.
+/// It receives the hash of the file to print, the complete hash.
 /// If the hash is valid and the file is found, it returns the content of the file as a String.
 /// If the hash is not valid, it returns an error.
 /// If the hash is valid but the file is not found, it returns an error.
@@ -61,7 +63,7 @@ pub fn cat_file_return_content(hash: &str) -> io::Result<String> {
     }
 }
 
-/// Decompresses a file given a File
+/// Decompresses a given file.
 /// Using the flate2 library, it decompresses the file and returns its content as a String.
 fn decompress_file(file: File) -> io::Result<String> {
     let mut decompressor = ZlibDecoder::new(BufReader::new(file));
