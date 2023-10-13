@@ -103,246 +103,246 @@ pub fn git_init(
 ///   of the created directory as a string.
 /// - `Err(String)`: If any step of the process fails, contains an error message.
 ///
-/// 
+///
 
 #[cfg(test)]
 mod test {
 
-use super::*;
-use crate::init::fs::File;
-use rand::random;
-use std::fs;
-use std::io::Read;
+    use super::*;
+    use crate::init::fs::File;
+    use rand::random;
+    use std::fs;
+    use std::io::Read;
 
-fn create_temp_directory() -> Result<String, String> {
-    let mut directory = std::env::temp_dir();
-    directory.push(format!("git_init_test_{}", random::<u32>()));
+    fn create_temp_directory() -> Result<String, String> {
+        let mut directory = std::env::temp_dir();
+        directory.push(format!("git_init_test_{}", random::<u32>()));
 
-    if let Err(err) = fs::create_dir(&directory) {
-        return Err(format!("Failed to create temp directory: {}", err));
-    }
-
-    if let Some(path_str) = directory.to_str() {
-        Ok(path_str.to_string())
-    } else {
-        Err("Failed to convert path to string".to_string())
-    }
-}
-
-#[test]
-/// Tests the `create_directory_if_not_exists` function.
-fn test_create_directory_if_not_exists() {
-    // Create a temporary directory
-    let temp_dir = create_temp_directory().expect("Failed to create temp directory");
-
-    // Call the function to create the directory
-    if let Err(err) = create_directory_if_not_exists(&temp_dir) {
-        panic!("Failed to create directory: {}", err);
-    }
-
-    // Check if the directory exists
-    assert!(Path::new(&temp_dir).exists());
-    assert!(Path::new(&temp_dir).is_dir());
-
-    // Clean up: Remove the temporary directory
-    if let Err(err) = fs::remove_dir_all(&temp_dir) {
-        panic!("Failed to remove temp directory: {}", err);
-    }
-}
-
-#[test]
-/// Tests the `create_file_if_not_exists` function.
-fn test_create_file_if_not_exists() {
-    // Create a temporary directory
-    let temp_dir = create_temp_directory().expect("Failed to create temp directory");
-
-    // Define a test file path within the temporary directory
-    let file_path = format!("{}/test_file.txt", temp_dir);
-
-    // Call the function to create the file with some content
-    if let Err(err) = create_file_if_not_exists(&file_path, "Test content") {
-        panic!("Failed to create file: {}", err);
-    }
-
-    // Check if the file exists and has the expected content
-    assert!(Path::new(&file_path).exists());
-    let mut file_content = String::new();
-    if let Err(err) =
-        File::open(&file_path).and_then(|mut file| file.read_to_string(&mut file_content))
-    {
-        panic!("Failed to read file: {}", err);
-    }
-    assert_eq!(file_content, "Test content");
-
-    // Clean up: Remove the temporary directory
-    if let Err(err) = fs::remove_dir_all(&temp_dir) {
-        panic!("Failed to remove temp directory: {}", err);
-    }
-}
-
-#[test]
-/// Tests the `git_init` function.
-fn test_git_init() {
-    // Create a temporary directory for testing
-    let temp_dir = create_temp_directory().expect("Failed to create temp directory");
-
-    // Call the git_init function
-    if let Err(err) = git_init(&temp_dir, "main", None) {
-        panic!("Failed to initialize Git repository: {}", err);
-    }
-
-    // Check if the Git repository was initialized
-    let git_dir_path = format!("{}/.git", temp_dir);
-    assert!(Path::new(&git_dir_path).exists());
-
-    // Clean up: Remove the temporary directory
-    if let Err(err) = fs::remove_dir_all(&temp_dir) {
-        panic!("Failed to remove temp directory: {}", err);
-    }
-}
-#[test]
-/// Test initializing a Git repository with the default branch "main".
-fn test_git_init_default_branch() {
-    let temp_dir = create_temp_directory().expect("Failed to create temp directory");
-
-    match git_init(&temp_dir, "main", None) {
-        Ok(_) => {
-            let git_dir_path = format!("{}/.git", temp_dir);
-            assert!(Path::new(&git_dir_path).exists());
-            assert!(Path::new(&git_dir_path).is_dir());
-
-            // Check the HEAD file
-            let head_file_path = format!("{}/HEAD", git_dir_path);
-            assert!(Path::new(&head_file_path).exists());
-
-            let mut head_file_content = String::new();
-            match File::open(&head_file_path)
-                .and_then(|mut file| file.read_to_string(&mut head_file_content))
-            {
-                Ok(_) => {
-                    assert_eq!(head_file_content, "ref: refs/heads/main\n");
-                }
-                Err(err) => panic!("Failed to read HEAD file: {}", err),
-            }
+        if let Err(err) = fs::create_dir(&directory) {
+            return Err(format!("Failed to create temp directory: {}", err));
         }
-        Err(err) => panic!("Failed to initialize Git repository: {}", err),
-    }
 
-    // Clean up: Remove the temporary directory
-    if let Err(err) = fs::remove_dir_all(&temp_dir) {
-        panic!("Failed to remove temp directory: {}", err);
-    }
-}
-
-#[test]
-/// Test initializing a Git repository with a custom initial branch.
-fn test_git_init_custom_branch() {
-    let temp_dir = create_temp_directory().expect("Failed to create temp directory");
-
-    match git_init(&temp_dir, "mybranch", None) {
-        Ok(_) => {
-            let git_dir_path = format!("{}/.git", temp_dir);
-            assert!(Path::new(&git_dir_path).exists());
-            assert!(Path::new(&git_dir_path).is_dir());
-
-            // Check the HEAD file
-            let head_file_path = format!("{}/HEAD", git_dir_path);
-            assert!(Path::new(&head_file_path).exists());
-
-            let mut head_file_content = String::new();
-            match File::open(&head_file_path)
-                .and_then(|mut file| file.read_to_string(&mut head_file_content))
-            {
-                Ok(_) => {
-                    assert_eq!(head_file_content, "ref: refs/heads/mybranch\n");
-                }
-                Err(err) => panic!("Failed to read HEAD file: {}", err),
-            }
+        if let Some(path_str) = directory.to_str() {
+            Ok(path_str.to_string())
+        } else {
+            Err("Failed to convert path to string".to_string())
         }
-        Err(err) => panic!("Failed to initialize Git repository: {}", err),
     }
 
-    // Clean up: Remove the temporary directory
-    if let Err(err) = fs::remove_dir_all(&temp_dir) {
-        panic!("Failed to remove temp directory: {}", err);
-    }
-}
+    #[test]
+    /// Tests the `create_directory_if_not_exists` function.
+    fn test_create_directory_if_not_exists() {
+        // Create a temporary directory
+        let temp_dir = create_temp_directory().expect("Failed to create temp directory");
 
-#[test]
-/// Test initializing a Git repository with a template directory.
-fn test_git_init_with_template() {
-    let temp_dir = create_temp_directory().expect("Failed to create temp directory");
-
-    // Create a template directory with a sample file
-    let template_dir = create_temp_directory().expect("Failed to create template directory");
-    let template_file_path = format!("{}/template_file.txt", template_dir);
-    create_file_if_not_exists(&template_file_path, "Template content")
-        .expect("Failed to create template file");
-
-    match git_init(&temp_dir, "main", Some(&template_dir)) {
-        Ok(_) => {
-            let git_dir_path = format!("{}/.git", temp_dir);
-            assert!(Path::new(&git_dir_path).exists());
-            assert!(Path::new(&git_dir_path).is_dir());
-
-            // Check the HEAD file
-            let head_file_path = format!("{}/HEAD", git_dir_path);
-            assert!(Path::new(&head_file_path).exists());
-
-            let mut head_file_content = String::new();
-            match File::open(&head_file_path)
-                .and_then(|mut file| file.read_to_string(&mut head_file_content))
-            {
-                Ok(_) => {
-                    assert_eq!(head_file_content, "ref: refs/heads/main\n");
-                }
-                Err(err) => panic!("Failed to read HEAD file: {}", err),
-            }
-
-            // Check if the template file was copied
-            let copied_template_file_path = format!("{}/template_file.txt", temp_dir);
-            assert!(Path::new(&copied_template_file_path).exists());
-
-            let mut template_file_content = String::new();
-            match File::open(&copied_template_file_path)
-                .and_then(|mut file| file.read_to_string(&mut template_file_content))
-            {
-                Ok(_) => {
-                    assert_eq!(template_file_content, "Template content");
-                }
-                Err(err) => panic!("Failed to read copied template file: {}", err),
-            }
+        // Call the function to create the directory
+        if let Err(err) = create_directory_if_not_exists(&temp_dir) {
+            panic!("Failed to create directory: {}", err);
         }
-        Err(err) => panic!("Failed to initialize Git repository: {}", err),
-    }
 
-    // Clean up: Remove the temporary directories
-    if let Err(err) = fs::remove_dir_all(&temp_dir) {
-        panic!("Failed to remove temp directory: {}", err);
-    }
-    if let Err(err) = fs::remove_dir_all(&template_dir) {
-        panic!("Failed to remove template directory: {}", err);
-    }
-}
+        // Check if the directory exists
+        assert!(Path::new(&temp_dir).exists());
+        assert!(Path::new(&temp_dir).is_dir());
 
-#[test]
-/// Test initializing a Git repository in an existing directory.
-fn test_git_init_existing_directory() {
-    let temp_dir = create_temp_directory().expect("Failed to create temp directory");
-
-    // Call git_init on an existing directory
-    match git_init(&temp_dir, "main", None) {
-        Ok(_) => {
-            let git_dir_path = format!("{}/.git", temp_dir);
-            assert!(Path::new(&git_dir_path).exists());
-            assert!(Path::new(&git_dir_path).is_dir());
+        // Clean up: Remove the temporary directory
+        if let Err(err) = fs::remove_dir_all(&temp_dir) {
+            panic!("Failed to remove temp directory: {}", err);
         }
-        Err(err) => panic!("Failed to initialize Git repository: {}", err),
     }
 
-    // Clean up: Remove the temporary directory
-    if let Err(err) = fs::remove_dir_all(&temp_dir) {
-        panic!("Failed to remove temp directory: {}", err);
+    #[test]
+    /// Tests the `create_file_if_not_exists` function.
+    fn test_create_file_if_not_exists() {
+        // Create a temporary directory
+        let temp_dir = create_temp_directory().expect("Failed to create temp directory");
+
+        // Define a test file path within the temporary directory
+        let file_path = format!("{}/test_file.txt", temp_dir);
+
+        // Call the function to create the file with some content
+        if let Err(err) = create_file_if_not_exists(&file_path, "Test content") {
+            panic!("Failed to create file: {}", err);
+        }
+
+        // Check if the file exists and has the expected content
+        assert!(Path::new(&file_path).exists());
+        let mut file_content = String::new();
+        if let Err(err) =
+            File::open(&file_path).and_then(|mut file| file.read_to_string(&mut file_content))
+        {
+            panic!("Failed to read file: {}", err);
+        }
+        assert_eq!(file_content, "Test content");
+
+        // Clean up: Remove the temporary directory
+        if let Err(err) = fs::remove_dir_all(&temp_dir) {
+            panic!("Failed to remove temp directory: {}", err);
+        }
     }
-}
+
+    #[test]
+    /// Tests the `git_init` function.
+    fn test_git_init() {
+        // Create a temporary directory for testing
+        let temp_dir = create_temp_directory().expect("Failed to create temp directory");
+
+        // Call the git_init function
+        if let Err(err) = git_init(&temp_dir, "main", None) {
+            panic!("Failed to initialize Git repository: {}", err);
+        }
+
+        // Check if the Git repository was initialized
+        let git_dir_path = format!("{}/.git", temp_dir);
+        assert!(Path::new(&git_dir_path).exists());
+
+        // Clean up: Remove the temporary directory
+        if let Err(err) = fs::remove_dir_all(&temp_dir) {
+            panic!("Failed to remove temp directory: {}", err);
+        }
+    }
+    #[test]
+    /// Test initializing a Git repository with the default branch "main".
+    fn test_git_init_default_branch() {
+        let temp_dir = create_temp_directory().expect("Failed to create temp directory");
+
+        match git_init(&temp_dir, "main", None) {
+            Ok(_) => {
+                let git_dir_path = format!("{}/.git", temp_dir);
+                assert!(Path::new(&git_dir_path).exists());
+                assert!(Path::new(&git_dir_path).is_dir());
+
+                // Check the HEAD file
+                let head_file_path = format!("{}/HEAD", git_dir_path);
+                assert!(Path::new(&head_file_path).exists());
+
+                let mut head_file_content = String::new();
+                match File::open(&head_file_path)
+                    .and_then(|mut file| file.read_to_string(&mut head_file_content))
+                {
+                    Ok(_) => {
+                        assert_eq!(head_file_content, "ref: refs/heads/main\n");
+                    }
+                    Err(err) => panic!("Failed to read HEAD file: {}", err),
+                }
+            }
+            Err(err) => panic!("Failed to initialize Git repository: {}", err),
+        }
+
+        // Clean up: Remove the temporary directory
+        if let Err(err) = fs::remove_dir_all(&temp_dir) {
+            panic!("Failed to remove temp directory: {}", err);
+        }
+    }
+
+    #[test]
+    /// Test initializing a Git repository with a custom initial branch.
+    fn test_git_init_custom_branch() {
+        let temp_dir = create_temp_directory().expect("Failed to create temp directory");
+
+        match git_init(&temp_dir, "mybranch", None) {
+            Ok(_) => {
+                let git_dir_path = format!("{}/.git", temp_dir);
+                assert!(Path::new(&git_dir_path).exists());
+                assert!(Path::new(&git_dir_path).is_dir());
+
+                // Check the HEAD file
+                let head_file_path = format!("{}/HEAD", git_dir_path);
+                assert!(Path::new(&head_file_path).exists());
+
+                let mut head_file_content = String::new();
+                match File::open(&head_file_path)
+                    .and_then(|mut file| file.read_to_string(&mut head_file_content))
+                {
+                    Ok(_) => {
+                        assert_eq!(head_file_content, "ref: refs/heads/mybranch\n");
+                    }
+                    Err(err) => panic!("Failed to read HEAD file: {}", err),
+                }
+            }
+            Err(err) => panic!("Failed to initialize Git repository: {}", err),
+        }
+
+        // Clean up: Remove the temporary directory
+        if let Err(err) = fs::remove_dir_all(&temp_dir) {
+            panic!("Failed to remove temp directory: {}", err);
+        }
+    }
+
+    #[test]
+    /// Test initializing a Git repository with a template directory.
+    fn test_git_init_with_template() {
+        let temp_dir = create_temp_directory().expect("Failed to create temp directory");
+
+        // Create a template directory with a sample file
+        let template_dir = create_temp_directory().expect("Failed to create template directory");
+        let template_file_path = format!("{}/template_file.txt", template_dir);
+        create_file_if_not_exists(&template_file_path, "Template content")
+            .expect("Failed to create template file");
+
+        match git_init(&temp_dir, "main", Some(&template_dir)) {
+            Ok(_) => {
+                let git_dir_path = format!("{}/.git", temp_dir);
+                assert!(Path::new(&git_dir_path).exists());
+                assert!(Path::new(&git_dir_path).is_dir());
+
+                // Check the HEAD file
+                let head_file_path = format!("{}/HEAD", git_dir_path);
+                assert!(Path::new(&head_file_path).exists());
+
+                let mut head_file_content = String::new();
+                match File::open(&head_file_path)
+                    .and_then(|mut file| file.read_to_string(&mut head_file_content))
+                {
+                    Ok(_) => {
+                        assert_eq!(head_file_content, "ref: refs/heads/main\n");
+                    }
+                    Err(err) => panic!("Failed to read HEAD file: {}", err),
+                }
+
+                // Check if the template file was copied
+                let copied_template_file_path = format!("{}/template_file.txt", temp_dir);
+                assert!(Path::new(&copied_template_file_path).exists());
+
+                let mut template_file_content = String::new();
+                match File::open(&copied_template_file_path)
+                    .and_then(|mut file| file.read_to_string(&mut template_file_content))
+                {
+                    Ok(_) => {
+                        assert_eq!(template_file_content, "Template content");
+                    }
+                    Err(err) => panic!("Failed to read copied template file: {}", err),
+                }
+            }
+            Err(err) => panic!("Failed to initialize Git repository: {}", err),
+        }
+
+        // Clean up: Remove the temporary directories
+        if let Err(err) = fs::remove_dir_all(&temp_dir) {
+            panic!("Failed to remove temp directory: {}", err);
+        }
+        if let Err(err) = fs::remove_dir_all(&template_dir) {
+            panic!("Failed to remove template directory: {}", err);
+        }
+    }
+
+    #[test]
+    /// Test initializing a Git repository in an existing directory.
+    fn test_git_init_existing_directory() {
+        let temp_dir = create_temp_directory().expect("Failed to create temp directory");
+
+        // Call git_init on an existing directory
+        match git_init(&temp_dir, "main", None) {
+            Ok(_) => {
+                let git_dir_path = format!("{}/.git", temp_dir);
+                assert!(Path::new(&git_dir_path).exists());
+                assert!(Path::new(&git_dir_path).is_dir());
+            }
+            Err(err) => panic!("Failed to initialize Git repository: {}", err),
+        }
+
+        // Clean up: Remove the temporary directory
+        if let Err(err) = fs::remove_dir_all(&temp_dir) {
+            panic!("Failed to remove temp directory: {}", err);
+        }
+    }
 }
