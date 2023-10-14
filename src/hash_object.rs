@@ -112,13 +112,21 @@ mod tests {
 
     #[test]
     fn test_store_file_hash() {
-        let hash = store_file("tests/hash_object/hash_object_hello.txt", "tests/hash_object").unwrap();
+        let hash = store_file(
+            "tests/hash_object/hash_object_hello.txt",
+            "tests/hash_object",
+        )
+        .unwrap();
         assert_eq!(hash, "c57eff55ebc0c54973903af5f72bac72762cf4f4");
     }
 
     #[test]
     fn test_store_file_content() {
-        let _hash = store_file("tests/hash_object/hash_object_hello.txt", "tests/hash_object").unwrap();
+        let _hash = store_file(
+            "tests/hash_object/hash_object_hello.txt",
+            "tests/hash_object",
+        )
+        .unwrap();
         let content =
             std::fs::read(".git/objects/c5/7eff55ebc0c54973903af5f72bac72762cf4f4").unwrap();
         let mut decoder = ZlibDecoder::new(&content[..]);

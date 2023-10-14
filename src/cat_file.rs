@@ -59,7 +59,8 @@ mod tests {
     #[test]
     fn test_decompress_file() {
         let file =
-            std::fs::File::open("tests/cat_file/objects/c5/7eff55ebc0c54973903af5f72bac72762cf4f4").unwrap();
+            std::fs::File::open("tests/cat_file/objects/c5/7eff55ebc0c54973903af5f72bac72762cf4f4")
+                .unwrap();
         let content = super::decompress_file(file).unwrap();
         assert_eq!(content, "blob 12\0Hello World!");
     }
