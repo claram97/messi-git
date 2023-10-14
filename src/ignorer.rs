@@ -2,6 +2,7 @@ use std::fs;
 
 const MGIT_IGNORE: &str = ".mgitignore";
 
+#[derive(Default)]
 pub struct Ignorer {
     paths: Vec<String>,
 }
