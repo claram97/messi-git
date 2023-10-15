@@ -4,25 +4,24 @@ use std::{
     io::{self, Error, Write},
 };
 
-use crate::ignorer::Ignorer;
 use crate::hash_object;
+use crate::ignorer::Ignorer;
 
 #[derive(Default)]
 pub struct Index {
     map: HashMap<String, String>,
     ignorer: Ignorer,
     path: String,
-    git_dir: String
+    git_dir: String,
 }
 
 impl Index {
-
     pub fn new(index_path: &str, git_dir_path: &str) -> Self {
         Self {
             map: HashMap::new(),
             ignorer: Ignorer::load(),
             path: String::from(index_path),
-            git_dir: String::from(git_dir_path)
+            git_dir: String::from(git_dir_path),
         }
     }
 

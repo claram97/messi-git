@@ -20,7 +20,12 @@ use crate::index::Index;
 /// TODO: .gitignore
 ///
 /// IO errors may occurr while doing IO operations. In that cases, Error will be returned.
-pub fn add(path: &str, index_path: &str, git_dir_path: &str, options: Option<Vec<String>>) -> io::Result<()> {
+pub fn add(
+    path: &str,
+    index_path: &str,
+    git_dir_path: &str,
+    options: Option<Vec<String>>,
+) -> io::Result<()> {
     if is_subpath(path, MGIT) {
         return Ok(());
     }

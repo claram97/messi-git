@@ -1,6 +1,6 @@
+use messi::{add, index};
 use std::fs;
 use std::io::{self, Write};
-use messi::{add, index};
 
 const GIT_DIR: &str = ".mgit";
 
@@ -10,7 +10,7 @@ fn write_file(path: &str, content: &str) -> io::Result<()> {
 }
 
 #[test]
-fn test_add_file_is_in_index() -> io::Result<()>{
+fn test_add_file_is_in_index() -> io::Result<()> {
     let index_path = ".mgit/index1";
     write_file(index_path, "")?;
     // Given a file with a path
