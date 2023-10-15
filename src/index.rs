@@ -106,13 +106,11 @@ impl Index {
         self.map.is_empty()
     }
 
-    #[cfg(test)]
-    fn contains(&self, path: &str) -> bool {
+    pub fn contains(&self, path: &str) -> bool {
         self.map.contains_key(path)
     }
 
-    #[cfg(test)]
-    fn get_hash(&self, path: &str) -> Option<&String> {
+    pub fn get_hash(&self, path: &str) -> Option<&String> {
         self.map.get(path)
     }
 }
