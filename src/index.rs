@@ -7,7 +7,6 @@ use std::{
 use crate::ignorer::Ignorer;
 use crate::hash_object;
 
-const INDEX_PATH: &str = ".mgit/index";
 const MGIT_DIR: &str = ".mgit";
 
 #[derive(Default)]
@@ -24,22 +23,15 @@ impl Index {
         }
     }
 
-    #[cfg(test)]
     fn with(index_content: &str) -> Self {
         let mut index = Self::new();
         index.load_content(index_content);
         index
     }
 
-    pub fn load() -> io::Result<Self> {
-        let mut index = Self {
-            map: HashMap::new(),
-            ignorer: Ignorer::load(),
-        };
-
-        let index_content = fs::read_to_string(INDEX_PATH)?;
-        index.load_content(&index_content);
-        Ok(index)
+    pub fn load(index_path: &str) -> io::Result<Self> {
+        let index_content = fs::read_to_string(index_path)?;
+        Ok(Self::with(&index_content))
     }
 
     fn load_content(&mut self, index_content: &str) {
@@ -93,8 +85,8 @@ impl Index {
         }
     }
 
-    pub fn write_file(&self) -> io::Result<()> {
-        let mut index_file = fs::File::create(INDEX_PATH)?;
+    pub fn write_file(&self, index_path: &str) -> io::Result<()> {
+        let mut index_file = fs::File::create(index_path)?;
         for line in &self.map {
             writeln!(index_file, "{} {}", line.1, line.0)?;
         }

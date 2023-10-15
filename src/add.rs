@@ -20,20 +20,20 @@ use crate::index::Index;
 /// TODO: .gitignore
 ///
 /// IO errors may occurr while doing IO operations. In that cases, Error will be returned.
-pub fn add(path: &str, options: Option<Vec<String>>) -> io::Result<()> {
+pub fn add(path: &str, index_path: &str, options: Option<Vec<String>>) -> io::Result<()> {
     if is_subpath(path, MGIT) {
         return Ok(());
     }
 
     if let Some(params) = options {
         if params.contains(&OPTIONS_ALL.to_string()) {
-            return add(".", None);
+            return add(".", index_path, None);
         }
     }
 
-    let mut index = Index::load()?;
+    let mut index = Index::load(index_path)?;
     index.add_path(path)?;
-    index.write_file()?;
+    index.write_file(index_path)?;
 
     Ok(())
 }
