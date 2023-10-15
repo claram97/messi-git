@@ -1,4 +1,5 @@
 use std::io;
+use messi::init::git_init;
 
 enum GitCommand {
     HashObject,
@@ -34,9 +35,21 @@ fn main() {
         "hash-object" => GitCommand::HashObject,
         "cat-file" => GitCommand::CatFile,
         "init" => GitCommand::Init,
-       
+        "status" => GitCommand::Status,
+        "add" => GitCommand::Add,
+        "rm" => GitCommand::Rm,
+        "commit" => GitCommand::Commit,
+        "checkout" => GitCommand::Checkout,
+        "log" => GitCommand::Log,
+        "clone" => GitCommand::Clone,
+        "fetch" => GitCommand::Fetch,
+        "merge" => GitCommand::Merge,
+        "remote" => GitCommand::Remote,
+        "pull" => GitCommand::Pull,
+        "push" => GitCommand::Push,
+        "branch" => GitCommand::Branch,
         _ => {
-            eprintln!("El segundo argumento no es una opción válida de Git.");
+            eprintln!("No es una opción válida de Git.");
             return; 
         }
     };
@@ -44,33 +57,58 @@ fn main() {
     match git_command {
         GitCommand::HashObject => {
             println!("Segundo argumento ingresado: {}", second_argument);
-            execute_hash_object(); 
         }
         GitCommand::CatFile => {
             println!("Segundo argumento ingresado: {}", second_argument);
-            execute_cat_file(); 
         }
         GitCommand::Init => {
             println!("Segundo argumento ingresado: {}", second_argument);
-            execute_init(); 
+            if let Err(err) = git_init("a", "branch", None) {
+                eprintln!("Error al inicializar el repositorio Git: {}", err);
+            } 
+        }
+        GitCommand::Status => {
+            println!("Segundo argumento ingresado: {}", second_argument);
+        }
+        GitCommand::Add => {
+            println!("Segundo argumento ingresado: {}", second_argument);
+        }
+        GitCommand::Rm => {
+            println!("Segundo argumento ingresado: {}", second_argument);
+        }
+        GitCommand::Commit => {
+            println!("Segundo argumento ingresado: {}", second_argument);
+        }
+        GitCommand::Checkout => {
+            println!("Segundo argumento ingresado: {}", second_argument);
+        }
+        GitCommand::Log => {
+            println!("Segundo argumento ingresado: {}", second_argument);
+        }
+        GitCommand::Clone => {
+            println!("Segundo argumento ingresado: {}", second_argument);
+        }
+        GitCommand::Fetch => {
+            println!("Segundo argumento ingresado: {}", second_argument);
+        }
+        GitCommand::Merge => {
+            println!("Segundo argumento ingresado: {}", second_argument);
+        }
+        GitCommand::Remote => {
+            println!("Segundo argumento ingresado: {}", second_argument);
+        }
+        GitCommand::Pull => {
+            println!("Segundo argumento ingresado: {}", second_argument);
+        }
+        GitCommand::Push => {
+            println!("Segundo argumento ingresado: {}", second_argument);
         },
          _ => todo!()
        
     }
 }
 
-fn execute_hash_object() {
-    println!("Ejecutando 'git hash-object'...");
-    
-}
 
-fn execute_cat_file() {
-    println!("Ejecutando 'git cat-file'...");
-}
-
-fn execute_init() {
-    println!("Ejecutando 'git init'...");
-}
 
 
 fn get_user_input() -> Vec<String> {
