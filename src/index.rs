@@ -9,9 +9,9 @@ use crate::ignorer::Ignorer;
 
 /// Index is a structure that will help to manage the index file of
 /// a repo a.k.a staging area.
-/// 
+///
 /// Will have mapped every staged filename and its hash.
-/// Will also have a path where it should read and write and a path to 
+/// Will also have a path where it should read and write and a path to
 /// a git directory where the new object will be stored.
 #[derive(Default)]
 pub struct Index {
@@ -22,7 +22,6 @@ pub struct Index {
 }
 
 impl Index {
-
     fn new(index_path: &str, git_dir_path: &str) -> Self {
         Self {
             map: HashMap::new(),
@@ -34,7 +33,7 @@ impl Index {
 
     /// This method let the user to create a new index by loading the content
     /// of the given file and a git directory where the objects will be stored.
-    /// 
+    ///
     /// May fail if the index path can not be read.
     pub fn load(index_path: &str, git_dir_path: &str) -> io::Result<Self> {
         let index_content = fs::read_to_string(index_path)?;
@@ -57,10 +56,10 @@ impl Index {
     }
 
     /// Given a path to a file or directory, the index will add, update or remove this path.
-    /// 
-    /// If the path is a directory, then the index will recursively iterate over it until 
+    ///
+    /// If the path is a directory, then the index will recursively iterate over it until
     /// all files in every sub-directory is added.
-    /// 
+    ///
     /// If the file does not exists, then it will be removed from the index.
     pub fn add_path(&mut self, path: &str) -> io::Result<()> {
         if self.ignorer.ignore(path) {
@@ -106,7 +105,7 @@ impl Index {
     }
 
     /// Lets the user to dump the index to a file that can be read un the future by Index
-    /// 
+    ///
     /// May fail for an I/O error.
     pub fn write_file(&self) -> io::Result<()> {
         let mut index_file = fs::File::create(&self.path)?;
@@ -127,7 +126,7 @@ impl Index {
     }
 
     /// Given a path, the corresponding hash is returned if the file has been staged.
-    /// 
+    ///
     /// If the file has not been staged, then None is returned
     pub fn get_hash(&self, path: &str) -> Option<&String> {
         self.map.get(path)

@@ -2,7 +2,6 @@ use std::fs;
 
 const MGIT_IGNORE: &str = ".mgitignore";
 
-
 /// This is a helper structure that will help some git commands
 /// to know if a path has to be ignored or not according to
 /// the content of git ignore file.

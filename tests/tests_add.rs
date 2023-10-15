@@ -12,7 +12,7 @@ fn write_file(path: &str, content: &str) -> io::Result<()> {
 #[test]
 fn test_add_file_is_in_index() -> io::Result<()> {
     fs::create_dir_all(".mgit")?;
-    
+
     let index_path = ".mgit/index1";
     write_file(index_path, "")?;
     // Given a file with a path
