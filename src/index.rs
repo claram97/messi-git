@@ -7,31 +7,34 @@ use std::{
 use crate::ignorer::Ignorer;
 use crate::hash_object;
 
-const MGIT_DIR: &str = ".mgit";
-
 #[derive(Default)]
 pub struct Index {
     map: HashMap<String, String>,
     ignorer: Ignorer,
+    path: String,
+    git_dir: String
 }
 
 impl Index {
-    pub fn new() -> Self {
+
+    pub fn new(index_path: &str, git_dir_path: &str) -> Self {
         Self {
             map: HashMap::new(),
             ignorer: Ignorer::load(),
+            path: String::from(index_path),
+            git_dir: String::from(git_dir_path)
         }
     }
 
-    fn with(index_content: &str) -> Self {
-        let mut index = Self::new();
-        index.load_content(index_content);
-        index
+    pub fn load(index_path: &str, git_dir_path: &str) -> io::Result<Self> {
+        let index_content = fs::read_to_string(index_path)?;
+        Ok(Self::with(&index_content, index_path, git_dir_path))
     }
 
-    pub fn load(index_path: &str) -> io::Result<Self> {
-        let index_content = fs::read_to_string(index_path)?;
-        Ok(Self::with(&index_content))
+    fn with(index_content: &str, index_path: &str, git_dir_path: &str) -> Self {
+        let mut index = Self::new(index_path, git_dir_path);
+        index.load_content(index_content);
+        index
     }
 
     fn load_content(&mut self, index_content: &str) {
@@ -53,7 +56,7 @@ impl Index {
         match fs::metadata(path) {
             Ok(metadata) if metadata.is_dir() => self.add_dir(path),
             Ok(_) => {
-                let new_hash = hash_object::store_file(path, MGIT_DIR)?;
+                let new_hash = hash_object::store_file(path, &self.git_dir)?;
                 self.add_file(path, &new_hash)
             }
             Err(_) => self.remove_file(path),
@@ -85,8 +88,8 @@ impl Index {
         }
     }
 
-    pub fn write_file(&self, index_path: &str) -> io::Result<()> {
-        let mut index_file = fs::File::create(index_path)?;
+    pub fn write_file(&self) -> io::Result<()> {
+        let mut index_file = fs::File::create(&self.path)?;
         for line in &self.map {
             writeln!(index_file, "{} {}", line.1, line.0)?;
         }
@@ -111,18 +114,21 @@ impl Index {
 mod tests {
     use std::path::Path;
 
+    use crate::index::Index;
+
     use super::*;
 
     #[test]
     fn test_map_empty() {
-        let index = Index::new();
+        let index = Index::default();
         assert!(index.is_empty())
     }
 
     #[test]
     fn test_map_keys() {
         let index_content = "123456789 a.txt\n12388798 b.txt\n88321767 c.txt\n123817237 d.txt\n";
-        let index = Index::with(index_content);
+        let mut index = Index::default();
+        index.load_content(index_content);
 
         assert!(index.contains("a.txt"));
         assert!(index.contains("b.txt"));
@@ -133,7 +139,8 @@ mod tests {
     #[test]
     fn test_map_values() {
         let index_content = "123456789 a.txt\n12388798 b.txt\n88321767 c.txt\n123817237 d.txt\n";
-        let index = Index::with(index_content);
+        let mut index = Index::default();
+        index.load_content(index_content);
 
         assert_eq!(index.get_hash("a.txt"), Some(&"123456789".to_string()));
         assert_eq!(index.get_hash("b.txt"), Some(&"12388798".to_string()));
@@ -143,7 +150,7 @@ mod tests {
 
     #[test]
     fn test_add_new_file() -> io::Result<()> {
-        let mut index = Index::new();
+        let mut index = Index::default();
         let path = "new.rs";
         let hash = "filehashed";
         index.add_file(path, &hash)?;
@@ -154,7 +161,7 @@ mod tests {
 
     #[test]
     fn test_add_updated_file() -> io::Result<()> {
-        let mut index = Index::new();
+        let mut index = Index::default();
         let path = "new.rs";
         let hash = "filehashed";
         index.add_file(path, &hash)?;
@@ -168,7 +175,8 @@ mod tests {
     #[test]
     fn test_remove_file() -> io::Result<()> {
         let index_content = "hashed old.txt";
-        let mut index = Index::with(index_content);
+        let mut index = Index::default();
+        index.load_content(index_content);
         let path = "old.txt";
 
         assert!(index.contains(path));
@@ -180,7 +188,7 @@ mod tests {
 
     #[test]
     fn test_add_path_file() -> io::Result<()> {
-        let mut index = Index::new();
+        let mut index = Index::new("", ".mgit");
 
         let path = "tests/add/dir_to_add/non_empty/a.txt";
 
@@ -192,7 +200,7 @@ mod tests {
 
     #[test]
     fn test_add_path_empty_dir() -> io::Result<()> {
-        let mut index = Index::new();
+        let mut index = Index::new("", ".mgit");
         let empty_dir_path = "tests/add/dir_to_add/empty";
         if !Path::new(empty_dir_path).exists() {
             fs::create_dir_all(empty_dir_path)?;
@@ -205,8 +213,8 @@ mod tests {
     }
 
     #[test]
-    fn test_add_non_empty_dir() -> io::Result<()> {
-        let mut index = Index::new();
+    fn test_add_path_non_empty_dir() -> io::Result<()> {
+        let mut index = Index::new("", ".mgit");
         let dir_path = "tests/add/dir_to_add/non_empty";
 
         index.add_path(dir_path)?;
@@ -217,8 +225,8 @@ mod tests {
     }
 
     #[test]
-    fn test_add_non_empty_recursive_dirs() -> io::Result<()> {
-        let mut index = Index::new();
+    fn test_add_path_non_empty_recursive_dirs() -> io::Result<()> {
+        let mut index = Index::new("", ".mgit");
         let dir_path = "tests/add/dir_to_add/recursive";
 
         index.add_path(dir_path)?;
