@@ -136,10 +136,6 @@ impl Index {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
-    use crate::index::Index;
-
     use super::*;
 
     #[test]
@@ -210,9 +206,15 @@ mod tests {
         Ok(())
     }
 
+    // For testing an unitialized repository
+    fn setup_mgit(git_dir: &str) -> io::Result<()> {
+        fs::create_dir_all(format!("{}/objects", git_dir))
+    }
+
     #[test]
     fn test_add_path_file() -> io::Result<()> {
         let mut index = Index::new("", ".mgit");
+        setup_mgit(".mgit")?;
 
         let path = "tests/add/dir_to_add/non_empty/a.txt";
 
@@ -225,10 +227,10 @@ mod tests {
     #[test]
     fn test_add_path_empty_dir() -> io::Result<()> {
         let mut index = Index::new("", ".mgit");
+        setup_mgit(".mgit")?;
+
         let empty_dir_path = "tests/add/dir_to_add/empty";
-        if !Path::new(empty_dir_path).exists() {
-            fs::create_dir_all(empty_dir_path)?;
-        }
+        fs::create_dir_all(empty_dir_path)?;
 
         index.add_path(empty_dir_path)?;
 
@@ -239,6 +241,8 @@ mod tests {
     #[test]
     fn test_add_path_non_empty_dir() -> io::Result<()> {
         let mut index = Index::new("", ".mgit");
+        setup_mgit(".mgit")?;
+
         let dir_path = "tests/add/dir_to_add/non_empty";
 
         index.add_path(dir_path)?;
@@ -251,6 +255,8 @@ mod tests {
     #[test]
     fn test_add_path_non_empty_recursive_dirs() -> io::Result<()> {
         let mut index = Index::new("", ".mgit");
+        setup_mgit(".mgit")?;
+
         let dir_path = "tests/add/dir_to_add/recursive";
 
         index.add_path(dir_path)?;

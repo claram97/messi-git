@@ -11,6 +11,8 @@ fn write_file(path: &str, content: &str) -> io::Result<()> {
 
 #[test]
 fn test_add_file_is_in_index() -> io::Result<()> {
+    fs::create_dir_all(".mgit")?;
+    
     let index_path = ".mgit/index1";
     write_file(index_path, "")?;
     // Given a file with a path
@@ -29,6 +31,8 @@ fn test_add_file_is_in_index() -> io::Result<()> {
 
 #[test]
 fn test_update_file() -> io::Result<()> {
+    fs::create_dir_all(".mgit")?;
+
     let index_path = ".mgit/index2";
     write_file(index_path, "")?;
     // Given a file with a path
@@ -54,6 +58,8 @@ fn test_update_file() -> io::Result<()> {
 
 #[test]
 fn test_removing_file() -> io::Result<()> {
+    fs::create_dir_all(".mgit")?;
+
     let index_path = ".mgit/index3";
     write_file(index_path, "")?;
     // Given a file with a path
