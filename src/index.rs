@@ -5,8 +5,11 @@ use std::{
 };
 
 use crate::ignorer::Ignorer;
+use crate::hash_object;
 
 const INDEX_PATH: &str = ".mgit/index";
+const MGIT_DIR: &str = ".mgit";
+
 #[derive(Default)]
 pub struct Index {
     map: HashMap<String, String>,
@@ -28,10 +31,15 @@ impl Index {
         index
     }
 
-    pub fn load_index(&mut self) -> io::Result<()> {
+    pub fn load() -> io::Result<Self> {
+        let mut index = Self {
+            map: HashMap::new(),
+            ignorer: Ignorer::load(),
+        };
+
         let index_content = fs::read_to_string(INDEX_PATH)?;
-        self.load_content(&index_content);
-        Ok(())
+        index.load_content(&index_content);
+        Ok(index)
     }
 
     fn load_content(&mut self, index_content: &str) {
@@ -53,8 +61,8 @@ impl Index {
         match fs::metadata(path) {
             Ok(metadata) if metadata.is_dir() => self.add_dir(path),
             Ok(_) => {
-                let new_hash = "";
-                self.add_file(path, new_hash)
+                let new_hash = hash_object::store_file(path, MGIT_DIR)?;
+                self.add_file(path, &new_hash)
             }
             Err(_) => self.remove_file(path),
         }

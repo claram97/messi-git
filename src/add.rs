@@ -31,8 +31,7 @@ pub fn add(path: &str, options: Option<Vec<String>>) -> io::Result<()> {
         }
     }
 
-    let mut index = Index::new();
-    index.load_index()?;
+    let mut index = Index::load()?;
     index.add_path(path)?;
     index.write_file()?;
 
