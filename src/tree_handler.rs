@@ -37,7 +37,22 @@ impl Tree {
     }
 
     fn add_file(&mut self, name: &str, hash: &str) {
-        self.files.push((name.to_string(), hash.to_string()));
+        //self.files.push((name.to_string(), hash.to_string()));
+        
+        //Insert ordered using binary search so that the files are ordered alphabetically.
+        //And the resulting trees are deterministic.
+        let mut start = 0;
+        let mut end = self.files.len();
+        let mut middle = (start + end) / 2;
+        while start < end {
+            if self.files[middle].0 < name.to_string() {
+                start = middle + 1;
+            } else {
+                end = middle;
+            }
+            middle = (start + end) / 2;
+        }
+        self.files.insert(middle, (name.to_string(), hash.to_string()));
     }
 
     pub fn get_depth(&self) -> usize {
@@ -99,6 +114,9 @@ pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)>{
         let sub_tree = write_tree(&sub_dir, directory)?;
         subtrees.push(sub_tree);
     }
+    
+    //Sort the subtrees by name so the resulting tree is deterministic.
+    subtrees.sort();
     
     //When all of the subtrees have been traversed, i can write "myself"
     let tree_content = tree.tree_blobs_to_string_formatted();
