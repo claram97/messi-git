@@ -57,7 +57,6 @@ pub fn get_user_input() -> Vec<String> {
     }
 
     let args: Vec<String> = input
-        .trim()
         .split_whitespace()
         .map(|s| s.to_string())
         .collect();
@@ -177,21 +176,6 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
 /// # Arguments
 ///
 /// - `args`: A vector of strings representing the arguments passed to the command.
-///
-/// # Example
-///
-/// ```rust
-/// use your_module::handle_hash_object;
-///
-/// fn main() {
-///     let args = vec![
-///         String::from("git"),           // Program name (convention).
-///         String::from("hash-object"),   // 'hash-object' command.
-///         String::from("file_path.txt"), // Path to the file to store.
-///     ];
-///     handle_hash_object(args);
-/// }
-/// ```
 ///
 fn handle_hash_object(args: Vec<String>) {
     let file_to_store = match args.get(2) {
