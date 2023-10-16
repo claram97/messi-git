@@ -1,5 +1,4 @@
 use std::{
-    env,
     fs::{self, File},
     io::{self, Write},
     path::Path,
@@ -7,29 +6,6 @@ use std::{
 
 use flate2::{write::ZlibEncoder, Compression};
 use sha1::{Digest, Sha1};
-
-pub const GIT_DIR: &str = ".mgit";
-
-/// Returns the path to the .git directory if it exists in the current directory or any of its parents.
-/// Returns None if the .git directory is not found.
-fn find_git_directory() -> Option<String> {
-    if let Ok(current_dir) = env::current_dir() {
-        let mut current_dir = current_dir;
-
-        loop {
-            let git_dir = current_dir.join(GIT_DIR);
-            if git_dir.exists() && git_dir.is_dir() {
-                return Some(git_dir.display().to_string());
-            }
-
-            if !current_dir.pop() {
-                break; // Reached the root directory, the git directory was not found.
-            }
-        }
-    }
-
-    None
-}
 
 /// Returns the sha1 hash of the given content.
 /// It does not add any type information to the content.
@@ -56,18 +32,11 @@ pub fn hash_file_content(path: &str) -> io::Result<String> {
 /// Returns the path to the file object in the objects folder.
 /// The path is of the form: objects/<first 2 characters of hash>/<remaining characters of hash>
 /// The result is the place where the object corresponding to the given file is stored.
-pub fn get_file_object_path(path: &str) -> io::Result<String> {
+pub fn get_file_object_path(path: &str, directory: &str) -> io::Result<String> {
     let content_hash = hash_file_content(path)?;
-    if let Some(git_dir) = find_git_directory() {
-        let output_file_dir = git_dir + "/objects/" + &content_hash[..2] + "/";
-        let output_file_str = output_file_dir + &content_hash[2..];
-        Ok(output_file_str)
-    } else {
-        Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Git directory not found",
-        ))
-    }
+    let output_file_dir = directory.to_string() + "/objects/" + &content_hash[..2] + "/";
+    let output_file_str = output_file_dir + &content_hash[2..];
+    Ok(output_file_str)
 }
 
 /// Creates a directory with the given name if it does not exist.
@@ -83,25 +52,26 @@ fn create_directory(name: &str) -> io::Result<()> {
     }
 }
 
-/// Stores the file at the given path in the objects directory.
+/// Stores the file at the given path in the objects folder of the given directory.
+/// Directory must be the path to the git folder.
 /// Returns the hash of the file content.
 ///
 /// Stores the file in the path: objects/<first 2 characters of hash>/<remaining characters of hash>
 /// The file is compressed using zlib.
-pub fn store_file(path: &str) -> io::Result<String> {
+///
+/// The content is prepended with the header: blob <size>\0. The size is the size of the content.
+///
+/// If the directory is not a git directory, it returns an error.
+/// If the directory does not have an objects folder, it returns an error.
+/// If the file does not exist, it returns an error.
+/// If the file is already stored, it stores it again.
+pub fn store_file(path: &str, directory: &str) -> io::Result<String> {
     let content_hash = hash_file_content(path)?;
-    if let Some(git_dir) = find_git_directory() {
-        let output_file_dir = git_dir + "/objects/" + &content_hash[..2] + "/";
-        create_directory(&output_file_dir)?;
-        let output_file_str = output_file_dir + &content_hash[2..];
-        compress_content(path, output_file_str.as_str())?;
-        Ok(content_hash)
-    } else {
-        Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Git directory not found",
-        ))
-    }
+    let output_file_dir = directory.to_string() + "/objects/" + &content_hash[..2] + "/";
+    create_directory(&output_file_dir)?;
+    let output_file_str = output_file_dir + &content_hash[2..];
+    compress_content(path, output_file_str.as_str())?;
+    Ok(content_hash)
 }
 
 /// Compresses the content of the file at the given input path and stores it in the file at the given output path.
@@ -144,21 +114,35 @@ mod tests {
 
     #[test]
     fn test_hash_file_content() {
-        let hash = hash_file_content("tests/tests_files/hash_object_hello.txt").unwrap();
+        let hash = hash_file_content("tests/hash_object/hash_object_hello.txt").unwrap();
         assert_eq!(hash, "c57eff55ebc0c54973903af5f72bac72762cf4f4");
     }
 
     #[test]
     fn test_store_file_hash() {
-        let hash = store_file("tests/tests_files/hash_object_hello.txt").unwrap();
+        let hash = store_file(
+            "tests/hash_object/hash_object_hello.txt",
+            "tests/hash_object",
+        )
+        .unwrap();
         assert_eq!(hash, "c57eff55ebc0c54973903af5f72bac72762cf4f4");
     }
 
     #[test]
     fn test_store_file_content() {
-        let _hash = store_file("tests/tests_files/hash_object_hello.txt").unwrap();
+        // Delete the previous file if it exists
+        let _ = std::fs::remove_file(
+            "tests/hash_object/objects/c5/7eff55ebc0c54973903af5f72bac72762cf4f4",
+        );
+
+        let _hash = store_file(
+            "tests/hash_object/hash_object_hello.txt",
+            "tests/hash_object",
+        )
+        .unwrap();
         let content =
-            std::fs::read(".git/objects/c5/7eff55ebc0c54973903af5f72bac72762cf4f4").unwrap();
+            std::fs::read("tests/hash_object/objects/c5/7eff55ebc0c54973903af5f72bac72762cf4f4")
+                .unwrap();
         let mut decoder = ZlibDecoder::new(&content[..]);
         let mut decoded_content = String::new();
         decoder.read_to_string(&mut decoded_content).unwrap();
@@ -167,7 +151,25 @@ mod tests {
 
     #[test]
     fn store_file_does_not_exist() {
-        let result = store_file("tests/tests_files/does_not_exist.txt");
+        let result = store_file("tests/hash_object/does_not_exist.txt", "tests/hash_object");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_git_dir_doe_not_exist() {
+        let result = store_file(
+            "tests/hash_object/hash_object_hello.txt",
+            "tests/does_not_exist",
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_no_objects_folder() {
+        let result = store_file(
+            "tests/hash_object/hash_object_hello.txt",
+            "tests/hash_object/no_objects_folder",
+        );
         assert!(result.is_err());
     }
 }

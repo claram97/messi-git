@@ -177,7 +177,9 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
 ///
 fn handle_hash_object(args: Vec<String>) {
     let file_to_store = &args[2];
-    match store_file(file_to_store) {
+    let current_directory = ".";
+
+    match store_file(file_to_store, current_directory) {
         Ok(hash) => {
             println!(
                 "El archivo se ha almacenado como un objeto Git con hash: {}",
@@ -201,8 +203,9 @@ fn handle_hash_object(args: Vec<String>) {
 /// - `args`: A vector of strings representing the arguments passed to the command.
 fn handle_cat_file(args: Vec<String>) {
     let hash = &args[2];
+    let current_directory = ".";
 
-    match cat_file(hash, &mut std::io::stdout()) {
+    match cat_file(hash, current_directory, &mut std::io::stdout()) {
         Ok(()) => {
             println!();
         }
