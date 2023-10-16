@@ -1,6 +1,6 @@
 use std::io::{self};
 
-use crate::{index::{self}, hash_object};
+use crate::{index::{self}, hash_object, cat_file::cat_file_return_content};
 
 //Tree structure
 //files is a vector of tuples (file_name, hash)
@@ -35,6 +35,17 @@ impl Tree {
         let last_dir_index = self.directories.len() - 1;
         &mut self.directories[last_dir_index]
     }
+
+    //Get a subdir from a tree
+    fn get_subdir(&self, name: &str) -> Option<&Tree> {
+        for dir in &self.directories {
+            if dir.name == name {
+                return Some(dir);
+            }
+        }
+        None
+    }
+
 
     fn add_file(&mut self, name: &str, hash: &str) {
         //self.files.push((name.to_string(), hash.to_string()));
@@ -76,6 +87,28 @@ impl Tree {
         result
     }
 
+    //Given a path, this function should return the hash correspondent to it in the tree.
+    //If the path does not exist, it returns None.
+    pub fn get_hash_from_path(&self, path: &str) -> Option<String> {
+        let mut path = path.split('/').collect::<Vec<&str>>();
+        let file_name = match path.pop() {
+            Some(file_name) => file_name,
+            None => return None,
+        };
+        let mut current_tree = self;
+        while !path.is_empty() {
+            current_tree = match current_tree.get_subdir(path.remove(0)) {
+                Some(tree) => tree,
+                None => return None,
+            };
+        }
+        for (name, hash) in &current_tree.files {
+            if name == file_name {
+                return Some(hash.to_string());
+            }
+        }
+        None
+    }
 }
 
 // From an index file, loading it in an Index struct it builds a tree.
@@ -83,7 +116,7 @@ impl Tree {
 // The tree is built recursively.
 // The tree is built using the index file.
 // The index file is a file that contains the hash of each file in the staging area and the path to the file.
-pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> Tree {
+pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> io::Result<Tree> {
     let index = index::Index::load(&index_path, &git_dir_path).unwrap();
     let mut tree = Tree::new();
 
@@ -93,14 +126,17 @@ pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> Tree {
     //Starting from the root directory of the tree, it goes down the tree until it reaches the directory where the file should be.
     for (path, hash) in index.iter() {
         let mut path = path.split('/').collect::<Vec<&str>>();
-        let file_name = path.pop().unwrap();
+        let file_name = match path.pop() {
+            Some(file_name) => file_name,
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Invalid path in index file.")),
+        };
         let mut current_tree = &mut tree;
         for dir in path {
             current_tree = current_tree.get_or_create_dir(dir);
         }
         current_tree.add_file(file_name, hash);
     }
-    tree
+    Ok(tree)
 }
 
 //Write tree to file in the objects folder.
@@ -131,4 +167,59 @@ pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)>{
     //Store and hash the tree content.
     let tree_hash = hash_object::store_string_to_file(&tree_content, directory ,"tree")?;
     Ok((tree_hash, tree.name.clone()))
+}
+
+
+fn _load_tree_from_file(tree_hash: &str, directory: &str, name: &str) -> io::Result<Tree> {
+    let tree_content = cat_file_return_content(tree_hash, directory)?;
+    let mut tree = Tree::new();
+    tree.name = name.to_string();
+    let lines = tree_content.lines();
+
+    for line in lines {
+        let line = line.split(' ').collect::<Vec<&str>>();
+        let object_type = line[0];
+        let hash = line[1];
+        let name = line[2];
+        match object_type {
+            "blob" => tree.add_file(name, hash),
+            "tree" => {
+                _load_tree_from_file(hash, directory, name)?;
+                tree.directories.push(_load_tree_from_file(hash, directory, name)?);
+            },
+            _ => println!("Invalid tree file."),
+        }
+    }
+    Ok(tree)
+}
+
+pub fn load_tree_from_file (tree_hash: &str, directory: &str) -> io::Result<Tree> {
+    let tree = _load_tree_from_file(tree_hash, directory, "root")?;
+    Ok(tree)
+}
+
+pub fn print_tree_console(tree: &Tree, depth: usize) {
+    let mut spaces = String::new();
+    for _ in 0..depth {
+        spaces.push_str("  ");
+    }
+    for (file_name, hash) in &tree.files {
+        println!("{}{} {}", spaces, file_name, hash);
+    }
+    for dir in &tree.directories {
+        println!("{}{}", spaces, dir.name);
+        print_tree_console(&dir, depth + 1);
+    }
+}
+
+//Tests
+
+#[cfg(test)]
+mod tests {
+    // use super::*;
+
+    // #[test]
+    // fn test_get_hash_from_path() {
+        
+    // }
 }

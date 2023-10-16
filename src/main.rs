@@ -1,6 +1,6 @@
 use std::{fs::File, io::{Write, self}};
 
-use messi::{hash_object, commit, cat_file};
+use messi::{hash_object, commit, cat_file, tree_handler::print_tree_console};
 
 fn main() {
     let hash1 = hash_object::store_file(
@@ -42,4 +42,16 @@ fn main() {
     let commit_hash = commit::create_new_commit_file(".mgit", "probando nuevo commit", None).unwrap();
     
     cat_file::cat_file(&commit_hash, ".mgit", &mut io::stdout()).unwrap();
+
+    println!("===========================================================================");
+    println!("===========================================================================");
+
+
+    let tree = messi::tree_handler::load_tree_from_file("c78a81f71e0a1110498ce3b86e53dd4872d3efe0", ".mgit").unwrap();
+    print_tree_console(&tree, tree.get_depth());
+
+    let path = "src/index.rs";
+    let found_hash = tree.get_hash_from_path(path);
+    println!("Hash for path {} is {}", path, found_hash.unwrap());
+
 }
