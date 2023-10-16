@@ -5,6 +5,11 @@ use std::{
     io::{self, Error}, path::Path,
 };
 
+/// LogIter is a structure that will help to iterate
+/// through commit logs in the correct way.
+/// 
+/// Also implements Iterator trait so it has a lot 
+/// of flexibility because of that
 pub struct LogIter {
     log: Option<Log>,
 }
@@ -27,6 +32,22 @@ impl Iterator for LogIter {
     }
 }
 
+/// Log is a structure that will manage all relevant information
+/// about each commit.
+/// 
+/// A log can be loaded in two different ways:
+/// - Giving a commit hash
+/// 
+/// - Not giving a commit hash. In this case, HEAD file of 
+/// the repo will be read.
+/// 
+/// The method 'iter()' is available to get a LogIter instance
+/// starting in this Log.
+/// 
+/// The load of the Log may fail because of I/O errors.
+/// 
+/// For example: if the user try to load a Log from an inexistent commit hash,
+/// will fail.
 #[derive(Debug, Default, Clone)]
 pub struct Log {
     git_dir: String,
@@ -45,6 +66,17 @@ fn invalid_head_error() -> Error {
 }
 
 impl Log {
+    /// Method to load and return a Log
+    /// 
+    /// The git directory is needed for some internal actions.
+    /// 
+    /// The commit may or may not be present.
+    /// 
+    /// If available, the log of the given commit is loaded.
+    /// 
+    /// Otherwise, HEAD file will be read to load the Log.
+    /// 
+    /// The load of the Log may fail because of I/O errors.
     pub fn load(commit: Option<&str>, git_dir: &str) -> io::Result<Self> {
         if let Some(hash) = commit {
             Self::new_from_hash(hash, git_dir)
@@ -121,6 +153,9 @@ impl Log {
         }
     }
 
+    /// Returns an iterator starting in 'self'
+    /// 
+    /// When accessing to the next Log, it refers to 'parent log'
     pub fn iter(&self) -> LogIter {
         LogIter::new(self.clone())
     }
@@ -147,6 +182,12 @@ impl Display for Log {
     }
 }
 
+
+/// This function receive relevante information to create a Log and 
+/// return the corresponding iterator
+/// 
+/// The user who calls this function will have an iterator of logs
+/// to use. Usually it will be used for printing in stdout
 pub fn log(
     commit: Option<&str>,
     git_dir: &str,
