@@ -1,5 +1,5 @@
-pub(crate) const NAME_OF_GIT_DIRECTORY: &str = ".git";
-pub(crate) const NAME_OF_INDEX_FILE: &str = "index-file";
+use std::path::PathBuf;
+
 /// Recursively searches for a directory named "name_of_git_directory" in the file system
 /// starting from the location specified by "current_dir."
 ///
@@ -12,20 +12,6 @@ pub(crate) const NAME_OF_INDEX_FILE: &str = "index-file";
 ///
 /// This function returns an `Option<String>` containing the path to the found directory as a string if it is found.
 /// If the directory is not found, it returns `None`.
-///
-/// # Example
-///
-/// ```
-///
-/// let mut current_dir = env::current_dir();
-/// let git_directory_name = ".git";
-///
-/// if let Some(git_dir_path) = find_git_directory(&mut current_dir, git_directory_name) {
-///     println!("Found the Git directory at: {}", git_dir_path);
-/// } else {
-///     println!("Git directory not found in the search path.");
-/// }
-/// ```
 pub fn find_git_directory(
     current_dir: &mut PathBuf,
     name_of_git_directory: &str,
@@ -40,11 +26,36 @@ pub fn find_git_directory(
             break;
         }
     }
-
     None
 }
 
 #[cfg(test)]
 mod tests {
-    
+    use super::*;
+    const NAME_OF_GIT_DIRECTORY: &str = ".test_git";
+
+    #[test]
+    fn find_git_directory_returns_none_when_no_git_directory_is_found() {
+        let mut current_dir = PathBuf::from("tests/utils/empty");
+        let git_directory_name = NAME_OF_GIT_DIRECTORY;
+
+        assert_eq!(
+            find_git_directory(&mut current_dir, git_directory_name),
+            None
+        );
+    }
+
+    #[test]
+    fn find_git_directory_returns_path_to_git_directory_when_found() {
+        let mut current_dir = PathBuf::from("tests/utils/not_empty");
+        let git_directory_name = NAME_OF_GIT_DIRECTORY;
+
+        let expected_path = "tests/utils/not_empty/.test_git";
+        let expected_path = expected_path.to_string();
+
+        assert_eq!(
+            find_git_directory(&mut current_dir, git_directory_name),
+            Some(expected_path)
+        );
+    }
 }
