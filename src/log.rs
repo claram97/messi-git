@@ -1,19 +1,43 @@
 use crate::cat_file;
 use std::{
+    fmt::Display,
     fs,
-    io::{self, Error}, fmt::{Display, format}
+    io::{self, Error}, path::Path,
 };
 
+pub struct LogIter {
+    log: Option<Log>,
+}
+
+impl LogIter {
+    fn new(log: Log) -> Self {
+        Self { log: Some(log) }
+    }
+}
+
+impl Iterator for LogIter {
+    type Item = Log;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let actual = self.log.clone();
+        if let Some(log) = &self.log {
+            self.log = log.get_parent_log();
+        }
+        actual
+    }
+}
+
 #[derive(Debug, Default, Clone)]
-struct Log {
+pub struct Log {
     git_dir: String,
     commit_hash: String,
     tree_hash: String,
     parent_hash: Option<String>,
     message: String,
     author: String,
+    date: String,
     committer: String,
-    date: String
+    oneline: bool,
 }
 
 fn invalid_head_error() -> Error {
@@ -21,13 +45,21 @@ fn invalid_head_error() -> Error {
 }
 
 impl Log {
-    pub fn load(git_dir: &str) -> io::Result<Self> {
+    pub fn load(commit: Option<&str>, git_dir: &str) -> io::Result<Self> {
+        if let Some(hash) = commit {
+            Self::new_from_hash(hash, git_dir)
+        } else {
+            Self::load_from_head(git_dir)
+        }
+    }
+
+    fn load_from_head(git_dir: &str) -> io::Result<Self> {
         let head_path = format!("{}/HEAD", git_dir);
         let head_content = fs::read_to_string(head_path)?;
         let last_commit_ref = head_content.trim().split(": ").last();
         if let Some(commit_ref) = last_commit_ref {
-            let commit_ref = commit_ref;
             let heads_path = format!("{}/{}", git_dir, commit_ref);
+            dbg!(&heads_path);
             match fs::read_to_string(heads_path) {
                 Ok(hash) => Self::new_from_hash(&hash.trim(), git_dir),
                 Err(_) => Self::new_from_hash(commit_ref, git_dir),
@@ -36,6 +68,7 @@ impl Log {
             //     let hash = fs::read_to_string(heads_path)?;
             //     Self::new_from_hash(&hash, git_dir)
             // } else {
+            //     dbg!(&commit_ref);
             //     Self::new_from_hash(commit_ref, git_dir)
             // }
         } else {
@@ -59,9 +92,9 @@ impl Log {
                     Some(("author", author)) => {
                         let fields: Vec<&str> = author.split(' ').collect();
                         let len = fields.len();
-                        log.author = fields[0..len-2].join(" ");
-                        log.date = fields[len-2..].join(" ")
-                    },
+                        log.author = fields[0..len - 2].join(" ");
+                        log.date = fields[len - 2..].join(" ")
+                    }
                     Some(("committer", committer)) => log.committer = committer.to_string(),
                     _ => return Err(invalid_head_error()),
                 }
@@ -72,32 +105,59 @@ impl Log {
             Err(invalid_head_error())
         }
     }
+
+    fn get_parent_log(&self) -> Option<Self> {
+        if let Some(parent) = &self.parent_hash {
+            let next_log = Log::new_from_hash(&parent, &self.git_dir);
+            match next_log {
+                Ok(mut log) => {
+                    log.oneline = self.oneline;
+                    Some(log)
+                },
+                Err(_) => None,
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn iter(&self) -> LogIter {
+        LogIter::new(self.clone())
+    }
 }
 
 impl Display for Log {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let commit = format!("\x1b[0;33mcommit {}\x1b[0m", &self.commit_hash);
+        let message_vec: Vec<String> = self
+            .message
+            .lines()
+            .map(|line| format!("\t{}", line))
+            .collect();
+        let message = message_vec.join("\n");
+
+        if self.oneline {
+            let commit = commit.replace("commit ", "");
+            return writeln!(f, "{} {}", commit, message);
+        }
+
         let author = format!("Author: {}", &self.author);
         let date = format!("Date: {}", &self.date);
-        let message_vec: Vec<String> = self.message.lines().map(|line| format!("\t{}", line)).collect();
-        let message = message_vec.join("\n");
         writeln!(f, "{}\n{}\n{}\n\n{}", commit, author, date, message)
     }
 }
 
-impl Iterator for Log {
-    type Item = Log;
+pub fn log(
+    commit: Option<&str>,
+    git_dir: &str,
+    amount: usize,
+    skip: usize,
+    oneline: bool,
+) -> io::Result<impl Iterator<Item = Log>> {
+    let mut log = Log::load(commit, git_dir)?;
+    log.oneline = oneline;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(hash) = &self.parent_hash {
-            if let Ok(log) = Self::new_from_hash(hash, &self.git_dir) {
-                let actual = self.clone();
-                self.clone_from(&log);
-                return Some(actual);
-            }
-        }
-        None
-    }
+    Ok(log.iter().skip(skip).take(amount))
 }
 
 #[cfg(test)]
@@ -111,13 +171,34 @@ mod tests {
     }
 
     #[test]
-    fn test_2() {
-        let log = Log::new_from_hash("c6e4695d7f410a8c49787c7c87c5b390b56dc53a", ".git");
+    fn test_3() {
+        let log = log(
+            Some("c6e4695d7f410a8c49787c7c87c5b390b56dc53a"),
+            ".git",
+            5,
+            0,
+            true,
+        );
         assert!(log.is_ok());
         let log = log.unwrap();
-        let logs: Vec<Log>= log.take(5).collect();
-        for log in logs {
-            println!("{}", log)
+        for l in log {
+            println!("{}", l)
+        }
+    }
+
+    #[test]
+    fn test_4() {
+        let log = log(
+            None,
+            ".mgit",
+            5,
+            0,
+            true,
+        );
+        assert!(log.is_ok());
+        let log = log.unwrap();
+        for l in log {
+            println!("{}", l);
         }
     }
 }
