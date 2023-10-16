@@ -76,7 +76,7 @@ impl Log {
 
 impl Display for Log {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let commit = format!("commit {}", &self.commit_hash);
+        let commit = format!("\x1b[0;33mcommit {}\x1b[0m", &self.commit_hash);
         let author = format!("Author: {}", &self.author);
         let date = format!("Date: {}", &self.date);
         let message_vec: Vec<String> = self.message.lines().map(|line| format!("\t{}", line)).collect();
@@ -116,6 +116,8 @@ mod tests {
         assert!(log.is_ok());
         let log = log.unwrap();
         let logs: Vec<Log>= log.take(5).collect();
-        println!("{}",logs[0]);
+        for log in logs {
+            println!("{}", log)
+        }
     }
 }
