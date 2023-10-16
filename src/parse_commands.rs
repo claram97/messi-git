@@ -1,7 +1,7 @@
+use crate::cat_file::cat_file;
 use crate::hash_object::store_file;
 use crate::init::git_init;
 use std::io;
-use crate::cat_file::cat_file;
 
 /// Enumeration representing Git commands.
 ///
@@ -57,10 +57,7 @@ pub fn get_user_input() -> Vec<String> {
         eprintln!("Error reading user input");
     }
 
-    let args: Vec<String> = input
-        .split_whitespace()
-        .map(|s| s.to_string())
-        .collect();
+    let args: Vec<String> = input.split_whitespace().map(|s| s.to_string()).collect();
     args
 }
 
@@ -193,12 +190,21 @@ fn handle_hash_object(args: Vec<String>) {
     }
 }
 
+/// Handles the 'cat-file' Git command.
+///
+/// This function takes a list of arguments `args`, where the third argument (index 2) should be
+/// the hash of the Git object to retrieve and display its content. It then calls the `cat_file`
+/// function to retrieve and print the content of the Git object with the provided hash.
+///
+/// # Arguments
+///
+/// - `args`: A vector of strings representing the arguments passed to the command.
 fn handle_cat_file(args: Vec<String>) {
     let hash = &args[2];
 
     match cat_file(hash, &mut std::io::stdout()) {
         Ok(()) => {
-            println!(); 
+            println!();
         }
         Err(e) => {
             eprintln!("Error al obtener el contenido del archivo: {}", e);
