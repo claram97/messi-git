@@ -70,14 +70,13 @@ pub fn store_file(path: &str, directory: &str) -> io::Result<String> {
     let output_file_dir = directory.to_string() + "/objects/" + &content_hash[..2] + "/";
     create_directory(&output_file_dir)?;
     let output_file_str = output_file_dir + &content_hash[2..];
-    compress_content(path, output_file_str.as_str())?;
+    compress_content(path, output_file_str.as_str(), "blob")?;
     Ok(content_hash)
 }
 
 pub fn store_string_to_file(content: &str, directory: &str, file_type: &str) -> io::Result<String> {
     //Add the header to the content
-    let complete_content = format!("{file_type} {}\0", content.len()) + content;
-    let content_hash = hash_string(&complete_content);
+    let content_hash = hash_string(&content);
     
     //Create the directory if it does not exist
     let output_file_dir = directory.to_string() + "/objects/" + &content_hash[..2] + "/";
@@ -87,10 +86,10 @@ pub fn store_string_to_file(content: &str, directory: &str, file_type: &str) -> 
     //Create a tmp file with the content
     let tmp_file_path = output_file_str.clone() + "tmp";
     let mut tmp_file = File::create(&tmp_file_path)?;
-    tmp_file.write_all(complete_content.as_bytes())?;
+    tmp_file.write_all(content.as_bytes())?;
     
     //Compress the tmp file and store it in the output file
-    compress_content(&tmp_file_path, output_file_str.as_str())?;
+    compress_content(&tmp_file_path, output_file_str.as_str(), file_type)?;
     //Delete the tmp file
     fs::remove_file(tmp_file_path)?;
     Ok(content_hash)
@@ -99,12 +98,12 @@ pub fn store_string_to_file(content: &str, directory: &str, file_type: &str) -> 
 /// Compresses the content of the file at the given input path and stores it in the file at the given output path.
 /// The content is compressed using zlib.
 /// The content is prepended with the header: blob <size>\0. The size is the size of the content.
-fn compress_content(input_path: &str, output_path: &str) -> io::Result<()> {
+fn compress_content(input_path: &str, output_path: &str, file_type: &str) -> io::Result<()> {
     let output_file = File::create(output_path)?;
     let mut encoder = ZlibEncoder::new(output_file, Compression::default());
 
     let mut content = std::fs::read_to_string(input_path)?;
-    let header = format!("blob {}\0", content.len());
+    let header = format!("{file_type} {}\0", content.len());
     content.insert_str(0, &header);
 
     encoder.write_all(content.as_bytes())?;

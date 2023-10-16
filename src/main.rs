@@ -1,6 +1,6 @@
-use std::{fs::File, io::Write};
+use std::{fs::File, io::{Write, self}};
 
-use messi::{hash_object, tree_handler};
+use messi::{hash_object, commit, cat_file};
 
 fn main() {
     let hash1 = hash_object::store_file(
@@ -38,8 +38,8 @@ fn main() {
     index.write_all(format!("{} {}\n", hash4, "src/index.rs").as_bytes()).unwrap();
     index.write_all(format!("{} {}\n", hash5, "tests/logger_tests.rs").as_bytes()).unwrap();
 
-    //Create a tree file
-    let tree = tree_handler::build_tree(".mgit/index");
-    //println!("{:#?}", tree);
-    let _ = tree_handler::write_tree(&tree, ".mgit");
+    //Create a commit file
+    let commit_hash = commit::create_new_commit_file(".mgit", "probando nuevo commit", None).unwrap();
+    
+    cat_file::cat_file(&commit_hash, ".mgit", &mut io::stdout()).unwrap();
 }

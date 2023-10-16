@@ -53,6 +53,8 @@ impl Tree {
             middle = (start + end) / 2;
         }
         self.files.insert(middle, (name.to_string(), hash.to_string()));
+
+        //Might be better to use a binary heap.
     }
 
     pub fn get_depth(&self) -> usize {
@@ -81,8 +83,7 @@ impl Tree {
 // The tree is built recursively.
 // The tree is built using the index file.
 // The index file is a file that contains the hash of each file in the staging area and the path to the file.
-pub fn build_tree(index_path: &str) -> Tree {
-    let git_dir_path = String::from(".mgit");
+pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> Tree {
     let index = index::Index::load(&index_path, &git_dir_path).unwrap();
     let mut tree = Tree::new();
 
@@ -104,9 +105,9 @@ pub fn build_tree(index_path: &str) -> Tree {
 
 //Write tree to file in the objects folder.
 //When done, the subtrees should be hashed, compressed and stored.
-//The result is the hash of the tree.
+//The result of the function is a tuple of the form (hash, name).
 pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)>{
-    //Vec of hash, name tuples
+    //Vec of (hash, name) tuples
     let mut subtrees: Vec<(String, String)> = Vec::new();
 
     //Traverse the tree, hashing and compressing each subtree.
