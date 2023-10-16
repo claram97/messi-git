@@ -225,7 +225,7 @@ fn handle_hash_object(args: Vec<String>) {
             }
         }
         Err(e) => {
-            eprintln!("Error trying to get current directory", e);
+            eprintln!("Error trying to get current directory: {}", e);
         }
     }
 }
