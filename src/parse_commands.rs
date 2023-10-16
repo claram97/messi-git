@@ -4,6 +4,11 @@ use crate::init::git_init;
 use std::path::PathBuf;
 use std::thread::current;
 use std::{env, io};
+<<<<<<< HEAD
+=======
+
+const GIT_DIR: &str = ".mgit";
+>>>>>>> 9e76a001b1894aa79eff7534f5b7a3cc0af857d6
 
 const GIT_DIR: &str = ".mgit";
 /// Enumeration representing Git commands.
