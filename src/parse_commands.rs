@@ -1,7 +1,9 @@
 use crate::cat_file::cat_file;
 use crate::hash_object::store_file;
 use crate::init::git_init;
-use std::io;
+use std::thread::current;
+use std::{io, env};
+use std::path::PathBuf;
 
 /// Enumeration representing Git commands.
 ///
@@ -24,6 +26,24 @@ pub enum GitCommand {
     Pull,
     Push,
     Branch,
+}
+
+//Esta función va a estar en utils.rs
+pub fn find_git_directory(
+    current_dir: &mut PathBuf,
+    name_of_git_directory: &str,
+) -> Option<String> {
+    loop {
+        let git_dir = current_dir.join(name_of_git_directory);
+        if git_dir.exists() && git_dir.is_dir() {
+            return Some(git_dir.display().to_string());
+        }
+
+        if !current_dir.pop() {
+            break;
+        }
+    }
+    None
 }
 
 /// Reads user input from the command line and splits it into a vector of strings.
@@ -176,20 +196,23 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
 /// - `args`: A vector of strings representing the arguments passed to the command.
 ///
 fn handle_hash_object(args: Vec<String>) {
-    let file_to_store = &args[2];
-    let current_directory = ".";
-
-    match store_file(file_to_store, current_directory) {
-        Ok(hash) => {
-            println!(
-                "El archivo se ha almacenado como un objeto Git con hash: {}",
-                hash
-            );
-        }
-        Err(e) => {
-            eprintln!("Error al almacenar el archivo como objeto Git: {}", e);
+    if let Ok(current_dir) = env::current_dir() {
+        let mut current_dir = &current_dir.to_string_lossy().to_string();
+        let file_to_store = &args[2];
+    
+            match store_file(file_to_store,current_dir) {
+            Ok(hash) => {
+                println!(
+                    "El archivo se ha almacenado como un objeto Git con hash: {}",
+                    hash
+                );
+            }
+            Err(e) => {
+                eprintln!("Error al almacenar el archivo como objeto Git: {}", e);
+            }
         }
     }
+    //Hay que agregar error acá
 }
 
 /// Handles the 'cat-file' Git command.
@@ -203,16 +226,18 @@ fn handle_hash_object(args: Vec<String>) {
 /// - `args`: A vector of strings representing the arguments passed to the command.
 fn handle_cat_file(args: Vec<String>) {
     let hash = &args[2];
-    let current_directory = ".";
-
-    match cat_file(hash, current_directory, &mut std::io::stdout()) {
-        Ok(()) => {
-            println!();
-        }
-        Err(e) => {
-            eprintln!("Error al obtener el contenido del archivo: {}", e);
+    if let Ok(current_dir) = env::current_dir() {
+        let current_dir = &current_dir.to_string_lossy().to_string();
+        match cat_file(hash, current_dir, &mut std::io::stdout()) {
+            Ok(()) => {
+                println!();
+            }
+            Err(e) => {
+                eprintln!("Error al obtener el contenido del archivo: {}", e);
+            }
         }
     }
+    //Agregar error acá
 }
 
 fn handle_status(args: Vec<String>) {
