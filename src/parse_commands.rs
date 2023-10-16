@@ -1,6 +1,10 @@
 use std::io;
 use crate::init::git_init;
 
+/// Enumeration representing Git commands.
+///
+/// This enumeration defines Git commands that can be used.
+#[derive(Debug)]
 pub enum GitCommand {
     HashObject,
     CatFile,
@@ -20,17 +24,73 @@ pub enum GitCommand {
     Branch,
 }
 
+/// Reads user input from the command line and splits it into a vector of strings.
+///
+/// This function prompts the user to enter arguments separated by spaces and reads the input
+/// from the command line. It then splits the input into individual strings and returns them
+/// as a vector.
+///
+/// ## Example
+///
+/// ```
+/// use your_crate_name::get_user_input;
+///
+/// let user_input = get_user_input();
+/// println!("User input: {:?}", user_input);
+/// ```
+///
+/// The function returns a vector of strings, where each element is a user-supplied argument.
+///
+/// If there's an error reading user input, an error message is printed to the standard error
+/// stream (stderr).
+///
+/// ## Returns
+///
+/// Returns a `Vec<String>` containing the user-supplied arguments.
+///
 pub fn get_user_input() -> Vec<String> {
     let mut input = String::new();
-    println!("Ingresa los argumentos (separados por espacios):");
+    println!("Enter arguments (separated by spaces):");
     if io::stdin().read_line(&mut input).is_err() {
-        eprintln!("Error al leer la entrada del usuario");
+        eprintln!("Error reading user input");
     }
-    
+
     let args: Vec<String> = input.trim().split_whitespace().map(|s| s.to_string()).collect();
     args
 }
 
+/// Parses a user-supplied argument to determine the Git command to execute.
+///
+/// This function takes a user-supplied argument as a string and attempts to parse it
+/// to determine the corresponding Git command.
+///
+/// ## Parameters
+///
+/// - `second_argument`: A string representing the user-supplied Git command argument.
+///
+/// ## Returns
+///
+/// Returns an `Option<GitCommand>` representing the parsed Git command. If the argument
+/// matches a valid Git command, the corresponding `GitCommand` variant is returned within
+/// `Some`. If the argument does not match any known Git command, an error message is printed
+/// to the standard error stream (stderr), and `None` is returned.
+///
+/// ## Example
+///
+/// ```
+/// use your_crate_name::{parse_git_command, GitCommand};
+///
+/// let arg = "init";
+/// let result = parse_git_command(arg);
+/// match result {
+///     Some(cmd) => println!("Parsed Git command: {:?}", cmd),
+///     None => println!("Invalid Git command argument"),
+/// }
+/// ```
+///
+/// The function can be used to parse user-supplied Git command arguments and determine
+/// the corresponding `GitCommand` variant.
+///
 pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
     match second_argument {
         "hash-object" => Some(GitCommand::HashObject),
@@ -50,12 +110,39 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
         "push" => Some(GitCommand::Push),
         "branch" => Some(GitCommand::Branch),
         _ => {
-            eprintln!("No es una opción válida de Git.");
+            eprintln!("Not a valid Git option.");
             None
         }
     }
 }
 
+
+/// Handles a Git command with the specified arguments.
+///
+/// This function takes a `GitCommand` enum representing the Git command to execute and a
+/// vector of strings `args` that contains the command's arguments. It then delegates the
+/// execution of the specific Git command to a corresponding handler function based on the
+/// provided `GitCommand`. The handler function for each Git command is responsible for
+/// executing the command with the given arguments.
+///
+/// ## Parameters
+///
+/// - `git_command`: The `GitCommand` enum representing the Git command to execute.
+/// - `args`: A vector of strings containing the arguments for the Git command.
+///
+/// ## Example
+///
+/// ```
+/// use your_crate_name::{handle_git_command, GitCommand};
+///
+/// let git_command = GitCommand::Init;
+/// let args = vec!["init".to_string()];
+/// handle_git_command(git_command, args);
+/// ```
+///
+/// The function allows for the execution of different Git commands based on the provided
+/// `GitCommand` enum and its corresponding arguments.
+///
 pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
     match git_command {
         GitCommand::HashObject => handle_hash_object(args),
@@ -76,6 +163,7 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
         GitCommand::Init => handle_init(args),
     }
 }
+
 
 fn handle_hash_object(args: Vec<String>) {
     println!("Handling HashObject command with argument: ");
@@ -144,6 +232,34 @@ fn handle_branch(args: Vec<String>) {
     println!("Handling Branch command with argument: ");
 }
 
+/// Initializes a Git repository with optional configuration.
+///
+/// This function initializes a Git repository in the specified directory. It supports
+/// optional configuration through command-line arguments:
+///
+/// - `-b` or `--initial-branch`: Specifies the name of the initial branch. If not provided,
+///   the default branch name 'main' is used.
+/// - `--template`: Specifies a template directory to copy files from.
+///
+/// If the provided `current_directory` doesn't exist, it will be created.
+///
+/// ## Parameters
+///
+/// - `args`: A vector of strings containing command-line arguments. The function parses
+///   these arguments to determine the initial branch and template directory.
+///
+/// ## Example
+///
+/// ```
+/// use your_crate_name::{handle_init, git_init};
+///
+/// let args = vec!["init".to_string(), "my_repo".to_string(), "-b".to_string(), "mybranch".to_string()];
+/// handle_init(args);
+/// ```
+///
+/// The `handle_init` function initializes a Git repository based on the provided arguments,
+/// allowing you to specify the initial branch and a template directory.
+///
 pub fn handle_init(args: Vec<String>) {
    
     let mut current_directory = ".";
