@@ -22,9 +22,9 @@ fn hash_string(content: &str) -> String {
 /// The header is of the form: <type> <size>\0
 /// Use this function when searching for a file git object.
 /// This function does not return the path to the object in the objects folder, it returns the complete string.
-pub fn hash_file_content(path: &str) -> io::Result<String> {
+pub fn hash_file_content(path: &str, file_type: &str) -> io::Result<String> {
     let content = std::fs::read_to_string(path)?;
-    let header = format!("blob {}\0", content.len());
+    let header = format!("{file_type} {}\0", content.len());
     let complete = header + &content;
     Ok(hash_string(&complete))
 }
@@ -33,7 +33,7 @@ pub fn hash_file_content(path: &str) -> io::Result<String> {
 /// The path is of the form: objects/<first 2 characters of hash>/<remaining characters of hash>
 /// The result is the place where the object corresponding to the given file is stored.
 pub fn get_file_object_path(path: &str, directory: &str) -> io::Result<String> {
-    let content_hash = hash_file_content(path)?;
+    let content_hash = hash_file_content(path, "blob")?;
     let output_file_dir = directory.to_string() + "/objects/" + &content_hash[..2] + "/";
     let output_file_str = output_file_dir + &content_hash[2..];
     Ok(output_file_str)
@@ -66,11 +66,33 @@ fn create_directory(name: &str) -> io::Result<()> {
 /// If the file does not exist, it returns an error.
 /// If the file is already stored, it stores it again.
 pub fn store_file(path: &str, directory: &str) -> io::Result<String> {
-    let content_hash = hash_file_content(path)?;
+    let content_hash = hash_file_content(path, "blob")?;
     let output_file_dir = directory.to_string() + "/objects/" + &content_hash[..2] + "/";
     create_directory(&output_file_dir)?;
     let output_file_str = output_file_dir + &content_hash[2..];
     compress_content(path, output_file_str.as_str())?;
+    Ok(content_hash)
+}
+
+pub fn store_string_to_file(content: &str, directory: &str, file_type: &str) -> io::Result<String> {
+    //Add the header to the content
+    let complete_content = format!("{file_type} {}\0", content.len()) + content;
+    let content_hash = hash_string(&complete_content);
+    
+    //Create the directory if it does not exist
+    let output_file_dir = directory.to_string() + "/objects/" + &content_hash[..2] + "/";
+    create_directory(&output_file_dir)?;
+    let output_file_str = output_file_dir + &content_hash[2..];
+    
+    //Create a tmp file with the content
+    let tmp_file_path = output_file_str.clone() + "tmp";
+    let mut tmp_file = File::create(&tmp_file_path)?;
+    tmp_file.write_all(complete_content.as_bytes())?;
+    
+    //Compress the tmp file and store it in the output file
+    compress_content(&tmp_file_path, output_file_str.as_str())?;
+    //Delete the tmp file
+    fs::remove_file(tmp_file_path)?;
     Ok(content_hash)
 }
 
@@ -114,7 +136,7 @@ mod tests {
 
     #[test]
     fn test_hash_file_content() {
-        let hash = hash_file_content("tests/hash_object/hash_object_hello.txt").unwrap();
+        let hash = hash_file_content("tests/hash_object/hash_object_hello.txt", "blob").unwrap();
         assert_eq!(hash, "c57eff55ebc0c54973903af5f72bac72762cf4f4");
     }
 

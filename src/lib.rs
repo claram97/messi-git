@@ -5,3 +5,4 @@ pub mod ignorer;
 pub mod index;
 pub mod init;
 pub mod logger;
+pub mod tree_handler;
