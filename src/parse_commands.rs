@@ -196,23 +196,37 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
 /// - `args`: A vector of strings representing the arguments passed to the command.
 ///
 fn handle_hash_object(args: Vec<String>) {
-    if let Ok(current_dir) = env::current_dir() {
-        let mut current_dir = &current_dir.to_string_lossy().to_string();
-        let file_to_store = &args[2];
-    
-            match store_file(file_to_store,current_dir) {
-            Ok(hash) => {
-                println!(
-                    "El archivo se ha almacenado como un objeto Git con hash: {}",
-                    hash
-                );
-            }
-            Err(e) => {
-                eprintln!("Error al almacenar el archivo como objeto Git: {}", e);
+    match env::current_dir() {
+        Ok(current_dir) => {
+            let Some(git_dir) = (match find_git_directory(&mut current_dir.clone(), ".mgit") {
+                Some(git_dir) => Some(git_dir),
+                None => {
+                    eprintln!("No se encontró un repositorio Git");
+                    return;
+                }
+            }) else {
+                eprintln!("Error al obtener el directorio actual");
+                return;
+            };
+        
+            let file_to_store = &args[2];
+            
+            match store_file(file_to_store, &git_dir) {
+                Ok(hash) => {
+                    println!(
+                        "El archivo se ha almacenado como un objeto Git con hash: {}",
+                        hash
+                    );
+                }
+                Err(e) => {
+                    eprintln!("Error al almacenar el archivo como objeto Git: {}", e);
+                }
             }
         }
+        Err(e) => {
+            eprintln!("Error al obtener el directorio actual: {}", e);
+        }
     }
-    //Hay que agregar error acá
 }
 
 /// Handles the 'cat-file' Git command.
@@ -228,12 +242,20 @@ fn handle_cat_file(args: Vec<String>) {
     let hash = &args[2];
     if let Ok(current_dir) = env::current_dir() {
         let current_dir = &current_dir.to_string_lossy().to_string();
-        match cat_file(hash, current_dir, &mut std::io::stdout()) {
-            Ok(()) => {
-                println!();
+
+        match find_git_directory(&mut PathBuf::from(current_dir), ".mgit") {
+            Some(git_dir) => {
+                match cat_file(hash, &git_dir, &mut std::io::stdout()) {
+                    Ok(()) => {
+                        println!();
+                    }
+                    Err(e) => {
+                        eprintln!("Error al obtener el contenido del archivo: {}", e);
+                    }
+                }
             }
-            Err(e) => {
-                eprintln!("Error al obtener el contenido del archivo: {}", e);
+            None => {
+                eprintln!("No se encontró un repositorio Git");
             }
         }
     }

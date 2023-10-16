@@ -2,6 +2,8 @@ use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
 
+const GIT_DIR: &str = ".mgit";
+
 /// `create_directory_if_not_exists` is a utility function that creates a directory if it doesn't exist.
 ///
 /// ## Parameters
@@ -59,7 +61,7 @@ pub fn git_init(
     }
 
     // Necessary directories
-    let git_dir = format!("{}/.git", directory);
+    let git_dir = format!("{}/{}", directory, GIT_DIR);
     create_directory_if_not_exists(&git_dir)?;
 
     create_directory_if_not_exists(&format!("{}/objects", &git_dir))?;
@@ -192,7 +194,7 @@ mod test {
         }
 
         // Check if the Git repository was initialized
-        let git_dir_path = format!("{}/.git", temp_dir);
+        let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
         assert!(Path::new(&git_dir_path).exists());
 
         // Clean up: Remove the temporary directory
@@ -207,7 +209,7 @@ mod test {
 
         match git_init(&temp_dir, "main", None) {
             Ok(_) => {
-                let git_dir_path = format!("{}/.git", temp_dir);
+                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
                 assert!(Path::new(&git_dir_path).exists());
                 assert!(Path::new(&git_dir_path).is_dir());
 
@@ -241,7 +243,7 @@ mod test {
 
         match git_init(&temp_dir, "mybranch", None) {
             Ok(_) => {
-                let git_dir_path = format!("{}/.git", temp_dir);
+                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
                 assert!(Path::new(&git_dir_path).exists());
                 assert!(Path::new(&git_dir_path).is_dir());
 
@@ -281,7 +283,7 @@ mod test {
 
         match git_init(&temp_dir, "main", Some(&template_dir)) {
             Ok(_) => {
-                let git_dir_path = format!("{}/.git", temp_dir);
+                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
                 assert!(Path::new(&git_dir_path).exists());
                 assert!(Path::new(&git_dir_path).is_dir());
 
@@ -333,7 +335,7 @@ mod test {
         // Call git_init on an existing directory
         match git_init(&temp_dir, "main", None) {
             Ok(_) => {
-                let git_dir_path = format!("{}/.git", temp_dir);
+                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
                 assert!(Path::new(&git_dir_path).exists());
                 assert!(Path::new(&git_dir_path).is_dir());
             }
