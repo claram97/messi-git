@@ -1,4 +1,4 @@
-use messi::parse_commands::{get_user_input ,parse_git_command, handle_git_command};
+use messi::parse_commands::{get_user_input, handle_git_command, parse_git_command};
 
 fn main() {
     let args = get_user_input();
@@ -6,7 +6,7 @@ fn main() {
         Some(arg) => arg,
         None => {
             eprintln!("No se ha ingresado el segundo argumento.");
-            return; 
+            return;
         }
     };
 
@@ -14,4 +14,3 @@ fn main() {
         handle_git_command(git_command, args);
     }
 }
-

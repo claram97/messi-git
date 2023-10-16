@@ -1,6 +1,6 @@
-use std::io;
-use crate::init::git_init;
 use crate::hash_object::store_file;
+use crate::init::git_init;
+use std::io;
 
 /// Enumeration representing Git commands.
 ///
@@ -56,7 +56,11 @@ pub fn get_user_input() -> Vec<String> {
         eprintln!("Error reading user input");
     }
 
-    let args: Vec<String> = input.trim().split_whitespace().map(|s| s.to_string()).collect();
+    let args: Vec<String> = input
+        .trim()
+        .split_whitespace()
+        .map(|s| s.to_string())
+        .collect();
     args
 }
 
@@ -117,7 +121,6 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
     }
 }
 
-
 /// Handles a Git command with the specified arguments.
 ///
 /// This function takes a `GitCommand` enum representing the Git command to execute and a
@@ -134,7 +137,7 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
 /// ## Example
 ///
 /// ```
-/// use your_crate_name::{handle_git_command, GitCommand};
+/// use parse_commands::{handle_git_command, GitCommand};
 ///
 /// let git_command = GitCommand::Init;
 /// let args = vec!["init".to_string()];
@@ -190,25 +193,20 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
 /// }
 /// ```
 ///
-/// # Notes
-///
-/// - Ensure that the `store_file` function works correctly, and the Git directory is valid on your
-///   system before calling this function.
-///
-/// - If the file path is not provided as the third argument, an error message will be displayed.
-///
-/// - If an error occurs while storing the file as a Git object, an error message will be displayed.
 fn handle_hash_object(args: Vec<String>) {
     let file_to_store = match args.get(2) {
         Some(arg) => arg,
         None => {
             eprintln!("No se ha ingresado el segundo argumento.");
-            return; 
+            return;
         }
     };
     match store_file(file_to_store) {
         Ok(hash) => {
-            println!("El archivo se ha almacenado como un objeto Git con hash: {}", hash);
+            println!(
+                "El archivo se ha almacenado como un objeto Git con hash: {}",
+                hash
+            );
         }
         Err(e) => {
             eprintln!("Error al almacenar el archivo como objeto Git: {}", e);
@@ -242,37 +240,30 @@ fn handle_checkout(args: Vec<String>) {
 
 fn handle_log(args: Vec<String>) {
     println!("Handling Log command with argument: ");
-
 }
 
 fn handle_clone(args: Vec<String>) {
     println!("Handling Clone command with argument: ");
-    
 }
 
 fn handle_fetch(args: Vec<String>) {
     println!("Handling Fetch command with argument: ");
-    
 }
 
 fn handle_merge(args: Vec<String>) {
     println!("Handling Merge command with argument: ");
-    
 }
 
 fn handle_remote(args: Vec<String>) {
     println!("Handling Remote command with argument: ");
-    
 }
 
 fn handle_pull(args: Vec<String>) {
     println!("Handling Pull command with argument: ");
-    
 }
 
 fn handle_push(args: Vec<String>) {
     println!("Handling Push command with argument: ");
-    
 }
 
 fn handle_branch(args: Vec<String>) {
@@ -298,7 +289,7 @@ fn handle_branch(args: Vec<String>) {
 /// ## Example
 ///
 /// ```
-/// use your_crate_name::{handle_init, git_init};
+/// use init::{handle_init, git_init};
 ///
 /// let args = vec!["init".to_string(), "my_repo".to_string(), "-b".to_string(), "mybranch".to_string()];
 /// handle_init(args);
@@ -308,12 +299,11 @@ fn handle_branch(args: Vec<String>) {
 /// allowing you to specify the initial branch and a template directory.
 ///
 pub fn handle_init(args: Vec<String>) {
-   
     let mut current_directory = ".";
     let mut initial_branch = "main";
     let mut template_directory: Option<&str> = None;
 
-    let mut index = 2; 
+    let mut index = 2;
     while index < args.len() {
         let arg = &args[index];
         match arg.as_str() {
@@ -339,4 +329,3 @@ pub fn handle_init(args: Vec<String>) {
         eprintln!("Error al inicializar el repositorio Git: {}", err);
     }
 }
-
