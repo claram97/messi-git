@@ -3,7 +3,6 @@ use std::fs;
 use std::io;
 use std::io::Write;
 use std::path::Path;
-use std::fs::File;
 
 /// Process command-line arguments and options to perform various actions in a Git-like application.
 ///
@@ -19,17 +18,6 @@ use std::fs::File;
 ///   - `"-f"`: Force the change of branch or commit (discarding uncommitted changes).
 ///
 /// * `destination` - A string representing the branch name or commit ID to be operated on.
-///
-/// # Examples
-///
-/// ```
-/// process_args();
-/// // Rest of your code
-/// ```
-///
-/// This function processes the command-line arguments and options, then calls the corresponding
-/// functions to perform the desired action. If an invalid option is provided, it prints an error
-/// message and exits the program with an error code.
 pub fn process_args() {
     let args: Vec<String> = env::args().collect();
 
@@ -40,7 +28,7 @@ pub fn process_args() {
 
     let option = &args[1];
     let destination = &args[2];
-    let git_dir = Path::new(".git");
+    let git_dir = Path::new(".mgit");
 
     match option.as_str() {
         // Change to the specified branch
@@ -72,7 +60,9 @@ pub fn process_args() {
 /// # Example
 ///
 /// ```
-/// let git_dir = Path::new(".git");
+/// use std::path::Path;
+/// use messi::checkout::checkout_branch;
+/// let git_dir = Path::new(".mgit");
 /// let branch_name = "my_branch";
 /// checkout_branch(&git_dir, branch_name);
 /// ```
@@ -83,7 +73,7 @@ pub fn process_args() {
 ///
 /// If the branch reference file does not exist, or if there are errors during the process, the
 /// function prints an error message to the standard error output.
-fn checkout_branch(git_dir: &Path, branch_name: &str) {
+pub fn checkout_branch(git_dir: &Path, branch_name: &str) {
     let refs_dir = git_dir.join("refs").join("heads");
     let branch_ref_file = refs_dir.join(branch_name);
 
@@ -122,7 +112,9 @@ fn checkout_branch(git_dir: &Path, branch_name: &str) {
 /// # Example
 ///
 /// ```
-/// let git_dir = Path::new(".git");
+/// use std::path::Path;
+/// use messi::checkout::create_and_checkout_branch;
+/// let git_dir = Path::new(".mgit");
 /// let branch_name = "my_new_branch";
 /// create_and_checkout_branch(&git_dir, branch_name);
 /// ```
@@ -135,7 +127,7 @@ fn checkout_branch(git_dir: &Path, branch_name: &str) {
 ///
 /// If there are any errors during the branch creation process, the function prints appropriate
 /// error messages to the standard error output.
-fn create_and_checkout_branch(git_dir: &Path, branch_name: &str) {
+pub fn create_and_checkout_branch(git_dir: &Path, branch_name: &str) {
     let refs_dir = git_dir.join("refs").join("heads");
     let branch_ref_file = refs_dir.join(branch_name);
 
@@ -193,7 +185,9 @@ fn create_and_checkout_branch(git_dir: &Path, branch_name: &str) {
 /// # Example
 ///
 /// ```
-/// let file = fs::File::create("my_reference.txt").expect("Failed to create file");
+///  use std::fs::File;
+/// use messi::checkout::write_reference_value;
+/// let mut file = File::create("my_reference.txt").expect("Failed to create file");
 /// let value = "my_commit_id";
 /// let result = write_reference_value(&mut file, value);
 /// assert!(result.is_ok());
@@ -202,7 +196,7 @@ fn create_and_checkout_branch(git_dir: &Path, branch_name: &str) {
 /// This example demonstrates how to use the `write_reference_value` function to write a reference
 /// value to a file. It creates a new file, `my_reference.txt`, writes the value "my_commit_id" to
 /// the file, and checks if the write operation was successful.
-fn write_reference_value(file: &mut fs::File, value: &str) -> io::Result<()> {
+pub fn write_reference_value(file: &mut fs::File, value: &str) -> io::Result<()> {
     // Write the value to the reference file
     file.write_all(value.as_bytes())?;
     Ok(())
@@ -224,7 +218,8 @@ fn write_reference_value(file: &mut fs::File, value: &str) -> io::Result<()> {
 ///
 /// ```
 /// use std::path::Path;
-/// let git_dir = Path::new(".git");
+/// use messi::checkout::create_or_reset_branch;
+/// let git_dir = Path::new(".mgit");
 /// let branch_name = "my_branch";
 /// create_or_reset_branch(&git_dir, branch_name);
 /// ```
@@ -232,7 +227,7 @@ fn write_reference_value(file: &mut fs::File, value: &str) -> io::Result<()> {
 /// This example demonstrates how to use the `create_or_reset_branch` function to create or reset a branch
 /// named "my_branch" in a Git-like repository. If the branch already exists, it will be reset, and the
 /// HEAD reference will be updated to point to the branch.
-fn create_or_reset_branch(git_dir: &Path, branch_name: &str) {
+pub fn create_or_reset_branch(git_dir: &Path, branch_name: &str) {
     let refs_dir = git_dir.join("refs").join("heads");
     let branch_ref_file = refs_dir.join(branch_name);
 
@@ -285,7 +280,8 @@ fn create_or_reset_branch(git_dir: &Path, branch_name: &str) {
 ///
 /// ```
 /// use std::path::Path;
-/// let git_dir = Path::new(".git");
+/// use messi::checkout::checkout_commit_detached;
+/// let git_dir = Path::new(".mgit");
 /// let commit_id = "a1b2c3d4e5"; // Replace with an actual commit ID.
 /// checkout_commit_detached(&git_dir, commit_id);
 /// ```
@@ -293,7 +289,7 @@ fn create_or_reset_branch(git_dir: &Path, branch_name: &str) {
 /// This example demonstrates how to use the `checkout_commit_detached` function to switch to a specific
 /// commit in detached mode within a Git-like repository. Make sure to replace `"a1b2c3d4e5"` with the
 /// actual commit ID you want to check out.
-fn checkout_commit_detached(git_dir: &Path, commit_id: &str) {
+pub fn checkout_commit_detached(git_dir: &Path, commit_id: &str) {
     // Check if the specified commit exists
     let objects_dir = git_dir.join("objects");
     let commit_file = objects_dir.join(commit_id);
@@ -331,7 +327,8 @@ fn checkout_commit_detached(git_dir: &Path, commit_id: &str) {
 ///
 /// ```
 /// use std::path::Path;
-/// let git_dir = Path::new(".git");
+/// use messi::checkout::force_checkout;
+/// let git_dir = Path::new(".mgit");
 /// let branch_or_commit = "my_branch"; // Replace with a branch name or commit ID.
 /// force_checkout(&git_dir, branch_or_commit);
 /// ```
@@ -339,7 +336,7 @@ fn checkout_commit_detached(git_dir: &Path, commit_id: &str) {
 /// This example demonstrates how to use the `force_checkout` function to forcibly switch to a
 /// specific branch or commit within a Git-like repository. You can replace `"my_branch"` with
 /// the actual branch name or commit ID you want to switch to.
-fn force_checkout(git_dir: &Path, branch_or_commit: &str) {
+pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) {
     // Check if a branch or a commit is provided
     let is_branch = branch_or_commit.starts_with("refs/heads/");
 
@@ -489,13 +486,13 @@ mod tests {
 
         // Create a sample branch and set the HEAD file
         let refs_dir = Path::new(TEST_GIT).join("refs").join("heads");
-        let branch_name = "my_branch";
+        let branch_name = "other_branch";
         let branch_ref_file = refs_dir.join(branch_name);
         fs::create_dir_all(&branch_ref_file.parent().unwrap()).expect("Failed to create dirs");
         fs::write(&branch_ref_file, "commit_id").expect("Failed to write branch reference");
 
         let head_file = Path::new(TEST_GIT).join("HEAD");
-        fs::write(&head_file, format!("ref: refs/heads/my_branch\n"))
+        fs::write(&head_file, format!("ref: refs/heads/other_branch\n"))
             .expect("Failed to write HEAD file");
 
         // Execute the force_checkout function with an existing branch
@@ -520,30 +517,30 @@ mod tests {
     /// This test ensures that the `checkout_commit_detached` function correctly handles changing to a
     /// specific commit in detached mode.
     ///
-    // #[test]
-    // fn test_checkout_commit_detached() {
-    //     // Create a test directory if it doesn't exist
-    //     if !Path::new(T).exists() {
-    //         fs::create_dir_all(T).expect("Failed to create test directory");
-    //     }
+    #[test]
+    fn test_checkout_commit_detached() {
+        // Create a test directory if it doesn't exist
+        if !Path::new(T).exists() {
+            fs::create_dir_all(T).expect("Failed to create test directory");
+        }
 
-    //     // Create a sample commit and set the HEAD file
-    //     let objects_dir = Path::new(T).join("objects");
-    //     let commit_id = "commit_id";
-    //     let commit_file = objects_dir.join(&commit_id);
-    //     fs::create_dir_all(&commit_file.parent().unwrap()).expect("Failed to create dirs");
-    //     fs::write(&commit_file, "commit_content").expect("Failed to write commit object");
+        // Create a sample commit and set the HEAD file
+        let objects_dir = Path::new(T).join("objects");
+        let commit_id = "commit_id";
+        let commit_file = objects_dir.join(&commit_id);
+        fs::create_dir_all(&commit_file.parent().unwrap()).expect("Failed to create dirs");
+        fs::write(&commit_file, "commit_content").expect("Failed to write commit object");
 
-    //     let head_file = Path::new(T).join("HEAD");
-    //     fs::write(&head_file, "ref: refs/heads/main\n").expect("Failed to write HEAD file");
+        let head_file = Path::new(T).join("HEAD");
+        fs::write(&head_file, "ref: refs/heads/main\n").expect("Failed to write HEAD file");
 
-    //     // Execute the checkout_commit_detached function with a commit in detached mode
-    //     checkout_commit_detached(Path::new(T), commit_id);
+        // Execute the checkout_commit_detached function with a commit in detached mode
+        checkout_commit_detached(Path::new(T), commit_id);
 
-    //     // Verify that the HEAD file has been updated to point to the commit in detached mode
-    //     let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
-    //     assert_eq!(head_contents, format!("{} (commit)\n", commit_id));
-    // }
+        // Verify that the HEAD file has been updated to point to the commit in detached mode
+        let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
+        assert_eq!(head_contents, format!("{} (commit)\n", commit_id));
+    }
 
     /// Unit test for the `create_or_reset_branch` function.
     ///
@@ -570,7 +567,7 @@ mod tests {
         }
         // Create a sample branch and set the HEAD file to point to another branch
         let refs_dir = Path::new(TEST_GIT).join("refs").join("heads");
-        let branch_name = "my_branch";
+        let branch_name = "other_branch";
         let branch_ref_file = refs_dir.join(branch_name);
         fs::create_dir_all(&branch_ref_file.parent().unwrap()).expect("Failed to create dirs");
         fs::write(&branch_ref_file, "commit_id").expect("Failed to write branch reference");
