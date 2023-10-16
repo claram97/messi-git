@@ -202,11 +202,11 @@ fn handle_hash_object(args: Vec<String>) {
             let Some(git_dir) = (match find_git_directory(&mut current_dir.clone(), GIT_DIR) {
                 Some(git_dir) => Some(git_dir),
                 None => {
-                    eprintln!("No se encontró un repositorio Git");
+                    eprintln!("Git repository not found");
                     return;
                 }
             }) else {
-                eprintln!("Error al obtener el directorio actual");
+                eprintln!("Error trying to get current directory");
                 return;
             };
 
@@ -215,17 +215,17 @@ fn handle_hash_object(args: Vec<String>) {
             match store_file(file_to_store, &git_dir) {
                 Ok(hash) => {
                     println!(
-                        "El archivo se ha almacenado como un objeto Git con hash: {}",
+                        "File successfully stored as Git object with hash: {}",
                         hash
                     );
                 }
                 Err(e) => {
-                    eprintln!("Error al almacenar el archivo como objeto Git: {}", e);
+                    eprintln!("Error trying to store file as Git object: {}", e);
                 }
             }
         }
         Err(e) => {
-            eprintln!("Error al obtener el directorio actual: {}", e);
+            eprintln!("Error trying to get current directory", e);
         }
     }
 }
@@ -250,15 +250,15 @@ fn handle_cat_file(args: Vec<String>) {
                     println!();
                 }
                 Err(e) => {
-                    eprintln!("Error al obtener el contenido del archivo: {}", e);
+                    eprintln!("Error trying to access the content of the file: {}", e);
                 }
             },
             None => {
-                eprintln!("No se encontró un repositorio Git");
+                eprintln!("Git repository not found");
             }
         }
     } else {
-        eprintln!("Error al obtener el directorio actual");
+        eprintln!("Error trying to get current directory");
     }
 }
 
