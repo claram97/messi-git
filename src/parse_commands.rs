@@ -1,5 +1,6 @@
 use std::io;
 use crate::init::git_init;
+use crate::hash_object::store_file;
 
 /// Enumeration representing Git commands.
 ///
@@ -164,9 +165,55 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
     }
 }
 
-
+/// Handles the 'hash-object' Git command.
+///
+/// This function takes a list of arguments `args`, where the third argument (index 2) should be
+/// the path to the file to be stored as a Git object. It then stores the file as a Git object
+/// in the object directory and returns the SHA-1 hash of the stored content.
+///
+/// # Arguments
+///
+/// - `args`: A vector of strings representing the arguments passed to the command.
+///
+/// # Example
+///
+/// ```rust
+/// use your_module::handle_hash_object;
+///
+/// fn main() {
+///     let args = vec![
+///         String::from("git"),           // Program name (convention).
+///         String::from("hash-object"),   // 'hash-object' command.
+///         String::from("file_path.txt"), // Path to the file to store.
+///     ];
+///     handle_hash_object(args);
+/// }
+/// ```
+///
+/// # Notes
+///
+/// - Ensure that the `store_file` function works correctly, and the Git directory is valid on your
+///   system before calling this function.
+///
+/// - If the file path is not provided as the third argument, an error message will be displayed.
+///
+/// - If an error occurs while storing the file as a Git object, an error message will be displayed.
 fn handle_hash_object(args: Vec<String>) {
-    println!("Handling HashObject command with argument: ");
+    let file_to_store = match args.get(2) {
+        Some(arg) => arg,
+        None => {
+            eprintln!("No se ha ingresado el segundo argumento.");
+            return; 
+        }
+    };
+    match store_file(file_to_store) {
+        Ok(hash) => {
+            println!("El archivo se ha almacenado como un objeto Git con hash: {}", hash);
+        }
+        Err(e) => {
+            eprintln!("Error al almacenar el archivo como objeto Git: {}", e);
+        }
+    }
 }
 
 fn handle_cat_file(args: Vec<String>) {
