@@ -1,10 +1,11 @@
 use crate::cat_file::cat_file;
 use crate::hash_object::store_file;
 use crate::init::git_init;
-use std::thread::current;
-use std::{io, env};
 use std::path::PathBuf;
+use std::thread::current;
+use std::{env, io};
 
+const GIT_DIR: &str = ".mgit";
 /// Enumeration representing Git commands.
 ///
 /// This enumeration defines Git commands that can be used.
@@ -198,7 +199,7 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
 fn handle_hash_object(args: Vec<String>) {
     match env::current_dir() {
         Ok(current_dir) => {
-            let Some(git_dir) = (match find_git_directory(&mut current_dir.clone(), ".mgit") {
+            let Some(git_dir) = (match find_git_directory(&mut current_dir.clone(), GIT_DIR) {
                 Some(git_dir) => Some(git_dir),
                 None => {
                     eprintln!("No se encontró un repositorio Git");
@@ -208,9 +209,9 @@ fn handle_hash_object(args: Vec<String>) {
                 eprintln!("Error al obtener el directorio actual");
                 return;
             };
-        
+
             let file_to_store = &args[2];
-            
+
             match store_file(file_to_store, &git_dir) {
                 Ok(hash) => {
                     println!(
@@ -243,23 +244,22 @@ fn handle_cat_file(args: Vec<String>) {
     if let Ok(current_dir) = env::current_dir() {
         let current_dir = &current_dir.to_string_lossy().to_string();
 
-        match find_git_directory(&mut PathBuf::from(current_dir), ".mgit") {
-            Some(git_dir) => {
-                match cat_file(hash, &git_dir, &mut std::io::stdout()) {
-                    Ok(()) => {
-                        println!();
-                    }
-                    Err(e) => {
-                        eprintln!("Error al obtener el contenido del archivo: {}", e);
-                    }
+        match find_git_directory(&mut PathBuf::from(current_dir), GIT_DIR) {
+            Some(git_dir) => match cat_file(hash, &git_dir, &mut std::io::stdout()) {
+                Ok(()) => {
+                    println!();
                 }
-            }
+                Err(e) => {
+                    eprintln!("Error al obtener el contenido del archivo: {}", e);
+                }
+            },
             None => {
                 eprintln!("No se encontró un repositorio Git");
             }
         }
+    } else {
+        eprintln!("Error al obtener el directorio actual");
     }
-    //Agregar error acá
 }
 
 fn handle_status(args: Vec<String>) {
