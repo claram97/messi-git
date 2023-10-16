@@ -56,96 +56,124 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
     }
 }
 
-pub fn handle_git_command(git_command: GitCommand, second_argument: &str) {
+pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
     match git_command {
-        GitCommand::HashObject => handle_hash_object(second_argument),
-        GitCommand::CatFile => handle_cat_file(second_argument),
-        GitCommand::Status => handle_status(second_argument),
-        GitCommand::Add => handle_add(second_argument),
-        GitCommand::Rm => handle_rm(second_argument),
-        GitCommand::Commit => handle_commit(second_argument),
-        GitCommand::Checkout => handle_checkout(second_argument),
-        GitCommand::Log => handle_log(second_argument),
-        GitCommand::Clone => handle_clone(second_argument),
-        GitCommand::Fetch => handle_fetch(second_argument),
-        GitCommand::Merge => handle_merge(second_argument),
-        GitCommand::Remote => handle_remote(second_argument),
-        GitCommand::Pull => handle_pull(second_argument),
-        GitCommand::Push => handle_push(second_argument),
-        GitCommand::Branch => handle_branch(second_argument),
-        GitCommand::Init => handle_init(second_argument),
+        GitCommand::HashObject => handle_hash_object(args),
+        GitCommand::CatFile => handle_cat_file(args),
+        GitCommand::Status => handle_status(args),
+        GitCommand::Add => handle_add(args),
+        GitCommand::Rm => handle_rm(args),
+        GitCommand::Commit => handle_commit(args),
+        GitCommand::Checkout => handle_checkout(args),
+        GitCommand::Log => handle_log(args),
+        GitCommand::Clone => handle_clone(args),
+        GitCommand::Fetch => handle_fetch(args),
+        GitCommand::Merge => handle_merge(args),
+        GitCommand::Remote => handle_remote(args),
+        GitCommand::Pull => handle_pull(args),
+        GitCommand::Push => handle_push(args),
+        GitCommand::Branch => handle_branch(args),
+        GitCommand::Init => handle_init(args),
     }
 }
 
-fn handle_hash_object(second_argument: &str) {
-    println!("Handling HashObject command with argument: {}", second_argument);
+fn handle_hash_object(args: Vec<String>) {
+    println!("Handling HashObject command with argument: ");
 }
 
-fn handle_cat_file(second_argument: &str) {
-    println!("Handling CatFile command with argument: {}", second_argument);
-}
-fn handle_status(second_argument: &str) {
-    println!("Handling Status command with argument: {}", second_argument);
+fn handle_cat_file(args: Vec<String>) {
+    println!("Handling CatFile command with argument: ");
 }
 
-fn handle_add(second_argument: &str) {
-    println!("Handling Add command with argument: {}", second_argument);
+fn handle_status(args: Vec<String>) {
+    println!("Handling Status command with argument: ");
+}
+
+fn handle_add(args: Vec<String>) {
+    println!("Handling Add command with argument: ");
+}
+
+fn handle_rm(args: Vec<String>) {
+    println!("Handling Rm command with argument: ");
+}
+
+fn handle_commit(args: Vec<String>) {
+    println!("Handling Commit command with argument: ");
+}
+
+fn handle_checkout(args: Vec<String>) {
+    println!("Handling Checkout command with argument: ");
+}
+
+fn handle_log(args: Vec<String>) {
+    println!("Handling Log command with argument: ");
 
 }
 
-fn handle_rm(second_argument: &str) {
-    println!("Handling Rm command with argument: {}", second_argument);
-}
-
-fn handle_commit(second_argument: &str) {
-    println!("Handling Commit command with argument: {}", second_argument);
-}
-
-fn handle_checkout(second_argument: &str) {
-    println!("Handling Checkout command with argument: {}", second_argument);
-}
-
-fn handle_log(second_argument: &str) {
-    println!("Handling Log command with argument: {}", second_argument);
-
-}
-
-fn handle_clone(second_argument: &str) {
-    println!("Handling Clone command with argument: {}", second_argument);
+fn handle_clone(args: Vec<String>) {
+    println!("Handling Clone command with argument: ");
     
 }
 
-fn handle_fetch(second_argument: &str) {
-    println!("Handling Fetch command with argument: {}", second_argument);
+fn handle_fetch(args: Vec<String>) {
+    println!("Handling Fetch command with argument: ");
     
 }
 
-fn handle_merge(second_argument: &str) {
-    println!("Handling Merge command with argument: {}", second_argument);
+fn handle_merge(args: Vec<String>) {
+    println!("Handling Merge command with argument: ");
     
 }
 
-fn handle_remote(second_argument: &str) {
-    println!("Handling Remote command with argument: {}", second_argument);
+fn handle_remote(args: Vec<String>) {
+    println!("Handling Remote command with argument: ");
     
 }
 
-fn handle_pull(second_argument: &str) {
-    println!("Handling Pull command with argument: {}", second_argument);
+fn handle_pull(args: Vec<String>) {
+    println!("Handling Pull command with argument: ");
     
 }
 
-fn handle_push(second_argument: &str) {
-    println!("Handling Push command with argument: {}", second_argument);
+fn handle_push(args: Vec<String>) {
+    println!("Handling Push command with argument: ");
     
 }
 
-fn handle_branch(second_argument: &str) {
-    println!("Handling Branch command with argument: {}", second_argument);
+fn handle_branch(args: Vec<String>) {
+    println!("Handling Branch command with argument: ");
 }
 
-fn handle_init(second_argument: &str) {
-    println!("Handling Init command with argument: {}", second_argument);
-    
+pub fn handle_init(args: Vec<String>) {
+   
+    let mut current_directory = ".";
+    let mut initial_branch = "main";
+    let mut template_directory: Option<&str> = None;
+
+    let mut index = 2; 
+    while index < args.len() {
+        let arg = &args[index];
+        match arg.as_str() {
+            "-b" | "--initial-branch" => {
+                if index + 1 < args.len() {
+                    initial_branch = &args[index + 1];
+                    index += 1;
+                }
+            }
+            "--template" => {
+                if index + 1 < args.len() {
+                    template_directory = Some(&args[index + 1]);
+                    index += 1;
+                }
+            }
+            _ => {
+                current_directory = arg;
+            }
+        }
+        index += 1;
+    }
+    if let Err(err) = git_init(current_directory, initial_branch, template_directory) {
+        eprintln!("Error al inicializar el repositorio Git: {}", err);
+    }
 }
 

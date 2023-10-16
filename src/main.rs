@@ -11,7 +11,7 @@ fn main() {
     };
 
     if let Some(git_command) = parse_git_command(second_argument) {
-        handle_git_command(git_command, second_argument);
+        handle_git_command(git_command, args);
     }
 }
 
