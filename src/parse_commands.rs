@@ -1,6 +1,7 @@
 use crate::hash_object::store_file;
 use crate::init::git_init;
 use std::io;
+use crate::cat_file::cat_file;
 
 /// Enumeration representing Git commands.
 ///
@@ -178,13 +179,7 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
 /// - `args`: A vector of strings representing the arguments passed to the command.
 ///
 fn handle_hash_object(args: Vec<String>) {
-    let file_to_store = match args.get(2) {
-        Some(arg) => arg,
-        None => {
-            eprintln!("No se ha ingresado el segundo argumento.");
-            return;
-        }
-    };
+    let file_to_store = &args[2];
     match store_file(file_to_store) {
         Ok(hash) => {
             println!(
@@ -199,7 +194,16 @@ fn handle_hash_object(args: Vec<String>) {
 }
 
 fn handle_cat_file(args: Vec<String>) {
-    println!("Handling CatFile command with argument: ");
+    let hash = &args[2];
+
+    match cat_file(hash, &mut std::io::stdout()) {
+        Ok(()) => {
+            println!(); 
+        }
+        Err(e) => {
+            eprintln!("Error al obtener el contenido del archivo: {}", e);
+        }
+    }
 }
 
 fn handle_status(args: Vec<String>) {
