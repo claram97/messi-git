@@ -1,8 +1,6 @@
 use crate::hash_object;
 use std::io;
-
 use crate::tree_handler;
-
 
 const INDEX_FILE_NAME: &str = "index";
 

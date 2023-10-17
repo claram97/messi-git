@@ -22,7 +22,7 @@ impl Tree {
 
     /// Gets a name, if the directory with that name exists, returns a mutable reference to it.
     /// If it does not exist, creates a new directory with that name and returns a mutable reference to it.
-    /// The directory is added to the directories vector.
+    /// The directory is added to the parent's directories vector.
     fn get_or_create_dir(&mut self, name: &str) -> &mut Tree {
         for (i, dir) in self.directories.iter().enumerate() {
             if dir.name == name {
@@ -36,7 +36,8 @@ impl Tree {
         &mut self.directories[last_dir_index]
     }
 
-    //Get a subdir from a tree
+    /// Get a subdir from a tree.
+    /// Do not create it if it doesn't exist.
     fn get_subdir(&self, name: &str) -> Option<&Tree> {
         for dir in &self.directories {
             if dir.name == name {
@@ -47,6 +48,8 @@ impl Tree {
     }
 
 
+    /// Adds the hash and name of a file to the tree
+    /// It keeps an alphabetical order.
     fn add_file(&mut self, name: &str, hash: &str) {
         //self.files.push((name.to_string(), hash.to_string()));
         
@@ -68,6 +71,7 @@ impl Tree {
         //Might be better to use a binary heap.
     }
 
+    /// Returns the depth of the tree
     pub fn get_depth(&self) -> usize {
         let mut max_depth = 0;
         for dir in &self.directories {
@@ -79,16 +83,19 @@ impl Tree {
         max_depth + 1
     }
 
+    /// Returns a string that contains all the blobs added to the tree.
+    /// The blobs are formatted as "blob {hash} {file_name}\n"
     pub fn tree_blobs_to_string_formatted(&self) -> String {
         let mut result = String::new();
         for (file_name, hash) in &self.files {
-            result.push_str(format!("blob {} {}\n", hash, file_name).as_str());
+            result.push_str(format!("blob {hash} {file_name}\n").as_str());
         }
         result
     }
 
-    //Given a path, this function should return the hash correspondent to it in the tree.
-    //If the path does not exist, it returns None.
+    /// Given a path, this function should return the hash correspondent to it in the tree.
+    /// The path must be written with the same format as the index file of the directory.
+    /// If the path does not exist, it returns None.
     pub fn get_hash_from_path(&self, path: &str) -> Option<String> {
         let mut path = path.split('/').collect::<Vec<&str>>();
         let file_name = match path.pop() {
@@ -111,11 +118,11 @@ impl Tree {
     }
 }
 
-// From an index file, loading it in an Index struct it builds a tree.
-// The result is a tree of trees, where each tree is a directory and each leaf is a file.
-// The tree is built recursively.
-// The tree is built using the index file.
-// The index file is a file that contains the hash of each file in the staging area and the path to the file.
+/// Builds a tree from the index file.
+/// Every directory is a tree node, and every file is a leaf.
+/// Files that are not listed in a directory in the index file will be part of the root tree.
+/// 
+/// The index file must be in the same format as the one created by the index module.
 pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> io::Result<Tree> {
     let index = index::Index::load(&index_path, &git_dir_path).unwrap();
     let mut tree = Tree::new();
@@ -139,9 +146,9 @@ pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> io::Result
     Ok(tree)
 }
 
-//Write tree to file in the objects folder.
-//When done, the subtrees should be hashed, compressed and stored.
-//The result of the function is a tuple of the form (hash, name).
+/// Write tree to file in the objects folder.
+/// When done, the subtrees are already stored in the objects folder.
+/// The result of the function is a tuple of the form (hash, name) corresponding to the root tree.
 pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)>{
     //Vec of (hash, name) tuples
     let mut subtrees: Vec<(String, String)> = Vec::new();
@@ -162,14 +169,17 @@ pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)>{
         subtrees_formatted.push_str(format!("tree {} {}\n", subtree.0, subtree.1).as_str());
     }
 
-    let tree_content = tree_content + &subtrees_formatted;
-    println!("tree: {}\ntree content:\n{}", tree.name, tree_content);
     //Store and hash the tree content.
+    let tree_content = tree_content + &subtrees_formatted;
     let tree_hash = hash_object::store_string_to_file(&tree_content, directory ,"tree")?;
     Ok((tree_hash, tree.name.clone()))
 }
 
 
+/// Wrapper to abstract ourselves from tree naming.
+/// Creates a tree looking at the objects folder.
+/// When a tree is found in the object file, it loads it and appends it to the current tree.
+/// Else, if a blob is found, it adds it to the current tree.
 fn _load_tree_from_file(tree_hash: &str, directory: &str, name: &str) -> io::Result<Tree> {
     let tree_content = cat_file_return_content(tree_hash, directory)?;
     let mut tree = Tree::new();
@@ -193,6 +203,9 @@ fn _load_tree_from_file(tree_hash: &str, directory: &str, name: &str) -> io::Res
     Ok(tree)
 }
 
+/// Builds a tree from a tree hash.
+/// The tree and its subtrees must be stored in the objects folder, probably by using the write_tree function.
+/// The result of the function is a tree with the same structure as the one that was stored.
 pub fn load_tree_from_file (tree_hash: &str, directory: &str) -> io::Result<Tree> {
     let tree = _load_tree_from_file(tree_hash, directory, "root")?;
     Ok(tree)
@@ -216,10 +229,5 @@ pub fn print_tree_console(tree: &Tree, depth: usize) {
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
 
-    // #[test]
-    // fn test_get_hash_from_path() {
-        
-    // }
 }

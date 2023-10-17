@@ -22,6 +22,11 @@ fn hash_string(content: &str) -> String {
 /// The header is of the form: <type> <size>\0
 /// Use this function when searching for a file git object.
 /// This function does not return the path to the object in the objects folder, it returns the complete string.
+/// **It does not store the file**.
+/// ## Parameters
+/// * `path` - The path to the file.
+/// * `file_type` - The type of the file. It is used to create the header.
+/// 
 pub fn hash_file_content(path: &str, file_type: &str) -> io::Result<String> {
     let content = std::fs::read_to_string(path)?;
     let header = format!("{file_type} {}\0", content.len());
@@ -32,9 +37,14 @@ pub fn hash_file_content(path: &str, file_type: &str) -> io::Result<String> {
 /// Returns the path to the file object in the objects folder.
 /// The path is of the form: objects/<first 2 characters of hash>/<remaining characters of hash>
 /// The result is the place where the object corresponding to the given file is stored.
-pub fn get_file_object_path(path: &str, directory: &str) -> io::Result<String> {
+/// 
+/// ## Parameters
+/// * `path` - The path to the file.
+/// * `directory` - The path to the git directory.
+/// 
+pub fn get_file_object_path(path: &str, git_dir_path: &str) -> io::Result<String> {
     let content_hash = hash_file_content(path, "blob")?;
-    let output_file_dir = directory.to_string() + "/objects/" + &content_hash[..2] + "/";
+    let output_file_dir = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
     let output_file_str = output_file_dir + &content_hash[2..];
     Ok(output_file_str)
 }
@@ -65,21 +75,46 @@ fn create_directory(name: &str) -> io::Result<()> {
 /// If the directory does not have an objects folder, it returns an error.
 /// If the file does not exist, it returns an error.
 /// If the file is already stored, it stores it again.
-pub fn store_file(path: &str, directory: &str) -> io::Result<String> {
+/// 
+/// ## Parameters
+/// * `path` - The path to the file.
+/// * `directory` - The path to the git directory.
+/// 
+/// 
+pub fn store_file(path: &str, git_dir_path: &str) -> io::Result<String> {
     let content_hash = hash_file_content(path, "blob")?;
-    let output_file_dir = directory.to_string() + "/objects/" + &content_hash[..2] + "/";
+    let output_file_dir = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
     create_directory(&output_file_dir)?;
     let output_file_str = output_file_dir + &content_hash[2..];
     compress_content(path, output_file_str.as_str(), "blob")?;
     Ok(content_hash)
 }
 
-pub fn store_string_to_file(content: &str, directory: &str, file_type: &str) -> io::Result<String> {
+/// Stores the given content in the objects folder of the given directory.
+/// Directory must be the path to the git folder.
+/// Returns the hash of the content or an error if the directory is not a git directory or if the directory does not have an objects folder.
+///
+/// /// If the directory is not a git directory, it returns an error.
+/// If the directory does not have an objects folder, it returns an error.
+/// If the file does not exist, it returns an error.
+/// If the file is already stored, it stores it again.
+/// 
+/// Stores the file in the path: objects/<first 2 characters of hash>/<remaining characters of hash>
+/// The file is compressed using zlib.
+///
+/// The content is prepended with the header: <type> <size>\0. The size is the size of the content.
+/// 
+/// ## Parameters
+/// * `content` - The content to store.
+/// * `directory` - The path to the git directory.
+/// * `file_type` - The type of the file. It is used to create the header.
+/// 
+pub fn store_string_to_file(content: &str, git_dir_path: &str, file_type: &str) -> io::Result<String> {
     //Add the header to the content
     let content_hash = hash_string(&content);
     
     //Create the directory if it does not exist
-    let output_file_dir = directory.to_string() + "/objects/" + &content_hash[..2] + "/";
+    let output_file_dir = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
     create_directory(&output_file_dir)?;
     let output_file_str = output_file_dir + &content_hash[2..];
     
