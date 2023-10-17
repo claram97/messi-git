@@ -124,7 +124,7 @@ impl Tree {
 /// 
 /// The index file must be in the same format as the one created by the index module.
 pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> io::Result<Tree> {
-    let index = index::Index::load(&index_path, &git_dir_path).unwrap();
+    let index = index::Index::load(&index_path, &git_dir_path)?;
     let mut tree = Tree::new();
 
     //Iterates over the index struct, adding each file to the tree.
