@@ -1,6 +1,6 @@
 use std::io::{self};
 
-use crate::{index::{self}, hash_object, cat_file::cat_file_return_content};
+use crate::{index::{self}, hash_object, cat_file::{cat_file_return_content, self}};
 
 //Tree structure
 //files is a vector of tuples (file_name, hash)
@@ -20,9 +20,9 @@ impl Tree {
         }
     }
 
-    /// Gets a name, if the directory with that name exists, returns a mutable reference to it.
-    /// If it does not exist, creates a new directory with that name and returns a mutable reference to it.
-    /// The directory is added to the parent's directories vector.
+/// Gets a name, if the directory with that name exists, returns a mutable reference to it.
+/// If it does not exist, creates a new directory with that name and returns a mutable reference to it.
+/// The directory is added to the parent's directories vector.
     fn get_or_create_dir(&mut self, name: &str) -> &mut Tree {
         for (i, dir) in self.directories.iter().enumerate() {
             if dir.name == name {
@@ -36,8 +36,8 @@ impl Tree {
         &mut self.directories[last_dir_index]
     }
 
-    /// Get a subdir from a tree.
-    /// Do not create it if it doesn't exist.
+/// Get a subdir from a tree.
+/// Do not create it if it doesn't exist.
     fn get_subdir(&self, name: &str) -> Option<&Tree> {
         for dir in &self.directories {
             if dir.name == name {
@@ -48,8 +48,8 @@ impl Tree {
     }
 
 
-    /// Adds the hash and name of a file to the tree
-    /// It keeps an alphabetical order.
+/// Adds the hash and name of a file to the tree
+/// It keeps an alphabetical order.
     fn add_file(&mut self, name: &str, hash: &str) {
         //self.files.push((name.to_string(), hash.to_string()));
         
@@ -71,7 +71,7 @@ impl Tree {
         //Might be better to use a binary heap.
     }
 
-    /// Returns the depth of the tree
+/// Returns the depth of the tree
     pub fn get_depth(&self) -> usize {
         let mut max_depth = 0;
         for dir in &self.directories {
@@ -83,8 +83,8 @@ impl Tree {
         max_depth + 1
     }
 
-    /// Returns a string that contains all the blobs added to the tree.
-    /// The blobs are formatted as "blob {hash} {file_name}\n"
+/// Returns a string that contains all the blobs added to the tree.
+/// The blobs are formatted as "blob {hash} {file_name}\n"
     pub fn tree_blobs_to_string_formatted(&self) -> String {
         let mut result = String::new();
         for (file_name, hash) in &self.files {
@@ -93,9 +93,9 @@ impl Tree {
         result
     }
 
-    /// Given a path, this function should return the hash correspondent to it in the tree.
-    /// The path must be written with the same format as the index file of the directory.
-    /// If the path does not exist, it returns None.
+/// Given a path, this function should return the hash correspondent to it in the tree.
+/// The path must be written with the same format as the index file of the directory.
+/// If the path does not exist, it returns None.
     pub fn get_hash_from_path(&self, path: &str) -> Option<String> {
         let mut path = path.split('/').collect::<Vec<&str>>();
         let file_name = match path.pop() {
@@ -211,6 +211,49 @@ pub fn load_tree_from_file (tree_hash: &str, directory: &str) -> io::Result<Tree
     Ok(tree)
 }
 
+/// Load a tree (`Tree`) from a specified commit.
+///
+/// This function takes the hash of a commit and a base directory as input,
+/// and loads the tree associated with that commit from the filesystem.
+///
+/// # Arguments
+///
+/// * `commit_hash`: The hash of the commit from which to load the tree.
+/// * `directory`: The base directory where the content of the commit will be searched.
+///
+/// # Returns
+///
+/// An `io::Result<Tree>` that contains the tree loaded from the commit.
+///
+/// # Errors
+///
+/// This function can return I/O (`io::Result`) errors if there are issues when reading
+/// the content of the commit or loading the tree from the filesystem.
+pub fn load_tree_from_commit (commit_hash : &str, directory : &str) -> io::Result<Tree> {
+    let commit_content = cat_file::cat_file_return_content(&commit_hash, &directory)?;
+    let splitted_commit_content : Vec<&str> = commit_content.split("\n").collect();
+    let first_line_of_commit_file : Vec<&str> = splitted_commit_content[0].split(" ").collect();
+    let tree_hash = &first_line_of_commit_file[1];
+    let tree = _load_tree_from_file(&tree_hash,&directory,"root")?;
+    Ok(tree)
+}
+
+/// Print the contents of a tree to the console with a specified depth of indentation.
+///
+/// This function recursively prints the files and subdirectories of a tree to the console,
+/// adding indentation to represent the directory structure. Each file is displayed with its
+/// name and associated hash.
+///
+/// # Arguments
+///
+/// * `tree`: A reference to the `Tree` structure to print.
+/// * `depth`: The depth of indentation to use for formatting the tree.
+///
+/// /// # Note
+///
+/// This function is intended for debugging and visualizing the contents of a `Tree` structure
+/// in a human-readable format on the console.
+///
 pub fn print_tree_console(tree: &Tree, depth: usize) {
     let mut spaces = String::new();
     for _ in 0..depth {
