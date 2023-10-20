@@ -96,4 +96,11 @@ mod tests {
     fn test_7() {
         assert!(is_subpath("src/data/data.txt", "src/data"));
     }
+
+    #[test]
+    fn test_8() {
+        let mut ignorer = Ignorer::default();
+        ignorer.paths.push("init.rs".to_string());
+        assert!(!ignorer.ignore("src/init.rs"));
+    }
 }
