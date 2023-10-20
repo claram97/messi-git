@@ -22,7 +22,7 @@ pub struct Index {
 }
 
 impl Index {
-    fn new(index_path: &str, git_dir_path: &str) -> Self {
+    pub fn new(index_path: &str, git_dir_path: &str) -> Self {
         Self {
             map: HashMap::new(),
             ignorer: Ignorer::load(),
@@ -89,12 +89,12 @@ impl Index {
         Ok(())
     }
 
-    fn add_file(&mut self, path: &str, hash: &str) -> io::Result<()> {
+    pub fn add_file(&mut self, path: &str, hash: &str) -> io::Result<()> {
         self.map.insert(path.to_string(), hash.to_string());
         Ok(())
     }
 
-    fn remove_file(&mut self, path: &str) -> io::Result<()> {
+    pub fn remove_file(&mut self, path: &str) -> io::Result<()> {
         match self.map.remove(path) {
             Some(_) => Ok(()),
             None => Err(Error::new(
@@ -103,6 +103,16 @@ impl Index {
             )),
         }
     }
+
+    pub fn load_from_path_if_exists(index_path: &str, git_dir_path: &str) -> io::Result<Option<Index>> {
+    if let Ok(metadata) = fs::metadata(index_path) {
+        if metadata.is_file() {
+            return Index::load(index_path, git_dir_path).map(|index| Some(index));
+        }
+    }
+    Ok(None)
+}
+
 
     /// Lets the user to dump the index to a file that can be read un the future by Index
     ///
@@ -136,7 +146,52 @@ impl Index {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn test_load_from_path_if_exists_with_existing_index() {
+        let mut index = Index::default();
+        // Ruta del archivo de índice de prueba y directorio Git de prueba
+        let test_index_path = "test_index.index";
+        let test_git_dir_path = "test_git";
 
+        // Crear un archivo de índice de prueba
+        let index_content = "hash_de_prueba archivo_prueba.txt\n";
+        fs::write(test_index_path, index_content).unwrap();
+
+        // Llamar a la función load_from_path_if_exists
+        let result = Index::load_from_path_if_exists(test_index_path, test_git_dir_path);
+        // Verificar que el resultado sea Some(Index)
+        if let Ok(Some(index)) = result {
+            // Verificar que el índice contenga el archivo
+            assert!(index.contains("archivo_prueba.txt"));
+        } else {
+            panic!("Se esperaba Some(Index), pero se obtuvo otro resultado.");
+        }
+
+        // Limpiar los archivos de prueba después de la prueba
+        fs::remove_file(test_index_path).ok();
+        fs::remove_dir_all(test_git_dir_path).ok();
+    }
+
+    #[test]
+    fn test_load_from_path_if_exists_with_non_existing_index() {
+        // Ruta del archivo de índice de prueba y directorio Git de prueba
+        let mut index = Index::default();
+        let test_index_path = "test_index1.index";
+        let test_git_dir_path = "test_git";
+
+        // Llamar a la función load_from_path_if_exists con un índice que no existe
+        let result = Index::load_from_path_if_exists(test_index_path, test_git_dir_path);
+        // Verificar que el resultado sea None
+        if let Ok(None) = result {
+            // No se pudo cargar un índice, lo cual es correcto
+        } else {
+            panic!("Se esperaba None, pero se obtuvo otro resultado.");
+        }
+
+        // Limpiar los archivos de prueba después de la prueba
+        fs::remove_file(test_index_path).ok();
+        fs::remove_dir_all(test_git_dir_path).ok();
+    }
     #[test]
     fn test_map_empty() {
         let index = Index::default();
