@@ -135,7 +135,6 @@ impl Index {
     pub fn iter(&self) -> std::collections::hash_map::Iter<String, String> {
         self.map.iter()
     }
-
 }
 
 #[cfg(test)]

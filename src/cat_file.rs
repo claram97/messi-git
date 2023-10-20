@@ -10,7 +10,7 @@ use flate2::bufread::ZlibDecoder;
 /// for example a file or a Vec<u8>
 /// For writing to stdout, io::stdout() can be used.
 /// If the hash is not valid, it prints "Not a valid hash".
-/// 
+///
 /// ## Parameters
 /// * `hash` - The complete hash of the file to print.
 /// * `directory` - The path to the git directory.
@@ -30,7 +30,7 @@ pub fn cat_file(hash: &str, directory: &str, output: &mut impl Write) -> io::Res
 /// If the hash is valid and the file is found, it returns the content of the file as a String.
 /// If the hash is not valid, it returns an error.
 /// If the hash is valid but the file is not found, it returns an error.
-/// 
+///
 /// ## Parameters
 /// * `hash` - The complete hash of the file to print.
 /// * `directory` - The path to the git directory.

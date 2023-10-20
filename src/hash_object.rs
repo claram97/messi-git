@@ -26,7 +26,7 @@ fn hash_string(content: &str) -> String {
 /// ## Parameters
 /// * `path` - The path to the file.
 /// * `file_type` - The type of the file. It is used to create the header.
-/// 
+///
 pub fn hash_file_content(path: &str, file_type: &str) -> io::Result<String> {
     let content = std::fs::read_to_string(path)?;
     let header = format!("{file_type} {}\0", content.len());
@@ -37,11 +37,11 @@ pub fn hash_file_content(path: &str, file_type: &str) -> io::Result<String> {
 /// Returns the path to the file object in the objects folder.
 /// The path is of the form: objects/<first 2 characters of hash>/<remaining characters of hash>
 /// The result is the place where the object corresponding to the given file is stored.
-/// 
+///
 /// ## Parameters
 /// * `path` - The path to the file.
 /// * `directory` - The path to the git directory.
-/// 
+///
 pub fn get_file_object_path(path: &str, git_dir_path: &str) -> io::Result<String> {
     let content_hash = hash_file_content(path, "blob")?;
     let output_file_dir = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
@@ -75,12 +75,12 @@ fn create_directory(name: &str) -> io::Result<()> {
 /// If the directory does not have an objects folder, it returns an error.
 /// If the file does not exist, it returns an error.
 /// If the file is already stored, it stores it again.
-/// 
+///
 /// ## Parameters
 /// * `path` - The path to the file.
 /// * `directory` - The path to the git directory.
-/// 
-/// 
+///
+///
 pub fn store_file(path: &str, git_dir_path: &str) -> io::Result<String> {
     let content_hash = hash_file_content(path, "blob")?;
     let output_file_dir = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
@@ -98,31 +98,35 @@ pub fn store_file(path: &str, git_dir_path: &str) -> io::Result<String> {
 /// If the directory does not have an objects folder, it returns an error.
 /// If the file does not exist, it returns an error.
 /// If the file is already stored, it stores it again.
-/// 
+///
 /// Stores the file in the path: objects/<first 2 characters of hash>/<remaining characters of hash>
 /// The file is compressed using zlib.
 ///
 /// The content is prepended with the header: <type> <size>\0. The size is the size of the content.
-/// 
+///
 /// ## Parameters
 /// * `content` - The content to store.
 /// * `directory` - The path to the git directory.
 /// * `file_type` - The type of the file. It is used to create the header.
-/// 
-pub fn store_string_to_file(content: &str, git_dir_path: &str, file_type: &str) -> io::Result<String> {
+///
+pub fn store_string_to_file(
+    content: &str,
+    git_dir_path: &str,
+    file_type: &str,
+) -> io::Result<String> {
     //Add the header to the content
     let content_hash = hash_string(&content);
-    
+
     //Create the directory if it does not exist
     let output_file_dir = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
     create_directory(&output_file_dir)?;
     let output_file_str = output_file_dir + &content_hash[2..];
-    
+
     //Create a tmp file with the content
     let tmp_file_path = output_file_str.clone() + "tmp";
     let mut tmp_file = File::create(&tmp_file_path)?;
     tmp_file.write_all(content.as_bytes())?;
-    
+
     //Compress the tmp file and store it in the output file
     compress_content(&tmp_file_path, output_file_str.as_str(), file_type)?;
     //Delete the tmp file

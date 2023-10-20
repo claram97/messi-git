@@ -1,6 +1,10 @@
 use std::io::{self};
 
-use crate::{index::{self}, hash_object, cat_file::{cat_file_return_content, self}};
+use crate::{
+    cat_file::{self, cat_file_return_content},
+    hash_object,
+    index::{self},
+};
 
 //Tree structure
 //files is a vector of tuples (file_name, hash)
@@ -20,9 +24,9 @@ impl Tree {
         }
     }
 
-/// Gets a name, if the directory with that name exists, returns a mutable reference to it.
-/// If it does not exist, creates a new directory with that name and returns a mutable reference to it.
-/// The directory is added to the parent's directories vector.
+    /// Gets a name, if the directory with that name exists, returns a mutable reference to it.
+    /// If it does not exist, creates a new directory with that name and returns a mutable reference to it.
+    /// The directory is added to the parent's directories vector.
     fn get_or_create_dir(&mut self, name: &str) -> &mut Tree {
         for (i, dir) in self.directories.iter().enumerate() {
             if dir.name == name {
@@ -36,8 +40,8 @@ impl Tree {
         &mut self.directories[last_dir_index]
     }
 
-/// Get a subdir from a tree.
-/// Do not create it if it doesn't exist.
+    /// Get a subdir from a tree.
+    /// Do not create it if it doesn't exist.
     fn get_subdir(&self, name: &str) -> Option<&Tree> {
         for dir in &self.directories {
             if dir.name == name {
@@ -47,12 +51,11 @@ impl Tree {
         None
     }
 
-
-/// Adds the hash and name of a file to the tree
-/// It keeps an alphabetical order.
+    /// Adds the hash and name of a file to the tree
+    /// It keeps an alphabetical order.
     fn add_file(&mut self, name: &str, hash: &str) {
         //self.files.push((name.to_string(), hash.to_string()));
-        
+
         //Insert ordered using binary search so that the files are ordered alphabetically.
         //And the resulting trees are deterministic.
         let mut start = 0;
@@ -66,12 +69,13 @@ impl Tree {
             }
             middle = (start + end) / 2;
         }
-        self.files.insert(middle, (name.to_string(), hash.to_string()));
+        self.files
+            .insert(middle, (name.to_string(), hash.to_string()));
 
         //Might be better to use a binary heap.
     }
 
-/// Returns the depth of the tree
+    /// Returns the depth of the tree
     pub fn get_depth(&self) -> usize {
         let mut max_depth = 0;
         for dir in &self.directories {
@@ -83,8 +87,8 @@ impl Tree {
         max_depth + 1
     }
 
-/// Returns a string that contains all the blobs added to the tree.
-/// The blobs are formatted as "blob {hash} {file_name}\n"
+    /// Returns a string that contains all the blobs added to the tree.
+    /// The blobs are formatted as "blob {hash} {file_name}\n"
     pub fn tree_blobs_to_string_formatted(&self) -> String {
         let mut result = String::new();
         for (file_name, hash) in &self.files {
@@ -93,9 +97,9 @@ impl Tree {
         result
     }
 
-/// Given a path, this function should return the hash correspondent to it in the tree.
-/// The path must be written with the same format as the index file of the directory.
-/// If the path does not exist, it returns None.
+    /// Given a path, this function should return the hash correspondent to it in the tree.
+    /// The path must be written with the same format as the index file of the directory.
+    /// If the path does not exist, it returns None.
     pub fn get_hash_from_path(&self, path: &str) -> Option<String> {
         let mut path = path.split('/').collect::<Vec<&str>>();
         let file_name = match path.pop() {
@@ -121,7 +125,7 @@ impl Tree {
 /// Builds a tree from the index file.
 /// Every directory is a tree node, and every file is a leaf.
 /// Files that are not listed in a directory in the index file will be part of the root tree.
-/// 
+///
 /// The index file must be in the same format as the one created by the index module.
 pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> io::Result<Tree> {
     let index = index::Index::load(&index_path, &git_dir_path)?;
@@ -135,7 +139,12 @@ pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> io::Result
         let mut path = path.split('/').collect::<Vec<&str>>();
         let file_name = match path.pop() {
             Some(file_name) => file_name,
-            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Invalid path in index file.")),
+            None => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "Invalid path in index file.",
+                ))
+            }
         };
         let mut current_tree = &mut tree;
         for dir in path {
@@ -149,7 +158,7 @@ pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> io::Result
 /// Write tree to file in the objects folder.
 /// When done, the subtrees are already stored in the objects folder.
 /// The result of the function is a tuple of the form (hash, name) corresponding to the root tree.
-pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)>{
+pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)> {
     //Vec of (hash, name) tuples
     let mut subtrees: Vec<(String, String)> = Vec::new();
 
@@ -158,10 +167,10 @@ pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)>{
         let sub_tree = write_tree(&sub_dir, directory)?;
         subtrees.push(sub_tree);
     }
-    
+
     //Sort the subtrees by name so the resulting tree is deterministic.
     subtrees.sort();
-    
+
     //When all of the subtrees have been traversed, i can write "myself"
     let tree_content = tree.tree_blobs_to_string_formatted();
     let mut subtrees_formatted: String = "".to_owned();
@@ -171,10 +180,9 @@ pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)>{
 
     //Store and hash the tree content.
     let tree_content = tree_content + &subtrees_formatted;
-    let tree_hash = hash_object::store_string_to_file(&tree_content, directory ,"tree")?;
+    let tree_hash = hash_object::store_string_to_file(&tree_content, directory, "tree")?;
     Ok((tree_hash, tree.name.clone()))
 }
-
 
 /// Wrapper to abstract ourselves from tree naming.
 /// Creates a tree looking at the objects folder.
@@ -195,8 +203,9 @@ fn _load_tree_from_file(tree_hash: &str, directory: &str, name: &str) -> io::Res
             "blob" => tree.add_file(name, hash),
             "tree" => {
                 _load_tree_from_file(hash, directory, name)?;
-                tree.directories.push(_load_tree_from_file(hash, directory, name)?);
-            },
+                tree.directories
+                    .push(_load_tree_from_file(hash, directory, name)?);
+            }
             _ => println!("Invalid tree file."),
         }
     }
@@ -206,7 +215,7 @@ fn _load_tree_from_file(tree_hash: &str, directory: &str, name: &str) -> io::Res
 /// Builds a tree from a tree hash.
 /// The tree and its subtrees must be stored in the objects folder, probably by using the write_tree function.
 /// The result of the function is a tree with the same structure as the one that was stored.
-pub fn load_tree_from_file (tree_hash: &str, directory: &str) -> io::Result<Tree> {
+pub fn load_tree_from_file(tree_hash: &str, directory: &str) -> io::Result<Tree> {
     let tree = _load_tree_from_file(tree_hash, directory, "root")?;
     Ok(tree)
 }
@@ -229,12 +238,12 @@ pub fn load_tree_from_file (tree_hash: &str, directory: &str) -> io::Result<Tree
 ///
 /// This function can return I/O (`io::Result`) errors if there are issues when reading
 /// the content of the commit or loading the tree from the filesystem.
-pub fn load_tree_from_commit (commit_hash : &str, directory : &str) -> io::Result<Tree> {
+pub fn load_tree_from_commit(commit_hash: &str, directory: &str) -> io::Result<Tree> {
     let commit_content = cat_file::cat_file_return_content(&commit_hash, &directory)?;
-    let splitted_commit_content : Vec<&str> = commit_content.split("\n").collect();
-    let first_line_of_commit_file : Vec<&str> = splitted_commit_content[0].split(" ").collect();
+    let splitted_commit_content: Vec<&str> = commit_content.split("\n").collect();
+    let first_line_of_commit_file: Vec<&str> = splitted_commit_content[0].split(" ").collect();
     let tree_hash = &first_line_of_commit_file[1];
-    let tree = _load_tree_from_file(&tree_hash,&directory,"root")?;
+    let tree = _load_tree_from_file(&tree_hash, &directory, "root")?;
     Ok(tree)
 }
 
@@ -272,5 +281,229 @@ pub fn print_tree_console(tree: &Tree, depth: usize) {
 
 #[cfg(test)]
 mod tests {
+    //use std::fs::File;
+
+    //use crate::add;
+
+    use std::{fs::{File, self, OpenOptions}, io::{Write, ErrorKind}, path::Path};
+
+    use rand::Error;
+
+    use crate::add;
+
+    use super::*;
+    #[test]
+    fn test_get_or_create_dir_2() {
+        let mut tree = Tree::new();
+        tree.get_or_create_dir("root");
+        assert!(tree.directories.len() == 1)
+    }
+
+    #[test]
+    fn test_get_or_create_dir_1() {
+        let mut tree = Tree::new();
+        tree.get_or_create_dir("root");
+        tree.get_or_create_dir("root");
+        assert!(tree.directories.len() == 1)
+    }
+
+    #[test]
+    fn test_get_or_create_dir_3() {
+        let mut tree = Tree::new();
+        tree.get_or_create_dir("root");
+        tree.get_or_create_dir("name");
+        assert!(tree.directories.len() == 2)
+    }
+    
+    #[test]
+    fn test_get_or_create_dir_4() {
+        let mut tree = Tree::new();
+        tree.get_or_create_dir("root");
+        tree.get_or_create_dir("root/algo");
+        assert!(tree.directories.len() == 2)
+    }
+
+    #[test]
+    fn test_get_subdir_1() {
+        let mut tree = Tree::new();
+        tree.get_or_create_dir("root");
+        let subdir = tree.get_subdir("name");
+        assert!(subdir.is_none());
+    }
+
+    #[test]
+    fn test_get_subdir_2() {
+        let mut tree = Tree::new();
+        tree.get_or_create_dir("root");
+        let subdir = tree.get_subdir("root");
+        assert!(subdir.is_some());
+    }
+
+    #[test]
+    fn test_add_file() {
+        let mut tree = Tree::new();
+        tree.add_file("root", "059302h2");
+        assert!(tree.files.len() == 1);
+    }
+
+    #[test]
+    fn test_get_depth_1() {
+        let tree = Tree::new();
+        assert!(tree.get_depth() == 1);
+    }
+
+    #[test]
+    fn test_get_depth_2() {
+        let mut tree = Tree::new();
+        tree.get_or_create_dir("root");
+        assert!(tree.get_depth() == 2);
+    }
+
+    #[test]
+    fn test_get_depth_3() {
+        let mut tree = Tree::new();
+        tree.get_or_create_dir("root");
+        tree.get_or_create_dir("name");
+        assert!(tree.get_depth() == 2);
+    }
+
+    #[test]
+    fn test_get_depth_4() {
+        let mut tree = Tree::new();
+        tree.add_file("root", "45739h123c");
+        assert!(tree.get_depth() == 1);
+    }
+
+    #[test]
+    fn test_get_depth_5() {
+        let mut tree = Tree::new();
+        let new_tree = tree.get_or_create_dir("root");
+        
+        assert!(new_tree.get_depth() == 1 && tree.get_depth() == 2);
+    }
+
+    #[test]
+    fn test_tree_blobs_to_string_formatted() {
+        let mut tree = Tree::new();
+        tree.add_file("root", "1");
+        tree.add_file("test", "2");
+        let string = tree.tree_blobs_to_string_formatted();
+        assert_eq!(string,"blob 1 root\nblob 2 test\n");
+    }
+
+    #[test]
+    fn test_get_hash_from_path_is_some() {
+        let mut tree = Tree::new();
+        tree.add_file("root", "1");
+        if let Some(hash) = tree.get_hash_from_path("root") {
+            assert_eq!(hash,"1");
+        }
+        else {
+            panic!()
+        }
+    }
+
+    
+    #[test]
+    fn test_get_hash_from_path_is_none() {
+        let mut tree = Tree::new();
+        tree.add_file("root", "1");
+        let hash_result = tree.get_hash_from_path("none");
+        assert!(hash_result.is_none());
+    }
+
+    fn create_if_not_exists(path: &str, is_dir : bool) -> io::Result<()> {
+        if !Path::new(path).exists() {
+            if is_dir {
+                std::fs::create_dir(path)?;
+            } else {
+                File::create(path)?;
+            }
+        }
+        Ok(())
+    }
+    
+    #[test]
+    fn test_build_tree_from_index() -> io::Result<()> {
+        create_if_not_exists("tests/fake_repo",true)?;
+        create_if_not_exists("tests/fake_repo/.mgit",true)?;
+        create_if_not_exists("tests/fake_repo/.mgit/index_file",false)?;
+        create_if_not_exists("tests/fake_repo/.mgitignore",false)?;
+        let content = "file1.txt\nfile2.txt\n/.mgit/file3.txt\n";
+        let path = "tests/fake_repo/.mgit/index_file";
+
+        let mut index_file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(path)?;
+
+        index_file.write_all(content.as_bytes())?;
+
+
+        /*Con add falla
+        add::add("file1.txt","tests/fake_repo/.mgit/index_file","tests/fake_repo",None)?;
+        add::add("file2.txt","tests/fake_repo/.mgit/index_file","tests/fake_repo",None)?;
+        add::add("/.mgit/file3.txt","tests/fake_repo/.mgit/index_file","tests/fake_repo",None)?;
+        */
+        let result_tree = build_tree_from_index("tests/fake_repo/.mgit/index_file", "tests/fake_repo");
+        assert!(result_tree.is_ok());
+        Ok(())
+    }
+
+    #[test]
+    fn test_build_tree_from_index_fails() -> io::Result<()> {
+        create_if_not_exists("tests/fake_repo",true)?;
+        create_if_not_exists("tests/fake_repo/.mgit",true)?;
+        create_if_not_exists("tests/fake_repo/.mgit/index_file",false)?;
+        create_if_not_exists("tests/fake_repo/.mgitignore",false)?;
+        let content = "file1.txt\nfile2.txt\n/.mgit/file3.txt\n";
+        let path = "tests/fake_repo/.mgit/index_file";
+
+        let mut index_file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(path)?;
+
+        index_file.write_all(content.as_bytes())?;
+
+
+        /*Con add falla
+        add::add("file1.txt","tests/fake_repo/.mgit/index_file","tests/fake_repo",None)?;
+        add::add("file2.txt","tests/fake_repo/.mgit/index_file","tests/fake_repo",None)?;
+        add::add("/.mgit/file3.txt","tests/fake_repo/.mgit/index_file","tests/fake_repo",None)?;
+        */
+        let result_tree = build_tree_from_index("tests/fake_repo/.mgit/index", "tests/fake_repo");
+        assert!(result_tree.is_err());
+        Ok(())
+    }
+
+    //Acá debería devolver error y no devuelve error
+    #[test]
+    fn test_build_tree_from_index_fails_2() -> io::Result<()> {
+        create_if_not_exists("tests/fake_repo",true)?;
+        create_if_not_exists("tests/fake_repo/.mgit",true)?;
+        create_if_not_exists("tests/fake_repo/.mgit/index_file",false)?;
+        create_if_not_exists("tests/fake_repo/.mgitignore",false)?;
+        let content = "file1.txt\nfile2.txt\n/.mgit/file3.txt\n";
+        let path = "tests/fake_repo/.mgit/index_file";
+
+        let mut index_file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(path)?;
+
+        index_file.write_all(content.as_bytes())?;
+
+
+        /*Con add falla
+        add::add("file1.txt","tests/fake_repo/.mgit/index_file","tests/fake_repo",None)?;
+        add::add("file2.txt","tests/fake_repo/.mgit/index_file","tests/fake_repo",None)?;
+        add::add("/.mgit/file3.txt","tests/fake_repo/.mgit/index_file","tests/fake_repo",None)?;
+        */
+        let result_tree = build_tree_from_index("tests/fake_repo/.mgit/index_file", "tests/");
+        assert!(result_tree.is_err());
+        Ok(())
+    }
+    
 
 }
