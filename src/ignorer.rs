@@ -46,14 +46,18 @@ pub fn is_subpath(subpath: &str, path: &str) -> bool {
     let path_child: Vec<&str> = get_subpaths(subpath);
 
     for i in 0..path_parent.len() {
-        if path_parent[i] != path_child[i] {
-            return false;
+        match (path_parent.get(i), path_child.get(i)) {
+            (Some(subpath_parent), Some(subpath_child)) => {
+                if subpath_parent != subpath_child {
+                    return false;
+                }
+            }
+            _ => return false,
         }
     }
     true
 }
 
-// hacer tests de integracion con file real
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -81,5 +85,15 @@ mod tests {
     #[test]
     fn test_5() {
         assert!(is_subpath("src/data.txt", "src/data.txt"));
+    }
+
+    #[test]
+    fn test_6() {
+        assert!(!is_subpath("src/data", "src/data/data.txt"));
+    }
+
+    #[test]
+    fn test_7() {
+        assert!(is_subpath("src/data/data.txt", "src/data"));
     }
 }
