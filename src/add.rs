@@ -24,6 +24,7 @@ pub fn add(
     path: &str,
     index_path: &str,
     git_dir_path: &str,
+    gitignore_path: &str,
     options: Option<Vec<String>>,
 ) -> io::Result<()> {
     if is_subpath(path, MGIT) {
@@ -32,11 +33,11 @@ pub fn add(
 
     if let Some(params) = options {
         if params.contains(&OPTIONS_ALL.to_string()) {
-            return add(".", index_path, git_dir_path, None);
+            return add(".", index_path, git_dir_path, gitignore_path,None);
         }
     }
 
-    let mut index = Index::load(index_path, git_dir_path)?;
+    let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
     index.add_path(path)?;
     index.write_file()?;
 

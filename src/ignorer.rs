@@ -1,7 +1,5 @@
 use std::fs;
 
-const MGIT_IGNORE: &str = ".mgitignore";
-
 /// This is a helper structure that will help some git commands
 /// to know if a path has to be ignored or not according to
 /// the content of git ignore file.
@@ -13,8 +11,8 @@ pub struct Ignorer {
 impl Ignorer {
     /// This method loads the git ignore file and returns an
     /// Ignorer ready to use
-    pub fn load() -> Self {
-        match fs::read_to_string(MGIT_IGNORE) {
+    pub fn load(gitignore_path: &str) -> Self {
+        match fs::read_to_string(gitignore_path) {
             Ok(file) => Self {
                 paths: file.lines().map(str::to_string).collect(),
             },
