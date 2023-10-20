@@ -37,10 +37,20 @@ impl Index {
     /// May fail if the index path can not be read.
     pub fn load(index_path: &str, git_dir_path: &str, gitignore_path: &str) -> io::Result<Self> {
         let index_content = fs::read_to_string(index_path)?;
-        Ok(Self::with(&index_content, index_path, git_dir_path, gitignore_path))
+        Ok(Self::with(
+            &index_content,
+            index_path,
+            git_dir_path,
+            gitignore_path,
+        ))
     }
 
-    fn with(index_content: &str, index_path: &str, git_dir_path: &str, gitignore_path: &str) -> Self {
+    fn with(
+        index_content: &str,
+        index_path: &str,
+        git_dir_path: &str,
+        gitignore_path: &str,
+    ) -> Self {
         let mut index = Self::new(index_path, git_dir_path, gitignore_path);
         index.load_content(index_content);
         index

@@ -33,7 +33,7 @@ pub fn add(
 
     if let Some(params) = options {
         if params.contains(&OPTIONS_ALL.to_string()) {
-            return add(".", index_path, git_dir_path, gitignore_path,None);
+            return add(".", index_path, git_dir_path, gitignore_path, None);
         }
     }
 
