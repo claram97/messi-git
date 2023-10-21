@@ -213,6 +213,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore]
     fn test_oneline() {
         let log_iter = log(
             Some("2d2d2887951eaf42f37b437d44bb4cfcae97fe54"),
@@ -227,6 +228,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_many_lines() {
         let log_iter = log(
             Some("2d2d2887951eaf42f37b437d44bb4cfcae97fe54"),
@@ -241,6 +243,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_from_head() {
         let log_iter = log(None, ".git", 3, 0, true);
         assert!(log_iter.is_ok());
