@@ -96,7 +96,7 @@ impl Log {
                 let heads_path = format!("{}/{}", git_dir, refs);
                 if Path::new(&heads_path).exists() {
                     let hash = fs::read_to_string(heads_path)?;
-                    Self::load_from_hash(&hash.trim(), git_dir)
+                    Self::load_from_hash(hash.trim(), git_dir)
                 } else {
                     Self::load_from_hash(refs, git_dir)
                 }
@@ -143,15 +143,15 @@ impl Log {
         Ok(())
     }
 
-    fn as_oneline(mut self, oneline: bool) -> Self {
+    fn set_online(mut self, oneline: bool) -> Self {
         self.oneline = oneline;
         self
     }
 
     fn get_parent_log(&self) -> Option<Self> {
         if let Some(parent) = &self.parent_hash {
-            if let Ok(log) = Log::load_from_hash(&parent, &self.git_dir) {
-                return Some(log.as_oneline(self.oneline));
+            if let Ok(log) = Log::load_from_hash(parent, &self.git_dir) {
+                return Some(log.set_online(self.oneline));
             }
         }
         None
@@ -160,8 +160,10 @@ impl Log {
     /// Returns an iterator starting in 'self'
     ///
     /// When accessing to the next Log, it refers to 'parent log'
-    pub fn iter(&self) -> LogIter {
-        LogIter::new(self.clone())
+    ///
+    /// self is consumed
+    pub fn iter(self) -> LogIter {
+        LogIter::new(self)
     }
 }
 
@@ -197,9 +199,14 @@ pub fn log(
     skip: usize,
     oneline: bool,
 ) -> io::Result<impl Iterator<Item = Log>> {
-    let log = Log::load(commit, git_dir)?.as_oneline(oneline);
-
+    let log = Log::load(commit, git_dir)?.set_online(oneline);
     Ok(log.iter().skip(skip).take(amount))
+}
+
+pub fn print_logs(log_iter: impl Iterator<Item = Log>) {
+    for log in log_iter {
+        println!("{log}")
+    }
 }
 
 #[cfg(test)]
@@ -207,40 +214,38 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {
-        let log = Log::load_from_hash("c6e4695d7f410a8c49787c7c87c5b390b56dc53a", ".git");
-        assert!(log.is_ok())
-    }
-
-    #[test]
-    fn test_3() {
-        let log = log(
+    fn test_oneline() {
+        let log_iter = log(
             Some("c6e4695d7f410a8c49787c7c87c5b390b56dc53a"),
             ".git",
             5,
             0,
             true,
         );
-        assert!(log.is_ok());
-        let log = log.unwrap();
-        for l in log {
-            println!("{}", l)
-        }
+        assert!(log_iter.is_ok());
+        let log_iter = log_iter.unwrap();
+        print_logs(log_iter)
     }
 
     #[test]
-    fn test_4() -> io::Result<()> {
-        let log = log(
-            Some("1830303e24de7d4c747317c9b93dd45938d794d9"),
+    fn test_many_lines() {
+        let log_iter = log(
+            Some("c6e4695d7f410a8c49787c7c87c5b390b56dc53a"),
             ".git",
             5,
             0,
-            true,
-        )?;
-        // let log = log.unwrap();
-        for l in log {
-            println!("{:?}", l);
-        }
-        Ok(())
+            false,
+        );
+        assert!(log_iter.is_ok());
+        let log_iter = log_iter.unwrap();
+        print_logs(log_iter)
+    }
+
+    #[test]
+    fn test_from_head() {
+        let log_iter = log(None, ".git", 3, 0, true);
+        assert!(log_iter.is_ok());
+        let log_iter = log_iter.unwrap();
+        print_logs(log_iter)
     }
 }
