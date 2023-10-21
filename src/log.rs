@@ -2,7 +2,8 @@ use crate::cat_file;
 use std::{
     fmt::Display,
     fs,
-    io::{self, Error}, path::Path
+    io::{self, Error},
+    path::Path,
 };
 
 /// LogIter is a structure that will help to iterate
@@ -99,7 +100,7 @@ impl Log {
                 } else {
                     Self::load_from_hash(refs, git_dir)
                 }
-            },
+            }
             None => Err(invalid_data_error(&head_content)),
         }
     }
@@ -107,7 +108,7 @@ impl Log {
     fn load_from_hash(hash: &str, git_dir: &str) -> io::Result<Self> {
         let commit_content = cat_file::cat_file_return_content(hash, git_dir)?;
         let header_lines = commit_content.lines().position(|line| line.is_empty());
-        
+
         match header_lines {
             Some(n) => {
                 let mut log = Self::default();
@@ -118,7 +119,7 @@ impl Log {
                 log.git_dir = git_dir.to_string();
                 log.commit_hash = hash.to_string();
                 Ok(log)
-            },
+            }
             None => Err(invalid_data_error(hash)),
         }
     }
@@ -131,30 +132,29 @@ impl Log {
                 let fields: Vec<&str> = author.split(' ').collect();
                 let len = fields.len();
                 if len < 4 {
-                    return Err(invalid_data_error(line))
+                    return Err(invalid_data_error(line));
                 }
                 self.author = fields[0..len - 2].join(" ");
                 self.date = fields[len - 2..].join(" ")
             }
             Some(("committer", committer)) => self.committer = committer.to_string(),
-            _ => {},
+            _ => {}
         }
         Ok(())
     }
 
+    fn as_oneline(mut self, oneline: bool) -> Self {
+        self.oneline = oneline;
+        self
+    }
+
     fn get_parent_log(&self) -> Option<Self> {
         if let Some(parent) = &self.parent_hash {
-            let next_log = Log::load_from_hash(&parent, &self.git_dir);
-            match next_log {
-                Ok(mut log) => {
-                    log.oneline = self.oneline;
-                    Some(log)
-                }
-                Err(_) => None,
+            if let Ok(log) = Log::load_from_hash(&parent, &self.git_dir) {
+                return Some(log.as_oneline(self.oneline));
             }
-        } else {
-            None
         }
+        None
     }
 
     /// Returns an iterator starting in 'self'
@@ -168,16 +168,15 @@ impl Log {
 impl Display for Log {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let commit = format!("\x1b[0;33mcommit {}\x1b[0m", &self.commit_hash);
-        let message_vec: Vec<String> = self
+        let message = self
             .message
             .lines()
             .map(|line| format!("\t{}", line))
-            .collect();
-        let message = message_vec.join("\n");
+            .collect::<String>();
 
         if self.oneline {
             let commit = commit.replace("commit ", "");
-            return writeln!(f, "{} {}", commit, message);
+            return write!(f, "{} {}", commit, message);
         }
 
         let author = format!("Author: {}", &self.author);
@@ -198,8 +197,7 @@ pub fn log(
     skip: usize,
     oneline: bool,
 ) -> io::Result<impl Iterator<Item = Log>> {
-    let mut log = Log::load(commit, git_dir)?;
-    log.oneline = oneline;
+    let log = Log::load(commit, git_dir)?.as_oneline(oneline);
 
     Ok(log.iter().skip(skip).take(amount))
 }
@@ -232,7 +230,13 @@ mod tests {
 
     #[test]
     fn test_4() -> io::Result<()> {
-        let log = log(Some("1830303e24de7d4c747317c9b93dd45938d794d9"), ".git", 5, 0, true)?;
+        let log = log(
+            Some("1830303e24de7d4c747317c9b93dd45938d794d9"),
+            ".git",
+            5,
+            0,
+            true,
+        )?;
         // let log = log.unwrap();
         for l in log {
             println!("{:?}", l);
