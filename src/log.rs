@@ -215,7 +215,7 @@ mod tests {
     #[test]
     fn test_oneline() {
         let log_iter = log(
-            Some("c6e4695d7f410a8c49787c7c87c5b390b56dc53a"),
+            Some("2d2d2887951eaf42f37b437d44bb4cfcae97fe54"),
             ".git",
             5,
             0,
@@ -229,7 +229,7 @@ mod tests {
     #[test]
     fn test_many_lines() {
         let log_iter = log(
-            Some("c6e4695d7f410a8c49787c7c87c5b390b56dc53a"),
+            Some("2d2d2887951eaf42f37b437d44bb4cfcae97fe54"),
             ".git",
             5,
             0,
