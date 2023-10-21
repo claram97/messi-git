@@ -173,8 +173,7 @@ impl Display for Log {
         let message = self
             .message
             .lines()
-            .map(|line| format!("\t{}", line))
-            .collect::<String>();
+            .fold(String::new(), |acc, line| format!("{}\t{}", acc, line));
 
         if self.oneline {
             let commit = commit.replace("commit ", "");
