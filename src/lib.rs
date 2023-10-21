@@ -7,4 +7,3 @@ pub mod init;
 pub mod logger;
 pub mod parse_commands;
 pub mod utils;
-

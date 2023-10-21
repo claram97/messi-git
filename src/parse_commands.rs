@@ -214,10 +214,7 @@ fn handle_hash_object(args: Vec<String>) {
 
             match store_file(file_to_store, &git_dir) {
                 Ok(hash) => {
-                    println!(
-                        "File successfully stored as Git object with hash: {}",
-                        hash
-                    );
+                    println!("File successfully stored as Git object with hash: {}", hash);
                 }
                 Err(e) => {
                     eprintln!("Error trying to store file as Git object: {}", e);
