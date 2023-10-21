@@ -2,13 +2,13 @@ use crate::cat_file;
 use std::{
     fmt::Display,
     fs,
-    io::{self, Error}, path::Path,
+    io::{self, Error}
 };
 
 /// LogIter is a structure that will help to iterate
 /// through commit logs in the correct way.
-/// 
-/// Also implements Iterator trait so it has a lot 
+///
+/// Also implements Iterator trait so it has a lot
 /// of flexibility because of that
 pub struct LogIter {
     log: Option<Log>,
@@ -34,18 +34,18 @@ impl Iterator for LogIter {
 
 /// Log is a structure that will manage all relevant information
 /// about each commit.
-/// 
+///
 /// A log can be loaded in two different ways:
 /// - Giving a commit hash
-/// 
-/// - Not giving a commit hash. In this case, HEAD file of 
+///
+/// - Not giving a commit hash. In this case, HEAD file of
 /// the repo will be read.
-/// 
+///
 /// The method 'iter()' is available to get a LogIter instance
 /// starting in this Log.
-/// 
+///
 /// The load of the Log may fail because of I/O errors.
-/// 
+///
 /// For example: if the user try to load a Log from an inexistent commit hash,
 /// will fail.
 #[derive(Debug, Default, Clone)]
@@ -61,21 +61,21 @@ pub struct Log {
     oneline: bool,
 }
 
-fn invalid_head_error() -> Error {
-    Error::new(io::ErrorKind::InvalidData, "HEAD file has invalid data")
+fn invalid_data_error(commit: &str) -> Error {
+    Error::new(io::ErrorKind::InvalidData, format!("Commit: {}", commit))
 }
 
 impl Log {
     /// Method to load and return a Log
-    /// 
+    ///
     /// The git directory is needed for some internal actions.
-    /// 
+    ///
     /// The commit may or may not be present.
-    /// 
+    ///
     /// If available, the log of the given commit is loaded.
-    /// 
+    ///
     /// Otherwise, HEAD file will be read to load the Log.
-    /// 
+    ///
     /// The load of the Log may fail because of I/O errors.
     pub fn load(commit: Option<&str>, git_dir: &str) -> io::Result<Self> {
         if let Some(hash) = commit {
@@ -104,7 +104,7 @@ impl Log {
             //     Self::new_from_hash(commit_ref, git_dir)
             // }
         } else {
-            Err(invalid_head_error())
+            Err(invalid_data_error(&head_content))
         }
     }
 
@@ -118,24 +118,32 @@ impl Log {
 
         if let Some(n) = header_lines {
             for line in commit_content.lines().take(n) {
-                match line.split_once(' ') {
-                    Some(("tree", hash)) => log.tree_hash = hash.to_string(),
-                    Some(("parent", hash)) => log.parent_hash = Some(hash.to_string()),
-                    Some(("author", author)) => {
-                        let fields: Vec<&str> = author.split(' ').collect();
-                        let len = fields.len();
-                        log.author = fields[0..len - 2].join(" ");
-                        log.date = fields[len - 2..].join(" ")
-                    }
-                    Some(("committer", committer)) => log.committer = committer.to_string(),
-                    _ => return Err(invalid_head_error()),
-                }
+                log.parse_commit_header_line(line)?;
             }
             log.message = commit_content.lines().skip(n).collect();
             Ok(log)
         } else {
-            Err(invalid_head_error())
+            Err(invalid_data_error(hash))
         }
+    }
+
+    fn parse_commit_header_line(&mut self, line: &str) -> io::Result<()> {
+        match line.split_once(' ') {
+            Some(("tree", hash)) => self.tree_hash = hash.to_string(),
+            Some(("parent", hash)) => self.parent_hash = Some(hash.to_string()),
+            Some(("author", author)) => {
+                let fields: Vec<&str> = author.split(' ').collect();
+                let len = fields.len();
+                if len < 4 {
+                    return Err(invalid_data_error(line))
+                }
+                self.author = fields[0..len - 2].join(" ");
+                self.date = fields[len - 2..].join(" ")
+            }
+            Some(("committer", committer)) => self.committer = committer.to_string(),
+            _ => {},
+        }
+        Ok(())
     }
 
     fn get_parent_log(&self) -> Option<Self> {
@@ -145,7 +153,7 @@ impl Log {
                 Ok(mut log) => {
                     log.oneline = self.oneline;
                     Some(log)
-                },
+                }
                 Err(_) => None,
             }
         } else {
@@ -154,7 +162,7 @@ impl Log {
     }
 
     /// Returns an iterator starting in 'self'
-    /// 
+    ///
     /// When accessing to the next Log, it refers to 'parent log'
     pub fn iter(&self) -> LogIter {
         LogIter::new(self.clone())
@@ -182,10 +190,9 @@ impl Display for Log {
     }
 }
 
-
-/// This function receive relevante information to create a Log and 
+/// This function receive relevante information to create a Log and
 /// return the corresponding iterator
-/// 
+///
 /// The user who calls this function will have an iterator of logs
 /// to use. Usually it will be used for printing in stdout
 pub fn log(
@@ -228,18 +235,12 @@ mod tests {
     }
 
     #[test]
-    fn test_4() {
-        let log = log(
-            None,
-            ".mgit",
-            5,
-            0,
-            true,
-        );
-        assert!(log.is_ok());
-        let log = log.unwrap();
+    fn test_4() -> io::Result<()> {
+        let log = log(Some("1830303e24de7d4c747317c9b93dd45938d794d9"), ".git", 5, 0, true)?;
+        // let log = log.unwrap();
         for l in log {
-            println!("{}", l);
+            println!("{:?}", l);
         }
+        Ok(())
     }
 }
