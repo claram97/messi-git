@@ -125,6 +125,29 @@ impl Index {
         Ok(())
     }
 
+    /// Returns an iterator over the key-value pairs in the map.
+    ///
+    /// This function returns an iterator that allows you to iterate over the key-value pairs in the map.
+    ///
+    /// # Returns
+    /// An iterator over the key-value pairs in the map.
+    pub fn iter(&self) -> std::collections::hash_map::Iter<String, String> {
+        self.map.iter()
+    }
+
+    /// Checks if a path should be ignored based on the provided `ignorer`.
+    ///
+    /// This function checks if a given `path` should be ignored by using the provided `ignorer`.
+    ///
+    /// # Arguments
+    /// - `path`: A reference to a string representing the path to be checked.
+    ///
+    /// # Returns
+    /// `true` if the path should be ignored, otherwise `false`.
+    pub fn path_should_be_ignored(&self,path : &str) -> bool {
+        self.ignorer.ignore(path)
+    }
+
     #[cfg(test)]
     fn is_empty(&self) -> bool {
         self.map.is_empty()
@@ -142,6 +165,8 @@ impl Index {
         self.map.get(path)
     }
 }
+
+
 
 #[cfg(test)]
 mod tests {
