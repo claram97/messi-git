@@ -6,6 +6,9 @@ use std::{
 use messi::{cat_file, commit, hash_object, tree_handler::print_tree_console};
 
 fn main() {
+
+    messi::init::git_init(".", "main", None).unwrap();
+
     let hash1 =
         hash_object::store_file("tests/hash_object/hash_object_hello.txt", ".mgit").unwrap();
 
@@ -38,8 +41,7 @@ fn main() {
         .unwrap();
 
     //Create a commit file
-    let commit_hash =
-        commit::create_new_commit_file(".mgit", "probando nuevo commit", None).unwrap();
+    let commit_hash = commit::new_commit(".mgit", "probando nuevo commit").unwrap();
 
     cat_file::cat_file(&commit_hash, ".mgit", &mut io::stdout()).unwrap();
 
