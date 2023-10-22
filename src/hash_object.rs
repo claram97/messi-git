@@ -114,22 +114,17 @@ pub fn store_string_to_file(
     git_dir_path: &str,
     file_type: &str,
 ) -> io::Result<String> {
-    //Add the header to the content
-    let content_hash = hash_string(&content);
+    let content_hash = hash_string(content);
 
-    //Create the directory if it does not exist
     let output_file_dir = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
     create_directory(&output_file_dir)?;
     let output_file_str = output_file_dir + &content_hash[2..];
 
-    //Create a tmp file with the content
     let tmp_file_path = output_file_str.clone() + "tmp";
     let mut tmp_file = File::create(&tmp_file_path)?;
     tmp_file.write_all(content.as_bytes())?;
 
-    //Compress the tmp file and store it in the output file
     compress_content(&tmp_file_path, output_file_str.as_str(), file_type)?;
-    //Delete the tmp file
     fs::remove_file(tmp_file_path)?;
     Ok(content_hash)
 }

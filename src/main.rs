@@ -1,24 +1,32 @@
-use std::{fs::File, io::{self}};
+use std::{
+    fs::File,
+    io::{self},
+};
 
-use messi::{commit, cat_file, tree_handler::print_tree_console, init::git_init, add};
+use messi::{add, cat_file, commit, init::git_init, tree_handler::print_tree_console};
 
 fn main() {
-    
     let repo_result = git_init(".", "main", None);
-    
+
     println!("{:?}", repo_result);
 
     //Create the index file
     let _ = File::create(".mgit/index").unwrap();
 
-    add::add("tests/hash_object/hash_object_hello.txt", ".mgit/index", ".mgit", None).unwrap();
+    add::add(
+        "tests/hash_object/hash_object_hello.txt",
+        ".mgit/index",
+        ".mgit",
+        None,
+    )
+    .unwrap();
     add::add("src/cat_file.rs", ".mgit/index", ".mgit", None).unwrap();
     add::add("src/hash_object.rs", ".mgit/index", ".mgit", None).unwrap();
     add::add("src/index.rs", ".mgit/index", ".mgit", None).unwrap();
     add::add("tests/logger_tests.rs", ".mgit/index", ".mgit", None).unwrap();
 
     let commit_hash = commit::new_commit(".mgit", "probando nuevo commit").unwrap();
-    
+
     cat_file::cat_file(&commit_hash, ".mgit", &mut io::stdout()).unwrap();
 
     println!("===========================================================================");

@@ -43,34 +43,21 @@ impl Tree {
     /// Get a subdir from a tree.
     /// Do not create it if it doesn't exist.
     fn get_subdir(&self, name: &str) -> Option<&Tree> {
-        for dir in &self.directories {
-            if dir.name == name {
-                return Some(dir);
-            }
-        }
-        None
+        self.directories.iter().find(|&dir| dir.name == name)
     }
 
     /// Adds the hash and name of a file to the tree
     /// It keeps an alphabetical order.
     fn add_file(&mut self, name: &str, hash: &str) {
-        //Insert ordered using binary search so that the files are ordered alphabetically.
-        //And the resulting trees are deterministic.
-        let mut start = 0;
-        let mut end = self.files.len();
-        let mut middle = (start + end) / 2;
-        while start < end {
-            if self.files[middle].0 < name.to_string() {
-                start = middle + 1;
-            } else {
-                end = middle;
-            }
-            middle = (start + end) / 2;
-        }
-        self.files
-            .insert(middle, (name.to_string(), hash.to_string()));
+        let insert_idx = self
+            .files
+            .binary_search_by(|(existing_name, _)| existing_name.cmp(&name.to_owned()));
 
-        //Might be better to use a binary heap.
+        match insert_idx {
+            Ok(idx) | Err(idx) => {
+                self.files.insert(idx, (name.to_string(), hash.to_string()));
+            }
+        }
     }
 
     /// Returns the depth of the tree
@@ -126,7 +113,7 @@ impl Tree {
 ///
 /// The index file must be in the same format as the one created by the index module.
 pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> io::Result<Tree> {
-    let index = index::Index::load(&index_path, &git_dir_path)?;
+    let index = index::Index::load(index_path, git_dir_path)?;
     let mut tree = Tree::new();
 
     //Iterates over the index struct, adding each file to the tree.
@@ -162,7 +149,7 @@ pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)> 
 
     //Traverse the tree, hashing and compressing each subtree.
     for sub_dir in &tree.directories {
-        let sub_tree = write_tree(&sub_dir, directory)?;
+        let sub_tree = write_tree(sub_dir, directory)?;
         subtrees.push(sub_tree);
     }
 
@@ -237,11 +224,11 @@ pub fn load_tree_from_file(tree_hash: &str, directory: &str) -> io::Result<Tree>
 /// This function can return I/O (`io::Result`) errors if there are issues when reading
 /// the content of the commit or loading the tree from the filesystem.
 pub fn load_tree_from_commit(commit_hash: &str, directory: &str) -> io::Result<Tree> {
-    let commit_content = cat_file::cat_file_return_content(&commit_hash, &directory)?;
-    let splitted_commit_content: Vec<&str> = commit_content.split("\n").collect();
-    let first_line_of_commit_file: Vec<&str> = splitted_commit_content[0].split(" ").collect();
+    let commit_content = cat_file::cat_file_return_content(commit_hash, directory)?;
+    let splitted_commit_content: Vec<&str> = commit_content.split('\n').collect();
+    let first_line_of_commit_file: Vec<&str> = splitted_commit_content[0].split(' ').collect();
     let tree_hash = &first_line_of_commit_file[1];
-    let tree = _load_tree_from_file(&tree_hash, &directory, "root")?;
+    let tree = _load_tree_from_file(tree_hash, directory, "root")?;
     Ok(tree)
 }
 
@@ -250,12 +237,12 @@ pub fn has_tree_changed_since_last_commit(
     last_commit_hash: &str,
     directory: &str,
 ) -> bool {
-    let commit_content = match cat_file::cat_file_return_content(&last_commit_hash, &directory) {
+    let commit_content = match cat_file::cat_file_return_content(last_commit_hash, directory) {
         Ok(content) => content,
         Err(_) => return true,
     };
-    let splitted_commit_content: Vec<&str> = commit_content.split("\n").collect();
-    let first_line_of_commit_file: Vec<&str> = splitted_commit_content[0].split(" ").collect();
+    let splitted_commit_content: Vec<&str> = commit_content.split('\n').collect();
+    let first_line_of_commit_file: Vec<&str> = splitted_commit_content[0].split(' ').collect();
     let last_tree_hash = first_line_of_commit_file[1];
     new_tree_hash != last_tree_hash
 }
@@ -286,7 +273,7 @@ pub fn print_tree_console(tree: &Tree, depth: usize) {
     }
     for dir in &tree.directories {
         println!("{}{}", spaces, dir.name);
-        print_tree_console(&dir, depth + 1);
+        print_tree_console(dir, depth + 1);
     }
 }
 
@@ -294,8 +281,12 @@ pub fn print_tree_console(tree: &Tree, depth: usize) {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::{File, OpenOptions}, io::Write, path::Path};
     use super::*;
+    use std::{
+        fs::{File, OpenOptions},
+        io::Write,
+        path::Path,
+    };
     #[test]
     fn test_get_or_create_dir_2() {
         let mut tree = Tree::new();
@@ -318,7 +309,7 @@ mod tests {
         tree.get_or_create_dir("name");
         assert!(tree.directories.len() == 2)
     }
-    
+
     #[test]
     fn test_get_or_create_dir_4() {
         let mut tree = Tree::new();
@@ -382,7 +373,7 @@ mod tests {
     fn test_get_depth_5() {
         let mut tree = Tree::new();
         let new_tree = tree.get_or_create_dir("root");
-        
+
         assert!(new_tree.get_depth() == 1 && tree.get_depth() == 2);
     }
 
@@ -392,7 +383,7 @@ mod tests {
         tree.add_file("root", "1");
         tree.add_file("test", "2");
         let string = tree.tree_blobs_to_string_formatted();
-        assert_eq!(string,"blob 1 root\nblob 2 test\n");
+        assert_eq!(string, "blob 1 root\nblob 2 test\n");
     }
 
     #[test]
@@ -400,14 +391,12 @@ mod tests {
         let mut tree = Tree::new();
         tree.add_file("root", "1");
         if let Some(hash) = tree.get_hash_from_path("root") {
-            assert_eq!(hash,"1");
-        }
-        else {
+            assert_eq!(hash, "1");
+        } else {
             panic!()
         }
     }
 
-    
     #[test]
     fn test_get_hash_from_path_is_none() {
         let mut tree = Tree::new();
@@ -416,7 +405,7 @@ mod tests {
         assert!(hash_result.is_none());
     }
 
-    fn create_if_not_exists(path: &str, is_dir : bool) -> io::Result<()> {
+    fn create_if_not_exists(path: &str, is_dir: bool) -> io::Result<()> {
         if !Path::new(path).exists() {
             if is_dir {
                 std::fs::create_dir(path)?;
@@ -426,40 +415,35 @@ mod tests {
         }
         Ok(())
     }
-    
+
     #[test]
     fn test_build_tree_from_index() -> io::Result<()> {
-        create_if_not_exists("tests/fake_repo",true)?;
-        create_if_not_exists("tests/fake_repo/.mgit",true)?;
-        create_if_not_exists("tests/fake_repo/.mgit/index_file",false)?;
-        create_if_not_exists("tests/fake_repo/.mgitignore",false)?;
+        create_if_not_exists("tests/fake_repo", true)?;
+        create_if_not_exists("tests/fake_repo/.mgit", true)?;
+        create_if_not_exists("tests/fake_repo/.mgit/index_file", false)?;
+        create_if_not_exists("tests/fake_repo/.mgitignore", false)?;
         let content = "file1.txt\nfile2.txt\n/.mgit/file3.txt\n";
         let path = "tests/fake_repo/.mgit/index_file";
 
-        let mut index_file = OpenOptions::new()
-            .write(true)
-            .truncate(true)
-            .open(path)?;
+        let mut index_file = OpenOptions::new().write(true).truncate(true).open(path)?;
 
         index_file.write_all(content.as_bytes())?;
-        let result_tree = build_tree_from_index("tests/fake_repo/.mgit/index_file", "tests/fake_repo");
+        let result_tree =
+            build_tree_from_index("tests/fake_repo/.mgit/index_file", "tests/fake_repo");
         assert!(result_tree.is_ok());
         Ok(())
     }
 
     #[test]
     fn test_build_tree_from_index_fails() -> io::Result<()> {
-        create_if_not_exists("tests/fake_repo",true)?;
-        create_if_not_exists("tests/fake_repo/.mgit",true)?;
-        create_if_not_exists("tests/fake_repo/.mgit/index_file",false)?;
-        create_if_not_exists("tests/fake_repo/.mgitignore",false)?;
+        create_if_not_exists("tests/fake_repo", true)?;
+        create_if_not_exists("tests/fake_repo/.mgit", true)?;
+        create_if_not_exists("tests/fake_repo/.mgit/index_file", false)?;
+        create_if_not_exists("tests/fake_repo/.mgitignore", false)?;
         let content = "file1.txt\nfile2.txt\n/.mgit/file3.txt\n";
         let path = "tests/fake_repo/.mgit/index_file";
 
-        let mut index_file = OpenOptions::new()
-            .write(true)
-            .truncate(true)
-            .open(path)?;
+        let mut index_file = OpenOptions::new().write(true).truncate(true).open(path)?;
 
         index_file.write_all(content.as_bytes())?;
         let result_tree = build_tree_from_index("tests/fake_repo/.mgit/index", "tests/fake_repo");
@@ -477,11 +461,16 @@ mod tests {
         let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs/refs");
         let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs/refs/heads");
         let mut head_file = std::fs::File::create(git_dir_path.to_string() + "/HEAD").unwrap();
-        head_file.write_all("ref: refs/heads/main".as_bytes()).unwrap();
+        head_file
+            .write_all("ref: refs/heads/main".as_bytes())
+            .unwrap();
 
         //Create the refs/heads/main file
-        let mut refs_file = std::fs::File::create(git_dir_path.to_string() + "/refs/heads/main").unwrap();
-        refs_file.write_all("hash_del_commit_anterior".as_bytes()).unwrap();
+        let mut refs_file =
+            std::fs::File::create(git_dir_path.to_string() + "/refs/heads/main").unwrap();
+        refs_file
+            .write_all("hash_del_commit_anterior".as_bytes())
+            .unwrap();
 
         //Create the index file
         let mut index_file = std::fs::File::create(git_dir_path.to_string() + "/index").unwrap();
@@ -499,14 +488,20 @@ mod tests {
         let mut index_file = OpenOptions::new()
             .write(true)
             .truncate(true)
-            .open(path).unwrap();
+            .open(path)
+            .unwrap();
 
         index_file.write_all(content.as_bytes()).unwrap();
-        let tree = build_tree_from_index("tests/commit/.mgit_test4/index", "tests/commit/.mgit_test4").unwrap();
+        let tree =
+            build_tree_from_index("tests/commit/.mgit_test4/index", "tests/commit/.mgit_test4")
+                .unwrap();
         let result = write_tree(&tree, "tests/commit/.mgit_test4").unwrap();
         let tree_file = cat_file_return_content(&result.0, "tests/commit/.mgit_test4").unwrap();
 
-        assert_eq!(tree_file, "blob hash1 file1.txt\nblob hash2 file2.txt\nblob hash3 file3.txt\n");
+        assert_eq!(
+            tree_file,
+            "blob hash1 file1.txt\nblob hash2 file2.txt\nblob hash3 file3.txt\n"
+        );
     }
 
     #[test]
@@ -520,7 +515,8 @@ mod tests {
         let mut index_file = OpenOptions::new()
             .write(true)
             .truncate(true)
-            .open(path).unwrap();
+            .open(path)
+            .unwrap();
 
         index_file.write_all(content.as_bytes()).unwrap();
         let tree = build_tree_from_index("tests/commit/.mgit_test5/index", git_dir_path).unwrap();
@@ -533,7 +529,10 @@ mod tests {
 
         let sub_tree_content = cat_file_return_content(&sub_tree_hash, git_dir_path).unwrap();
 
-        assert_eq!(tree_file_blob_part, "blob hash1 file1.txt\nblob hash2 file2.txt\nblob hash3 file3.txt\n");
+        assert_eq!(
+            tree_file_blob_part,
+            "blob hash1 file1.txt\nblob hash2 file2.txt\nblob hash3 file3.txt\n"
+        );
         assert_eq!(sub_tree_content, "blob hash4 file4.txt\n");
     }
 }
