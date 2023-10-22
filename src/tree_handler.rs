@@ -281,16 +281,7 @@ pub fn print_tree_console(tree: &Tree, depth: usize) {
 
 #[cfg(test)]
 mod tests {
-    //use std::fs::File;
-
-    //use crate::add;
-
-    use std::{fs::{File, self, OpenOptions}, io::{Write, ErrorKind}, path::Path};
-
-    use rand::Error;
-
-    use crate::add;
-
+    use std::{fs::{File, OpenOptions}, io::Write, path::Path};
     use super::*;
     #[test]
     fn test_get_or_create_dir_2() {

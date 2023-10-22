@@ -1,7 +1,6 @@
 use crate::cat_file;
 use crate::hash_object;
 use crate::tree_handler;
-use crate::tree_handler::print_tree_console;
 use std::io;
 use std::io::Read;
 use std::io::Write;
@@ -114,9 +113,7 @@ mod tests {
 
     #[test]
     fn test_hash_in_refs_file() {
-        //Edit the refs/heads/main file
         let git_dir_path = "tests/commit/.mgit_test";
-        reset_refs_file(git_dir_path);
         let message = "test commit";
         let commit_hash = new_commit(git_dir_path, message).unwrap();
         let refs_path = git_dir_path.to_string() + "/refs/heads/main";
@@ -127,14 +124,16 @@ mod tests {
     }
 
     #[test]
-    fn test_commit_parent() {
-        //Edit the refs/heads/main file
-        let git_dir_path = "tests/commit/.mgit_test";
-        reset_refs_file(git_dir_path);
+    fn test_commit_parent_is_correct() {
+        let git_dir_path: &str = "tests/commit/.mgit_test1";
+        let refs_dir = git_dir_path.to_string() + "/refs/heads/main";
+        let mut ref_actual = std::fs::File::open(&refs_dir).unwrap();
+        let mut ref_actual_content = String::new();
+        ref_actual.read_to_string(&mut ref_actual_content).unwrap();
         let message = "test commit";
         let commit_hash = new_commit(git_dir_path, message).unwrap();
         let parent_hash = get_parent_hash(&commit_hash, git_dir_path).unwrap();
-        assert_eq!(parent_hash, "hash_del_commit_anterior");
+        assert_eq!(parent_hash, ref_actual_content);
     }
 
     #[test]
@@ -147,7 +146,7 @@ mod tests {
 
     #[test]
     fn commits_chained_correctly() {
-        let git_dir_path = "tests/commit/.mgit_test";
+        let git_dir_path = "tests/commit/.mgit_test2";
         reset_refs_file(git_dir_path);
         let message = "test commit";
         let commit_1_hash = new_commit(git_dir_path, message).unwrap();
@@ -163,21 +162,21 @@ mod tests {
         assert_eq!(parent_hash, commit_2_hash);
     }
 
-    // #[test]
-    // fn chained_commits_messages_are_correct() {
-    //     let git_dir_path = "tests/commit/.mgit_test";
-    //     reset_refs_file(git_dir_path);
-    //     let message = "test commit";
-    //     let commit_1_hash = new_commit(git_dir_path, message).unwrap();
-    //     let commit_1_content = cat_file::cat_file_return_content(&commit_1_hash, git_dir_path).unwrap();
-    //     let message = "test commit 2";
-    //     let commit_2_hash = new_commit(git_dir_path, message).unwrap();
-    //     let commit_2_content = cat_file::cat_file_return_content(&commit_2_hash, git_dir_path).unwrap();
-    //     let message = "test commit 3";
-    //     let commit_3_hash = new_commit(git_dir_path, message).unwrap();
-    //     let commit_3_content = cat_file::cat_file_return_content(&commit_3_hash, git_dir_path).unwrap();
-    //     assert_eq!(commit_1_content.split("\n").last().unwrap(), "test commit");
-    //     assert_eq!(commit_2_content.split("\n").last().unwrap(), "test commit 2");
-    //     assert_eq!(commit_3_content.split("\n").last().unwrap(), "test commit 3");
-    // }
+    #[test]
+    fn chained_commits_messages_are_correct() {
+        let git_dir_path = "tests/commit/.mgit_test3";
+        reset_refs_file(git_dir_path);
+        let message = "test commit";
+        let commit_1_hash = new_commit(git_dir_path, message).unwrap();
+        let commit_1_content = cat_file::cat_file_return_content(&commit_1_hash, git_dir_path).unwrap();
+        let message = "test commit 2";
+        let commit_2_hash = new_commit(git_dir_path, message).unwrap();
+        let commit_2_content = cat_file::cat_file_return_content(&commit_2_hash, git_dir_path).unwrap();
+        let message = "test commit 3";
+        let commit_3_hash = new_commit(git_dir_path, message).unwrap();
+        let commit_3_content = cat_file::cat_file_return_content(&commit_3_hash, git_dir_path).unwrap();
+        assert_eq!(commit_1_content.split("\n").last().unwrap(), "test commit");
+        assert_eq!(commit_2_content.split("\n").last().unwrap(), "test commit 2");
+        assert_eq!(commit_3_content.split("\n").last().unwrap(), "test commit 3");
+    }
 }

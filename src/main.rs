@@ -1,6 +1,6 @@
-use std::{fs::File, io::{Write, self}, result};
+use std::{fs::File, io::{self}};
 
-use messi::{hash_object, commit, cat_file, tree_handler::print_tree_console, init::git_init, add};
+use messi::{commit, cat_file, tree_handler::print_tree_console, init::git_init, add};
 
 fn main() {
     
@@ -9,7 +9,7 @@ fn main() {
     println!("{:?}", repo_result);
 
     //Create the index file
-    let mut index = File::create(".mgit/index").unwrap();
+    let _ = File::create(".mgit/index").unwrap();
 
     add::add("tests/hash_object/hash_object_hello.txt", ".mgit/index", ".mgit", None).unwrap();
     add::add("src/cat_file.rs", ".mgit/index", ".mgit", None).unwrap();
