@@ -1,6 +1,7 @@
 use crate::cat_file;
 use crate::hash_object;
 use crate::tree_handler;
+use crate::tree_handler::print_tree_console;
 use std::io;
 use std::io::Read;
 use std::io::Write;
@@ -23,13 +24,12 @@ fn create_new_commit_file(
     );
 
     let commit_hash = hash_object::store_string_to_file(&commit_content, directory, "commit")?;
-
     Ok(commit_hash)
 }
 
 /// Creates a new commit file and updates the branch file.
 /// the refs/heads/branch_name file will be updated with the new commit hash.
-/// The branch file must exist. If it doesn't exist, the function will return an error.
+/// If the branch file doesn't exist, it will be created.
 /// The index file must exist. If it doesn't exist, the function will return an error.
 /// 
 /// The commit file will be created with the following format:
@@ -61,17 +61,22 @@ pub fn new_commit(git_dir_path: &str, message: &str) -> io::Result<String> {
     };
 
     let branch_path = git_dir_path.to_string() + "/refs/heads/" + branch_name;
-    let mut branch_file = std::fs::File::open(&branch_path)?;
-    let mut parent_hash = String::new();
-    branch_file.read_to_string(&mut parent_hash)?;
-    if parent_hash == "" {
-        parent_hash = NO_PARENT.to_string();
-    }
-    let commit_hash = create_new_commit_file(git_dir_path, message, &parent_hash)?;
-    let mut branch_file = std::fs::File::create(&branch_path)?;
-    branch_file.write_all(commit_hash.as_bytes())?;
-
-    Ok(commit_hash)
+    match std::fs::File::open(&branch_path) {
+        Ok(mut file) => {
+            let mut parent_hash = String::new();
+            file.read_to_string(&mut parent_hash)?;
+            let commit_hash = create_new_commit_file(git_dir_path, message, &parent_hash)?;
+            let mut branch_file = std::fs::File::create(&branch_path)?;
+            branch_file.write_all(commit_hash.as_bytes())?;
+            Ok(commit_hash)
+        },
+        Err(_) => {
+            let commit_hash = create_new_commit_file(git_dir_path, message, NO_PARENT)?;
+            let mut branch_file = std::fs::File::create(&branch_path)?;
+            branch_file.write_all(commit_hash.as_bytes())?;
+            Ok(commit_hash)
+        }
+    } 
 }
 
 /// Returns the parent hash of the given commit hash.
