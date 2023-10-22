@@ -54,8 +54,6 @@ impl Tree {
     /// Adds the hash and name of a file to the tree
     /// It keeps an alphabetical order.
     fn add_file(&mut self, name: &str, hash: &str) {
-        //self.files.push((name.to_string(), hash.to_string()));
-
         //Insert ordered using binary search so that the files are ordered alphabetically.
         //And the resulting trees are deterministic.
         let mut start = 0;
@@ -245,6 +243,21 @@ pub fn load_tree_from_commit(commit_hash: &str, directory: &str) -> io::Result<T
     let tree_hash = &first_line_of_commit_file[1];
     let tree = _load_tree_from_file(&tree_hash, &directory, "root")?;
     Ok(tree)
+}
+
+pub fn has_tree_changed_since_last_commit(
+    new_tree_hash: &str,
+    last_commit_hash: &str,
+    directory: &str,
+) -> bool {
+    let commit_content = match cat_file::cat_file_return_content(&last_commit_hash, &directory) {
+        Ok(content) => content,
+        Err(_) => return true,
+    };
+    let splitted_commit_content: Vec<&str> = commit_content.split("\n").collect();
+    let first_line_of_commit_file: Vec<&str> = splitted_commit_content[0].split(" ").collect();
+    let last_tree_hash = first_line_of_commit_file[1];
+    new_tree_hash != last_tree_hash
 }
 
 /// Print the contents of a tree to the console with a specified depth of indentation.
@@ -454,15 +467,34 @@ mod tests {
         Ok(())
     }
 
+    fn rebuild_git_dir(git_dir_path: &str) {
+        let _ = std::fs::remove_dir_all(git_dir_path);
+        let _ = std::fs::create_dir(git_dir_path);
+        let _ = std::fs::create_dir(git_dir_path.to_string() + "/refs");
+        let _ = std::fs::create_dir(git_dir_path.to_string() + "/refs/heads");
+        let _ = std::fs::create_dir(git_dir_path.to_string() + "/objects");
+        let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs");
+        let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs/refs");
+        let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs/refs/heads");
+        let mut head_file = std::fs::File::create(git_dir_path.to_string() + "/HEAD").unwrap();
+        head_file.write_all("ref: refs/heads/main".as_bytes()).unwrap();
+
+        //Create the refs/heads/main file
+        let mut refs_file = std::fs::File::create(git_dir_path.to_string() + "/refs/heads/main").unwrap();
+        refs_file.write_all("hash_del_commit_anterior".as_bytes()).unwrap();
+
+        //Create the index file
+        let mut index_file = std::fs::File::create(git_dir_path.to_string() + "/index").unwrap();
+        index_file.write_all("".as_bytes()).unwrap();
+    }
+
     #[test]
     fn test_write_tree_no_subtrees() {
-        create_if_not_exists("tests/fake_repo",true).unwrap();
-        create_if_not_exists("tests/fake_repo/.mgit",true).unwrap();
-        create_if_not_exists("tests/fake_repo/.mgit/objects", true).unwrap();
-        create_if_not_exists("tests/fake_repo/.mgit/index_file",false).unwrap();
-        create_if_not_exists("tests/fake_repo/.mgitignore",false).unwrap();
+        let git_dir_path = "tests/commit/.mgit_test4";
+        rebuild_git_dir(git_dir_path);
+
         let content = "hash1 file1.txt\nhash2 file2.txt\nhash3 file3.txt\n";
-        let path = "tests/fake_repo/.mgit/index_file";
+        let path = "tests/commit/.mgit_test4/index";
 
         let mut index_file = OpenOptions::new()
             .write(true)
@@ -470,22 +502,20 @@ mod tests {
             .open(path).unwrap();
 
         index_file.write_all(content.as_bytes()).unwrap();
-        let tree = build_tree_from_index("tests/fake_repo/.mgit/index_file", "tests/fake_repo").unwrap();
-        let result = write_tree(&tree, "tests/fake_repo/.mgit").unwrap();
-        let tree_file = cat_file_return_content(&result.0, "tests/fake_repo/.mgit").unwrap();
+        let tree = build_tree_from_index("tests/commit/.mgit_test4/index", "tests/commit/.mgit_test4").unwrap();
+        let result = write_tree(&tree, "tests/commit/.mgit_test4").unwrap();
+        let tree_file = cat_file_return_content(&result.0, "tests/commit/.mgit_test4").unwrap();
 
         assert_eq!(tree_file, "blob hash1 file1.txt\nblob hash2 file2.txt\nblob hash3 file3.txt\n");
     }
 
     #[test]
     fn test_write_tree_with_subtrees() {
-        create_if_not_exists("tests/fake_repo",true).unwrap();
-        create_if_not_exists("tests/fake_repo/.mgit",true).unwrap();
-        create_if_not_exists("tests/fake_repo/.mgit/objects", true).unwrap();
-        create_if_not_exists("tests/fake_repo/.mgit/index_file",false).unwrap();
-        create_if_not_exists("tests/fake_repo/.mgitignore",false).unwrap();
+        let git_dir_path = "tests/commit/.mgit_test5";
+        rebuild_git_dir(git_dir_path);
+
         let content = "hash1 file1.txt\nhash2 file2.txt\nhash3 file3.txt\nhash4 src/file4.txt\n";
-        let path = "tests/fake_repo/.mgit/index_file";
+        let path = "tests/commit/.mgit_test5/index";
 
         let mut index_file = OpenOptions::new()
             .write(true)
@@ -493,15 +523,15 @@ mod tests {
             .open(path).unwrap();
 
         index_file.write_all(content.as_bytes()).unwrap();
-        let tree = build_tree_from_index("tests/fake_repo/.mgit/index_file", "tests/fake_repo").unwrap();
-        let result = write_tree(&tree, "tests/fake_repo/.mgit").unwrap();
+        let tree = build_tree_from_index("tests/commit/.mgit_test5/index", git_dir_path).unwrap();
+        let result = write_tree(&tree, git_dir_path).unwrap();
 
-        let tree_file = cat_file_return_content(&result.0, "tests/fake_repo/.mgit").unwrap();
+        let tree_file = cat_file_return_content(&result.0, git_dir_path).unwrap();
         let tree_file_blob_part = tree_file.split("tree").collect::<Vec<&str>>()[0];
         let tree_file_tree_part = tree_file.split("tree").collect::<Vec<&str>>()[1];
         let sub_tree_hash = tree_file_tree_part.split(" ").collect::<Vec<&str>>()[1];
 
-        let sub_tree_content = cat_file_return_content(&sub_tree_hash, "tests/fake_repo/.mgit").unwrap();
+        let sub_tree_content = cat_file_return_content(&sub_tree_hash, git_dir_path).unwrap();
 
         assert_eq!(tree_file_blob_part, "blob hash1 file1.txt\nblob hash2 file2.txt\nblob hash3 file3.txt\n");
         assert_eq!(sub_tree_content, "blob hash4 file4.txt\n");

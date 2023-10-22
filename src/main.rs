@@ -28,9 +28,4 @@ fn main() {
     let tree_hash = commit_data.split_whitespace().nth(1).unwrap();
     let tree = messi::tree_handler::load_tree_from_file(tree_hash, ".mgit").unwrap();
     print_tree_console(&tree, 0);
-
-    let path = "src/index.rs";
-    let found_hash = tree.get_hash_from_path(path);
-    println!("Hash for path {} is {}", path, found_hash.unwrap());
-
 }
