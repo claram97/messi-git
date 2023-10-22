@@ -159,6 +159,18 @@ mod tests {
     }
 
     #[test]
+    fn no_commit_made_if_no_changes() {
+        let git_dir_path = "tests/commit/.mgit_test6";
+        rebuild_git_dir(git_dir_path);
+        let message = "test commit";
+        let commit_hash = new_commit(git_dir_path, message);
+        let message = "test commit 2";
+        let commit_hash2 = new_commit(git_dir_path, message);
+        assert!(commit_hash.is_ok());
+        assert!(commit_hash2.is_err());
+    }
+
+    #[test]
     fn test_commit_parent_is_correct() {
         let git_dir_path: &str = "tests/commit/.mgit_test1";
         rebuild_git_dir(git_dir_path);
