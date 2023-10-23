@@ -6,6 +6,9 @@ use crate::{
     index::{self},
 };
 
+const BLOB_NORMAL_MODE : &str = "100644";
+const TREE_MODE : &str = "040000";
+
 //Tree structure
 //files is a vector of tuples (file_name, hash)
 #[derive(Debug)]
@@ -77,7 +80,7 @@ impl Tree {
     pub fn tree_blobs_to_string_formatted(&self) -> String {
         let mut result = String::new();
         for (file_name, hash) in &self.files {
-            result.push_str(format!("blob {hash} {file_name}\n").as_str());
+            result.push_str(format!("{BLOB_NORMAL_MODE} blob {hash} {file_name}\n").as_str());
         }
         result
     }
@@ -144,26 +147,19 @@ pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> io::Result
 /// When done, the subtrees are already stored in the objects folder.
 /// The result of the function is a tuple of the form (hash, name) corresponding to the root tree.
 pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)> {
-    //Vec of (hash, name) tuples
     let mut subtrees: Vec<(String, String)> = Vec::new();
 
-    //Traverse the tree, hashing and compressing each subtree.
     for sub_dir in &tree.directories {
         let sub_tree = write_tree(sub_dir, directory)?;
         subtrees.push(sub_tree);
     }
-
-    //Sort the subtrees by name so the resulting tree is deterministic.
     subtrees.sort();
 
-    //When all of the subtrees have been traversed, i can write "myself"
     let tree_content = tree.tree_blobs_to_string_formatted();
     let mut subtrees_formatted: String = "".to_owned();
     for subtree in subtrees {
-        subtrees_formatted.push_str(format!("tree {} {}\n", subtree.0, subtree.1).as_str());
+        subtrees_formatted.push_str(format!("{TREE_MODE} tree {} {}\n", subtree.0, subtree.1).as_str());
     }
-
-    //Store and hash the tree content.
     let tree_content = tree_content + &subtrees_formatted;
     let tree_hash = hash_object::store_string_to_file(&tree_content, directory, "tree")?;
     Ok((tree_hash, tree.name.clone()))
@@ -181,9 +177,9 @@ fn _load_tree_from_file(tree_hash: &str, directory: &str, name: &str) -> io::Res
 
     for line in lines {
         let line = line.split(' ').collect::<Vec<&str>>();
-        let object_type = line[0];
-        let hash = line[1];
-        let name = line[2];
+        let object_type = line[1];
+        let hash = line[2];
+        let name = line[3];
         match object_type {
             "blob" => tree.add_file(name, hash),
             "tree" => {
@@ -383,7 +379,7 @@ mod tests {
         tree.add_file("root", "1");
         tree.add_file("test", "2");
         let string = tree.tree_blobs_to_string_formatted();
-        assert_eq!(string, "blob 1 root\nblob 2 test\n");
+        assert_eq!(string, "100644 blob 1 root\n100644 blob 2 test\n");
     }
 
     #[test]
@@ -500,7 +496,7 @@ mod tests {
 
         assert_eq!(
             tree_file,
-            "blob hash1 file1.txt\nblob hash2 file2.txt\nblob hash3 file3.txt\n"
+            "100644 blob hash1 file1.txt\n100644 blob hash2 file2.txt\n100644 blob hash3 file3.txt\n"
         );
     }
 
@@ -531,8 +527,8 @@ mod tests {
 
         assert_eq!(
             tree_file_blob_part,
-            "blob hash1 file1.txt\nblob hash2 file2.txt\nblob hash3 file3.txt\n"
+            "100644 blob hash1 file1.txt\n100644 blob hash2 file2.txt\n100644 blob hash3 file3.txt\n040000 "
         );
-        assert_eq!(sub_tree_content, "blob hash4 file4.txt\n");
+        assert_eq!(sub_tree_content, "100644 blob hash4 file4.txt\n");
     }
 }
