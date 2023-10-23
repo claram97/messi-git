@@ -56,7 +56,7 @@ pub fn find_git_directory(
 /// ## Example
 ///
 /// ```
-/// use your_crate_name::get_user_input;
+/// use messi::parse_commands::get_user_input;
 ///
 /// let user_input = get_user_input();
 /// println!("User input: {:?}", user_input);
@@ -101,7 +101,7 @@ pub fn get_user_input() -> Vec<String> {
 /// ## Example
 ///
 /// ```
-/// use your_crate_name::{parse_git_command, GitCommand};
+/// use messi::parse_commands::{parse_git_command, GitCommand};
 ///
 /// let arg = "init";
 /// let result = parse_git_command(arg);
@@ -155,7 +155,7 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
 /// ## Example
 ///
 /// ```
-/// use parse_commands::{handle_git_command, GitCommand};
+/// use messi::parse_commands::{handle_git_command, GitCommand};
 ///
 /// let git_command = GitCommand::Init;
 /// let args = vec!["init".to_string()];
@@ -331,7 +331,8 @@ fn handle_cat_file(args: Vec<String>) {
 /// ## Example
 ///
 /// ```
-/// use init::{handle_init, git_init};
+/// use messi::parse_commands::handle_init;
+/// use messi::init::git_init;
 ///
 /// let args = vec!["init".to_string(), "my_repo".to_string(), "-b".to_string(), "mybranch".to_string()];
 /// handle_init(args);
