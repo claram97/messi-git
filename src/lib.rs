@@ -7,5 +7,6 @@ pub mod index;
 pub mod init;
 pub mod logger;
 pub mod parse_commands;
+pub mod rm;
 pub mod tree_handler;
 pub mod utils;
