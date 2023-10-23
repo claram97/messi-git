@@ -2,9 +2,11 @@ use crate::cat_file;
 use crate::hash_object;
 use crate::tree_handler;
 use crate::tree_handler::has_tree_changed_since_last_commit;
+use std::fs;
 use std::io;
 use std::io::Read;
 use std::io::Write;
+use std::path::Path;
 
 const NO_PARENT: &str = "0000000000000000000000000000000000000000";
 const INDEX_FILE_NAME: &str = "index";
@@ -128,6 +130,24 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
     };
 
     Ok(parent_hash.to_string())
+}
+
+pub fn read_head_commit_hash(git_dir: &str) -> io::Result<String> {
+    let head_path = format!("{}/HEAD", git_dir);
+    let head_content = fs::read_to_string(head_path)?;
+    let last_commit_ref = head_content.trim().split(": ").last();
+
+    match last_commit_ref {
+        Some(refs) => {
+            let heads_path = format!("{}/{}", git_dir, refs);
+            if Path::new(&heads_path).exists() {
+                fs::read_to_string(heads_path)
+            } else {
+                Ok(refs.to_string())
+            }
+        }
+        None => Err(io::Error::new(io::ErrorKind::NotFound, "Error in head file"))
+    }
 }
 
 #[cfg(test)]

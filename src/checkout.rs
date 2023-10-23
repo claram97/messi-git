@@ -3,6 +3,8 @@ use std::fs;
 use std::io;
 use std::io::Write;
 use std::path::Path;
+use crate::commit;
+use crate::tree_handler;
 
 /// Process command-line arguments and options to perform various actions in a Git-like application.
 ///
@@ -18,7 +20,7 @@ use std::path::Path;
 ///   - `"-f"`: Force the change of branch or commit (discarding uncommitted changes).
 ///
 /// * `destination` - A string representing the branch name or commit ID to be operated on.
-pub fn process_args() {
+pub fn process_args(git_dir_path: &str) {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
@@ -28,7 +30,7 @@ pub fn process_args() {
 
     let option = &args[1];
     let destination = &args[2];
-    let git_dir = Path::new(".mgit");
+    let git_dir = Path::new(git_dir_path);
 
     match option.as_str() {
         // Change to the specified branch
@@ -38,7 +40,7 @@ pub fn process_args() {
         // Create or reset a branch if it exists
         "-B" => create_or_reset_branch(git_dir, destination),
         // Change to a specific commit (detached mode)
-        "--detach" => checkout_commit_detached(git_dir, destination),
+        "--detach" => checkout_commit_detached(git_dir_path, destination),
         // Force the change of branch or commit (discarding uncommitted changes)
         "-f" => force_checkout(git_dir, destination),
         _ => {
@@ -289,24 +291,40 @@ pub fn create_or_reset_branch(git_dir: &Path, branch_name: &str) {
 /// This example demonstrates how to use the `checkout_commit_detached` function to switch to a specific
 /// commit in detached mode within a Git-like repository. Make sure to replace `"a1b2c3d4e5"` with the
 /// actual commit ID you want to check out.
-pub fn checkout_commit_detached(git_dir: &Path, commit_id: &str) {
-    // Check if the specified commit exists
-    let objects_dir = git_dir.join("objects");
-    let commit_file = objects_dir.join(commit_id);
-
-    if commit_file.exists() {
-        // Update the HEAD file to point to the commit in "detached" mode
-        let head_file = git_dir.join("HEAD");
-        let new_head_content = format!("{} (commit)\n", commit_id);
-        if let Err(err) = fs::write(head_file, new_head_content) {
-            eprintln!("Failed to update HEAD file: {}", err);
+pub fn checkout_commit_detached(git_dir: &str, commit_id: &str) {
+    let commit_tree = match tree_handler::load_tree_from_commit(commit_id, git_dir) {
+        Ok(tree) => tree,
+        Err(err) => {
+            eprintln!("Failed to recover commit tree: {}", err);
             return;
         }
+    };
+    // Tenemos el arbol
+    // Necesitamos borrar los archivos que git este trackeando (index)
+    // Escribir todos los que aparecen en el tree en el directorio.
 
-        println!("Switched to commit (detached mode): {}", commit_id);
-    } else {
-        eprintln!("Commit '{}' not found in the repository", commit_id);
-    }
+    let latest_commit = match commit::read_head_commit_hash(git_dir) {
+        Ok(commit) => commit,
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            return;
+        }
+    };
+    let latest_tree = match tree_handler::load_tree_from_commit(&latest_commit, git_dir) {
+        Ok(tree) => tree,
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            return;
+        }
+    };
+
+    let files_dir = match git_dir.rsplit_once('/') {
+        Some(tuple) => tuple.0,
+        None => return,
+    };
+
+    let _ = latest_tree.delete_directories(files_dir);
+    let _ = commit_tree.create_directories(files_dir, git_dir);
 }
 
 /// Forcefully switch to a specific branch or commit in a Git-like repository.
@@ -535,7 +553,7 @@ mod tests {
         fs::write(&head_file, "ref: refs/heads/main\n").expect("Failed to write HEAD file");
 
         // Execute the checkout_commit_detached function with a commit in detached mode
-        checkout_commit_detached(Path::new(T), commit_id);
+        checkout_commit_detached(T, commit_id);
 
         // Verify that the HEAD file has been updated to point to the commit in detached mode
         let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");

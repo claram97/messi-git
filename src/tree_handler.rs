@@ -1,4 +1,4 @@
-use std::io::{self};
+use std::{io::{self}, fs, path::PathBuf};
 
 use crate::{
     cat_file::{self, cat_file_return_content},
@@ -108,6 +108,61 @@ impl Tree {
         }
         None
     }
+
+    // pub fn collect_blobs_into_vec(&self) -> Vec<(String, String)> {
+    //     let mut blobs: Vec<(String,String)> = Vec::new();
+
+    //     for subdir in &self.directories {
+    //         let mut sub_blobs = subdir.collect_blobs_into_vec();
+
+    //         for mut blob in sub_blobs {
+    //             blob.0 = self.name.to_string() + "/" + &blob.0;
+    //             blobs.push(blob);
+    //         }
+    //     }
+
+    //     for mut blob in &self.files {
+    //         blob.0 = self.name + "/" + &blob.0;
+    //         blobs.push(blob);
+    //     }
+    //     blobs
+    // }
+
+    pub fn create_directories(&self, parent_dir: &str, git_dir_path: &str) -> io::Result<()> {
+        let dir_path = parent_dir.to_string() + &self.name;
+        fs::create_dir_all(&dir_path)?;
+        for file in &self.files {
+            let path = dir_path.to_string() + &file.0;
+            let mut new_file = fs::File::create(path)?;
+            cat_file::cat_file(&file.1, git_dir_path, &mut new_file)?;
+        }
+
+        for subdirs in &self.directories {
+            subdirs.create_directories(&dir_path, git_dir_path)?;
+        }
+        Ok(())
+    }
+
+    pub fn delete_directories(&self, parent_dir: &str) -> io::Result<()> {
+        let dir_path = parent_dir.to_string() + &self.name;
+        for file in &self.files {
+            let path = dir_path.to_string() + &file.0;
+            fs::remove_file(path)?;
+        }
+
+        for subdirs in &self.directories {
+            subdirs.delete_directories(&dir_path)?;
+        }
+
+        let dir_path_buf = PathBuf::from(&dir_path);
+        let is_empty = dir_path_buf.read_dir()?.next().is_none();
+        if is_empty {
+            fs::remove_dir(dir_path)?;
+        }
+        Ok(())
+    }
+
+
 }
 
 /// Builds a tree from the index file.
