@@ -6,8 +6,8 @@ use crate::{
     index::{self},
 };
 
-const BLOB_NORMAL_MODE : &str = "100644";
-const TREE_MODE : &str = "040000";
+const BLOB_NORMAL_MODE: &str = "100644";
+const TREE_MODE: &str = "040000";
 
 //Tree structure
 //files is a vector of tuples (file_name, hash)
@@ -158,7 +158,8 @@ pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)> 
     let tree_content = tree.tree_blobs_to_string_formatted();
     let mut subtrees_formatted: String = "".to_owned();
     for subtree in subtrees {
-        subtrees_formatted.push_str(format!("{TREE_MODE} tree {} {}\n", subtree.0, subtree.1).as_str());
+        subtrees_formatted
+            .push_str(format!("{TREE_MODE} tree {} {}\n", subtree.0, subtree.1).as_str());
     }
     let tree_content = tree_content + &subtrees_formatted;
     let tree_hash = hash_object::store_string_to_file(&tree_content, directory, "tree")?;
