@@ -144,7 +144,7 @@ impl Index {
     ///
     /// # Returns
     /// `true` if the path should be ignored, otherwise `false`.
-    pub fn path_should_be_ignored(&self,path : &str) -> bool {
+    pub fn path_should_be_ignored(&self, path: &str) -> bool {
         self.ignorer.ignore(path)
     }
 
@@ -165,8 +165,6 @@ impl Index {
         self.map.get(path)
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
