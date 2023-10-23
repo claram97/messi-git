@@ -1,12 +1,8 @@
-use std::env;
+use crate::index::Index;
 use std::fs;
-use std::error::Error;
-use crate::index::Index; 
 use std::io;
-use std::path::PathBuf;
 
 pub fn git_rm(file_name: &str, index_path: &str, git_dir_path: &str) -> io::Result<()> {
-
     if let Some(mut index) = Index::load_from_path_if_exists(index_path, git_dir_path)? {
         if !index.contains(file_name) {
             eprintln!("El archivo no está en el índice.");
@@ -24,7 +20,10 @@ pub fn git_rm(file_name: &str, index_path: &str, git_dir_path: &str) -> io::Resu
         }
 
         if let Err(err) = fs::remove_file(file_name) {
-            eprintln!("Error al eliminar el archivo del sistema de archivos de trabajo: {}", err);
+            eprintln!(
+                "Error al eliminar el archivo del sistema de archivos de trabajo: {}",
+                err
+            );
             return Err(err);
         }
     } else {
@@ -58,9 +57,7 @@ pub fn remove_path(index: &mut Index, path: &str) -> io::Result<()> {
         ));
     }
 
-    if let Err(err) = index.remove_file(path) {
-        return Err(err);
-    }
+    index.remove_file(path)?;
 
     if fs::metadata(path)?.is_dir() {
         remove_directory(path)?;
@@ -70,11 +67,12 @@ pub fn remove_path(index: &mut Index, path: &str) -> io::Result<()> {
 
     Ok(())
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
     use std::env;
+    use std::fs;
 
     #[test]
     fn test_git_rm_file_not_in_index() -> io::Result<()> {
@@ -126,7 +124,6 @@ mod tests {
         if let Ok(Some(index1)) = result1 {
         } else {
             assert!(result1.is_ok());
-            
         }
 
         Ok(())
@@ -147,5 +144,4 @@ mod tests {
 
         Ok(())
     }
-
 }
