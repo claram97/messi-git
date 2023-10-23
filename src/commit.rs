@@ -18,9 +18,10 @@ fn create_new_commit_file(
     directory: &str,
     message: &str,
     parent_commit: &str,
+    git_ignore_path: &str,
 ) -> io::Result<String> {
     let index_path = directory.to_string() + "/" + INDEX_FILE_NAME;
-    let commit_tree = tree_handler::build_tree_from_index(&index_path, directory)?;
+    let commit_tree = tree_handler::build_tree_from_index(&index_path, directory, git_ignore_path)?;
     let (tree_hash, _) = tree_handler::write_tree(&commit_tree, directory)?;
 
     if !has_tree_changed_since_last_commit(&tree_hash, parent_commit, directory) {
@@ -79,7 +80,7 @@ fn get_branch_name(git_dir_path: &str) -> io::Result<String> {
 ///
 /// The hash of the new commit.
 ///
-pub fn new_commit(git_dir_path: &str, message: &str) -> io::Result<String> {
+pub fn new_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> io::Result<String> {
     let branch_name = get_branch_name(git_dir_path)?;
     let branch_path = git_dir_path.to_string() + "/refs/heads/" + &branch_name;
     let parent_hash = match std::fs::File::open(&branch_path) {
@@ -90,7 +91,7 @@ pub fn new_commit(git_dir_path: &str, message: &str) -> io::Result<String> {
         }
         Err(_) => NO_PARENT.to_string(),
     };
-    let commit_hash = create_new_commit_file(git_dir_path, message, &parent_hash)?;
+    let commit_hash = create_new_commit_file(git_dir_path, message, &parent_hash, git_ignore_path)?;
     let mut branch_file = std::fs::File::create(&branch_path)?;
     branch_file.write_all(commit_hash.as_bytes())?;
     Ok(commit_hash)
@@ -172,7 +173,7 @@ mod tests {
         let git_dir_path = "tests/commit/.mgit_test";
         rebuild_git_dir(git_dir_path);
         let message = "test commit";
-        let commit_hash = new_commit(git_dir_path, message).unwrap();
+        let commit_hash = new_commit(git_dir_path, message, "").unwrap();
         let refs_path = git_dir_path.to_string() + "/refs/heads/main";
         let mut refs_file = std::fs::File::open(&refs_path).unwrap();
         let mut refs_content = String::new();
@@ -185,9 +186,9 @@ mod tests {
         let git_dir_path = "tests/commit/.mgit_test6";
         rebuild_git_dir(git_dir_path);
         let message = "test commit";
-        let commit_hash = new_commit(git_dir_path, message);
+        let commit_hash = new_commit(git_dir_path, message, "");
         let message = "test commit 2";
-        let commit_hash2 = new_commit(git_dir_path, message);
+        let commit_hash2 = new_commit(git_dir_path, message, "");
         assert!(commit_hash.is_ok());
         assert!(commit_hash2.is_err());
     }
@@ -201,7 +202,7 @@ mod tests {
         let mut ref_actual_content = String::new();
         ref_actual.read_to_string(&mut ref_actual_content).unwrap();
         let message = "test commit";
-        let commit_hash = new_commit(git_dir_path, message).unwrap();
+        let commit_hash = new_commit(git_dir_path, message, "").unwrap();
         let parent_hash = get_parent_hash(&commit_hash, git_dir_path).unwrap();
         assert_eq!(parent_hash, ref_actual_content);
     }
@@ -210,7 +211,7 @@ mod tests {
     fn head_does_not_exist_returns_error() {
         let git_dir_path = "tests/commit";
         let message = "test commit";
-        let result = new_commit(git_dir_path, message);
+        let result = new_commit(git_dir_path, message, "");
         assert!(result.is_err());
     }
 
@@ -220,7 +221,7 @@ mod tests {
         rebuild_git_dir(git_dir_path);
         reset_refs_file(git_dir_path);
         let message = "test commit";
-        let commit_1_hash = new_commit(git_dir_path, message).unwrap();
+        let commit_1_hash = new_commit(git_dir_path, message, "").unwrap();
         let parent_hash = get_parent_hash(&commit_1_hash, git_dir_path).unwrap();
         assert_eq!(parent_hash, "hash_del_commit_anterior");
         let mut index_file = std::fs::OpenOptions::new()
@@ -231,7 +232,7 @@ mod tests {
             .write_all("\nhashhashhashhash5 src/prueba/prueba2.c".as_bytes())
             .unwrap();
         let message = "test commit 2";
-        let commit_2_hash = new_commit(git_dir_path, message).unwrap();
+        let commit_2_hash = new_commit(git_dir_path, message, "").unwrap();
         let parent_hash = get_parent_hash(&commit_2_hash, git_dir_path).unwrap();
         assert_eq!(parent_hash, commit_1_hash);
 
@@ -243,7 +244,7 @@ mod tests {
             .write_all("\nhashhashhashhash6 src/prueba/prueba3.c".as_bytes())
             .unwrap();
         let message = "test commit 3";
-        let commit_3_hash = new_commit(git_dir_path, message).unwrap();
+        let commit_3_hash = new_commit(git_dir_path, message, "").unwrap();
         let parent_hash = get_parent_hash(&commit_3_hash, git_dir_path).unwrap();
         assert_eq!(parent_hash, commit_2_hash);
     }
@@ -254,7 +255,7 @@ mod tests {
         rebuild_git_dir(git_dir_path);
         reset_refs_file(git_dir_path);
         let message = "test commit";
-        let commit_1_hash = new_commit(git_dir_path, message).unwrap();
+        let commit_1_hash = new_commit(git_dir_path, message, "").unwrap();
         let commit_1_content =
             cat_file::cat_file_return_content(&commit_1_hash, git_dir_path).unwrap();
 
@@ -266,7 +267,7 @@ mod tests {
         index_file
             .write_all("\nhashhashhashhash5 src/prueba/prueba2.c".as_bytes())
             .unwrap();
-        let commit_2_hash = new_commit(git_dir_path, message).unwrap();
+        let commit_2_hash = new_commit(git_dir_path, message, "").unwrap();
         let commit_2_content =
             cat_file::cat_file_return_content(&commit_2_hash, git_dir_path).unwrap();
         let message = "test commit 3";
@@ -277,7 +278,7 @@ mod tests {
         index_file
             .write_all("\nhashhashhashhash6 src/prueba/prueba3.c".as_bytes())
             .unwrap();
-        let commit_3_hash = new_commit(git_dir_path, message).unwrap();
+        let commit_3_hash = new_commit(git_dir_path, message, "").unwrap();
         let commit_3_content =
             cat_file::cat_file_return_content(&commit_3_hash, git_dir_path).unwrap();
         assert_eq!(commit_1_content.split("\n").last().unwrap(), "test commit");

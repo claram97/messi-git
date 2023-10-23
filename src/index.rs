@@ -164,10 +164,6 @@ impl Index {
     pub fn get_hash(&self, path: &str) -> Option<&String> {
         self.map.get(path)
     }
-
-    pub fn iter(&self) -> std::collections::hash_map::Iter<String, String> {
-        self.map.iter()
-    }
 }
 
 #[cfg(test)]

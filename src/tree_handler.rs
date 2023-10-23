@@ -115,8 +115,12 @@ impl Tree {
 /// Files that are not listed in a directory in the index file will be part of the root tree.
 ///
 /// The index file must be in the same format as the one created by the index module.
-pub fn build_tree_from_index(index_path: &str, git_dir_path: &str) -> io::Result<Tree> {
-    let index = index::Index::load(index_path, git_dir_path)?;
+pub fn build_tree_from_index(
+    index_path: &str,
+    git_dir_path: &str,
+    git_ignore_path: &str,
+) -> io::Result<Tree> {
+    let index = index::Index::load(index_path, git_dir_path, git_ignore_path)?;
     let mut tree = Tree::new();
 
     //Iterates over the index struct, adding each file to the tree.
@@ -426,7 +430,7 @@ mod tests {
 
         index_file.write_all(content.as_bytes())?;
         let result_tree =
-            build_tree_from_index("tests/fake_repo/.mgit/index_file", "tests/fake_repo");
+            build_tree_from_index("tests/fake_repo/.mgit/index_file", "tests/fake_repo", "");
         assert!(result_tree.is_ok());
         Ok(())
     }
@@ -443,7 +447,8 @@ mod tests {
         let mut index_file = OpenOptions::new().write(true).truncate(true).open(path)?;
 
         index_file.write_all(content.as_bytes())?;
-        let result_tree = build_tree_from_index("tests/fake_repo/.mgit/index", "tests/fake_repo");
+        let result_tree =
+            build_tree_from_index("tests/fake_repo/.mgit/index", "tests/fake_repo", "");
         assert!(result_tree.is_err());
         Ok(())
     }
@@ -489,9 +494,12 @@ mod tests {
             .unwrap();
 
         index_file.write_all(content.as_bytes()).unwrap();
-        let tree =
-            build_tree_from_index("tests/commit/.mgit_test4/index", "tests/commit/.mgit_test4")
-                .unwrap();
+        let tree = build_tree_from_index(
+            "tests/commit/.mgit_test4/index",
+            "tests/commit/.mgit_test4",
+            "",
+        )
+        .unwrap();
         let result = write_tree(&tree, "tests/commit/.mgit_test4").unwrap();
         let tree_file = cat_file_return_content(&result.0, "tests/commit/.mgit_test4").unwrap();
 
@@ -516,7 +524,8 @@ mod tests {
             .unwrap();
 
         index_file.write_all(content.as_bytes()).unwrap();
-        let tree = build_tree_from_index("tests/commit/.mgit_test5/index", git_dir_path).unwrap();
+        let tree =
+            build_tree_from_index("tests/commit/.mgit_test5/index", git_dir_path, "").unwrap();
         let result = write_tree(&tree, git_dir_path).unwrap();
 
         let tree_file = cat_file_return_content(&result.0, git_dir_path).unwrap();
