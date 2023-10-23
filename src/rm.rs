@@ -35,8 +35,8 @@ use std::io;
 ///     eprintln!("Error: {}", err);
 /// }
 /// ```
-pub fn git_rm(file_name: &str, index_path: &str, git_dir_path: &str) -> io::Result<()> {
-    if let Some(mut index) = Index::load_from_path_if_exists(index_path, git_dir_path)? {
+pub fn git_rm(file_name: &str, index_path: &str, git_dir_path: &str, git_ignore_path: &str) -> io::Result<()> {
+    if let Some(mut index) = Index::load_from_path_if_exists(index_path, git_dir_path, git_ignore_path)? {
         if !index.contains(file_name) {
             eprintln!("The file is not in the index.");
             return Ok(());
@@ -163,7 +163,7 @@ mod tests {
         let git_dir_path = "ruta_al_git_dir";
         let file_name = "archivo_no_en_indice.txt";
 
-        let result = git_rm(file_name, index_path, git_dir_path);
+        let result = git_rm(file_name, index_path, git_dir_path, "");
 
         assert!(result.is_ok());
         assert!(!fs::metadata(file_name).is_ok());
@@ -185,7 +185,7 @@ mod tests {
     ///
     #[test]
     fn test_add_path_file() -> io::Result<()> {
-        let mut index = Index::new("", ".mgit");
+        let mut index = Index::new("", ".mgit", "");
         setup_mgit(".mgit")?;
 
         let path = "tests/add/dir_to_add/non_empty/a.txt";
@@ -209,7 +209,7 @@ mod tests {
         let index_path = "";
         let git_dir_path = ".mgit";
         let file_name = "a.txt";
-        let mut index = Index::new(index_path, git_dir_path);
+        let mut index = Index::new(index_path, git_dir_path, "");
         setup_mgit(".mgit")?;
 
         fs::write(file_name, "contenido del archivo")?;
@@ -218,9 +218,9 @@ mod tests {
         index.add_path(file_name)?;
         assert!(index.contains(file_name));
 
-        let result = git_rm(file_name, index_path, git_dir_path);
+        let result = git_rm(file_name, index_path, git_dir_path, "");
         assert!(result.is_ok());
-        let result1 = Index::load_from_path_if_exists(path, git_dir_path);
+        let result1 = Index::load_from_path_if_exists(path, git_dir_path, "");
         if let Ok(Some(_index1)) = result1 {
         } else {
             assert!(result1.is_ok());

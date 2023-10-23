@@ -10,6 +10,11 @@ use flate2::bufread::ZlibDecoder;
 /// for example a file or a Vec<u8>
 /// For writing to stdout, io::stdout() can be used.
 /// If the hash is not valid, it prints "Not a valid hash".
+///
+/// ## Parameters
+/// * `hash` - The complete hash of the file to print.
+/// * `directory` - The path to the git directory.
+/// * `output` - The output to write the content of the file to. It can be anything that implements Write. For example a file or a Vec<u8>. For writing to stdout, io::stdout() can be used.
 pub fn cat_file(hash: &str, directory: &str, output: &mut impl Write) -> io::Result<()> {
     if let Ok(content) = cat_file_return_content(hash, directory) {
         output.write_all(content.as_bytes())
@@ -25,6 +30,10 @@ pub fn cat_file(hash: &str, directory: &str, output: &mut impl Write) -> io::Res
 /// If the hash is valid and the file is found, it returns the content of the file as a String.
 /// If the hash is not valid, it returns an error.
 /// If the hash is valid but the file is not found, it returns an error.
+///
+/// ## Parameters
+/// * `hash` - The complete hash of the file to print.
+/// * `directory` - The path to the git directory.
 pub fn cat_file_return_content(hash: &str, directory: &str) -> io::Result<String> {
     let file_dir = format!("{}/objects/{}", directory, &hash[..2]);
     let file = File::open(format!("{}/{}", file_dir, &hash[2..]))?;

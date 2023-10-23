@@ -37,10 +37,10 @@ impl Index {
     /// # Returns
     ///
     /// A new instance of index.
-    pub fn new(index_path: &str, git_dir_path: &str) -> Self {
+    pub fn new(index_path: &str, git_dir_path: &str, gitignore_path: &str) -> Self {
         Self {
             map: HashMap::new(),
-            ignorer: Ignorer::load(),
+            ignorer: Ignorer::load(gitignore_path),
             path: String::from(index_path),
             git_dir: String::from(git_dir_path),
         }
@@ -50,9 +50,14 @@ impl Index {
     /// of the given file and a git directory where the objects will be stored.
     ///
     /// May fail if the index path can not be read.
-    pub fn load(index_path: &str, git_dir_path: &str) -> io::Result<Self> {
+    pub fn load(index_path: &str, git_dir_path: &str, gitignore_path: &str) -> io::Result<Self> {
         let index_content = fs::read_to_string(index_path)?;
-        Ok(Self::with(&index_content, index_path, git_dir_path))
+        Ok(Self::with(
+            &index_content,
+            index_path,
+            git_dir_path,
+            gitignore_path,
+        ))
     }
 
     /// Create a new instance of index and populate it with the provided content.
@@ -70,8 +75,13 @@ impl Index {
     /// # Returns
     ///
     /// A new instance of index populated with the content.
-    fn with(index_content: &str, index_path: &str, git_dir_path: &str) -> Self {
-        let mut index = Self::new(index_path, git_dir_path);
+    fn with(
+        index_content: &str,
+        index_path: &str,
+        git_dir_path: &str,
+        gitignore_path: &str,
+    ) -> Self {
+        let mut index = Self::new(index_path, git_dir_path, gitignore_path);
         index.load_content(index_content);
         index
     }
@@ -193,10 +203,11 @@ impl Index {
     pub fn load_from_path_if_exists(
         index_path: &str,
         git_dir_path: &str,
+        git_ignore_path: &str,
     ) -> io::Result<Option<Index>> {
         if let Ok(metadata) = fs::metadata(index_path) {
             if metadata.is_file() {
-                return Index::load(index_path, git_dir_path).map(Some);
+                return Index::load(index_path, git_dir_path, git_ignore_path).map(Some);
             }
         }
         Ok(None)
@@ -211,6 +222,29 @@ impl Index {
             writeln!(index_file, "{} {}", line.1, line.0)?;
         }
         Ok(())
+    }
+
+    /// Returns an iterator over the key-value pairs in the map.
+    ///
+    /// This function returns an iterator that allows you to iterate over the key-value pairs in the map.
+    ///
+    /// # Returns
+    /// An iterator over the key-value pairs in the map.
+    pub fn iter(&self) -> std::collections::hash_map::Iter<String, String> {
+        self.map.iter()
+    }
+
+    /// Checks if a path should be ignored based on the provided `ignorer`.
+    ///
+    /// This function checks if a given `path` should be ignored by using the provided `ignorer`.
+    ///
+    /// # Arguments
+    /// - `path`: A reference to a string representing the path to be checked.
+    ///
+    /// # Returns
+    /// `true` if the path should be ignored, otherwise `false`.
+    pub fn path_should_be_ignored(&self, path: &str) -> bool {
+        self.ignorer.ignore(path)
     }
 
     #[cfg(test)]
@@ -268,7 +302,7 @@ mod tests {
         let index_content = "hash_de_prueba archivo_prueba.txt\n";
         fs::write(test_index_path, index_content).unwrap();
 
-        let result = Index::load_from_path_if_exists(test_index_path, test_git_dir_path);
+        let result = Index::load_from_path_if_exists(test_index_path, test_git_dir_path, "");
         if let Ok(Some(index)) = result {
             assert!(index.contains("archivo_prueba.txt"));
         } else {
@@ -301,7 +335,7 @@ mod tests {
         let test_index_path = "test_index1.index";
         let test_git_dir_path = "test_git";
 
-        let result = Index::load_from_path_if_exists(test_index_path, test_git_dir_path);
+        let result = Index::load_from_path_if_exists(test_index_path, test_git_dir_path, "");
         if let Ok(None) = result {
         } else {
             panic!("Se esperaba None, pero se obtuvo otro resultado.");
@@ -491,7 +525,7 @@ mod tests {
     /// The test may panic if any of the assertions fail.
     #[test]
     fn test_add_path_file() -> io::Result<()> {
-        let mut index = Index::new("", ".mgit");
+        let mut index = Index::new("", ".mgit", "");
         setup_mgit(".mgit")?;
 
         let path = "tests/add/dir_to_add/non_empty/a.txt";
@@ -522,7 +556,7 @@ mod tests {
     /// The test may panic if any of the assertions fail.
     #[test]
     fn test_add_path_empty_dir() -> io::Result<()> {
-        let mut index = Index::new("", ".mgit");
+        let mut index = Index::new("", ".mgit", "");
         setup_mgit(".mgit")?;
 
         let empty_dir_path = "tests/add/dir_to_add/empty";
@@ -554,7 +588,7 @@ mod tests {
     /// The test may panic if any of the assertions fail.
     #[test]
     fn test_add_path_non_empty_dir() -> io::Result<()> {
-        let mut index = Index::new("", ".mgit");
+        let mut index = Index::new("", ".mgit", "");
         setup_mgit(".mgit")?;
 
         let dir_path = "tests/add/dir_to_add/non_empty";
@@ -586,7 +620,7 @@ mod tests {
     /// The test may panic if any of the assertions fail.
     #[test]
     fn test_add_path_non_empty_recursive_dirs() -> io::Result<()> {
-        let mut index = Index::new("", ".mgit");
+        let mut index = Index::new("", ".mgit", "");
         setup_mgit(".mgit")?;
 
         let dir_path = "tests/add/dir_to_add/recursive";
