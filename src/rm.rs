@@ -30,13 +30,20 @@ use std::io;
 /// use std::fs;
 /// use messi::rm::git_rm;
 ///
-/// let result = git_rm("file.txt", "index.index", ".mgit");
+/// let result = git_rm("file.txt", "index.index", ".mgit", ".gitignore");
 /// if let Err(err) = result {
 ///     eprintln!("Error: {}", err);
 /// }
 /// ```
-pub fn git_rm(file_name: &str, index_path: &str, git_dir_path: &str, git_ignore_path: &str) -> io::Result<()> {
-    if let Some(mut index) = Index::load_from_path_if_exists(index_path, git_dir_path, git_ignore_path)? {
+pub fn git_rm(
+    file_name: &str,
+    index_path: &str,
+    git_dir_path: &str,
+    git_ignore_path: &str,
+) -> io::Result<()> {
+    if let Some(mut index) =
+        Index::load_from_path_if_exists(index_path, git_dir_path, git_ignore_path)?
+    {
         if !index.contains(file_name) {
             eprintln!("The file is not in the index.");
             return Ok(());
@@ -127,12 +134,6 @@ pub fn remove_directory(dir_path: &str) -> io::Result<()> {
 /// - If there is an issue while removing a file within a directory.
 /// - If there is an issue while removing the directory itself.
 pub fn remove_path(index: &mut Index, path: &str) -> io::Result<()> {
-    if !index.contains(path) {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("Path not found in index: {}. Cannot remove", path),
-        ));
-    }
     index.remove_file(path)?;
 
     if fs::metadata(path)?.is_dir() {
