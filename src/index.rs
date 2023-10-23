@@ -22,7 +22,6 @@ pub struct Index {
 }
 
 impl Index {
-
     /// Create a new instance of index with the specified paths.
     ///
     /// This function initializes a new index and sets its internal fields based
@@ -262,7 +261,7 @@ mod tests {
     /// The test will panic if the loaded index is empty, indicating a failure.
     #[test]
     fn test_load_from_path_if_exists_with_existing_index() {
-        let mut index = Index::default();
+        let _index = Index::default();
         let test_index_path = "test_index.index";
         let test_git_dir_path = "test_git";
 
@@ -298,7 +297,7 @@ mod tests {
     /// The test will panic if the loaded result is not `None, indicating a failure.
     #[test]
     fn test_load_from_path_if_exists_with_non_existing_index() {
-        let mut index = Index::default();
+        let _index = Index::default();
         let test_index_path = "test_index1.index";
         let test_git_dir_path = "test_git";
 
@@ -436,7 +435,7 @@ mod tests {
         Ok(())
     }
 
-        /// Test for removing a file from the index.
+    /// Test for removing a file from the index.
     ///
     /// This test verifies the behavior of the `remove_file` method when removing a file from the index.
     ///
@@ -472,7 +471,7 @@ mod tests {
         fs::create_dir_all(format!("{}/objects", git_dir))
     }
 
-        /// Test for adding files by path to the index.
+    /// Test for adding files by path to the index.
     ///
     /// This test verifies the behavior of the `add_path` method when adding files from a specified path to the index.
     ///
