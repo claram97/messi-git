@@ -37,6 +37,24 @@ fn create_new_commit_file(
     Ok(commit_hash)
 }
 
+fn get_branch_name(git_dir_path: &str) -> io::Result<String> {
+    let head_path = git_dir_path.to_string() + "/HEAD";
+    let mut head_file = std::fs::File::open(head_path)?;
+    let mut head_content = String::new();
+    head_file.read_to_string(&mut head_content)?;
+
+    let branch_name = match head_content.split('/').last() {
+        Some(branch_name) => branch_name,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "HEAD file is empty",
+            ))
+        }
+    };
+    Ok(branch_name.to_string())
+}
+
 /// Creates a new commit file and updates the branch file.
 /// the refs/heads/branch_name file will be updated with the new commit hash.
 /// If the branch file doesn't exist, it will be created.
@@ -62,38 +80,20 @@ fn create_new_commit_file(
 /// The hash of the new commit.
 ///
 pub fn new_commit(git_dir_path: &str, message: &str) -> io::Result<String> {
-    let head_path = git_dir_path.to_string() + "/HEAD";
-    let mut head_file = std::fs::File::open(head_path)?;
-    let mut head_content = String::new();
-    head_file.read_to_string(&mut head_content)?;
-
-    let branch_name = match head_content.split('/').last() {
-        Some(branch_name) => branch_name,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "HEAD file is empty",
-            ))
-        }
-    };
-
-    let branch_path = git_dir_path.to_string() + "/refs/heads/" + branch_name;
-    match std::fs::File::open(&branch_path) {
+    let branch_name = get_branch_name(git_dir_path)?;
+    let branch_path = git_dir_path.to_string() + "/refs/heads/" + &branch_name;
+    let parent_hash = match std::fs::File::open(&branch_path) {
         Ok(mut file) => {
             let mut parent_hash = String::new();
             file.read_to_string(&mut parent_hash)?;
-            let commit_hash = create_new_commit_file(git_dir_path, message, &parent_hash)?;
-            let mut branch_file = std::fs::File::create(&branch_path)?;
-            branch_file.write_all(commit_hash.as_bytes())?;
-            Ok(commit_hash)
+            parent_hash
         }
-        Err(_) => {
-            let commit_hash = create_new_commit_file(git_dir_path, message, NO_PARENT)?;
-            let mut branch_file = std::fs::File::create(&branch_path)?;
-            branch_file.write_all(commit_hash.as_bytes())?;
-            Ok(commit_hash)
-        }
-    }
+        Err(_) => NO_PARENT.to_string(),
+    };
+    let commit_hash = create_new_commit_file(git_dir_path, message, &parent_hash)?;
+    let mut branch_file = std::fs::File::create(&branch_path)?;
+    branch_file.write_all(commit_hash.as_bytes())?;
+    Ok(commit_hash)
 }
 
 /// Returns the parent hash of the given commit hash.
@@ -223,7 +223,6 @@ mod tests {
         let commit_1_hash = new_commit(git_dir_path, message).unwrap();
         let parent_hash = get_parent_hash(&commit_1_hash, git_dir_path).unwrap();
         assert_eq!(parent_hash, "hash_del_commit_anterior");
-        //Append a "change" to the index file
         let mut index_file = std::fs::OpenOptions::new()
             .append(true)
             .open(git_dir_path.to_string() + "/index")
@@ -236,7 +235,6 @@ mod tests {
         let parent_hash = get_parent_hash(&commit_2_hash, git_dir_path).unwrap();
         assert_eq!(parent_hash, commit_1_hash);
 
-        //Append a "change" to the index file
         let mut index_file = std::fs::OpenOptions::new()
             .append(true)
             .open(git_dir_path.to_string() + "/index")
@@ -261,7 +259,6 @@ mod tests {
             cat_file::cat_file_return_content(&commit_1_hash, git_dir_path).unwrap();
 
         let message = "test commit 2";
-        //Append a "change" to the index file
         let mut index_file = std::fs::OpenOptions::new()
             .append(true)
             .open(git_dir_path.to_string() + "/index")
@@ -273,7 +270,6 @@ mod tests {
         let commit_2_content =
             cat_file::cat_file_return_content(&commit_2_hash, git_dir_path).unwrap();
         let message = "test commit 3";
-        //Append a "change" to the index file
         let mut index_file = std::fs::OpenOptions::new()
             .append(true)
             .open(git_dir_path.to_string() + "/index")
