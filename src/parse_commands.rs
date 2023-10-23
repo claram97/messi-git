@@ -2,7 +2,7 @@ use crate::cat_file::cat_file;
 use crate::hash_object::store_file;
 use crate::init::git_init;
 use std::path::PathBuf;
-use std::thread::current;
+//use std::thread::current;
 use std::{env, io};
 
 const GIT_DIR: &str = ".mgit";
@@ -169,20 +169,21 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
     match git_command {
         GitCommand::HashObject => handle_hash_object(args),
         GitCommand::CatFile => handle_cat_file(args),
-        GitCommand::Status => handle_status(args),
-        GitCommand::Add => handle_add(args),
-        GitCommand::Rm => handle_rm(args),
-        GitCommand::Commit => handle_commit(args),
-        GitCommand::Checkout => handle_checkout(args),
-        GitCommand::Log => handle_log(args),
-        GitCommand::Clone => handle_clone(args),
-        GitCommand::Fetch => handle_fetch(args),
-        GitCommand::Merge => handle_merge(args),
-        GitCommand::Remote => handle_remote(args),
-        GitCommand::Pull => handle_pull(args),
-        GitCommand::Push => handle_push(args),
-        GitCommand::Branch => handle_branch(args),
+        // GitCommand::Status => handle_status(args),
+        // GitCommand::Add => handle_add(args),
+        // GitCommand::Rm => handle_rm(args),
+        // GitCommand::Commit => handle_commit(args),
+        // GitCommand::Checkout => handle_checkout(args),
+        // GitCommand::Log => handle_log(args),
+        // GitCommand::Clone => handle_clone(args),
+        // GitCommand::Fetch => handle_fetch(args),
+        // GitCommand::Merge => handle_merge(args),
+        // GitCommand::Remote => handle_remote(args),
+        // GitCommand::Pull => handle_pull(args),
+        // GitCommand::Push => handle_push(args),
+        // GitCommand::Branch => handle_branch(args),
         GitCommand::Init => handle_init(args),
+        _ => todo!(),
     }
 }
 
@@ -259,57 +260,57 @@ fn handle_cat_file(args: Vec<String>) {
     }
 }
 
-fn handle_status(args: Vec<String>) {
-    println!("Handling Status command with argument: ");
-}
+// fn handle_status(args: Vec<String>) {
+//     println!("Handling Status command with argument: ");
+// }
 
-fn handle_add(args: Vec<String>) {
-    println!("Handling Add command with argument: ");
-}
+// fn handle_add(args: Vec<String>) {
+//     println!("Handling Add command with argument: ");
+// }
 
-fn handle_rm(args: Vec<String>) {
-    println!("Handling Rm command with argument: ");
-}
+// fn handle_rm(args: Vec<String>) {
+//     println!("Handling Rm command with argument: ");
+// }
 
-fn handle_commit(args: Vec<String>) {
-    println!("Handling Commit command with argument: ");
-}
+// fn handle_commit(args: Vec<String>) {
+//     println!("Handling Commit command with argument: ");
+// }
 
-fn handle_checkout(args: Vec<String>) {
-    println!("Handling Checkout command with argument: ");
-}
+// fn handle_checkout(args: Vec<String>) {
+//     println!("Handling Checkout command with argument: ");
+// }
 
-fn handle_log(args: Vec<String>) {
-    println!("Handling Log command with argument: ");
-}
+// fn handle_log(args: Vec<String>) {
+//     println!("Handling Log command with argument: ");
+// }
 
-fn handle_clone(args: Vec<String>) {
-    println!("Handling Clone command with argument: ");
-}
+// fn handle_clone(args: Vec<String>) {
+//     println!("Handling Clone command with argument: ");
+// }
 
-fn handle_fetch(args: Vec<String>) {
-    println!("Handling Fetch command with argument: ");
-}
+// fn handle_fetch(args: Vec<String>) {
+//     println!("Handling Fetch command with argument: ");
+// }
 
-fn handle_merge(args: Vec<String>) {
-    println!("Handling Merge command with argument: ");
-}
+// fn handle_merge(args: Vec<String>) {
+//     println!("Handling Merge command with argument: ");
+// }
 
-fn handle_remote(args: Vec<String>) {
-    println!("Handling Remote command with argument: ");
-}
+// fn handle_remote(args: Vec<String>) {
+//     println!("Handling Remote command with argument: ");
+// }
 
-fn handle_pull(args: Vec<String>) {
-    println!("Handling Pull command with argument: ");
-}
+// fn handle_pull(args: Vec<String>) {
+//     println!("Handling Pull command with argument: ");
+// }
 
-fn handle_push(args: Vec<String>) {
-    println!("Handling Push command with argument: ");
-}
+// fn handle_push(args: Vec<String>) {
+//     println!("Handling Push command with argument: ");
+// }
 
-fn handle_branch(args: Vec<String>) {
-    println!("Handling Branch command with argument: ");
-}
+// fn handle_branch(args: Vec<String>) {
+//     println!("Handling Branch command with argument: ");
+// }
 
 /// Initializes a Git repository with optional configuration.
 ///
