@@ -1,5 +1,6 @@
 use gtk::prelude::*;
 use gtk::Builder;
+use gtk::Window;
 
 fn main() {
     if gtk::init().is_err() {
@@ -12,15 +13,25 @@ fn main() {
 
     let window: gtk::Window = builder.get_object("window").expect("No se puede obtener la ventana");
     window.set_default_size(800, 600);
-
     let button_clone: gtk::Button = get_button(&builder, "buttonclone", "Clone");
     let button_init: gtk::Button = get_button(&builder, "buttoninit", "Init");
 
     apply_common_style(&button_clone, &button_init);
     apply_window_style(&window); 
+    connect_button_clicked(&button_clone);
+    connect_button_clicked(&button_init);
     window.show_all();
 
     gtk::main();
+}
+
+fn connect_button_clicked(button: &gtk::Button) {
+    button.connect_clicked(move |_| {
+        let new_window = gtk::Window::new(gtk::WindowType::Toplevel);
+        new_window.set_title("Nueva Ventana");
+        new_window.set_default_size(400, 300);
+        new_window.show_all();
+    });
 }
 
 fn apply_window_style(window: &gtk::Window) {

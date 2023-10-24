@@ -46,7 +46,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkButton">
+          <object class="GtkButton" id="buttoninit">
             <property name="label" translatable="yes">Init</property>
             <property name="width_request">400</property>
             <property name="height_request">90</property>
@@ -57,6 +57,19 @@
           <packing>
             <property name="x">200</property>
             <property name="y">400</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkImage">
+            <property name="width_request">101</property>
+            <property name="height_request">82</property>
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="stock">gtk-directory</property>
+          </object>
+          <packing>
+            <property name="x">56</property>
+            <property name="y">7</property>
           </packing>
         </child>
       </object>
