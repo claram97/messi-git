@@ -18,21 +18,40 @@ fn main() {
 
     apply_common_style(&button_clone, &button_init);
     apply_window_style(&window); 
-    connect_button_clicked(&button_clone);
-    connect_button_clicked(&button_init);
+    connect_button_clicked(&button_clone, "Clone");
+    connect_button_clicked(&button_init, "Init");
     window.show_all();
 
     gtk::main();
 }
 
-fn connect_button_clicked(button: &gtk::Button) {
+fn connect_button_clicked(button: &gtk::Button, button_type: &str) {
+    let button_type = button_type.to_owned(); // Clonar la etiqueta
+    
     button.connect_clicked(move |_| {
         let new_window = gtk::Window::new(gtk::WindowType::Toplevel);
-        new_window.set_title("Nueva Ventana");
-        new_window.set_default_size(400, 300);
+       
+
+        match &button_type[..] {
+            "Clone" => {
+                // Acciones específicas para el botón "Clone"
+                println!("Botón 'Clone' presionado");
+                new_window.set_title("Clone Repository");
+            }
+            "Init" => {
+                // Acciones específicas para el botón "Init"
+                println!("Botón 'Init' presionado");
+                new_window.set_title("Init  Repository");
+            }
+            _ => {
+                // Manejar otros casos si es necesario
+            }
+        }
+        new_window.set_default_size(800, 600);
         new_window.show_all();
     });
 }
+
 
 fn apply_window_style(window: &gtk::Window) {
     let css_provider = gtk::CssProvider::new();
