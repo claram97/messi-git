@@ -40,7 +40,7 @@
             </attributes>
           </object>
           <packing>
-            <property name="x">300</property>
+            <property name="x">400</property>
             <property name="y">15</property>
           </packing>
         </child>
