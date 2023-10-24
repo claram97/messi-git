@@ -1,4 +1,4 @@
-use std::{io::{self}, fs, path::PathBuf};
+use std::{io::{self}, fs, path::{PathBuf, Path}};
 
 use crate::{
     cat_file::{self, cat_file_return_content},
@@ -36,7 +36,7 @@ impl Tree {
                 return &mut self.directories[i];
             }
         }
-        let mut new_dir = Tree::new(name);
+        let new_dir = Tree::new(name);
         self.directories.push(new_dir);
         let last_dir_index = self.directories.len() - 1;
         &mut self.directories[last_dir_index]
@@ -133,11 +133,9 @@ impl Tree {
         } else {
             parent_dir.to_string() + "/" + &self.name
         };
-        //let dir_path = parent_dir.to_string() + &self.name;
         fs::create_dir_all(&dir_path)?;
         for file in &self.files {
             let path = dir_path.to_string() + "/" + &file.0;
-            println!("Creating file: {}", path);
             let mut new_file = fs::File::create(path)?;
             cat_file::cat_file(&file.1, git_dir_path, &mut new_file)?;
         }
@@ -155,14 +153,16 @@ impl Tree {
             parent_dir.to_string() + "/" + &self.name
         };
         println!("Deleting directory: {}", dir_path);
+        for subdirs in &self.directories {
+            subdirs.delete_directories(&dir_path)?;
+        }
         for file in &self.files {
             let path = dir_path.to_string() + "/" + &file.0;
-            println!("Deleting file: {}", path);
             fs::remove_file(path)?;
         }
 
-        for subdirs in &self.directories {
-            subdirs.delete_directories(&dir_path)?;
+        if dir_path == "" {
+            return Ok(());
         }
         let dir_path_buf = PathBuf::from(&dir_path);
         let is_empty = dir_path_buf.read_dir()?.next().is_none();
@@ -171,6 +171,32 @@ impl Tree {
         }
         Ok(())
     }
+
+
+    // Build a function similar to delete_directories but that works using absolute paths
+
+    pub fn delete_directories2(&self, parent_dir: &Path) -> io::Result<()> {
+        let dir_path = parent_dir.join(&self.name);
+        for subdirs in &self.directories {
+            subdirs.delete_directories2(&dir_path)?;
+        }
+        for file in &self.files {
+            let path = dir_path.join(&file.0);
+            //let path = dir_path.to_string() + "/" + &file.0;
+            fs::remove_file(path)?;
+        }
+
+        if dir_path == Path::new("") {
+            return Ok(());
+        }
+        let dir_path_buf = PathBuf::from(&dir_path);
+        let is_empty = dir_path_buf.read_dir()?.next().is_none();
+        if is_empty {
+            fs::remove_dir(dir_path)?;
+        }
+        Ok(())
+    }
+
 
 
 }

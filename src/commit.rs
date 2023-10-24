@@ -55,7 +55,8 @@ fn get_branch_name(git_dir_path: &str) -> io::Result<String> {
             ))
         }
     };
-    Ok(branch_name.to_string())
+    let name: Vec<&str> = branch_name.split('\n').collect();
+    Ok(name[0].to_string())
 }
 
 /// Creates a new commit file and updates the branch file.

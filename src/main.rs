@@ -1,6 +1,6 @@
-use std::{io::{self, Write}, fs::File};
+use std::{io::{self, Write}, fs::File, path::{Path, PathBuf}};
 
-use messi::{parse_commands::{get_user_input, handle_git_command, parse_git_command}, init, commit, tree_handler::{self, print_tree_console}, cat_file, add};
+use messi::{parse_commands::{get_user_input, handle_git_command, parse_git_command}, init, commit, tree_handler::{self, print_tree_console}, cat_file, add, checkout};
 
 // fn main() {
 //     let args = get_user_input();
@@ -18,28 +18,46 @@ use messi::{parse_commands::{get_user_input, handle_git_command, parse_git_comma
 // }
 
 fn main() {
-    // let mut file = File::create("tests/checkout/archivo.txt").unwrap();
-    // file.write_all(b"Hello Wo22rld!").unwrap();
-    // let mut file = File::create("tests/checkout/otro_archivo.txt").unwrap();
-    // file.write_all(b"Hellooo World!").unwrap();
-    // let mut file = File::create("tests/checkout/directorio_para_probar/nuevo_archivo.txt").unwrap();
-    // file.write_all(b"Hellooo World!").unwrap();
+
+    //Create an empty index file
+    let mut file = File::create("tests/checkout/.mgit/index").unwrap();
+    //Rewrite HEAD
+    let mut head = File::create("tests/checkout/.mgit/HEAD").unwrap();
+    head.write_all(b"ref: refs/heads/main").unwrap();
+
+    let mut file_1 = File::create("tests/checkout/archivo.txt").unwrap();
+    file_1.write_all(b"Hello Wo22rld!").unwrap();
+    let mut file_2 = File::create("tests/checkout/otro_archivo.txt").unwrap();
+    file_2.write_all(b"Hellooo World!").unwrap();
+
+    //If dir doesnt exist, create it
+    if !Path::new("tests/checkout/directorio_para_probar").exists() {
+        std::fs::create_dir("tests/checkout/directorio_para_probar").unwrap();
+    }
+    let mut file_3 = File::create("tests/checkout/directorio_para_probar/nuevo_archivo.txt").unwrap();
+    file_3.write_all(b"Hellooo World!").unwrap();
     
-    // add::add("tests/checkout/archivo.txt", "tests/checkout/.mgit/index", "tests/checkout/.mgit", "", None);
-    // add::add("tests/checkout/otro_archivo.txt", "tests/checkout/.mgit/index", "tests/checkout/.mgit", "", None);
-    // add::add("tests/checkout/directorio_para_probar/nuevo_archivo.txt", "tests/checkout/.mgit/index", "tests/checkout/.mgit", "", None);
+    add::add("tests/checkout/archivo.txt", "tests/checkout/.mgit/index", "tests/checkout/.mgit", "", None);
+    add::add("tests/checkout/otro_archivo.txt", "tests/checkout/.mgit/index", "tests/checkout/.mgit", "", None);
+    add::add("tests/checkout/directorio_para_probar/nuevo_archivo.txt", "tests/checkout/.mgit/index", "tests/checkout/.mgit", "", None);
 
-    // let result = commit::new_commit("tests/checkout/.mgit", "Hola", "");
-    // println!("{:?}", result);
-    // let commit_hash = &result.unwrap();
-    // let result = cat_file::cat_file(commit_hash, "tests/checkout/.mgit",&mut io::stdout());
-    let commit_hash = "6ba70ff970e11ec8e5824054a6a94e8900e2884d";
-    let tree = tree_handler::load_tree_from_commit(commit_hash, "tests/checkout/.mgit").unwrap();
-
-    // print_tree_console(&tree, 0);
-
-    let resultt = tree.delete_directories("");
-    let result = tree.create_directories("", "tests/checkout/.mgit");
-    
+    let result = commit::new_commit("tests/checkout/.mgit", "Hola", "");
     println!("{:?}", result);
+
+    let mut file_4 = File::create("tests/checkout/archivo3.txt").unwrap();
+    file_4.write_all(b"Helleeeo World!").unwrap();
+
+    //Edit file
+    let mut edit = File::write(&mut file_1, b"Este archivo fue cambiado").unwrap();
+
+    add::add("tests/checkout/archivo3.txt", "tests/checkout/.mgit/index", "tests/checkout/.mgit", "", None);
+    add::add("tests/checkout/archivo.txt", "tests/checkout/.mgit/index", "tests/checkout/.mgit", "", None);
+
+    let result2 = commit::new_commit("tests/checkout/.mgit", "Hola2", "");
+    println!("{:?}", result2);
+
+    //Get current directory
+    let current_dir = std::env::current_dir().unwrap();
+    let git_dir: PathBuf = current_dir.join("tests/checkout/.mgit");
+    let result3 = checkout::checkout_commit_detached(&git_dir, &result.unwrap());
 }

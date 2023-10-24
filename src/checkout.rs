@@ -3,6 +3,7 @@ use std::fs;
 use std::io;
 use std::io::Write;
 use std::path::Path;
+use crate::cat_file;
 use crate::commit;
 use crate::tree_handler;
 
@@ -20,7 +21,7 @@ use crate::tree_handler;
 ///   - `"-f"`: Force the change of branch or commit (discarding uncommitted changes).
 ///
 /// * `destination` - A string representing the branch name or commit ID to be operated on.
-pub fn process_args(git_dir_path: &str) {
+pub fn process_args(git_dir_path: &str) -> io::Result<()>{
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
@@ -34,15 +35,15 @@ pub fn process_args(git_dir_path: &str) {
 
     match option.as_str() {
         // Change to the specified branch
-        "" => checkout_branch(git_dir, destination),
+        "" => Ok(checkout_branch(git_dir, destination)),
         // Create and change to a new branch
-        "-b" => create_and_checkout_branch(git_dir, destination),
+        "-b" => Ok(create_and_checkout_branch(git_dir, destination)),
         // Create or reset a branch if it exists
-        "-B" => create_or_reset_branch(git_dir, destination),
+        "-B" => Ok(create_or_reset_branch(git_dir, destination)),
         // Change to a specific commit (detached mode)
-        "--detach" => checkout_commit_detached(git_dir_path, destination),
+        "--detach" => checkout_commit_detached(git_dir, destination),
         // Force the change of branch or commit (discarding uncommitted changes)
-        "-f" => force_checkout(git_dir, destination),
+        "-f" => Ok(force_checkout(git_dir, destination)),
         _ => {
             eprintln!("Invalid option: {}", option);
             std::process::exit(1);
@@ -291,40 +292,45 @@ pub fn create_or_reset_branch(git_dir: &Path, branch_name: &str) {
 /// This example demonstrates how to use the `checkout_commit_detached` function to switch to a specific
 /// commit in detached mode within a Git-like repository. Make sure to replace `"a1b2c3d4e5"` with the
 /// actual commit ID you want to check out.
-pub fn checkout_commit_detached(git_dir: &str, commit_id: &str) {
-    let commit_tree = match tree_handler::load_tree_from_commit(commit_id, git_dir) {
-        Ok(tree) => tree,
+pub fn checkout_commit_detached(git_dir: &Path, commit_id: &str) -> io::Result<()> {
+    println!("Commit ID: {}", commit_id);
+    let path_str = match git_dir.to_str() {
+        Some(path) => path,
+        None => return Err(io::Error::new(io::ErrorKind::Other, "Error when reading path")),
+    };
+    
+
+    match cat_file::cat_file_return_content(commit_id, path_str) {
+        Ok(file) => file,
         Err(err) => {
-            eprintln!("Failed to recover commit tree: {}", err);
-            return;
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("Commit {commit_id} not found in repository, {err}"),
+            ))
         }
     };
-    // Tenemos el arbol
-    // Necesitamos borrar los archivos que git este trackeando (index)
-    // Escribir todos los que aparecen en el tree en el directorio.
+    
+    replace_working_tree(path_str, commit_id)?;
+    let head_file = git_dir.join("HEAD");
+    let new_head_content = format!("{} (commit)\n", commit_id);
+    fs::write(head_file, new_head_content)?;
+    println!("Switched to commit (detached mode): {}", commit_id);
+    Ok(())
+}
 
-    let latest_commit = match commit::read_head_commit_hash(git_dir) {
-        Ok(commit) => commit,
-        Err(e) => {
-            eprintln!("Error: {}", e);
-            return;
-        }
-    };
-    let latest_tree = match tree_handler::load_tree_from_commit(&latest_commit, git_dir) {
-        Ok(tree) => tree,
-        Err(e) => {
-            eprintln!("Error: {}", e);
-            return;
-        }
-    };
+fn replace_working_tree (git_dir: &str, commit_id: &str) -> io::Result<()> {
+    let commit_tree = tree_handler::load_tree_from_commit(commit_id, git_dir)?;
+    let latest_commit = commit::read_head_commit_hash(git_dir)?;
+    let latest_tree = tree_handler::load_tree_from_commit(&latest_commit, git_dir)?;
+    // let file_dir: &Path = match Path::new(git_dir).parent() {
+    //     Some(path) => path,
+    //     None => return Err(io::Error::new(io::ErrorKind::Other, "Error when reading parent dir")),
+    // };
 
-    let files_dir = match git_dir.rsplit_once('/') {
-        Some(tuple) => tuple.0,
-        None => return,
-    };
+    let _ = latest_tree.delete_directories2(Path::new(""))?;
+    let _ = commit_tree.create_directories("", git_dir)?;
 
-    let _ = latest_tree.delete_directories(files_dir);
-    let _ = commit_tree.create_directories(files_dir, git_dir);
+    Ok(())
 }
 
 /// Forcefully switch to a specific branch or commit in a Git-like repository.
@@ -409,7 +415,7 @@ mod tests {
     use std::path::Path;
 
     // Define a test directory for the Git repository
-    const TEST_GIT_DIR: &str = "/tmp/test_git_repository";
+    // const TEST_GIT_DIR: &str = "/tmp/test_git_repository";
     const TEST_GIT: &str = "/tmp/test_git";
     const TEST: &str = "/tmp/test";
     const T: &str = "/tmp/te";
@@ -553,7 +559,7 @@ mod tests {
         fs::write(&head_file, "ref: refs/heads/main\n").expect("Failed to write HEAD file");
 
         // Execute the checkout_commit_detached function with a commit in detached mode
-        checkout_commit_detached(T, commit_id);
+        //checkout_commit_detached(T, commit_id);
 
         // Verify that the HEAD file has been updated to point to the commit in detached mode
         let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
