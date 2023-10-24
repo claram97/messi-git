@@ -1,3 +1,6 @@
+extern crate messi;
+use messi::gui::run_gui;
+
 fn main() {
-    println!("Hello, world!");
+    run_gui();
 }

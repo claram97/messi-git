@@ -1,0 +1,19 @@
+.window {
+    background-color: rgb(43, 4, 53);
+}
+.custom-button {
+    background-color: rgb(43, 4, 53);
+    color: #ff0000; /* Rojo */
+    padding: 5px 10px;
+    border: none;
+}
+
+.horizontal-button-box {
+    spacing: 10px;
+}
+
+.custom-label {
+    font-size: 70px; /* Tamaño de fuente más grande */
+    color: #ff0000; /* Color de letra rojo */
+    text-shadow: 2px 2px 4px #000; /* Efecto de sombra en el texto */
+}

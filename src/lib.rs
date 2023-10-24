@@ -6,3 +6,5 @@ pub mod index;
 pub mod init;
 pub mod logger;
 pub mod utils;
+pub mod gui;
+
