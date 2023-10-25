@@ -35,7 +35,7 @@ pub fn process_args(git_dir_path: &str) -> io::Result<()>{
 
     match option.as_str() {
         // Change to the specified branch
-        "" => Ok(checkout_branch(git_dir, destination)),
+        "" => checkout_branch(git_dir, destination),
         // Create and change to a new branch
         "-b" => Ok(create_and_checkout_branch(git_dir, destination)),
         // Create or reset a branch if it exists
@@ -76,29 +76,35 @@ pub fn process_args(git_dir_path: &str) -> io::Result<()>{
 ///
 /// If the branch reference file does not exist, or if there are errors during the process, the
 /// function prints an error message to the standard error output.
-pub fn checkout_branch(git_dir: &Path, branch_name: &str) {
+pub fn checkout_branch(git_dir: &Path, branch_name: &str) -> io::Result<()> {
     let refs_dir = git_dir.join("refs").join("heads");
     let branch_ref_file = refs_dir.join(branch_name);
-
-    // Check if the branch reference file exists
-    if branch_ref_file.exists() {
-        // Read the content of the reference file to get the commit it points to
-        if let Ok(_branch_ref_content) = fs::read_to_string(&branch_ref_file) {
-            // Update the HEAD file to point to the new branch
-            let head_file = git_dir.join("HEAD");
-            let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
-            if let Err(err) = fs::write(head_file, new_head_content) {
-                eprintln!("Failed to update HEAD file: {}", err);
-                return;
-            }
-
-            println!("Switched to branch: {}", branch_name);
-        } else {
-            eprintln!("Failed to read branch reference file content");
+    let git_dir_str = match git_dir.to_str() {
+        Some(path) => path,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error when reading path",
+            ))
         }
-    } else {
-        eprintln!("Branch '{}' not found in the repository", branch_name);
+    };
+    if !branch_ref_file.exists() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Branch '{}' not found in the repository", branch_name),
+        ));
     }
+    // Check if the branch reference file exists
+    // Read the content of the reference file to get the commit it points to
+    let branch_commit_id = fs::read_to_string(&branch_ref_file)?;
+
+    let head_file = git_dir.join("HEAD");
+    let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
+    fs::write(head_file, new_head_content)?;
+
+    replace_working_tree(git_dir_str, &branch_commit_id)?;
+    println!("Switched to branch: {}", branch_name);
+    Ok(())
 }
 
 /// Create and checkout a new branch in a Git-like repository.
