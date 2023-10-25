@@ -179,6 +179,7 @@ mod tests {
         let mut refs_content = String::new();
         refs_file.read_to_string(&mut refs_content).unwrap();
         assert_eq!(refs_content, commit_hash);
+        let _ = std::fs::remove_dir_all(git_dir_path);
     }
 
     #[test]
@@ -191,6 +192,7 @@ mod tests {
         let commit_hash2 = new_commit(git_dir_path, message, "");
         assert!(commit_hash.is_ok());
         assert!(commit_hash2.is_err());
+        let _ = std::fs::remove_dir_all(git_dir_path);
     }
 
     #[test]
@@ -205,6 +207,7 @@ mod tests {
         let commit_hash = new_commit(git_dir_path, message, "").unwrap();
         let parent_hash = get_parent_hash(&commit_hash, git_dir_path).unwrap();
         assert_eq!(parent_hash, ref_actual_content);
+        let _ = std::fs::remove_dir_all(git_dir_path);
     }
 
     #[test]
@@ -247,6 +250,7 @@ mod tests {
         let commit_3_hash = new_commit(git_dir_path, message, "").unwrap();
         let parent_hash = get_parent_hash(&commit_3_hash, git_dir_path).unwrap();
         assert_eq!(parent_hash, commit_2_hash);
+        let _ = std::fs::remove_dir_all(git_dir_path);
     }
 
     #[test]
@@ -290,5 +294,6 @@ mod tests {
             commit_3_content.split("\n").last().unwrap(),
             "test commit 3"
         );
+        let _ = std::fs::remove_dir_all(git_dir_path);
     }
 }
