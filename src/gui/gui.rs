@@ -19,16 +19,17 @@ pub fn run_main_window() {
     connect_button_clicked(&button_init, "Init");
     window.show_all();
 }
-fn create_text_entry_window(button_type: &str) {
+
+fn create_text_entry_window(button_type: &str, message: &str) {
     let entry_window = gtk::Window::new(gtk::WindowType::Toplevel);
-    entry_window.set_title("Ingresar Texto");
+    entry_window.set_title(message);
     entry_window.set_default_size(400, 150);
 
     let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
     entry_window.add(&main_box);
 
     let entry = gtk::Entry::new();
-    entry.set_text("Texto predeterminado (opcional)");
+    entry.set_text("Texto predeterminado ");
     main_box.add(&entry);
 
     let ok_button = gtk::Button::with_label("OK");
@@ -37,24 +38,24 @@ fn create_text_entry_window(button_type: &str) {
     ok_button.connect_clicked(move |_| {
         let text = entry.get_text().to_string();
         println!("Texto ingresado: {}", text);
-
-        // Aquí puedes realizar la lógica con el texto ingresado, como guardarlo o procesarlo.
-        // También puedes cerrar la ventana con entry_window.close() si es necesario.
     });
 
     entry_window.show_all();
 }
+
+
 fn connect_button_clicked2(button: &gtk::Button, button_type: &str) {
     let button_type = button_type.to_owned(); // Clonar la etiqueta
     
     button.connect_clicked(move |_| {
-        if button_type == "option2" {
-            create_text_entry_window(&button_type);
-        } else if button_type == "Clone" {
-            // Código para el botón "Clone" aquí
+        if button_type == "option2"  {
+            create_text_entry_window(  &button_type, "Ingrese la rama ");
+        } else if button_type == "option3" {
+            create_text_entry_window( &button_type, "Ingrese la ruta al template a utilizar");
         }
     });
 }
+
 fn connect_button_clicked(button: &gtk::Button, button_type: &str) {
     let button_type = button_type.to_owned(); // Clonar la etiqueta
     
@@ -75,7 +76,9 @@ fn connect_button_clicked(button: &gtk::Button, button_type: &str) {
               
             // Mostrar la nueva ventana "Init"
             new_window_init.show_all();
+            connect_button_clicked2(&button1, "option1");
             connect_button_clicked2(&button2, "option2");
+            connect_button_clicked2(&button3, "option3");
         } else if button_type == "Clone" {
             // Código para el botón "Clone" aquí
         }
