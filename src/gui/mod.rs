@@ -1,3 +1,3 @@
 mod gui;
 
-pub use gui::run_gui;
+pub use gui::run_main_window;

@@ -1,85 +1,88 @@
-extern crate gtk;
+
 use gtk::prelude::*;
-use gtk::{Window, WindowType, CssProvider, Box, Orientation, Button};
+use gtk::Builder;
+use gtk::Window;
+use pango::Alignment;
 
-pub fn run_gui() {
-    if gtk::init().is_err() {
-        println!("Failed to initialize GTK.");
-        return;
-    }
+pub fn run_main_window() {
+    let builder = Builder::new();
+    builder.add_from_file("src/gui/part3.ui"); // Reemplaza con el nombre de tu archivo .ui
 
-    let window = create_window();
-    let container = create_gui_elements(&window);
+    let window: gtk::Window = builder.get_object("window").expect("No se puede obtener la ventana");
+    window.set_default_size(800, 600);
+    let button_clone: gtk::Button = get_button(&builder, "buttonclone", "Clone");
+    let button_init: gtk::Button = get_button(&builder, "buttoninit", "Init");
 
+    apply_common_style(&button_clone, &button_init);
+    apply_window_style(&window); 
+    connect_button_clicked(&button_clone, "Clone");
+    connect_button_clicked(&button_init, "Init");
     window.show_all();
-    gtk::main();
 }
 
-fn create_window() -> Window {
-    let window = Window::new(WindowType::Toplevel);
-    window.set_title("Bienvenido a GitMessi");
-    window.set_default_size(800, 600);
+fn connect_button_clicked(button: &gtk::Button, button_type: &str) {
+    let button_type = button_type.to_owned(); // Clonar la etiqueta
+    
+    button.connect_clicked(move |_| {
+        if button_type == "Init" {
+            let builder_window_init = gtk::Builder::new();
+            builder_window_init.add_from_file("src/gui/windowInit.ui"); // Asegúrate de que la ruta sea correcta
+            let new_window_init: gtk::Window = builder_window_init.get_object("window").expect("No se puede obtener la ventana");
+            new_window_init.set_default_size(800, 600);
+            apply_window_style(&new_window_init);
+            let button1: gtk::Button = get_button(&builder_window_init, "button1", "option1");
+            let button2: gtk::Button = get_button(&builder_window_init, "button2", "option2");
+            let button3: gtk::Button = get_button(&builder_window_init, "button3", "option3");
 
-    // Agregar un estilo CSS para establecer el fondo en azul
-    let provider = CssProvider::new();
-    provider
-        .load_from_data(
-            "window {
-                background-color: #3498db; /* Azul */
-            }
-            button {
-                background-color: #3498db;
-                color: white;
-                font-family: monospace;
-                border: none;
-                padding: 10px;
-            }
-            ".as_bytes(),
-        )
+            apply_common_style(&button2, &button1);
+            apply_common_style(&button3, &button1);
+
+            // Mostrar la nueva ventana "Init"
+            new_window_init.show_all();
+        } else if button_type == "Clone" {
+            // Código para el botón "Clone" aquí
+        }
+    });
+}
+
+fn apply_window_style(window: &gtk::Window) {
+    let css_provider = gtk::CssProvider::new();
+    css_provider
+        .load_from_data("window {
+            background-color: #87CEEB; /* Color celeste */
+        }"
+        .as_bytes())
         .expect("Failed to load CSS");
 
-    let context = window.get_style_context();
-    context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-
-    window
+    let style_context = window.get_style_context();
+    style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
-fn create_gui_elements(window: &Window) -> gtk::Box {
-    let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
 
-    // Etiqueta de bienvenida en el centro
-    let label = gtk::Label::new(Some("Bienvenido a GitMessi"));
-    label.set_halign(gtk::Align::Center);
-    label.set_valign(gtk::Align::Center);
+fn get_button(builder: &Builder, button_id: &str, label_text: &str) -> gtk::Button {
+    let button: gtk::Button = builder.get_object(button_id).expect(&format!("No se puede obtener el botón {}", label_text));
+    let label = button.get_child().unwrap().downcast::<gtk::Label>().unwrap();
+    let pango_desc = pango::FontDescription::from_string("Sans 30");
+    label.override_font(&pango_desc);
+    button.show();
+    button
+}
 
-    // Aplicar la clase personalizada al Label
-    let label_style_context = label.get_style_context();
-    label_style_context.add_class("custom-label");
+fn apply_common_style(button_clone: &gtk::Button, button_init: &gtk::Button) {
+    let css_provider = gtk::CssProvider::new();
+    css_provider
+        .load_from_data("button {
+            background-color: #87CEEB; /* Color celeste */
+            color: #1e3799; /* Color de texto azul oscuro */
+            border: 10px solid #1e3799; /* Borde azul oscuro */
+            padding: 10px; /* Espaciado alrededor del contenido */
+        }"
+        .as_bytes())
+        .expect("Failed to load CSS");
 
+    let style_context_clone = button_clone.get_style_context();
+    style_context_clone.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-    // Contenedor para los botones
-    let button_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    button_box.set_spacing(100); // Agrega espaciado entre los botones
-
-    for i in 1..=4 {
-        let button = gtk::Button::with_label(&format!("Botón {}", i));
-        
-        // Aplicar el estilo personalizado a cada botón
-        let style_context = button.get_style_context();
-        style_context.add_class("custom-button");
-
-        button_box.add(&button);
-    }
-
-    // Aplicar el estilo al contenedor de botones
-    let button_box_style_context = button_box.get_style_context();
-    button_box_style_context.add_class("horizontal-button-box");
-
-    container.pack_start(&label, true, true, 0);
-    container.pack_start(&button_box, false, false, 0);
-
-    // Agrega el contenedor a la ventana
-    window.add(&container);
-
-    container
+    let style_context_init = button_init.get_style_context();
+    style_context_init.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
