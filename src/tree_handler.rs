@@ -544,7 +544,7 @@ mod tests {
         Ok(())
     }
 
-    fn rebuild_git_dir(git_dir_path: &str) {
+    fn create_git_dir(git_dir_path: &str) {
         let _ = std::fs::remove_dir_all(git_dir_path);
         let _ = std::fs::create_dir(git_dir_path);
         let _ = std::fs::create_dir(git_dir_path.to_string() + "/refs");
@@ -573,7 +573,7 @@ mod tests {
     #[test]
     fn test_write_tree_no_subtrees() {
         let git_dir_path = "tests/commit/.mgit_test4";
-        rebuild_git_dir(git_dir_path);
+        create_git_dir(git_dir_path);
 
         let content = "hash1 file1.txt\nhash2 file2.txt\nhash3 file3.txt\n";
         let path = "tests/commit/.mgit_test4/index";
@@ -598,12 +598,13 @@ mod tests {
             tree_file,
             "100644 blob hash1 file1.txt\n100644 blob hash2 file2.txt\n100644 blob hash3 file3.txt\n"
         );
+        let _ = std::fs::remove_dir_all(git_dir_path);
     }
 
     #[test]
     fn test_write_tree_with_subtrees() {
         let git_dir_path = "tests/commit/.mgit_test5";
-        rebuild_git_dir(git_dir_path);
+        create_git_dir(git_dir_path);
 
         let content = "hash1 file1.txt\nhash2 file2.txt\nhash3 file3.txt\nhash4 src/file4.txt\n";
         let path = "tests/commit/.mgit_test5/index";
@@ -631,5 +632,6 @@ mod tests {
             "100644 blob hash1 file1.txt\n100644 blob hash2 file2.txt\n100644 blob hash3 file3.txt\n040000 "
         );
         assert_eq!(sub_tree_content, "100644 blob hash4 file4.txt\n");
+        let _ = std::fs::remove_dir_all(git_dir_path);
     }
 }
