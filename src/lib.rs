@@ -1,5 +1,6 @@
 pub mod checkout;
 pub mod add;
+pub mod branch;
 pub mod cat_file;
 pub mod commit;
 pub mod hash_object;
