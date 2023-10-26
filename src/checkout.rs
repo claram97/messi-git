@@ -77,7 +77,25 @@ pub fn process_args(git_dir_path: &str) -> io::Result<()>{
 ///
 /// If the branch reference file does not exist, or if there are errors during the process, the
 /// function prints an error message to the standard error output.
-pub fn checkout_branch(git_dir: &Path, branch_name: &str) -> io::Result<()> {
+pub fn checkout_branch(git_dir_path: &Path, branch_name: &str) -> io::Result<()>{
+    let git_dir_path_str = match git_dir_path.to_str() {
+        Some(path) => path,
+        None => return Err(io::Error::new(io::ErrorKind::Other, "Error when reading path")),
+    };
+
+    match checkout_branch_references(git_dir_path, branch_name) {
+        Ok(old_commit_id) => {
+            let new_commit_id = branch::get_current_branch_commit(git_dir_path_str)?;
+            match replace_working_tree(git_dir_path_str, &old_commit_id, &new_commit_id) {
+                Ok(_) => Ok(()),
+                Err(err) => Err(err)
+            }
+        }
+        Err(err) => Err(err)
+    }
+}
+
+fn checkout_branch_references(git_dir: &Path, branch_name: &str) -> io::Result<String> {
     let refs_dir = git_dir.join("refs").join("heads");
     let branch_ref_file = refs_dir.join(branch_name);
     let git_dir_str = match git_dir.to_str() {
@@ -91,21 +109,15 @@ pub fn checkout_branch(git_dir: &Path, branch_name: &str) -> io::Result<()> {
     };
     if !branch_ref_file.exists() {
         return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("Branch '{}' not found in the repository", branch_name),
+            io::ErrorKind::Other,
+            format!("Branch {} does not exist", branch_name),
         ));
     }
-    // Check if the branch reference file exists
-    // Read the content of the reference file to get the commit it points to
-    let branch_commit_id = fs::read_to_string(&branch_ref_file)?;
-
+    let old_commit_id = branch::get_current_branch_commit(git_dir_str)?;
     let head_file = git_dir.join("HEAD");
     let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
     fs::write(head_file, new_head_content)?;
-
-    replace_working_tree(git_dir_str, &branch_commit_id)?;
-    println!("Switched to branch: {}", branch_name);
-    Ok(())
+    Ok(old_commit_id)
 }
 
 /// Create and checkout a new branch in a Git-like repository.
@@ -147,16 +159,17 @@ pub fn create_and_checkout_branch(git_dir: &Path, branch_name: &str) -> io::Resu
             ))
         }
     };
-    branch::create_new_branch(git_dir_str, branch_name, &mut io::stdout())?;
-    
-    let head_file = git_dir.join("HEAD");
-    let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
-    fs::write(head_file, new_head_content)?;
 
-    let branch_ref_file = git_dir.join("refs").join("heads").join(branch_name);
-    let branch_commit_id = fs::read_to_string(&branch_ref_file)?;
-    replace_working_tree(git_dir_str, &branch_commit_id)?;
+    let old_commit_id = create_and_checkout_branch_references(git_dir_str, branch_name)?;
+    let branch_commit_id = branch::get_current_branch_commit(git_dir_str)?;
+    replace_working_tree(git_dir_str, &old_commit_id, &branch_commit_id)?;
     Ok(())
+}
+
+fn create_and_checkout_branch_references(git_dir_str: &str, branch_name: &str) -> io::Result<String> {
+    branch::create_new_branch(git_dir_str, branch_name, &mut io::stdout())?;
+    let old_commit_id = checkout_branch_references(Path::new(git_dir_str), branch_name)?;
+    Ok(old_commit_id)
 }
 
 /// Write a reference value to a file in a Git-like repository.
@@ -269,35 +282,37 @@ pub fn create_or_reset_branch(git_dir: &Path, branch_name: &str) -> io::Result<(
 /// commit in detached mode within a Git-like repository. Make sure to replace `"a1b2c3d4e5"` with the
 /// actual commit ID you want to check out.
 pub fn checkout_commit_detached(git_dir: &Path, commit_id: &str) -> io::Result<()> {
-    println!("Commit ID: {}", commit_id);
-    let path_str = match git_dir.to_str() {
+    let git_dir_str = match git_dir.to_str() {
         Some(path) => path,
-        None => return Err(io::Error::new(io::ErrorKind::Other, "Error when reading path")),
-    };
-    
-
-    match cat_file::cat_file_return_content(commit_id, path_str) {
-        Ok(file) => file,
-        Err(err) => {
+        None => {
             return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                format!("Commit {commit_id} not found in repository, {err}"),
+                io::ErrorKind::Other,
+                "Error when reading path",
             ))
         }
     };
-    
-    replace_working_tree(path_str, commit_id)?;
-    let head_file = git_dir.join("HEAD");
-    let new_head_content = format!("{} (commit)\n", commit_id);
-    fs::write(head_file, new_head_content)?;
-    println!("Switched to commit (detached mode): {}", commit_id);
-    Ok(())
+    match checkout_commit_detached_references(git_dir_str, commit_id) {
+        Ok(old_commit_id) => {
+            match replace_working_tree(git_dir_str, &old_commit_id, &commit_id) {
+                Ok(_) => Ok(()),
+                Err(err) => Err(err)
+            }
+        }
+        Err(err) => Err(err)
+    }
 }
 
-fn replace_working_tree (git_dir: &str, commit_id: &str) -> io::Result<()> {
-    let commit_tree = tree_handler::load_tree_from_commit(commit_id, git_dir)?;
-    let latest_commit = commit::read_head_commit_hash(git_dir)?;
-    let latest_tree = tree_handler::load_tree_from_commit(&latest_commit, git_dir)?;
+fn checkout_commit_detached_references(git_dir_str: &str, commit_id: &str) -> io::Result<String> {
+    let head_file = git_dir_str.to_string() + "/HEAD";
+    let old_commit_id = cat_file::cat_file_return_content(commit_id, git_dir_str)?;
+    let new_head_content = format!("{} (commit)\n", commit_id);
+    fs::write(head_file, new_head_content)?;
+    Ok(old_commit_id)
+}
+
+fn replace_working_tree (git_dir: &str, old_commit_id: &str, new_commit_id: &str) -> io::Result<()> {
+    let commit_tree = tree_handler::load_tree_from_commit(new_commit_id, git_dir)?;
+    let latest_tree = tree_handler::load_tree_from_commit(old_commit_id, git_dir)?;
     // let file_dir: &Path = match Path::new(git_dir).parent() {
     //     Some(path) => path,
     //     None => return Err(io::Error::new(io::ErrorKind::Other, "Error when reading parent dir")),
@@ -392,7 +407,8 @@ mod tests {
     // Define a test directory for the Git repository
     // const TEST_GIT_DIR: &str = "/tmp/test_git_repository";
     const TEST_GIT: &str = "/tmp/test_git";
-    const TEST: &str = "/tmp/test";
+    const TEST_CHECKOUT: &str = "/tmp/test_checkout";
+    const TEST_CHECKOUT2: &str = "/tmp/test_checkout2";
     const T: &str = "/tmp/te";
 
     /// Unit test for the `checkout_branch` function.
@@ -408,22 +424,22 @@ mod tests {
     #[test]
     fn test_checkout_branch() {
         // Create a test directory if it doesn't exist
-        if !Path::new(TEST).exists() {
-            fs::create_dir_all(TEST).expect("Failed to create test directory");
+        if !Path::new(TEST_CHECKOUT).exists() {
+            fs::create_dir_all(TEST_CHECKOUT).expect("Failed to create test directory");
         }
         // Create a sample branch and set the HEAD file
-        let refs_dir = Path::new(TEST).join("refs").join("heads");
+        let refs_dir = Path::new(TEST_CHECKOUT).join("refs").join("heads");
         let branch_name = "my_branch";
         let branch_ref_file = refs_dir.join(branch_name);
         fs::create_dir_all(&branch_ref_file.parent().unwrap()).expect("Failed to create dirs");
         fs::write(&branch_ref_file, "commit_id").expect("Failed to write branch reference");
 
-        let head_file = Path::new(TEST).join("HEAD");
+        let head_file = Path::new(TEST_CHECKOUT).join("HEAD");
         fs::write(&head_file, format!("ref: refs/heads/{}", branch_name))
             .expect("Failed to write HEAD file");
 
         // Execute the checkout_branch function
-        checkout_branch(Path::new(TEST), branch_name);
+        checkout_branch_references(Path::new(TEST_CHECKOUT), branch_name);
 
         // Verify that the HEAD file has been updated correctly
         let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
@@ -443,20 +459,29 @@ mod tests {
     #[test]
     fn test_create_and_checkout_branch() {
         // Create a test directory if it doesn't exist
-        if !Path::new(TEST).exists() {
-            fs::create_dir_all(TEST).expect("Failed to create test directory");
+        if !Path::new(TEST_CHECKOUT2).exists() {
+            fs::create_dir_all(TEST_CHECKOUT2).expect("Failed to create test directory");
         }
+        
+        //Create a refs heads directory and write the old branch name
+        let refs_dir = Path::new(TEST_CHECKOUT2).join("refs").join("heads");
+        fs::create_dir_all(&refs_dir).expect("Failed to create dirs");
+        let branch_ref_file = refs_dir.join("my_branch");
+        //Write a commit hash to the old branch
+        let mut old_branch_file = fs::File::create(branch_ref_file).unwrap();
+        write_reference_value(&mut old_branch_file, "commit_id").unwrap();
+
 
         // Execute the create_and_checkout_branch function
-        create_and_checkout_branch(Path::new(TEST), "new_branch");
+        create_and_checkout_branch_references(TEST_CHECKOUT2, "new_branch").unwrap();
 
         // Verify that a new branch has been created
-        let refs_dir = Path::new(TEST).join("refs").join("heads");
+        let refs_dir = Path::new(TEST_CHECKOUT2).join("refs").join("heads");
         let branch_ref_file = refs_dir.join("new_branch");
         assert!(branch_ref_file.exists(), "Branch file not created");
 
         // Verify that the HEAD file has been updated
-        let head_file = Path::new(TEST).join("HEAD");
+        let head_file = Path::new(TEST_CHECKOUT2).join("HEAD");
         let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
         assert_eq!(head_contents, "ref: refs/heads/my_branch\n");
     }
