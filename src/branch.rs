@@ -37,6 +37,18 @@ pub fn get_current_branch_commit(git_dir_path: &str) -> io::Result<String> {
     Ok(branch_content)
 }
 
+pub fn delete_branch(git_dir: &str, branch_name: &str) -> io::Result<()> {
+    let branch_path = git_dir.to_string() + "/refs/heads/" + branch_name;
+    let path = Path::new(&branch_path);
+    if path.exists() {
+        fs::remove_file(path)?;
+    } else {
+        let buffer = format!("error: branch '{}' not found\n", branch_name);
+        io::stdout().write_all(buffer.as_bytes())?;
+    }
+    Ok(())
+}
+
 /// Creates a new branch in the repo with the given name.
 /// The new branch will point to the same commit as the current branch.
 /// HEAD won't be updated.

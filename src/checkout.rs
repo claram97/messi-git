@@ -224,13 +224,22 @@ pub fn write_reference_value(file: &mut fs::File, value: &str) -> io::Result<()>
 pub fn create_or_reset_branch(git_dir: &Path, branch_name: &str) -> io::Result<()> {
     let refs_dir = git_dir.join("refs").join("heads");
     let branch_ref_file = refs_dir.join(branch_name);
-
+    let git_dir_str = match git_dir.to_str() {
+        Some(path) => path,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error when reading path",
+            ))
+        }
+    };
     //Check if the branch reference file exists
     if branch_ref_file.exists() {
+        branch::delete_branch(git_dir_str, branch_name)?;
+        create_and_checkout_branch(git_dir, branch_name)?;
     } else {
         create_and_checkout_branch(git_dir, branch_name)?;
     }
-    
     Ok(())
 }
 
