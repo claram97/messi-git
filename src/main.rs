@@ -1,6 +1,7 @@
 use gtk::prelude::*;
 use gtk::Builder;
 use gtk::Window;
+use pango::Alignment;
 
 fn main() {
     if gtk::init().is_err() {
@@ -42,6 +43,7 @@ fn connect_button_clicked(button: &gtk::Button, button_type: &str) {
                 // Acciones específicas para el botón "Init"
                 println!("Botón 'Init' presionado");
                 new_window.set_title("Init  Repository");
+                create_init_options_buttons(&new_window);
             }
             _ => {
                 // Manejar otros casos si es necesario
@@ -51,6 +53,57 @@ fn connect_button_clicked(button: &gtk::Button, button_type: &str) {
         apply_window_style(&new_window); 
         new_window.show_all();
     });
+}
+
+fn create_init_options_buttons(parent_window: &gtk::Window) {
+    let container = gtk::Box::new(gtk::Orientation::Vertical, 10);
+
+    let container = gtk::Box::new(gtk::Orientation::Vertical, 10);
+
+    // Crear botones para las opciones de git init
+    let button_option1 = gtk::Button::with_label("Git init");
+    let button_option2 = gtk::Button::with_label("Git init -b <branch>");
+    let button_option3 = gtk::Button::with_label("Git init --template <path>");
+
+    // Aplicar estilos CSS personalizados a los botones
+    let css_provider = gtk::CssProvider::new();
+    css_provider.load_from_data("button {
+        background-color: #87CEEB; /* Color celeste */
+        color: #1e3799; /* Color de texto azul oscuro */
+        border: 10px solid #1e3799; /* Borde azul oscuro */
+        padding: 10px; /* Espaciado alrededor del contenido */
+    }"
+        .as_bytes(),
+    )
+    .expect("Failed to load CSS");
+
+    let style_context_option1 = button_option1.get_style_context();
+    style_context_option1.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    let style_context_option2 = button_option2.get_style_context();
+    style_context_option2.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    let style_context_option3 = button_option3.get_style_context();
+    style_context_option3.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+ container.pack_start(&button_option1, true, true, 0);
+    container.pack_start(&button_option2, true, true, 0);
+    container.pack_start(&button_option3, true, true, 0);
+
+    // Conectar acciones a los botones
+    button_option1.connect_clicked(|_| {
+        //run_git_init("");
+    });
+
+    button_option2.connect_clicked(|_| {
+        // Implementa la lógica para git init -b <branch>
+    });
+
+    button_option3.connect_clicked(|_| {
+        // Implementa la lógica para git init --template <path>
+    });
+
+    parent_window.add(&container);
+    container.show_all();
 }
 
 
