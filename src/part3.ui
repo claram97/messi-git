@@ -1,25 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.2 -->
+<!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
   <object class="GtkWindow" id="window">
-    <property name="can_focus">False</property>
-    <property name="icon_name">utilities-terminal</property>
-    <child type="titlebar">
-      <placeholder/>
-    </child>
+    <property name="can-focus">False</property>
+    <property name="icon-name">utilities-terminal</property>
     <child>
       <object class="GtkFixed" id="fix">
         <property name="visible">True</property>
-        <property name="can_focus">False</property>
+        <property name="can-focus">False</property>
         <child>
           <object class="GtkButton" id="buttonclone">
             <property name="label" translatable="yes">Clone</property>
-            <property name="width_request">400</property>
-            <property name="height_request">90</property>
+            <property name="width-request">400</property>
+            <property name="height-request">90</property>
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">True</property>
             <signal name="clicked" handler="on_buttonclone_clicked" swapped="no"/>
           </object>
           <packing>
@@ -29,14 +26,14 @@
         </child>
         <child>
           <object class="GtkLabel" id="git messi">
-            <property name="width_request">400</property>
-            <property name="height_request">43</property>
+            <property name="width-request">400</property>
+            <property name="height-request">43</property>
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="tooltip_text" translatable="yes">Choose your option </property>
+            <property name="can-focus">False</property>
+            <property name="tooltip-text" translatable="yes">Choose your option </property>
             <property name="label" translatable="yes">GIT MESSI</property>
             <attributes>
-              <attribute name="font-desc" value="Lato Heavy 64"/>
+              <attribute name="font-desc" value="Liberation Mono Bold Italic 64"/>
               <attribute name="foreground" value="#34346565a4a4"/>
             </attributes>
           </object>
@@ -48,11 +45,11 @@
         <child>
           <object class="GtkButton" id="buttoninit">
             <property name="label" translatable="yes">Init</property>
-            <property name="width_request">400</property>
-            <property name="height_request">90</property>
+            <property name="width-request">400</property>
+            <property name="height-request">90</property>
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">True</property>
           </object>
           <packing>
             <property name="x">200</property>
@@ -61,10 +58,10 @@
         </child>
         <child>
           <object class="GtkImage">
-            <property name="width_request">101</property>
-            <property name="height_request">82</property>
+            <property name="width-request">101</property>
+            <property name="height-request">82</property>
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
+            <property name="can-focus">False</property>
             <property name="stock">gtk-directory</property>
             <property name="icon_size">6</property>
           </object>

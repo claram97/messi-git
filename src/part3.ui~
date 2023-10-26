@@ -66,6 +66,7 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="stock">gtk-directory</property>
+            <property name="icon_size">6</property>
           </object>
           <packing>
             <property name="x">56</property>
