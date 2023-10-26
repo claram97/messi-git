@@ -132,7 +132,7 @@ impl Tree {
     // }
 
     pub fn create_directories(&self, parent_dir: &str, git_dir_path: &str) -> io::Result<()> {
-        let dir_path = if parent_dir == "" {
+        let dir_path = if parent_dir.is_empty() {
             parent_dir.to_string() + &self.name
         } else {
             parent_dir.to_string() + "/" + &self.name
@@ -151,7 +151,7 @@ impl Tree {
     }
 
     pub fn delete_directories(&self, parent_dir: &str) -> io::Result<()> {
-        let dir_path = if parent_dir == "" {
+        let dir_path = if parent_dir.is_empty() {
             parent_dir.to_string() + &self.name
         } else {
             parent_dir.to_string() + "/" + &self.name
@@ -165,7 +165,7 @@ impl Tree {
             fs::remove_file(path)?;
         }
 
-        if dir_path == "" {
+        if dir_path.is_empty() {
             return Ok(());
         }
         let dir_path_buf = PathBuf::from(&dir_path);

@@ -1,6 +1,4 @@
 use crate::branch;
-use crate::cat_file;
-use crate::commit;
 use crate::tree_handler;
 use std::env;
 use std::fs;
@@ -44,7 +42,10 @@ pub fn process_args(git_dir_path: &str) -> io::Result<()> {
         // Change to a specific commit (detached mode)
         "--detach" => checkout_commit_detached(git_dir, destination),
         // Force the change of branch or commit (discarding uncommitted changes)
-        "-f" => Ok(force_checkout(git_dir, destination)),
+        "-f" => {
+            force_checkout(git_dir, destination);
+            Ok(())
+        }
         _ => {
             eprintln!("Invalid option: {}", option);
             std::process::exit(1);
@@ -300,7 +301,7 @@ pub fn checkout_commit_detached(git_dir: &Path, commit_id: &str) -> io::Result<(
         }
     };
     match checkout_commit_detached_references(git_dir_str, commit_id) {
-        Ok(old_commit_id) => match replace_working_tree(git_dir_str, &old_commit_id, &commit_id) {
+        Ok(old_commit_id) => match replace_working_tree(git_dir_str, &old_commit_id, commit_id) {
             Ok(_) => Ok(()),
             Err(err) => Err(err),
         },
@@ -313,7 +314,7 @@ fn checkout_commit_detached_references(git_dir_str: &str, commit_id: &str) -> io
     let old_commit_id = branch::get_current_branch_commit(git_dir_str)?;
     let new_head_content = format!("{} (commit)\n", commit_id);
     fs::write(head_file, new_head_content)?;
-    Ok("Hola".to_string())
+    Ok(old_commit_id)
 }
 
 fn replace_working_tree(git_dir: &str, old_commit_id: &str, new_commit_id: &str) -> io::Result<()> {
@@ -445,10 +446,11 @@ mod tests {
             .expect("Failed to write HEAD file");
 
         // Execute the checkout_branch function
-        checkout_branch_references(Path::new(TEST_CHECKOUT), branch_name);
+        let result = checkout_branch_references(Path::new(TEST_CHECKOUT), branch_name);
 
         // Verify that the HEAD file has been updated correctly
         let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
+        assert!(result.is_ok());
         assert_eq!(head_contents, format!("ref: refs/heads/{}\n", branch_name));
     }
 
@@ -624,14 +626,14 @@ mod tests {
             .expect("Failed to write HEAD file");
 
         // Execute the create_or_reset_branch function with an existing branch
-        create_or_reset_branch(Path::new(TEST_GIT), branch_name);
+        let _ = create_or_reset_branch(Path::new(TEST_GIT), branch_name);
 
         // Verify that the HEAD file has been updated to point to the new branch
         let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
         assert_eq!(head_contents, format!("ref: refs/heads/{}\n", branch_name));
 
         // Execute the create_or_reset_branch function with a non-existent branch
-        create_or_reset_branch(Path::new(TEST_GIT), "new_branch");
+        let _ = create_or_reset_branch(Path::new(TEST_GIT), "new_branch");
 
         // Verify that the new branch has been created, and that the HEAD file has been updated
         assert!(Path::new(TEST_GIT)
