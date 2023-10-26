@@ -72,6 +72,16 @@ pub fn git_init(
     let head_file = format!("{}/HEAD", &git_dir);
     create_file_if_not_exists(&head_file, &head_content)?;
 
+    // Config file
+    let config_content = r#"[core]
+      repositoryformatversion = 0
+      filemode = true
+      bare = false
+      logallrefupdates = true
+    "#;
+    let config_file = format!("{}/config", &git_dir);
+    create_file_if_not_exists(&config_file, config_content)?;
+
     // Copy files from the template directory
     if let Some(template) = template_directory {
         let template_dir = Path::new(template);
