@@ -3,13 +3,21 @@ use gtk::prelude::*;
 use gtk::Builder;
 use gtk::Window;
 use pango::Alignment;
+use std::sync::Mutex;
+
+pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
 pub fn run_main_window() {
+    unsafe {
+        OPEN_WINDOWS = Some(Mutex::new(Vec::new()));
+    }
     let builder = Builder::new();
     builder.add_from_file("src/gui/part3.ui"); 
 
     let window: gtk::Window = builder.get_object("window").expect("No se puede obtener la ventana");
     window.set_default_size(800, 600);
+    add_to_open_windows(&window);
+    print_open_windows();
     let button_clone: gtk::Button = get_button(&builder, "buttonclone", "Clone");
     let button_init: gtk::Button = get_button(&builder, "buttoninit", "Init");
 
@@ -18,10 +26,58 @@ pub fn run_main_window() {
     connect_button_clicked(&button_clone, "Clone");
     connect_button_clicked(&button_init, "Init");
     window.show_all();
+    
+}
+pub fn close_all_windows() {
+    unsafe {
+        if let Some(ref mutex) = OPEN_WINDOWS {
+            let mut open_windows = mutex.lock().expect("Mutex lock failed");
+            for window in open_windows.iter() {
+                window.close(); // Cierra cada ventana
+            }
+            open_windows.clear(); // Limpia la lista
+        }
+    }
+}
+fn print_open_windows() {
+    unsafe {
+        if let Some(ref windows) = OPEN_WINDOWS {
+            if let Ok(windows) = windows.lock() {
+                for window in windows.iter() {
+                    println!("Window: {:?}", window);
+                }
+            } else {
+                println!("Error al bloquear el mutex de las ventanas");
+            }
+        } else {
+            println!("OPEN_WINDOWS no está inicializado");
+        }
+    }
+}
+fn add_to_open_windows(window: &gtk::Window) {
+    unsafe {
+        if let Some(ref mutex) = OPEN_WINDOWS {
+            let mut open_windows = mutex.lock().expect("Mutex lock failed");
+            open_windows.push(window.clone());
+        }
+    }
+}
+fn show_new_window() {
+    let builder = gtk::Builder::new();
+    builder.add_from_file("src/gui/new_window.ui"); 
+
+    let new_window: gtk::Window = builder.get_object("window").expect("No se puede obtener la ventana");
+    new_window.set_default_size(800, 600);
+    apply_window_style(&new_window);
+
+
+    new_window.show_all();
 }
 
 fn create_text_entry_window(button_type: &str, message: &str) {
     let entry_window = gtk::Window::new(gtk::WindowType::Toplevel);
+    add_to_open_windows(&entry_window);
+    apply_window_style(&entry_window); 
     entry_window.set_title(message);
     entry_window.set_default_size(400, 150);
 
@@ -29,15 +85,19 @@ fn create_text_entry_window(button_type: &str, message: &str) {
     entry_window.add(&main_box);
 
     let entry = gtk::Entry::new();
-    entry.set_text("Texto predeterminado ");
+    entry.set_text("Texto predeterminado");
     main_box.add(&entry);
 
     let ok_button = gtk::Button::with_label("OK");
+    apply_common_style(&ok_button, &ok_button);
     main_box.add(&ok_button);
 
     ok_button.connect_clicked(move |_| {
         let text = entry.get_text().to_string();
         println!("Texto ingresado: {}", text);
+        close_all_windows();
+        show_new_window();
+
     });
 
     entry_window.show_all();
@@ -57,6 +117,7 @@ fn connect_button_clicked2(button: &gtk::Button, button_type: &str) {
 }
 
 fn connect_button_clicked(button: &gtk::Button, button_type: &str) {
+    
     let button_type = button_type.to_owned(); // Clonar la etiqueta
     
     button.connect_clicked(move |_| {
@@ -64,6 +125,7 @@ fn connect_button_clicked(button: &gtk::Button, button_type: &str) {
             let builder_window_init = gtk::Builder::new();
             builder_window_init.add_from_file("src/gui/windowInit.ui"); // Asegúrate de que la ruta sea correcta
             let new_window_init: gtk::Window = builder_window_init.get_object("window").expect("No se puede obtener la ventana");
+            add_to_open_windows(&new_window_init);
             new_window_init.set_default_size(800, 600);
             apply_window_style(&new_window_init);
             let button1: gtk::Button = get_button(&builder_window_init, "button1", "option1");
@@ -80,7 +142,6 @@ fn connect_button_clicked(button: &gtk::Button, button_type: &str) {
             connect_button_clicked2(&button2, "option2");
             connect_button_clicked2(&button3, "option3");
         } else if button_type == "Clone" {
-            // Código para el botón "Clone" aquí
         }
     });
 }
