@@ -48,6 +48,7 @@ fn connect_button_clicked(button: &gtk::Button, button_type: &str) {
             }
         }
         new_window.set_default_size(800, 600);
+        apply_window_style(&new_window); 
         new_window.show_all();
     });
 }
