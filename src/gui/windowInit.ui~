@@ -21,50 +21,50 @@
             </attributes>
           </object>
           <packing>
-            <property name="x">200</property>
+            <property name="x">280</property>
             <property name="y">15</property>
           </packing>
         </child>
         <child>
           <object class="GtkButton" id="button1">
             <property name="label" translatable="yes">In local directory</property>
-            <property name="width-request">100</property>
-            <property name="height-request">80</property>
+            <property name="width-request">400</property>
+            <property name="height-request">90</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
           </object>
           <packing>
             <property name="x">200</property>
-            <property name="y">200</property>
+            <property name="y">150</property>
           </packing>
         </child>
         <child>
           <object class="GtkButton" id="button2">
-            <property name="label" translatable="yes">In Branch</property>
-            <property name="width-request">100</property>
-            <property name="height-request">80</property>
+            <property name="label" translatable="yes">  In Branch (-b)  </property>
+            <property name="width-request">400</property>
+            <property name="height-request">90</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
           </object>
           <packing>
             <property name="x">200</property>
-            <property name="y">350</property>
+            <property name="y">300</property>
           </packing>
         </child>
         <child>
           <object class="GtkButton" id="button3">
-            <property name="label" translatable="yes">With template</property>
-            <property name="width-request">100</property>
-            <property name="height-request">80</property>
+            <property name="label" translatable="yes">  With template   </property>
+            <property name="width-request">400</property>
+            <property name="height-request">90</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
           </object>
           <packing>
             <property name="x">200</property>
-            <property name="y">500</property>
+            <property name="y">450</property>
           </packing>
         </child>
       </object>

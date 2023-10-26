@@ -6,7 +6,7 @@ use pango::Alignment;
 
 pub fn run_main_window() {
     let builder = Builder::new();
-    builder.add_from_file("src/gui/part3.ui"); // Reemplaza con el nombre de tu archivo .ui
+    builder.add_from_file("src/gui/part3.ui"); 
 
     let window: gtk::Window = builder.get_object("window").expect("No se puede obtener la ventana");
     window.set_default_size(800, 600);
