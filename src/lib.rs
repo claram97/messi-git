@@ -12,3 +12,6 @@ pub mod rm;
 pub mod tree_handler;
 pub mod utils;
 pub mod remote;
+pub mod branch_handler;
+pub mod config;
+pub mod remote_handler;
