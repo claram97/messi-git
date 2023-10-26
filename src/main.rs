@@ -34,7 +34,7 @@ fn main() {
 //     }
 //     let mut file_3 = File::create("tests/checkout/directorio_para_probar/nuevo_archivo.txt").unwrap();
 //     file_3.write_all(b"Hellooo World!").unwrap();
-    
+
 //     add::add("tests/checkout/archivo.txt", "tests/checkout/.mgit/index", "tests/checkout/.mgit", "", None);
 //     add::add("tests/checkout/otro_archivo.txt", "tests/checkout/.mgit/index", "tests/checkout/.mgit", "", None);
 //     add::add("tests/checkout/directorio_para_probar/nuevo_archivo.txt", "tests/checkout/.mgit/index", "tests/checkout/.mgit", "", None);

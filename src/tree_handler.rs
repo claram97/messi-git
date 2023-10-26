@@ -1,4 +1,8 @@
-use std::{io::{self}, fs, path::{PathBuf, Path}};
+use std::{
+    fs,
+    io::{self},
+    path::{Path, PathBuf},
+};
 
 use crate::{
     cat_file::{self, cat_file_return_content},
@@ -172,7 +176,6 @@ impl Tree {
         Ok(())
     }
 
-
     // Build a function similar to delete_directories but that works using absolute paths
 
     pub fn delete_directories2(&self, parent_dir: &Path) -> io::Result<()> {
@@ -196,9 +199,6 @@ impl Tree {
         }
         Ok(())
     }
-
-
-
 }
 
 /// Builds a tree from the index file.

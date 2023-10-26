@@ -144,7 +144,10 @@ pub fn read_head_commit_hash(git_dir: &str) -> io::Result<String> {
                 Ok(refs.to_string())
             }
         }
-        None => Err(io::Error::new(io::ErrorKind::NotFound, "Error in head file"))
+        None => Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Error in head file",
+        )),
     }
 }
 
