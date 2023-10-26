@@ -5,7 +5,7 @@
   <object class="GtkWindow" id="window">
     <property name="can-focus">False</property>
     <child>
-      <object class="GtkFixed">
+      <object class="GtkFixed" id="fix">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <child>
@@ -35,8 +35,36 @@
             <property name="receives-default">True</property>
           </object>
           <packing>
-            <property name="x">-48</property>
-            <property name="y">103</property>
+            <property name="x">200</property>
+            <property name="y">200</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="button2">
+            <property name="label" translatable="yes">In Branch</property>
+            <property name="width-request">100</property>
+            <property name="height-request">80</property>
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">True</property>
+          </object>
+          <packing>
+            <property name="x">200</property>
+            <property name="y">350</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="button3">
+            <property name="label" translatable="yes">With template</property>
+            <property name="width-request">100</property>
+            <property name="height-request">80</property>
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">True</property>
+          </object>
+          <packing>
+            <property name="x">200</property>
+            <property name="y">500</property>
           </packing>
         </child>
       </object>

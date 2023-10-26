@@ -35,6 +35,14 @@ fn connect_button_clicked(button: &gtk::Button, button_type: &str) {
             builder_window_init.add_from_file("src/windowInit.ui"); // Asegúrate de que la ruta sea correcta
             let new_window_init: gtk::Window = builder_window_init.get_object("window").expect("No se puede obtener la ventana");
             new_window_init.set_default_size(800, 600);
+            apply_window_style(&new_window_init);
+            let button1: gtk::Button = get_button(&builder_window_init, "button1", "option1");
+            let button2: gtk::Button = get_button(&builder_window_init, "button2", "option2");
+            let button3: gtk::Button = get_button(&builder_window_init, "button3", "option3");
+
+            apply_common_style(&button2, &button1);
+            apply_common_style(&button3, &button1);
+
             // Mostrar la nueva ventana "Init"
             new_window_init.show_all();
         } else if button_type == "Clone" {
