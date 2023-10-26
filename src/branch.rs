@@ -9,7 +9,7 @@ use crate::{commit, utils};
 /// Returns the path inside the HEAD file.
 /// The one that contains the path to the current branch.
 /// If the file is empty, it returns an error.
-fn get_current_branch_path(git_dir_path: &str) -> io::Result<String> {
+pub fn get_current_branch_path(git_dir_path: &str) -> io::Result<String> {
     let head_path = git_dir_path.to_string() + "/HEAD";
     let mut head_file = std::fs::File::open(head_path)?;
     let mut head_content = String::new();
@@ -26,6 +26,15 @@ fn get_current_branch_path(git_dir_path: &str) -> io::Result<String> {
     let nombre: Vec<&str> = path.split('\n').collect();
     let path_final = nombre[0];
     Ok(path_final.to_string())
+}
+
+pub fn get_current_branch_commit(git_dir_path: &str) -> io::Result<String> {
+    let branch_path = get_current_branch_path(git_dir_path)?;
+    let complete_path = git_dir_path.to_string() + "/" + &branch_path;
+    let mut branch_file = File::open(complete_path)?;
+    let mut branch_content = String::new();
+    branch_file.read_to_string(&mut branch_content)?;
+    Ok(branch_content)
 }
 
 /// Creates a new branch in the repo with the given name.
@@ -61,14 +70,9 @@ pub fn create_new_branch(
         output.write_all(buffer.as_bytes())?;
         return Ok(());
     }
-    let branch_path = get_current_branch_path(git_dir)?;
-    let complete_path = (&git_dir).to_string() + "/" + &branch_path;
-    let mut current_branch_file = File::open(complete_path)?;
-    let mut content = String::new();
-    current_branch_file.read_to_string(&mut content)?;
-
+    let current_commit = get_current_branch_commit(git_dir)?;
     let mut file = File::create(&new_refs)?;
-    file.write_all(content.as_bytes())?;
+    file.write_all(current_commit.as_bytes())?;
     Ok(())
 }
 

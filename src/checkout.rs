@@ -3,6 +3,7 @@ use std::fs;
 use std::io;
 use std::io::Write;
 use std::path::Path;
+use crate::branch;
 use crate::cat_file;
 use crate::commit;
 use crate::tree_handler;
@@ -37,9 +38,9 @@ pub fn process_args(git_dir_path: &str) -> io::Result<()>{
         // Change to the specified branch
         "" => checkout_branch(git_dir, destination),
         // Create and change to a new branch
-        "-b" => Ok(create_and_checkout_branch(git_dir, destination)),
+        "-b" => create_and_checkout_branch(git_dir, destination),
         // Create or reset a branch if it exists
-        "-B" => Ok(create_or_reset_branch(git_dir, destination)),
+        "-B" => create_or_reset_branch(git_dir, destination),
         // Change to a specific commit (detached mode)
         "--detach" => checkout_commit_detached(git_dir, destination),
         // Force the change of branch or commit (discarding uncommitted changes)
@@ -136,42 +137,26 @@ pub fn checkout_branch(git_dir: &Path, branch_name: &str) -> io::Result<()> {
 ///
 /// If there are any errors during the branch creation process, the function prints appropriate
 /// error messages to the standard error output.
-pub fn create_and_checkout_branch(git_dir: &Path, branch_name: &str) {
-    let refs_dir = git_dir.join("refs").join("heads");
-    let branch_ref_file = refs_dir.join(branch_name);
-
-    // Check if the branch already exists
-    if branch_ref_file.exists() {
-        eprintln!(
-            "Branch '{}' already exists in the repository. Use '-B' to reset it.",
-            branch_name
-        );
-        return;
-    }
-
-    // Create a reference file for the new branch
-    match fs::File::create(&branch_ref_file) {
-        Ok(mut file) => {
-            // Write an initial reference value (can be the ID of an initial commit)
-            if let Err(err) = write_reference_value(&mut file, "initial_commit_id") {
-                eprintln!("Failed to write reference value: {}", err);
-                return;
-            }
-
-            // Update the HEAD file to point to the new branch
-            let head_file = git_dir.join("HEAD");
-            let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
-            if let Err(err) = fs::write(head_file, new_head_content) {
-                eprintln!("Failed to update HEAD file: {}", err);
-                return;
-            }
-
-            println!("Created and switched to new branch: {}", branch_name);
+pub fn create_and_checkout_branch(git_dir: &Path, branch_name: &str) -> io::Result<()> {
+    let git_dir_str = match git_dir.to_str() {
+        Some(path) => path,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error when reading path",
+            ))
         }
-        Err(err) => {
-            eprintln!("Failed to create branch reference file: {}", err);
-        }
-    }
+    };
+    branch::create_new_branch(git_dir_str, branch_name, &mut io::stdout())?;
+    
+    let head_file = git_dir.join("HEAD");
+    let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
+    fs::write(head_file, new_head_content)?;
+
+    let branch_ref_file = git_dir.join("refs").join("heads").join(branch_name);
+    let branch_commit_id = fs::read_to_string(&branch_ref_file)?;
+    replace_working_tree(git_dir_str, &branch_commit_id)?;
+    Ok(())
 }
 
 /// Write a reference value to a file in a Git-like repository.
@@ -236,41 +221,17 @@ pub fn write_reference_value(file: &mut fs::File, value: &str) -> io::Result<()>
 /// This example demonstrates how to use the `create_or_reset_branch` function to create or reset a branch
 /// named "my_branch" in a Git-like repository. If the branch already exists, it will be reset, and the
 /// HEAD reference will be updated to point to the branch.
-pub fn create_or_reset_branch(git_dir: &Path, branch_name: &str) {
+pub fn create_or_reset_branch(git_dir: &Path, branch_name: &str) -> io::Result<()> {
     let refs_dir = git_dir.join("refs").join("heads");
     let branch_ref_file = refs_dir.join(branch_name);
 
-    // Create a reference file for the branch
-    match fs::File::create(branch_ref_file) {
-        Ok(mut file) => {
-            // Write an initial reference value (can be the ID of an initial commit)
-            if let Err(err) = write_reference_value(&mut file, "initial_commit_id") {
-                eprintln!("Failed to write reference value: {}", err);
-                return;
-            }
-
-            // Update the HEAD file to point to the branch
-            let head_file = git_dir.join("HEAD");
-            let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
-            if let Err(err) = fs::write(head_file, new_head_content) {
-                eprintln!("Failed to update HEAD file: {}", err);
-                return;
-            }
-
-            println!("Created or reset branch: {}", branch_name);
-        }
-        Err(_) => {
-            // If the reference file already exists, simply update HEAD to point to the branch
-            let head_file = git_dir.join("HEAD");
-            let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
-            if let Err(err) = fs::write(head_file, new_head_content) {
-                eprintln!("Failed to update HEAD file: {}", err);
-                return;
-            }
-
-            println!("Reset branch: {}", branch_name);
-        }
+    //Check if the branch reference file exists
+    if branch_ref_file.exists() {
+    } else {
+        create_and_checkout_branch(git_dir, branch_name)?;
     }
+    
+    Ok(())
 }
 
 /// Check out a specific commit in detached mode in a Git-like repository.
@@ -333,9 +294,8 @@ fn replace_working_tree (git_dir: &str, commit_id: &str) -> io::Result<()> {
     //     None => return Err(io::Error::new(io::ErrorKind::Other, "Error when reading parent dir")),
     // };
 
-    let _ = latest_tree.delete_directories2(Path::new(""))?;
-    let _ = commit_tree.create_directories("", git_dir)?;
-
+    latest_tree.delete_directories2(Path::new(""))?;
+    commit_tree.create_directories("", git_dir)?;
     Ok(())
 }
 
