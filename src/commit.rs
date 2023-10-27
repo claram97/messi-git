@@ -132,7 +132,7 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
 
 #[cfg(test)]
 mod tests {
-    fn rebuild_git_dir(git_dir_path: &str) {
+    fn create_git_dir(git_dir_path: &str) {
         let _ = std::fs::remove_dir_all(git_dir_path);
         let _ = std::fs::create_dir(git_dir_path);
         let _ = std::fs::create_dir(git_dir_path.to_string() + "/refs");
@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn test_hash_in_refs_file() {
         let git_dir_path = "tests/commit/.mgit_test";
-        rebuild_git_dir(git_dir_path);
+        create_git_dir(git_dir_path);
         let message = "test commit";
         let commit_hash = new_commit(git_dir_path, message, "").unwrap();
         let refs_path = git_dir_path.to_string() + "/refs/heads/main";
@@ -179,24 +179,26 @@ mod tests {
         let mut refs_content = String::new();
         refs_file.read_to_string(&mut refs_content).unwrap();
         assert_eq!(refs_content, commit_hash);
+        let _ = std::fs::remove_dir_all(git_dir_path);
     }
 
     #[test]
     fn no_commit_made_if_no_changes() {
         let git_dir_path = "tests/commit/.mgit_test6";
-        rebuild_git_dir(git_dir_path);
+        create_git_dir(git_dir_path);
         let message = "test commit";
         let commit_hash = new_commit(git_dir_path, message, "");
         let message = "test commit 2";
         let commit_hash2 = new_commit(git_dir_path, message, "");
         assert!(commit_hash.is_ok());
         assert!(commit_hash2.is_err());
+        let _ = std::fs::remove_dir_all(git_dir_path);
     }
 
     #[test]
     fn test_commit_parent_is_correct() {
         let git_dir_path: &str = "tests/commit/.mgit_test1";
-        rebuild_git_dir(git_dir_path);
+        create_git_dir(git_dir_path);
         let refs_dir = git_dir_path.to_string() + "/refs/heads/main";
         let mut ref_actual = std::fs::File::open(&refs_dir).unwrap();
         let mut ref_actual_content = String::new();
@@ -205,6 +207,7 @@ mod tests {
         let commit_hash = new_commit(git_dir_path, message, "").unwrap();
         let parent_hash = get_parent_hash(&commit_hash, git_dir_path).unwrap();
         assert_eq!(parent_hash, ref_actual_content);
+        let _ = std::fs::remove_dir_all(git_dir_path);
     }
 
     #[test]
@@ -218,7 +221,7 @@ mod tests {
     #[test]
     fn commits_chained_correctly() {
         let git_dir_path = "tests/commit/.mgit_test2";
-        rebuild_git_dir(git_dir_path);
+        create_git_dir(git_dir_path);
         reset_refs_file(git_dir_path);
         let message = "test commit";
         let commit_1_hash = new_commit(git_dir_path, message, "").unwrap();
@@ -247,12 +250,13 @@ mod tests {
         let commit_3_hash = new_commit(git_dir_path, message, "").unwrap();
         let parent_hash = get_parent_hash(&commit_3_hash, git_dir_path).unwrap();
         assert_eq!(parent_hash, commit_2_hash);
+        let _ = std::fs::remove_dir_all(git_dir_path);
     }
 
     #[test]
     fn chained_commits_messages_are_correct() {
         let git_dir_path = "tests/commit/.mgit_test3";
-        rebuild_git_dir(git_dir_path);
+        create_git_dir(git_dir_path);
         reset_refs_file(git_dir_path);
         let message = "test commit";
         let commit_1_hash = new_commit(git_dir_path, message, "").unwrap();
@@ -290,5 +294,6 @@ mod tests {
             commit_3_content.split("\n").last().unwrap(),
             "test commit 3"
         );
+        let _ = std::fs::remove_dir_all(git_dir_path);
     }
 }
