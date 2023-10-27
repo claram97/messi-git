@@ -38,7 +38,7 @@ fn create_new_commit_file(
     Ok(commit_hash)
 }
 
-fn get_branch_name(git_dir_path: &str) -> io::Result<String> {
+pub fn get_branch_name(git_dir_path: &str) -> io::Result<String> {
     let head_path = git_dir_path.to_string() + "/HEAD";
     let mut head_file = std::fs::File::open(head_path)?;
     let mut head_content = String::new();
@@ -53,9 +53,9 @@ fn get_branch_name(git_dir_path: &str) -> io::Result<String> {
             ))
         }
     };
-    Ok(branch_name.to_string())
+    let name: Vec<&str> = branch_name.split('\n').collect();
+    Ok(name[0].to_string())
 }
-
 /// Creates a new commit file and updates the branch file.
 /// the refs/heads/branch_name file will be updated with the new commit hash.
 /// If the branch file doesn't exist, it will be created.
