@@ -12,3 +12,4 @@ pub mod parse_commands;
 pub mod rm;
 pub mod tree_handler;
 pub mod utils;
+pub mod merge;
