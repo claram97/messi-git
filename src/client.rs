@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    io::{self, BufRead, BufReader, Read, Write},
+    io::{self, BufRead, BufReader, Read, Write, Error},
     net::TcpStream,
     str::from_utf8,
     vec,
@@ -28,12 +28,12 @@ impl Client {
     /// Establish a connection with the server and asks for the refs in the remote.
     /// A hashmap with the path of the refs as keys and the last commit hash as values is returned.
     /// 
+    /// Leaves the connection opened
     /// May fail due to I/O errors
-    pub fn get_refs(&mut self) -> io::Result<&HashMap<String, String>> {
+    pub fn get_refs(&mut self) -> io::Result<HashMap<String, String>> {
         self.upload_pack_initiate_connection()?;
         self.upload_pack_wait_refs();
-        self.flush()?;
-        Ok(&self.refs)
+        Ok(self.refs.clone())
     }
 
     /// Creates a connection with a server (assuming its a git server)
@@ -73,36 +73,36 @@ impl Client {
         self.send("0009done\n")
     }
 
-    /// REVISAR: deberia ser como el upload-pack the git
-    pub fn upload_pack(&mut self) -> io::Result<()> {
-        self.upload_pack_initiate_connection()?;
-        // self.ls_refs()?;
-        // self.read_response_until_flush();
-        self.upload_pack_wait_refs();
-
-        self.upload_pack_send_wanted_refs()?;
-        println!("Leo response de want");
-        // std::thread::sleep(std::time::Duration::from_secs(5));
-        self.read_response_until_flush();
-
-        println!("Termino conexion");
+    pub fn end_connection(&mut self) -> io::Result<()> {
+        dbg!("FLUSHIIING");
         self.flush()
     }
+    /// REVISAR: deberia ser como el upload-pack the git
+    // pub fn upload_pack(&mut self) -> io::Result<()> {
 
-    // Selects the wanted refs to fetch 
-    fn select_wanted_refs(&self) -> Vec<String> {
-        vec!["HEAD".to_string()]
-    }
+    //     let _ = self.get_refs();
 
-    // Auxiliar function. Tells the server which refs are required
-    fn upload_pack_send_wanted_refs(&mut self) -> io::Result<()> {
-        let _wanted_refs = self.select_wanted_refs();
-        let wanted_ref = "refs/heads/sharing";
+    //     self.upload_pack_send_wanted_refs()?;
+    //     // std::thread::sleep(std::time::Duration::from_secs(5));
+    //     self.upload_pack_initiate_connection()?;
+    //     println!("Leo response de want");
+    //     self.read_response_until_flush();
+
+    //     println!("Termino conexion");
+    //     self.flush()
+    // }
+
+    /// Tells the server which refs are required
+    /// If the provided ref name does not exist in remote, then an error is returned.
+    /// 
+    /// (DEBERIA TRAER EL PACKFILE PERO TODAVIA NO LO HACE)
+    pub fn want_ref(&mut self, wanted_ref: &str) -> io::Result<()> {
+
         println!("Pido: {}", wanted_ref);
         // for wanted_ref in wanted_refs {
         let hash = match self.refs.get(wanted_ref) {
             Some(hash) => hash,
-            None => return Ok(()),
+            None => return Err(Error::new(io::ErrorKind::NotFound, "Ref not found in remote")),
         };
 
         let want = format!("want {} {}\n", hash, &self.capabilities);
@@ -210,6 +210,11 @@ fn pkt_line(line: &str) -> String {
     len_hex + line
 }
 
+impl Drop for Client {
+    fn drop(&mut self) {
+        let _ = self.end_connection();
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -223,6 +228,7 @@ mod tests {
         let address = "localhost:".to_owned() + PORT;
         let mut client = Client::connect(&address, "repo","localhost")?;
         assert!(!client.get_refs()?.is_empty());
+        // client.end_connection()
         Ok(())
     }
 
@@ -232,6 +238,21 @@ mod tests {
         let address = "localhost:".to_owned() + PORT;
         let mut client = Client::connect(&address, "repo", "localhost")?;
         assert!(client.get_refs()?.contains_key("HEAD"));
+        // client.end_connection()
         Ok(())
+    }
+
+    #[test]
+    #[ignore]
+    fn test_upload_pack() -> io::Result<()> {
+        let address = "localhost:".to_owned() + PORT;
+        let mut client = Client::connect(&address, "repo", "localhost")?;
+        let refs = client.get_refs()?;
+        if let Some(wanted_ref) = refs.get("HEAD") {
+            client.want_ref(wanted_ref)?
+        }
+        Ok(())
+        // assert!(client.get_refs()?.contains_key("HEAD"));
+        // Ok(())
     }
 }
