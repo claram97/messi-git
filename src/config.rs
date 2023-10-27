@@ -1,6 +1,5 @@
 use crate::{branch_handler::Branch, remote_handler::Remote};
 use std::{
-    collections::LinkedList,
     fs::{File, OpenOptions},
     io::{self, BufRead, BufReader, Write},
 };
@@ -161,9 +160,115 @@ impl Config {
         Ok(())
     }
 
-    pub fn get_url() {}
+    fn change_remote_from_file(&self, remote: &Remote, output: &mut impl Write) -> io::Result<()> {
+        let input_file = File::open(&self.config_file_path)?;
+        let reader = BufReader::new(input_file);
+    
+        let temp_file_path = (&self.config_file_path).to_string() + "2";
+        let output_file = File::create(&temp_file_path)?;
+        let mut writer = io::BufWriter::new(output_file);
+    
+        let mut skip_lines = 0;
+        let mut buffer: Vec<String> = Vec::new();
+    
+        for line in reader.lines() {
+            let line = line?;
+            if skip_lines > 0 {
+                skip_lines -= 1;
+            } else {
+                if line.starts_with(&format!("[remote \"{}\"]", remote.name)) {
+                    skip_lines = 3;
+                    buffer.push(format!("[remote \"{}\"]", remote.name));
+                    buffer.push(format!("\turl = {}", remote.url));
+                    buffer.push(format!("\tfetch = {}", &remote.fetch));
+                }
+                else {
+                    buffer.push(line);
+                }
+            }
+        }
 
-    pub fn set_url() {}
+        for line in buffer {
+            writeln!(writer, "{}", line)?;
+        }
+    
+        std::fs::rename(temp_file_path, &self.config_file_path)?;
+    
+        Ok(())
+    }
 
-    pub fn change_remote_name() {}
+    pub fn get_url(&self, remote_name : &str, output: &mut impl Write) -> io::Result<()> {
+        if let Some(index) = self.remotes.iter().position(|r| r.name == remote_name) {
+            if let Some(remote) = self.remotes.get(index) {
+                output.write_all(remote.url.as_bytes())?;
+            }
+            else {
+                let error_message = format!("error: No such remote '{}'",remote_name);
+                output.write_all(error_message.as_bytes())?;
+                //Devolver error
+            }
+        }
+        else {
+            let error_message = format!("error: No such remote '{}'",remote_name);
+            output.write_all(error_message.as_bytes())?;
+        }
+        Ok(())
+    }
+
+    pub fn set_url(&mut self, remote_name : &str, new_url : &str, output: &mut impl Write) -> io::Result<()> {
+        if let Some(index) = self.remotes.iter().position(|r| r.name == remote_name) {
+            if let Some(remote) = self.remotes.get(index) {
+                if remote.url.eq(&new_url) {
+                    return Ok(());
+                }
+                else {
+                    let new_remote = Remote::new((&remote_name).to_string(),(&new_url).to_string(),(&remote.fetch).to_string());
+                    self.change_remote_from_file(&new_remote,output)?;
+                    self.remotes.remove(index);
+                    self.remotes.push(new_remote);
+                }
+            }
+            else {
+                let error_message = format!("error: No such remote '{}'",remote_name);
+                output.write_all(error_message.as_bytes())?;
+                //Devolver error
+            }
+        }
+        else {
+            let error_message = format!("error: No such remote '{}'",remote_name);
+            output.write_all(error_message.as_bytes())?;
+            //Devolver el error
+        }
+        Ok(())
+    }
+
+    pub fn change_remote_name(&mut self, remote_name : &str, remote_new_name : &str, output: &mut impl Write)-> io::Result<()> {
+        if let Some(index) = self.remotes.iter().position(|r| r.name == remote_name) {
+            if let Some(_) = self.remotes.iter().position(|s| s.name == remote_new_name) {
+                let error_message = format!("error: remote {} already exists.",remote_new_name);
+                output.write_all(error_message.as_bytes())?;
+                //Devolver el error
+            }
+            else {
+                if let Some(remote) = self.remotes.get(index) {
+                    let new_remote = Remote::new(remote_new_name.to_string(),(&remote.url).to_string(),(&remote.fetch).to_string());
+                    self.change_remote_from_file(&new_remote,output)?;
+                    self.remotes.remove(index);
+                    self.remotes.push(new_remote);
+                }
+                else {
+                    let error_message = format!("error: No such remote '{}'",remote_name);
+                    output.write_all(error_message.as_bytes())?;
+                    //Devolver error
+                }
+            }
+        }
+        else {
+            let error_message = format!("error: No such remote '{}'",remote_name);
+            output.write_all(error_message.as_bytes())?;
+            //Devolver el error
+        }
+        Ok(())
+    }
+
 }
