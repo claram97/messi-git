@@ -12,7 +12,7 @@ use std::path::Path;
 /// # Arguments
 /// `git_dir_path` - A string representing the path to the Git repository directory.
 /// `root_dir` - A string representing the path to the root directory of the repository.
-/// 
+///
 pub fn process_args(git_dir_path: &str, root_dir: &str) -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
