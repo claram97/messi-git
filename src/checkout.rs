@@ -426,6 +426,7 @@ mod tests {
 
     use super::*;
     use std::fs;
+    use std::io::Read;
     use std::path::Path;
 
     // Define a test directory for the Git repository
@@ -662,93 +663,203 @@ mod tests {
         assert_eq!(new_head_contents, format!("ref: refs/heads/new_branch\n"));
     }
 
+    fn prepare_dir(git_dir: &str) {
+        //Create a refs heads directory and write the old branch name
+        let refs_dir = Path::new(git_dir).join("refs").join("heads");
+        fs::create_dir_all(&refs_dir).expect("Failed to create dirs");
+
+        //Create an objects directory and write a commit
+        let objects_dir = Path::new(git_dir).join("objects");
+        fs::create_dir_all(&objects_dir).expect("Failed to create dirs");
+
+        //Create a HEAD file and write the old branch name
+        let head_file = Path::new(git_dir).join("HEAD");
+        fs::File::create(&head_file).expect("Failed to create file");
+        let head_contents = format!("ref: refs/heads/master");
+        fs::write(&head_file, head_contents).expect("Failed to write HEAD file");
+
+        //Create an index file
+        let index_file = Path::new(git_dir).join("index");
+        fs::File::create(&index_file).expect("Failed to create file");
+    }
+
+    fn prepare_commit_1(test_dir: &str) {
+        let file1 = Path::new(test_dir).join("archivo.txt");
+        let file2 = Path::new(test_dir).join("otro_archivo.txt");
+
+        fs::File::create(&file1).expect("Failed to create file");
+        fs::File::create(&file2).expect("Failed to create file");
+
+        fs::write(&file1, "Hola").expect("Failed to write file");
+        fs::write(&file2, "Chau").expect("Failed to write file");
+
+        let git_dir = test_dir.to_string() + "/.mgit";
+        let index_path = git_dir.to_string() + "/index";
+
+        let _ = add::add(
+            &(test_dir.to_string() + "/archivo.txt"),
+            &index_path,
+            &git_dir,
+            "",
+            None,
+        );
+
+        let _ = add::add(
+            &(test_dir.to_string() + "/otro_archivo.txt"),
+            &index_path,
+            &git_dir,
+            "",
+            None,
+        );
+    }
+
+    fn prepare_commit_2(test_dir: &str) {
+        let file1 = Path::new(test_dir).join("archivo.txt");
+
+        let dir = Path::new(test_dir).join("otro_dir");
+        fs::create_dir_all(&dir).expect("Failed to create dirs");
+        let file3 = Path::new(test_dir).join("otro_dir/nuevo_archivo.txt");
+
+        fs::File::create(&file1).expect("Failed to create file");
+        fs::File::create(&file3).expect("Failed to create file");
+
+        fs::write(&file1, "Este es otro hola").expect("Failed to write file");
+        fs::write(&file3, "Adios").expect("Failed to write file");
+
+        let git_dir = test_dir.to_string() + "/.mgit";
+        let index_path = git_dir.to_string() + "/index";
+
+        let _ = add::add(
+            &(test_dir.to_string() + "/archivo.txt"),
+            &index_path,
+            &git_dir,
+            "",
+            None,
+        );
+
+        let _ = add::add(
+            &(test_dir.to_string() + "/otro_dir/nuevo_archivo.txt"),
+            &index_path,
+            &git_dir,
+            "",
+            None,
+        );
+    }
+
     #[test]
     fn test_replace_working_tree() {
         // Create a test directory if it doesn't exist
         if !Path::new("tests/checkout").exists() {
             fs::create_dir_all("tests/checkout").expect("Failed to create test directory");
         }
-
-        //Create a refs heads directory and write the old branch name
-        let refs_dir = Path::new("tests/checkout/.mgit").join("refs").join("heads");
-        fs::create_dir_all(&refs_dir).expect("Failed to create dirs");
-        // let branch_ref_file = refs_dir.join("my_branch");
-        // fs::File::create(&branch_ref_file).expect("Failed to create file");
-
-        //Create an objects directory and write a commit
-        let objects_dir = Path::new("tests/checkout/.mgit").join("objects");
-        fs::create_dir_all(&objects_dir).expect("Failed to create dirs");
-
-        //Create a HEAD file and write the old branch name
-        let head_file = Path::new("tests/checkout/.mgit").join("HEAD");
-        fs::File::create(&head_file).expect("Failed to create file");
-        let head_contents = format!("ref: refs/heads/my_branch");
-        fs::write(&head_file, head_contents).expect("Failed to write HEAD file");
-
-        //Create some files and write to them
-        let file1 = Path::new("tests/checkout/archivo.txt");
-        let file2 = Path::new("tests/checkout/otro_archivo.txt");
-        let file3 = Path::new("tests/checkout/directorio_para_probar/nuevo_archivo.txt");
-        fs::File::create(&file1).expect("Failed to create file");
-        fs::File::create(&file2).expect("Failed to create file");
-        fs::create_dir_all("tests/checkout/directorio_para_probar").expect("Failed to create dirs");
-        fs::File::create(&file3).expect("Failed to create file");
-        fs::write(&file1, "Hola").expect("Failed to write file");
-        fs::write(&file2, "Hola").expect("Failed to write file");
-        fs::write(&file3, "Hola").expect("Failed to write file");
-
-        //Write an index files with some files
-        let index_file = Path::new("tests/checkout/.mgit").join("index");
-        fs::File::create(&index_file).expect("Failed to create file");
-
-        let _ = add::add(
-            "tests/checkout/archivo.txt",
-            "tests/checkout/.mgit/index",
-            "tests/checkout/.mgit",
-            "",
-            None,
-        );
-        let _ = add::add(
-            "tests/checkout/otro_archivo.txt",
-            "tests/checkout/.mgit/index",
-            "tests/checkout/.mgit",
-            "",
-            None,
-        );
-
-        //Write a commit hash to the old branch
+        prepare_dir("tests/checkout/.mgit");
+        prepare_commit_1("tests/checkout");
         let old_commmit = commit::new_commit("tests/checkout/.mgit", "Hola", "").unwrap();
-        //Edit something in the file1 and add it
-        fs::write(&file1, "Hola2").expect("Failed to write file");
-        let _ = add::add(
-            "tests/checkout/archivo.txt",
-            "tests/checkout/.mgit/index",
-            "tests/checkout/.mgit",
-            "",
-            None,
-        );
-        let _ = add::add(
-            "tests/checkout/directorio_para_probar/nuevo_archivo.txt",
-            "tests/checkout/.mgit/index",
-            "tests/checkout/.mgit",
-            "",
-            None,
-        );
-
+        prepare_commit_2("tests/checkout");
         let new_commit = commit::new_commit("tests/checkout/.mgit", "Hola", "").unwrap();
+
         replace_working_tree("tests/checkout/.mgit", "", &new_commit, &old_commmit).unwrap();
 
-        //Check that file1 content is the same as in old commit
+        let file1 = Path::new("tests/checkout/archivo.txt");
         let file1_content = fs::read_to_string(&file1).expect("Failed to read file");
         assert_eq!(file1_content, "Hola");
 
-        //Check that file3 has been deleted
+        let file3 = Path::new("tests/checkout/otro_dir/nuevo_archivo.txt");
         assert!(!file3.exists());
 
-        //Check that the directory has been deleted
-        assert!(!Path::new("tests/checkout/directorio_para_probar").exists());
+        assert!(!Path::new("tests/checkout/otro_dir").exists());
 
-        //Delete the created directories
         fs::remove_dir_all("tests/checkout").expect("Failed to delete directory");
+    }
+
+    #[test]
+    fn test_create_and_checkout_branch() {
+        // Create a test directory if it doesn't exist
+        if !Path::new("tests/checkout2").exists() {
+            fs::create_dir_all("tests/checkout2").expect("Failed to create test directory");
+        }
+        prepare_dir("tests/checkout2/.mgit");
+        prepare_commit_1("tests/checkout2");
+        let old_commmit = commit::new_commit("tests/checkout2/.mgit", "Hola", "").unwrap();
+
+        let git_dir_path = Path::new("tests/checkout2/.mgit");
+        create_and_checkout_branch(git_dir_path, "", "new_branch").unwrap();
+
+        let branch_ref_file = git_dir_path.join("refs").join("heads").join("new_branch");
+        let mut file = fs::File::open(&branch_ref_file).unwrap();
+        let mut content = String::new();
+        file.read_to_string(&mut content).unwrap();
+        assert_eq!(content, old_commmit);
+
+        fs::remove_dir_all("tests/checkout2").expect("Failed to delete directory");
+    }
+
+    #[test]
+    fn test_create_branch_and_return_to_old_one() {
+        // Create a test directory if it doesn't exist
+        if !Path::new("tests/checkout3").exists() {
+            fs::create_dir_all("tests/checkout3").expect("Failed to create test directory");
+        }
+        prepare_dir("tests/checkout3/.mgit");
+        prepare_commit_1("tests/checkout3");
+        let old_commmit = commit::new_commit("tests/checkout3/.mgit", "Hola", "").unwrap();
+
+        let git_dir_path = Path::new("tests/checkout3/.mgit");
+        create_and_checkout_branch(git_dir_path, "", "new_branch").unwrap();
+
+        let branch_ref_file = git_dir_path.join("refs").join("heads").join("new_branch");
+        let mut file = fs::File::open(&branch_ref_file).unwrap();
+        let mut content = String::new();
+        file.read_to_string(&mut content).unwrap();
+        assert_eq!(content, old_commmit);
+
+        create_and_checkout_branch(git_dir_path, "", "master").unwrap();
+
+        let branch_ref_file = git_dir_path.join("refs").join("heads").join("master");
+        let mut file = fs::File::open(&branch_ref_file).unwrap();
+        let mut content = String::new();
+        file.read_to_string(&mut content).unwrap();
+        assert_eq!(content, old_commmit);
+
+        fs::remove_dir_all("tests/checkout3").expect("Failed to delete directory");
+    }
+
+    #[test]
+    fn test_checkout_commit_and_return_to_old_branch() {
+        // Create a test directory if it doesn't exist
+        if !Path::new("tests/checkout4").exists() {
+            fs::create_dir_all("tests/checkout4").expect("Failed to create test directory");
+        }
+        prepare_dir("tests/checkout4/.mgit");
+        prepare_commit_1("tests/checkout4");
+        let old_commmit = commit::new_commit("tests/checkout4/.mgit", "Hola", "").unwrap();
+
+        let git_dir_path = Path::new("tests/checkout4/.mgit");
+        create_and_checkout_branch(git_dir_path, "", "new_branch").unwrap();
+
+        let branch_ref_file = git_dir_path.join("refs").join("heads").join("new_branch");
+        let mut file = fs::File::open(&branch_ref_file).unwrap();
+        let mut content = String::new();
+        file.read_to_string(&mut content).unwrap();
+        assert_eq!(content, old_commmit);
+
+        prepare_commit_2("tests/checkout4");
+        let new_commit = commit::new_commit("tests/checkout4/.mgit", "Hola", "").unwrap();
+        create_and_checkout_branch(git_dir_path, "", "master").unwrap();
+
+        let branch_ref_file = git_dir_path.join("refs").join("heads").join("master");
+        let mut file = fs::File::open(&branch_ref_file).unwrap();
+        let mut content = String::new();
+        file.read_to_string(&mut content).unwrap();
+        assert_eq!(content, old_commmit);
+
+        //Check that new_branch has the correct commit
+        let branch_ref_file = git_dir_path.join("refs").join("heads").join("new_branch");
+        let mut file = fs::File::open(&branch_ref_file).unwrap();
+        let mut content = String::new();
+        file.read_to_string(&mut content).unwrap();
+        assert_eq!(content, new_commit);
+
+        fs::remove_dir_all("tests/checkout4").expect("Failed to delete directory");
     }
 }
