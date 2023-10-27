@@ -20,7 +20,7 @@ use std::path::Path;
 ///   - `"-f"`: Force the change of branch or commit (discarding uncommitted changes).
 ///
 /// * `destination` - A string representing the branch name or commit ID to be operated on.
-pub fn process_args(git_dir_path: &str) -> io::Result<()> {
+pub fn process_args(git_dir_path: &str, root_dir: &str) -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
@@ -34,13 +34,13 @@ pub fn process_args(git_dir_path: &str) -> io::Result<()> {
 
     match option.as_str() {
         // Change to the specified branch
-        "" => checkout_branch(git_dir, destination),
+        "" => checkout_branch(git_dir, root_dir, destination),
         // Create and change to a new branch
-        "-b" => create_and_checkout_branch(git_dir, destination),
+        "-b" => create_and_checkout_branch(git_dir, root_dir, destination),
         // Create or reset a branch if it exists
-        "-B" => create_or_reset_branch(git_dir, destination),
+        "-B" => create_or_reset_branch(git_dir, root_dir, destination),
         // Change to a specific commit (detached mode)
-        "--detach" => checkout_commit_detached(git_dir, destination),
+        "--detach" => checkout_commit_detached(git_dir, root_dir, destination),
         // Force the change of branch or commit (discarding uncommitted changes)
         "-f" => {
             force_checkout(git_dir, destination);
@@ -69,7 +69,8 @@ pub fn process_args(git_dir_path: &str) -> io::Result<()> {
 /// use messi::checkout::checkout_branch;
 /// let git_dir = Path::new(".mgit");
 /// let branch_name = "my_branch";
-/// checkout_branch(&git_dir, branch_name);
+/// let root_dir = ".";
+/// checkout_branch(&git_dir, root_dir, branch_name);
 /// ```
 ///
 /// This function checks if the specified branch reference file exists. If it exists, the content of
@@ -78,7 +79,7 @@ pub fn process_args(git_dir_path: &str) -> io::Result<()> {
 ///
 /// If the branch reference file does not exist, or if there are errors during the process, the
 /// function prints an error message to the standard error output.
-pub fn checkout_branch(git_dir_path: &Path, branch_name: &str) -> io::Result<()> {
+pub fn checkout_branch(git_dir_path: &Path, root_dir: &str, branch_name: &str) -> io::Result<()> {
     let git_dir_path_str = match git_dir_path.to_str() {
         Some(path) => path,
         None => {
@@ -92,7 +93,7 @@ pub fn checkout_branch(git_dir_path: &Path, branch_name: &str) -> io::Result<()>
     match checkout_branch_references(git_dir_path, branch_name) {
         Ok(old_commit_id) => {
             let new_commit_id = branch::get_current_branch_commit(git_dir_path_str)?;
-            match replace_working_tree(git_dir_path_str, &old_commit_id, &new_commit_id) {
+            match replace_working_tree(git_dir_path_str, root_dir, &old_commit_id, &new_commit_id) {
                 Ok(_) => Ok(()),
                 Err(err) => Err(err),
             }
@@ -144,7 +145,8 @@ fn checkout_branch_references(git_dir: &Path, branch_name: &str) -> io::Result<S
 /// use messi::checkout::create_and_checkout_branch;
 /// let git_dir = Path::new(".mgit");
 /// let branch_name = "my_new_branch";
-/// create_and_checkout_branch(&git_dir, branch_name);
+/// let root_dir = ".";
+/// create_and_checkout_branch(&git_dir, root_dir, branch_name);
 /// ```
 ///
 /// This function checks if the branch already exists in the repository. If it does, it prints an
@@ -155,7 +157,11 @@ fn checkout_branch_references(git_dir: &Path, branch_name: &str) -> io::Result<S
 ///
 /// If there are any errors during the branch creation process, the function prints appropriate
 /// error messages to the standard error output.
-pub fn create_and_checkout_branch(git_dir: &Path, branch_name: &str) -> io::Result<()> {
+pub fn create_and_checkout_branch(
+    git_dir: &Path,
+    root_dir: &str,
+    branch_name: &str,
+) -> io::Result<()> {
     let git_dir_str = match git_dir.to_str() {
         Some(path) => path,
         None => {
@@ -168,7 +174,7 @@ pub fn create_and_checkout_branch(git_dir: &Path, branch_name: &str) -> io::Resu
 
     let old_commit_id = create_and_checkout_branch_references(git_dir_str, branch_name)?;
     let branch_commit_id = branch::get_current_branch_commit(git_dir_str)?;
-    replace_working_tree(git_dir_str, &old_commit_id, &branch_commit_id)?;
+    replace_working_tree(git_dir_str, root_dir, &old_commit_id, &branch_commit_id)?;
     Ok(())
 }
 
@@ -237,13 +243,14 @@ pub fn write_reference_value(file: &mut fs::File, value: &str) -> io::Result<()>
 /// use messi::checkout::create_or_reset_branch;
 /// let git_dir = Path::new(".mgit");
 /// let branch_name = "my_branch";
-/// create_or_reset_branch(&git_dir, branch_name);
+/// let root_dir = ".";
+/// create_or_reset_branch(&git_dir, root_dir, branch_name);
 /// ```
 ///
 /// This example demonstrates how to use the `create_or_reset_branch` function to create or reset a branch
 /// named "my_branch" in a Git-like repository. If the branch already exists, it will be reset, and the
 /// HEAD reference will be updated to point to the branch.
-pub fn create_or_reset_branch(git_dir: &Path, branch_name: &str) -> io::Result<()> {
+pub fn create_or_reset_branch(git_dir: &Path, root_dir: &str, branch_name: &str) -> io::Result<()> {
     let refs_dir = git_dir.join("refs").join("heads");
     let branch_ref_file = refs_dir.join(branch_name);
     let git_dir_str = match git_dir.to_str() {
@@ -258,9 +265,9 @@ pub fn create_or_reset_branch(git_dir: &Path, branch_name: &str) -> io::Result<(
     //Check if the branch reference file exists
     if branch_ref_file.exists() {
         branch::delete_branch(git_dir_str, branch_name)?;
-        create_and_checkout_branch(git_dir, branch_name)?;
+        create_and_checkout_branch(git_dir, root_dir, branch_name)?;
     } else {
-        create_and_checkout_branch(git_dir, branch_name)?;
+        create_and_checkout_branch(git_dir, root_dir, branch_name)?;
     }
     Ok(())
 }
@@ -284,13 +291,14 @@ pub fn create_or_reset_branch(git_dir: &Path, branch_name: &str) -> io::Result<(
 /// use messi::checkout::checkout_commit_detached;
 /// let git_dir = Path::new(".mgit");
 /// let commit_id = "a1b2c3d4e5"; // Replace with an actual commit ID.
-/// checkout_commit_detached(&git_dir, commit_id);
+/// let root_dir = ".";
+/// checkout_commit_detached(&git_dir, root_dir, commit_id);
 /// ```
 ///
 /// This example demonstrates how to use the `checkout_commit_detached` function to switch to a specific
 /// commit in detached mode within a Git-like repository. Make sure to replace `"a1b2c3d4e5"` with the
 /// actual commit ID you want to check out.
-pub fn checkout_commit_detached(git_dir: &Path, commit_id: &str) -> io::Result<()> {
+pub fn checkout_commit_detached(git_dir: &Path, root_dir: &str, commit_id: &str) -> io::Result<()> {
     let git_dir_str = match git_dir.to_str() {
         Some(path) => path,
         None => {
@@ -301,10 +309,12 @@ pub fn checkout_commit_detached(git_dir: &Path, commit_id: &str) -> io::Result<(
         }
     };
     match checkout_commit_detached_references(git_dir_str, commit_id) {
-        Ok(old_commit_id) => match replace_working_tree(git_dir_str, &old_commit_id, commit_id) {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err),
-        },
+        Ok(old_commit_id) => {
+            match replace_working_tree(git_dir_str, root_dir, &old_commit_id, commit_id) {
+                Ok(_) => Ok(()),
+                Err(err) => Err(err),
+            }
+        }
         Err(err) => Err(err),
     }
 }
@@ -317,7 +327,12 @@ fn checkout_commit_detached_references(git_dir_str: &str, commit_id: &str) -> io
     Ok(old_commit_id)
 }
 
-fn replace_working_tree(git_dir: &str, old_commit_id: &str, new_commit_id: &str) -> io::Result<()> {
+fn replace_working_tree(
+    git_dir: &str,
+    root_dir: &str,
+    old_commit_id: &str,
+    new_commit_id: &str,
+) -> io::Result<()> {
     let commit_tree = tree_handler::load_tree_from_commit(new_commit_id, git_dir)?;
     let latest_tree = tree_handler::load_tree_from_commit(old_commit_id, git_dir)?;
     // let file_dir: &Path = match Path::new(git_dir).parent() {
@@ -325,8 +340,8 @@ fn replace_working_tree(git_dir: &str, old_commit_id: &str, new_commit_id: &str)
     //     None => return Err(io::Error::new(io::ErrorKind::Other, "Error when reading parent dir")),
     // };
 
-    latest_tree.delete_directories2(Path::new(""))?;
-    commit_tree.create_directories("", git_dir)?;
+    latest_tree.delete_directories2(Path::new(root_dir))?;
+    commit_tree.create_directories(root_dir, git_dir)?;
     Ok(())
 }
 
@@ -407,6 +422,8 @@ pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) {
 // Importa las bibliotecas necesarias para los tests
 #[cfg(test)]
 mod tests {
+    use crate::{add, commit};
+
     use super::*;
     use std::fs;
     use std::path::Path;
@@ -626,14 +643,14 @@ mod tests {
             .expect("Failed to write HEAD file");
 
         // Execute the create_or_reset_branch function with an existing branch
-        let _ = create_or_reset_branch(Path::new(TEST_GIT), branch_name);
+        let _ = create_or_reset_branch(Path::new(TEST_GIT), TEST_GIT, branch_name);
 
         // Verify that the HEAD file has been updated to point to the new branch
         let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
         assert_eq!(head_contents, format!("ref: refs/heads/{}\n", branch_name));
 
         // Execute the create_or_reset_branch function with a non-existent branch
-        let _ = create_or_reset_branch(Path::new(TEST_GIT), "new_branch");
+        let _ = create_or_reset_branch(Path::new(TEST_GIT), TEST_GIT, "new_branch");
 
         // Verify that the new branch has been created, and that the HEAD file has been updated
         assert!(Path::new(TEST_GIT)
@@ -643,5 +660,95 @@ mod tests {
             .exists());
         let new_head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");
         assert_eq!(new_head_contents, format!("ref: refs/heads/new_branch\n"));
+    }
+
+    #[test]
+    fn test_replace_working_tree() {
+        // Create a test directory if it doesn't exist
+        if !Path::new("tests/checkout").exists() {
+            fs::create_dir_all("tests/checkout").expect("Failed to create test directory");
+        }
+
+        //Create a refs heads directory and write the old branch name
+        let refs_dir = Path::new("tests/checkout/.mgit").join("refs").join("heads");
+        fs::create_dir_all(&refs_dir).expect("Failed to create dirs");
+        // let branch_ref_file = refs_dir.join("my_branch");
+        // fs::File::create(&branch_ref_file).expect("Failed to create file");
+
+        //Create an objects directory and write a commit
+        let objects_dir = Path::new("tests/checkout/.mgit").join("objects");
+        fs::create_dir_all(&objects_dir).expect("Failed to create dirs");
+
+        //Create a HEAD file and write the old branch name
+        let head_file = Path::new("tests/checkout/.mgit").join("HEAD");
+        fs::File::create(&head_file).expect("Failed to create file");
+        let head_contents = format!("ref: refs/heads/my_branch");
+        fs::write(&head_file, head_contents).expect("Failed to write HEAD file");
+
+        //Create some files and write to them
+        let file1 = Path::new("tests/checkout/archivo.txt");
+        let file2 = Path::new("tests/checkout/otro_archivo.txt");
+        let file3 = Path::new("tests/checkout/directorio_para_probar/nuevo_archivo.txt");
+        fs::File::create(&file1).expect("Failed to create file");
+        fs::File::create(&file2).expect("Failed to create file");
+        fs::create_dir_all("tests/checkout/directorio_para_probar").expect("Failed to create dirs");
+        fs::File::create(&file3).expect("Failed to create file");
+        fs::write(&file1, "Hola").expect("Failed to write file");
+        fs::write(&file2, "Hola").expect("Failed to write file");
+        fs::write(&file3, "Hola").expect("Failed to write file");
+
+        //Write an index files with some files
+        let index_file = Path::new("tests/checkout/.mgit").join("index");
+        fs::File::create(&index_file).expect("Failed to create file");
+
+        let _ = add::add(
+            "tests/checkout/archivo.txt",
+            "tests/checkout/.mgit/index",
+            "tests/checkout/.mgit",
+            "",
+            None,
+        );
+        let _ = add::add(
+            "tests/checkout/otro_archivo.txt",
+            "tests/checkout/.mgit/index",
+            "tests/checkout/.mgit",
+            "",
+            None,
+        );
+
+        //Write a commit hash to the old branch
+        let old_commmit = commit::new_commit("tests/checkout/.mgit", "Hola", "").unwrap();
+        //Edit something in the file1 and add it
+        fs::write(&file1, "Hola2").expect("Failed to write file");
+        let _ = add::add(
+            "tests/checkout/archivo.txt",
+            "tests/checkout/.mgit/index",
+            "tests/checkout/.mgit",
+            "",
+            None,
+        );
+        let _ = add::add(
+            "tests/checkout/directorio_para_probar/nuevo_archivo.txt",
+            "tests/checkout/.mgit/index",
+            "tests/checkout/.mgit",
+            "",
+            None,
+        );
+
+        let new_commit = commit::new_commit("tests/checkout/.mgit", "Hola", "").unwrap();
+        replace_working_tree("tests/checkout/.mgit", "", &new_commit, &old_commmit).unwrap();
+
+        //Check that file1 content is the same as in old commit
+        let file1_content = fs::read_to_string(&file1).expect("Failed to read file");
+        assert_eq!(file1_content, "Hola");
+
+        //Check that file3 has been deleted
+        assert!(!file3.exists());
+
+        //Check that the directory has been deleted
+        assert!(!Path::new("tests/checkout/directorio_para_probar").exists());
+
+        //Delete the created directories
+        fs::remove_dir_all("tests/checkout").expect("Failed to delete directory");
     }
 }
