@@ -11,50 +11,74 @@ use std::{
 const PORT: &str = "9418";
 const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
-const HOST: &str = "localhost";
+
 #[derive(Debug)]
 struct Client {
+    repository: String,
+    host: String,
     socket: TcpStream,
     refs: HashMap<String, String>,
     capabilities: String,
 }
 
+/// This is a git client that is able to connect to a git server
+/// using the git protocol.
 impl Client {
 
-    fn get_refs(&self) -> &HashMap<String, String> {
-        &self.refs
+    /// Establish a connection with the server and asks for the refs in the remote.
+    /// A hashmap with the path of the refs as keys and the last commit hash as values is returned.
+    /// 
+    /// May fail due to I/O errors
+    pub fn get_refs(&mut self) -> io::Result<&HashMap<String, String>> {
+        self.upload_pack_initiate_connection()?;
+        self.upload_pack_wait_refs();
+        self.flush()?;
+        Ok(&self.refs)
     }
 
-    fn connect(address: &str) -> io::Result<Self> {
+    /// Creates a connection with a server (assuming its a git server)
+    /// 
+    /// Parameters:
+    ///     - address: address to establish a tcp connection
+    ///     - repository: name of the repository in the remote
+    ///     - host: REVISAR (no se si es si o si el mismo que address)
+    pub fn connect(address: &str, repository: &str, host: &str) -> io::Result<Self> {
         let socket = TcpStream::connect(address)?;
         let refs = HashMap::new();
         // let capabilities = String::new();
+        let repository = repository.to_owned();
+        let host = host.to_owned();
         let capabilities = String::from("multi_ack_detailed side-band-64k wait-for-done");
         Ok(Self {
+            repository,
+            host,
             socket,
             refs,
             capabilities,
         })
     }
 
+    // Sends a message throw the socket
     fn send(&mut self, message: &str) -> io::Result<()> {
         write!(self.socket, "{}", message)
     }
 
+    // Sends a 'flush' signal to the server
     fn flush(&mut self) -> io::Result<()> {
         self.send("0000")
     }
 
+    // Sends a 'done' signal to the server
     fn done(&mut self) -> io::Result<()> {
         self.send("0009done\n")
     }
 
-    pub fn upload_pack(&mut self, repository_name: &str, host: Option<&str>) -> io::Result<()> {
-        self.upload_pack_initiate_connection(repository_name, host)?;
+    /// REVISAR: deberia ser como el upload-pack the git
+    pub fn upload_pack(&mut self) -> io::Result<()> {
+        self.upload_pack_initiate_connection()?;
         // self.ls_refs()?;
         // self.read_response_until_flush();
         self.upload_pack_wait_refs();
-        dbg!(&self.refs);
 
         self.upload_pack_send_wanted_refs()?;
         println!("Leo response de want");
@@ -62,13 +86,15 @@ impl Client {
         self.read_response_until_flush();
 
         println!("Termino conexion");
-        self.end_connection()
+        self.flush()
     }
 
+    // Selects the wanted refs to fetch 
     fn select_wanted_refs(&self) -> Vec<String> {
         vec!["HEAD".to_string()]
     }
 
+    // Auxiliar function. Tells the server which refs are required
     fn upload_pack_send_wanted_refs(&mut self) -> io::Result<()> {
         let _wanted_refs = self.select_wanted_refs();
         let wanted_ref = "refs/heads/sharing";
@@ -97,15 +123,15 @@ impl Client {
         // Ok(())
     }
 
+    // Establish the first conversation with the server
+    // Lets the server know that an upload-pack is requested
     fn upload_pack_initiate_connection(
-        &mut self,
-        repository_name: &str,
-        _host: Option<&str>,
+        &mut self
     ) -> io::Result<()> {
-        let mut command = format!("{} /{}", GIT_UPLOAD_PACK, repository_name);
-        // if let Some(host) = host {
-        command = format!("{}\0host={}\0", command, HOST);
-        // }
+        let mut command = format!("{} /{}", GIT_UPLOAD_PACK, self.repository);
+
+        command = format!("{}\0host={}\0", command, self.host);
+
         command = format!("{}\0version={}\0", command, VERSION);
 
         let pkt_command = pkt_line(&command);
@@ -117,6 +143,7 @@ impl Client {
         Ok(())
     }
 
+    // Auxiliar function. Reads the socket until a 'flush' signal is read
     fn read_response_until_flush(&mut self) {
         let mut reader = BufReader::new(&self.socket);
         let (mut size, mut line) = read_pkt_line(&mut reader);
@@ -127,6 +154,8 @@ impl Client {
         println!();
     }
 
+    // Auxiliar function. Waits for the refs and loads them in self
+    // Should be called only aftes: upload_pack_initiate_connection 
     fn upload_pack_wait_refs(&mut self) {
         let mut reader = BufReader::new(&self.socket);
         let _ = reader.read_line(&mut String::new());
@@ -144,11 +173,9 @@ impl Client {
             }
             (size, line) = read_pkt_line(&mut reader);
         }
+        dbg!(&self.refs);
     }
 
-    fn end_connection(&mut self) -> io::Result<()> {
-        self.flush()
-    }
 }
 
 
@@ -187,14 +214,24 @@ fn pkt_line(line: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    // Command to raise a git server with git daemon is a directory with git directories inside.
+    // git-daemon-export-ok file should exist in .git directory in the repo
+    // git daemon --base-path=. --reuseaddr --informative-errors --verbose
     #[test]
     #[ignore]
     fn test_get_refs() -> io::Result<()> {
         let address = "localhost:".to_owned() + PORT;
-        let mut client = Client::connect(&address)?;
-        client.upload_pack("repo", None)?;
-        assert!(!client.get_refs().is_empty());
+        let mut client = Client::connect(&address, "repo","localhost")?;
+        assert!(!client.get_refs()?.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    #[ignore]
+    fn test_refs_has_head() -> io::Result<()> {
+        let address = "localhost:".to_owned() + PORT;
+        let mut client = Client::connect(&address, "repo", "localhost")?;
+        assert!(client.get_refs()?.contains_key("HEAD"));
         Ok(())
     }
 }
