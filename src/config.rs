@@ -160,7 +160,7 @@ impl Config {
         Ok(())
     }
 
-    fn change_remote_from_file(&self, remote: &Remote, output: &mut impl Write) -> io::Result<()> {
+    fn change_remote_from_file(&self, remote: &Remote) -> io::Result<()> {
         let input_file = File::open(&self.config_file_path)?;
         let reader = BufReader::new(input_file);
     
@@ -223,7 +223,7 @@ impl Config {
                 }
                 else {
                     let new_remote = Remote::new((&remote_name).to_string(),(&new_url).to_string(),(&remote.fetch).to_string());
-                    self.change_remote_from_file(&new_remote,output)?;
+                    self.change_remote_from_file(&new_remote)?;
                     self.remotes.remove(index);
                     self.remotes.push(new_remote);
                 }
@@ -252,7 +252,7 @@ impl Config {
             else {
                 if let Some(remote) = self.remotes.get(index) {
                     let new_remote = Remote::new(remote_new_name.to_string(),(&remote.url).to_string(),(&remote.fetch).to_string());
-                    self.change_remote_from_file(&new_remote,output)?;
+                    self.change_remote_from_file(&new_remote)?;
                     self.remotes.remove(index);
                     self.remotes.push(new_remote);
                 }
