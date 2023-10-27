@@ -28,6 +28,27 @@ fn get_current_branch_path(git_dir_path: &str) -> io::Result<String> {
     Ok(path_final.to_string())
 }
 
+pub fn get_branch_commit_hash(branch_name: &str, git_dir: &str) -> io::Result<String> {
+    let branch_path = git_dir.to_string() + "/refs/heads/" + branch_name;
+    let mut branch_file = std::fs::File::open(branch_path)?;
+    let mut branch_content = String::new();
+    branch_file.read_to_string(&mut branch_content)?;
+    let nombre: Vec<&str> = branch_content.split('\n').collect();
+    let path_final = nombre[0];
+    Ok(path_final.to_string())
+}
+
+pub fn update_branch_commit_hash(
+    branch_name: &str,
+    commit_hash: &str,
+    git_dir: &str,
+) -> io::Result<()> {
+    let branch_path = git_dir.to_string() + "/refs/heads/" + branch_name;
+    let mut branch_file = std::fs::File::create(branch_path)?;
+    branch_file.write_all(commit_hash.as_bytes())?;
+    Ok(())
+}
+
 /// Creates a new branch in the repo with the given name.
 /// The new branch will point to the same commit as the current branch.
 /// HEAD won't be updated.

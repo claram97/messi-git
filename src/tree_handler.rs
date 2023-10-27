@@ -1,4 +1,8 @@
-use std::io::{self};
+use std::{
+    fs,
+    io::{self},
+    path::PathBuf,
+};
 
 use crate::{
     cat_file::{self, cat_file_return_content},
@@ -107,6 +111,51 @@ impl Tree {
             }
         }
         None
+    }
+
+    pub fn create_directories(&self, parent_dir: &str, git_dir_path: &str) -> io::Result<()> {
+        let dir_path = if parent_dir.is_empty() {
+            parent_dir.to_string() + &self.name
+        } else {
+            parent_dir.to_string() + "/" + &self.name
+        };
+        fs::create_dir_all(&dir_path)?;
+        for file in &self.files {
+            let path = dir_path.to_string() + "/" + &file.0;
+            let mut new_file = fs::File::create(path)?;
+            cat_file::cat_file(&file.1, git_dir_path, &mut new_file)?;
+        }
+
+        for subdirs in &self.directories {
+            subdirs.create_directories(&dir_path, git_dir_path)?;
+        }
+        Ok(())
+    }
+
+    pub fn delete_directories(&self, parent_dir: &str) -> io::Result<()> {
+        let dir_path = if parent_dir.is_empty() {
+            parent_dir.to_string() + &self.name
+        } else {
+            parent_dir.to_string() + "/" + &self.name
+        };
+        println!("Deleting directory: {}", dir_path);
+        for subdirs in &self.directories {
+            subdirs.delete_directories(&dir_path)?;
+        }
+        for file in &self.files {
+            let path = dir_path.to_string() + "/" + &file.0;
+            fs::remove_file(path)?;
+        }
+
+        if dir_path.is_empty() {
+            return Ok(());
+        }
+        let dir_path_buf = PathBuf::from(&dir_path);
+        let is_empty = dir_path_buf.read_dir()?.next().is_none();
+        if is_empty {
+            fs::remove_dir(dir_path)?;
+        }
+        Ok(())
     }
 }
 
