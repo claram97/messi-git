@@ -3,7 +3,6 @@ use crate::tree_handler;
 use std::env;
 use std::fs;
 use std::io;
-use std::io::Write;
 use std::path::Path;
 
 /// Process command-line arguments and options to perform various actions in a Git-like application.
@@ -11,15 +10,9 @@ use std::path::Path;
 /// This function expects command-line arguments and options in the form of `<option> <branch_or_commit>`.
 ///
 /// # Arguments
-///
-/// * `option` - A string representing the option to be performed. Possible values are:
-///   - `""`: Change to the specified branch.
-///   - `"-b"`: Create and change to a new branch.
-///   - `"-B"`: Create or reset a branch if it exists.
-///   - `"--detach"`: Change to a specific commit (detached mode).
-///   - `"-f"`: Force the change of branch or commit (discarding uncommitted changes).
-///
-/// * `destination` - A string representing the branch name or commit ID to be operated on.
+/// `git_dir_path` - A string representing the path to the Git repository directory.
+/// `root_dir` - A string representing the path to the root directory of the repository.
+/// 
 pub fn process_args(git_dir_path: &str, root_dir: &str) -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
@@ -60,6 +53,7 @@ pub fn process_args(git_dir_path: &str, root_dir: &str) -> io::Result<()> {
 /// # Arguments
 ///
 /// * `git_dir` - A reference to the root directory of the Git repository, represented as a `Path`.
+/// * `root_dir` - A string representing the path to the root directory of the repository.
 /// * `branch_name` - A string representing the name of the branch to be checked out.
 ///
 /// # Example
@@ -75,7 +69,9 @@ pub fn process_args(git_dir_path: &str, root_dir: &str) -> io::Result<()> {
 ///
 /// This function checks if the specified branch reference file exists. If it exists, the content of
 /// the reference file is read to determine the commit it points to. Then, it updates the HEAD file
-/// to point to the new branch, effectively switching to that branch.
+/// to point to the new branch and replaces the working tree with the contents of the new branch. When the
+/// function returns, the HEAD reference points to the new branch, and the working tree contains the
+/// files and directories of the new branch.
 ///
 /// If the branch reference file does not exist, or if there are errors during the process, the
 /// function prints an error message to the standard error output.
@@ -136,6 +132,7 @@ fn checkout_branch_references(git_dir: &Path, branch_name: &str) -> io::Result<S
 /// # Arguments
 ///
 /// * `git_dir` - A reference to the root directory of the Git repository, represented as a `Path`.
+/// * `root_dir` - A string representing the path to the root directory of the repository.
 /// * `branch_name` - A string representing the name of the new branch to be created and checked out.
 ///
 /// # Example
@@ -153,7 +150,8 @@ fn checkout_branch_references(git_dir: &Path, branch_name: &str) -> io::Result<S
 /// error message and advises using the `-B` option to reset the branch. If the branch does not
 /// exist, it creates a reference file for the new branch and writes an initial reference value
 /// (which can be the ID of an initial commit). It then updates the HEAD file to point to the new
-/// branch, effectively switching to the newly created branch.
+/// branch and replaces the working tree with the contents of the new branch, Effectively changing
+/// the currently checked-out branch to the new branch.
 ///
 /// If there are any errors during the branch creation process, the function prints appropriate
 /// error messages to the standard error output.
@@ -185,43 +183,6 @@ fn create_and_checkout_branch_references(
     branch::create_new_branch(git_dir_str, branch_name, &mut io::stdout())?;
     let old_commit_id = checkout_branch_references(Path::new(git_dir_str), branch_name)?;
     Ok(old_commit_id)
-}
-
-/// Write a reference value to a file in a Git-like repository.
-///
-/// This function writes a reference value, typically a commit ID, to a specified file within
-/// a Git-like repository. The reference file is represented by a mutable reference to a
-/// `fs::File` and the value to be written is provided as a string.
-///
-/// # Arguments
-///
-/// * `file` - A mutable reference to a `fs::File` that represents the reference file to write the value to.
-/// * `value` - A string containing the reference value, typically a commit ID, to be written to the file.
-///
-/// # Returns
-///
-/// This function returns an `io::Result` indicating whether the write operation was successful. If
-/// the write operation succeeds, `Ok(())` is returned. If any errors occur during the write operation,
-/// an `Err` variant containing an error description is returned.
-///
-/// # Example
-///
-/// ```
-///  use std::fs::File;
-/// use messi::checkout::write_reference_value;
-/// let mut file = File::create("my_reference.txt").expect("Failed to create file");
-/// let value = "my_commit_id";
-/// let result = write_reference_value(&mut file, value);
-/// assert!(result.is_ok());
-/// ```
-///
-/// This example demonstrates how to use the `write_reference_value` function to write a reference
-/// value to a file. It creates a new file, `my_reference.txt`, writes the value "my_commit_id" to
-/// the file, and checks if the write operation was successful.
-pub fn write_reference_value(file: &mut fs::File, value: &str) -> io::Result<()> {
-    // Write the value to the reference file
-    file.write_all(value.as_bytes())?;
-    Ok(())
 }
 
 /// Create or reset a Git-like branch in a repository.
@@ -502,8 +463,8 @@ mod tests {
         fs::write(&head_file, head_contents).expect("Failed to write HEAD file");
 
         //Write a commit hash to the old branch
-        let mut old_branch_file = fs::File::create(branch_ref_file).unwrap();
-        write_reference_value(&mut old_branch_file, "commit_id").unwrap();
+        fs::File::create(&branch_ref_file).unwrap();
+        fs::write(&branch_ref_file, "commit_id").expect("Failed to write branch reference");
 
         // Execute the create_and_checkout_branch function
         create_and_checkout_branch_references(TEST_CHECKOUT2, "new_branch").unwrap();
@@ -596,8 +557,8 @@ mod tests {
         fs::create_dir_all(&refs_dir).expect("Failed to create dirs");
         let branch_ref_file = refs_dir.join("main");
         fs::File::create(&branch_ref_file).expect("Failed to create file");
-        let mut old_branch_file = fs::File::create(branch_ref_file).unwrap();
-        write_reference_value(&mut old_branch_file, "commit_id").unwrap();
+        fs::File::create(&branch_ref_file).unwrap();
+        fs::write(&branch_ref_file, "commit_id").expect("Failed to write branch reference");
 
         // Execute the checkout_commit_detached function with a commit in detached mode
         let result = checkout_commit_detached_references(T, commit_id);
