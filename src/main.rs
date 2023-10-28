@@ -1,11 +1,13 @@
 use std::{
     fs::File,
-    io::{self, Write, BufReader, BufRead},
+    io::{self, BufRead, BufReader, Write},
 };
 
 use messi::{
+    config::Config,
     parse_commands::{get_user_input, handle_git_command, parse_git_command},
-    utils, config::Config, remote_handler::Remote,
+    remote_handler::Remote,
+    utils, remote::git_remote,
 };
 
 // fn main() {
@@ -34,6 +36,7 @@ fn main() -> io::Result<()> {
             ))
         }
     };
+
     //Esto lo tiene que crear init
     /*let path = (&git_dir).to_string() + "/config";
     let mut file = File::create(&path)?;
