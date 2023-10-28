@@ -115,55 +115,65 @@ fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) {
     });
 }
 
+
+fn configure_init_window(new_window_init: &gtk::Window, builder: &gtk::Builder) {
+    add_to_open_windows(new_window_init);
+    apply_window_style(new_window_init);
+    new_window_init.set_default_size(800, 600);
+
+    let button1 = get_button(builder, "button1", "option1");
+    let button2 = get_button(builder, "button2", "option2");
+    let button3 = get_button(builder, "button3", "option3");
+
+    apply_button_style(&button1);
+    apply_button_style(&button2);
+    apply_button_style(&button3);
+
+    connect_button_clicked_init_window(&button1, "option1");
+    connect_button_clicked_init_window(&button2, "option2");
+    connect_button_clicked_init_window(&button3, "option3");
+}
+
+fn configure_clone_window(new_window_clone: &gtk::Window, builder: &gtk::Builder) {
+    add_to_open_windows(new_window_clone);
+    apply_window_style(new_window_clone);
+    new_window_clone.set_default_size(800, 600);
+
+}
+
 fn connect_button_clicked_main_window(button: &gtk::Button, button_type: &str) {
-    let button_type = button_type.to_owned(); 
-
+    let button_type = button_type.to_owned();
+    
     button.connect_clicked(move |_| {
-        if button_type == "Init" {
-            let builder_window_init = gtk::Builder::new();
-            match builder_window_init.add_from_file("src/gui/windowInit.ui") {
-                Ok(_) => {
-                },
-                Err(err) => {
-                    eprintln!("Error loading the UI file: {}", err);
+        let builder = gtk::Builder::new();
+        match button_type.as_str() {
+            "Init" => {
+                if let Some(new_window_init) = load_and_get_window(&builder, "src/gui/windowInit.ui", "window") {
+                    configure_init_window(&new_window_init, &builder);
+                    new_window_init.show_all();
                 }
-            }
-            
-            let new_window_init: gtk::Window = builder_window_init.get_object("window").expect("Failed to get the window");
-            add_to_open_windows(&new_window_init);
-            apply_window_style(&new_window_init);
-            new_window_init.set_default_size(800, 600);
-            
-            let button1: gtk::Button = get_button(&builder_window_init, "button1", "option1");
-            let button2: gtk::Button = get_button(&builder_window_init, "button2", "option2");
-            let button3: gtk::Button = get_button(&builder_window_init, "button3", "option3");
-            apply_button_style(&button1);
-            apply_button_style(&button2);
-            apply_button_style(&button3);
-
-            new_window_init.show_all();
-
-            connect_button_clicked_init_window(&button1, "option1");
-            connect_button_clicked_init_window(&button2, "option2");
-            connect_button_clicked_init_window(&button3, "option3");
-
-        } else if button_type == "Clone" {
-            let builder_window_clone = gtk::Builder::new();
-            match builder_window_clone.add_from_file("src/gui/windowClone.ui") {
-                Ok(_) => {
-                },
-                Err(err) => {
-                    eprintln!("Error loading the UI file: {}", err);
+            },
+            "Clone" => {
+                if let Some(new_window_clone) = load_and_get_window(&builder, "src/gui/windowClone.ui", "window") {
+                    configure_clone_window(&new_window_clone, &builder);
+                    new_window_clone.show_all();
                 }
-            }
-                        
-            let new_window_clone: gtk::Window = builder_window_clone.get_object("window").expect("Failed to get the window");
-            add_to_open_windows(&new_window_clone);
-            apply_window_style(&new_window_clone);
-            new_window_clone.set_default_size(800, 600);
-            new_window_clone.show_all();
+            },
+            _ => eprintln!("Unknown button type: {}", button_type),
         }
     });
+}
+
+fn load_and_get_window(builder: &gtk::Builder, ui_path: &str, window_name: &str) -> Option<gtk::Window> {
+    match builder.add_from_file(ui_path) {
+        Ok(_) => {
+            builder.get_object(window_name)
+        }
+        Err(err) => {
+            eprintln!("Error loading the UI file: {}", err);
+            None
+        }
+    }
 }
 
 fn apply_window_style(window: &gtk::Window) {
