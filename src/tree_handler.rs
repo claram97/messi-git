@@ -7,7 +7,7 @@ use std::{
 use crate::{
     cat_file::{self, cat_file_return_content},
     hash_object,
-    index::{self},
+    index::{self}, diff,
 };
 
 const BLOB_NORMAL_MODE: &str = "100644";
@@ -157,6 +157,35 @@ impl Tree {
         }
         Ok(())
     }
+
+        /// Squash the tree into a vector of tuples (file_name, hash). So a file that is in a subtree will have its complete path from the root tree.
+    pub fn squash_tree_into_vec(&self, parent_dir: &str) -> Vec<(String, String)> {
+        let mut result = Vec::new();
+        let dir_path = if parent_dir.is_empty() {
+            parent_dir.to_string() + &self.name
+        } else {
+            parent_dir.to_string() + "/" + &self.name
+        };
+        for file in &self.files {
+            let path = dir_path.to_string() + "/" + &file.0;
+            result.push((path, file.1.to_string()));
+        }
+        for subdirs in &self.directories {
+            let mut subdirs_vec = subdirs.squash_tree_into_vec(&dir_path);
+            result.append(&mut subdirs_vec);
+        }
+        result
+    }
+
+    pub fn build_index_file_from_tree(&self, index_path: &str, git_dir_path: &str, gitignore_path: &str) -> io::Result<index::Index> {
+        let mut index = index::Index::new(index_path, git_dir_path, gitignore_path);
+        let entries = self.squash_tree_into_vec("");
+        for entry in entries {
+            index.add_file(&entry.0, &entry.1)?;
+        }
+        Ok(index)
+    }
+
 }
 
 /// Builds a tree from the index file.
@@ -326,6 +355,38 @@ pub fn print_tree_console(tree: &Tree, depth: usize) {
         print_tree_console(dir, depth + 1);
     }
 }
+
+pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> Tree {
+    let our_tree_vec = our_tree.squash_tree_into_vec("");
+    let mut new_tree = Tree::new();
+    for (path, hash) in our_tree_vec {
+        let their_hash = their_tree.get_hash_from_path(&path);
+        match their_hash {
+            None => new_tree.add_file(&path, &hash),
+            Some(their_hash) => {
+                let diff_string = diff::return_object_diff_string(&hash, &their_hash, git_dir);
+                match diff_string {
+                    Ok(diff_string) => {
+                        let hash_diff = hash_object::store_string_to_file(&diff_string, git_dir, "blob");
+                        match hash_diff {
+                            Ok(hash_diff) => {
+                                new_tree.add_file(&path, &hash_diff);
+                            }
+                            Err(_) => {
+                                new_tree.add_file(&path, &hash);
+                            }
+                        }
+                    }
+                    Err(_) => {
+                        new_tree.add_file(&path, &hash);
+                    }
+                }
+            }
+        }
+    }
+    new_tree
+}
+
 
 //Tests
 

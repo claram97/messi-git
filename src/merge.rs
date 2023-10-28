@@ -1,44 +1,21 @@
 use std::io;
 
-use crate::{branch, tree_handler, utils};
+use crate::{branch, tree_handler, utils::{self, get_git_ignore_path}, commit};
 
-pub fn is_fast_forward(their_branch_commit: &str, common_commit: &str) -> bool {
-    if common_commit == their_branch_commit {
+pub fn is_fast_forward(our_branch_commit: &str, common_commit: &str) -> bool {
+    if our_branch_commit == common_commit {
         return true;
     }
     false
 }
 
-fn fast_forward_merge(
-    our_branch: &str,
-    their_branch: &str,
+pub fn find_common_ancestor(
+    our_branch_commit: &str,
+    their_branch_commit: &str,
     git_dir: &str,
-    root_dir: &str,
-) -> io::Result<()> {
-    branch::update_branch_commit_hash(our_branch, their_branch, git_dir)?;
-    let our_commit = branch::get_branch_commit_hash(our_branch, git_dir).unwrap();
-    let old_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
-
-    let their_commit = branch::get_branch_commit_hash(their_branch, git_dir).unwrap();
-    let new_tree = tree_handler::load_tree_from_commit(&their_commit, git_dir)?;
-
-    old_tree.delete_directories(root_dir)?;
-    new_tree.create_directories(root_dir, git_dir)?;
-
-    Ok(())
-}
-
-pub fn git_merge(
-    our_branch: &str,
-    their_branch: &str,
-    git_dir: &str,
-    root_dir: &str,
-) -> io::Result<()> {
-    let our_commit = branch::get_branch_commit_hash(our_branch, git_dir)?;
-    let their_commit = branch::get_branch_commit_hash(their_branch, git_dir)?;
-
-    let our_commit_parents = utils::get_commit_parents(&our_commit, git_dir)?;
-    let their_commit_parents = utils::get_commit_parents_set(&their_commit, git_dir)?;
+) -> io::Result<String> {
+    let our_commit_parents = utils::get_branch_commit_history(&our_branch_commit, git_dir)?;
+    let their_commit_parents = utils::get_branch_commit_history_set(&their_branch_commit, git_dir)?;
 
     let mut common_ancestor = String::new();
     for parent in our_commit_parents {
@@ -54,9 +31,102 @@ pub fn git_merge(
             "No common ancestor found.",
         ));
     }
+    Ok(common_ancestor)
+}
 
-    if is_fast_forward(&their_commit, &common_ancestor) {
+fn fast_forward_merge(
+    our_branch: &str,
+    their_branch: &str,
+    git_dir: &str,
+    root_dir: &str,
+) -> io::Result<()> {
+    branch::update_branch_commit_hash(our_branch, their_branch, git_dir)?;
+    let our_commit = branch::get_branch_commit_hash(our_branch, git_dir).unwrap();
+    let old_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
+
+    let their_commit = branch::get_branch_commit_hash(their_branch, git_dir).unwrap();
+    let new_tree = tree_handler::load_tree_from_commit(&their_commit, git_dir)?;
+    old_tree.delete_directories(root_dir)?;
+    new_tree.create_directories(root_dir, git_dir)?;
+    let index_path = utils::get_index_file_path(git_dir);
+    let new_index_file_contents = new_tree.build_index_file_from_tree(&index_path, git_dir, &get_git_ignore_path(git_dir))?;
+    new_index_file_contents.write_file()?;
+    Ok(())
+}
+
+fn two_way_merge(
+    our_branch: &str,
+    their_branch: &str,
+    git_dir: &str,
+    root_dir: &str,
+) -> io::Result<()> {
+    let our_commit = branch::get_branch_commit_hash(our_branch, git_dir).unwrap();
+    let their_commit = branch::get_branch_commit_hash(their_branch, git_dir).unwrap();
+
+    let our_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
+    let their_tree = tree_handler::load_tree_from_commit(&their_commit, git_dir)?;
+
+    let mut new_tree = tree_handler::merge_trees(&our_tree, &their_tree, git_dir);
+
+    our_tree.delete_directories(root_dir)?;
+    new_tree.create_directories(root_dir, git_dir)?;
+    let index_path = utils::get_index_file_path(git_dir);
+    let new_index_file_contents = new_tree.build_index_file_from_tree(&index_path, git_dir, &get_git_ignore_path(git_dir))?;
+    new_index_file_contents.write_file()?;
+    Ok(())
+}
+
+
+pub fn git_merge(
+    our_branch: &str,
+    their_branch: &str,
+    git_dir: &str,
+    root_dir: &str,
+) -> io::Result<()> {
+    let our_commit = branch::get_branch_commit_hash(our_branch, git_dir)?;
+    let their_commit = branch::get_branch_commit_hash(their_branch, git_dir)?;
+
+    let common_ancestor = find_common_ancestor(&our_commit, &their_commit, git_dir)?;
+
+    if is_fast_forward(&our_commit, &common_ancestor) {
         fast_forward_merge(our_branch, their_branch, git_dir, root_dir)?;
+    } else {
+        two_way_merge(our_branch, their_branch, git_dir, root_dir)?;
+        let commit_message = format!("Merge branch '{}'", their_branch);
+        commit::new_commit(git_dir, &commit_message, "")?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+
+    use std::{fs, io::Write};
+
+    use crate::commit;
+
+    use super::*;
+    const NAME_OF_GIT_DIRECTORY: &str = "tests/merge/test_ffmerge";
+
+    #[test]
+    fn is_fast_forward_returns_true_when_our_branch_commit_is_equal_to_common_commit() {
+        let our_branch_commit = "their_branch_commit";
+        let common_commit = "their_branch_commit";
+
+        assert_eq!(
+            is_fast_forward(our_branch_commit, common_commit),
+            true
+        );
+    }
+
+    #[test]
+    fn is_fast_forward_returns_false_when_our_branch_commit_is_not_equal_to_common_commit() {
+        let our_branch_commit = "their_branch_commit";
+        let common_commit = "common_commit";
+
+        assert_eq!(
+            is_fast_forward(our_branch_commit, common_commit),
+            false
+        );
+    }
 }

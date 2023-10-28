@@ -31,8 +31,9 @@ pub fn find_git_directory(
     None
 }
 
-pub fn get_commit_parents(commit_hash: &str, git_dir: &str) -> io::Result<Vec<String>> {
+pub fn get_branch_commit_history(commit_hash: &str, git_dir: &str) -> io::Result<Vec<String>> {
     let mut parents = Vec::new();
+    parents.push(commit_hash.to_string());
     let mut commit_parent = commit::get_parent_hash(commit_hash, git_dir);
     while let Ok(parent) = commit_parent {
         parents.push(parent.clone());
@@ -41,14 +42,27 @@ pub fn get_commit_parents(commit_hash: &str, git_dir: &str) -> io::Result<Vec<St
     Ok(parents)
 }
 
-pub fn get_commit_parents_set(commit_hash: &str, git_dir: &str) -> io::Result<HashSet<String>> {
+pub fn get_branch_commit_history_set(commit_hash: &str, git_dir: &str) -> io::Result<HashSet<String>> {
     let mut parents = HashSet::new();
+    parents.insert(commit_hash.to_string());
     let mut commit_parent = commit::get_parent_hash(commit_hash, git_dir);
     while let Ok(parent) = commit_parent {
         parents.insert(parent.clone());
         commit_parent = commit::get_parent_hash(&parent, git_dir);
     }
     Ok(parents)
+}
+
+pub fn get_index_file_path(git_dir: &str) -> String {
+    let mut index_file = PathBuf::from(git_dir);
+    index_file.push("index");
+    index_file.display().to_string()
+}
+
+pub fn get_git_ignore_path(git_dir: &str) -> String {
+    let mut git_ignore_file = PathBuf::from(git_dir);
+    git_ignore_file.push(".gitignore");
+    git_ignore_file.display().to_string()
 }
 
 #[cfg(test)]
@@ -112,10 +126,11 @@ mod tests {
 
         let git_dir = "tests/utils/parents2";
         let mut expected_parents = Vec::new();
+        expected_parents.push(result.clone());
         expected_parents.push("a4a7dce85cf63874e984719f4fdd239f5145052e".to_string());
 
         assert_eq!(
-            get_commit_parents(&result, git_dir).unwrap(),
+            get_branch_commit_history(&result, git_dir).unwrap(),
             expected_parents
         );
         let _ = fs::remove_dir_all("tests/utils/parents2");
@@ -165,12 +180,13 @@ mod tests {
         let commit_3_hash = commit::new_commit(git_dir_path, "Holaaa", "").unwrap();
 
         let mut expected_parents = Vec::new();
+        expected_parents.push(commit_3_hash.clone());
         expected_parents.push(commit_2_hash);
         expected_parents.push(commit_1_hash);
         expected_parents.push("a4a7dce85cf63874e984719f4fdd239f5145052e".to_string());
 
         assert_eq!(
-            get_commit_parents(&commit_3_hash, git_dir_path).unwrap(),
+            get_branch_commit_history(&commit_3_hash, git_dir_path).unwrap(),
             expected_parents
         );
     }
