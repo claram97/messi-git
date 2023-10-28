@@ -1,6 +1,7 @@
 use gtk::prelude::*;
 use gtk::Builder;
 use std::sync::Mutex;
+use gtk::CssProvider;
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -50,9 +51,11 @@ fn add_to_open_windows(window: &gtk::Window) {
     }
 }
 
+
 fn show_repository_window() {
     let builder = gtk::Builder::new();
-    if let Some(new_window) = load_and_get_window(&builder,"src/gui/new_window.ui", "window") {
+    if let Some(new_window) = load_and_get_window(&builder,"src/gui/new_window2.ui", "window") {
+       
         configure_repository_window(new_window);
     }
    

@@ -8,7 +8,7 @@
     <property name="default-width">800</property>
     <property name="default-height">600</property>
     <child>
-      <object class="GtkBox">
+      <object class="GtkBox" id="box">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <child>
@@ -36,7 +36,7 @@
               </object>
               <packing>
                 <property name="name">Add</property>
-                <property name="title" translatable="yes">Add</property>
+                <property name="title" translatable="yes">ADD</property>
               </packing>
             </child>
             <child>
@@ -140,7 +140,7 @@
               </object>
               <packing>
                 <property name="name">push</property>
-                <property name="title" translatable="yes">push</property>
+                <property name="title" translatable="yes">PUSH</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -161,7 +161,7 @@
               </object>
               <packing>
                 <property name="name">pull</property>
-                <property name="title" translatable="yes">pull</property>
+                <property name="title" translatable="yes">PULL</property>
                 <property name="position">2</property>
               </packing>
             </child>
@@ -173,7 +173,7 @@
               </object>
               <packing>
                 <property name="name">page1</property>
-                <property name="title" translatable="yes">commit</property>
+                <property name="title" translatable="yes">COMMIT</property>
                 <property name="position">3</property>
               </packing>
             </child>
@@ -185,8 +185,20 @@
               </object>
               <packing>
                 <property name="name">page2</property>
-                <property name="title" translatable="yes">branch</property>
+                <property name="title" translatable="yes">BRANCH</property>
                 <property name="position">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">label</property>
+              </object>
+              <packing>
+                <property name="name">page0</property>
+                <property name="title" translatable="yes">CHECKOUT</property>
+                <property name="position">5</property>
               </packing>
             </child>
           </object>
