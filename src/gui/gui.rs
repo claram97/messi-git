@@ -10,28 +10,23 @@ pub fn run_main_window() {
     }
 
     let builder = Builder::new();
-    match builder.add_from_file("src/gui/part3.ui") {
-        Ok(_) => {
-        },
-        Err(err) => {
-            eprintln!("Error loading the UI file: {}", err);
-        }
-    }
-
-    let window: gtk::Window = builder.get_object("window").expect("Failed to get the window");
-    window.set_default_size(800, 600);
-    add_to_open_windows(&window);
-    apply_window_style(&window);
-
-    let button_clone: gtk::Button = get_button(&builder, "buttonclone", "Clone");
-    let button_init: gtk::Button = get_button(&builder, "buttoninit", "Init");
-    apply_button_style(&button_clone);
-    apply_button_style(&button_init);
-
-    connect_button_clicked_main_window(&button_clone, "Clone");
-    connect_button_clicked_main_window(&button_init, "Init");
+    if let Some(window) = load_and_get_window(&builder,"src/gui/part3.ui", "window") {
+        
+        window.set_default_size(800, 600);
+        add_to_open_windows(&window);
+        apply_window_style(&window);
     
-    window.show_all();
+        let button_clone: gtk::Button = get_button(&builder, "buttonclone", "Clone");
+        let button_init: gtk::Button = get_button(&builder, "buttoninit", "Init");
+        apply_button_style(&button_clone);
+        apply_button_style(&button_init);
+    
+        connect_button_clicked_main_window(&button_clone, "Clone");
+        connect_button_clicked_main_window(&button_init, "Init");
+        
+        window.show_all();
+    }
+   
 }
 
 pub fn close_all_windows() {
@@ -57,18 +52,15 @@ fn add_to_open_windows(window: &gtk::Window) {
 
 fn show_repository_window() {
     let builder = gtk::Builder::new();
-    match builder.add_from_file("src/gui/new_window.ui") {
-        Ok(_) => {
-        },
-        Err(err) => {
-            eprintln!("Error loading the UI file: {}", err);
-        }
+    if let Some(new_window) = load_and_get_window(&builder,"src/gui/new_window.ui", "window") {
+        configure_repository_window(new_window);
     }
-    
-    let new_window: gtk::Window = builder.get_object("window").expect("Failed to get the window");
+   
+}
+
+fn configure_repository_window(new_window: gtk::Window) {
     new_window.set_default_size(800, 600);
     apply_window_style(&new_window);
-
     new_window.show_all();
 }
 
@@ -101,7 +93,7 @@ fn create_text_entry_window( message: &str) {
 }
 
 fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) {
-    let button_type = button_type.to_owned(); // Clone the label
+    let button_type = button_type.to_owned(); 
 
     button.connect_clicked(move |_| {
         if button_type == "option2" {
