@@ -17,7 +17,6 @@ pub fn run_main_window() {
     let window: gtk::Window = builder.get_object("window").expect("No se puede obtener la ventana");
     window.set_default_size(800, 600);
     add_to_open_windows(&window);
-    print_open_windows();
     let button_clone: gtk::Button = get_button(&builder, "buttonclone", "Clone");
     let button_init: gtk::Button = get_button(&builder, "buttoninit", "Init");
 
@@ -112,6 +111,9 @@ fn connect_button_clicked2(button: &gtk::Button, button_type: &str) {
             create_text_entry_window(  &button_type, "Ingrese la rama ");
         } else if button_type == "option3" {
             create_text_entry_window( &button_type, "Ingrese la ruta al template a utilizar");
+        }else if button_type == "option1"{
+            close_all_windows();
+            show_new_window();
         }
     });
 }
@@ -142,6 +144,13 @@ fn connect_button_clicked(button: &gtk::Button, button_type: &str) {
             connect_button_clicked2(&button2, "option2");
             connect_button_clicked2(&button3, "option3");
         } else if button_type == "Clone" {
+            let builder_window_clone = gtk::Builder::new();
+            builder_window_clone.add_from_file("src/gui/windowClone.ui"); // Asegúrate de que la ruta sea correcta
+            let new_window_clone: gtk::Window = builder_window_clone.get_object("window").expect("No se puede obtener la ventana");
+            add_to_open_windows(&new_window_clone);
+            new_window_clone.set_default_size(800, 600);
+            apply_window_style(&new_window_clone);
+            new_window_clone.show_all();
         }
     });
 }
