@@ -2,6 +2,9 @@ use gtk::prelude::*;
 use gtk::Builder;
 use std::sync::Mutex;
 use gtk::CssProvider;
+use std::rc::Rc;
+use core::cell::RefCell;
+use gtk::Label;
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -50,8 +53,12 @@ fn add_to_open_windows(window: &gtk::Window) {
         }
     }
 }
+fn obtener_texto_desde_funcion() -> String {
+    // Aquí puedes colocar el código de tu función para obtener el texto
+    "Hola, mundo".to_string() // Ejemplo: Retorna un texto fijo
+}
 
-
+ 
 fn show_repository_window() {
     let builder = gtk::Builder::new();
     if let Some(new_window) = load_and_get_window(&builder,"src/gui/new_window2.ui", "window") {
@@ -76,53 +83,37 @@ fn show_repository_window() {
         apply_button_style(&button7);
         apply_button_style(&button8);
 
-        // Conectar acciones específicas a cada botón
         button1.connect_clicked(move |_| {
-            // Acción para el botón 1 (Add)
             println!("Button 1 (Add) clicked.");
-            // Agrega aquí la lógica para el botón 1
         });
 
         button2.connect_clicked(move |_| {
-            // Acción para el botón 2 (Commit)
             println!("Button 2 (Commit) clicked.");
-            // Agrega aquí la lógica para el botón 2
         });
 
         button3.connect_clicked(move |_| {
-            // Acción para el botón 3 (Push)
             println!("Button 3 (Push) clicked.");
-            // Agrega aquí la lógica para el botón 3
         });
 
         button4.connect_clicked(move |_| {
-            // Acción para el botón 4
             println!("Button 4 clicked.");
-            // Agrega aquí la lógica para el botón 4
         });
 
         button5.connect_clicked(move |_| {
-            // Acción para el botón 5
             println!("Button 5 clicked.");
-            // Agrega aquí la lógica para el botón 5
         });
 
         button6.connect_clicked(move |_| {
-            // Acción para el botón 6
             println!("Button 6 clicked.");
-            // Agrega aquí la lógica para el botón 6
         });
 
         button7.connect_clicked(move |_| {
-            // Acción para el botón 7
-            println!("Button 7 clicked.");
-            // Agrega aquí la lógica para el botón 7
+            let label: Label = builder.get_object("label").unwrap();
+            let texto_desde_funcion = obtener_texto_desde_funcion();
+            label.set_text(&texto_desde_funcion);
         });
 
         button8.connect_clicked(move |_| {
-            // Acción para el botón 8
-            println!("Button 8 clicked.");
-            
             new_window_clone.close();
             run_main_window();
         });
@@ -130,14 +121,10 @@ fn show_repository_window() {
     
    
 }
-fn close_window(window: gtk::Window) {
-    // Cierra la ventana actual
-    window.close();
-}
+
 fn configure_repository_window(new_window: gtk::Window) {
     new_window.set_default_size(800, 600);
     apply_window_style(&new_window);
-    
     new_window.show_all();
 }
 

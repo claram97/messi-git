@@ -107,7 +107,7 @@
           </object>
           <packing>
             <property name="x">5</property>
-            <property name="y">340</property>
+            <property name="y">335</property>
           </packing>
         </child>
         <child>
@@ -120,8 +120,21 @@
             <property name="receives-default">True</property>
           </object>
           <packing>
-            <property name="x">700</property>
-            <property name="y">570</property>
+            <property name="x">5</property>
+            <property name="y">550</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="label">
+            <property name="width-request">100</property>
+            <property name="height-request">80</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">label</property>
+          </object>
+          <packing>
+            <property name="x">326</property>
+            <property name="y">138</property>
           </packing>
         </child>
       </object>

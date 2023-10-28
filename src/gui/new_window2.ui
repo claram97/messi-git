@@ -124,6 +124,19 @@
             <property name="y">550</property>
           </packing>
         </child>
+        <child>
+          <object class="GtkLabel" id="label">
+            <property name="width-request">500</property>
+            <property name="height-request">400</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">label</property>
+          </object>
+          <packing>
+            <property name="x">150</property>
+            <property name="y">10</property>
+          </packing>
+        </child>
       </object>
     </child>
   </object>
