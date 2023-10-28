@@ -55,8 +55,25 @@ fn add_to_open_windows(window: &gtk::Window) {
 fn show_repository_window() {
     let builder = gtk::Builder::new();
     if let Some(new_window) = load_and_get_window(&builder,"src/gui/new_window2.ui", "window") {
-       
         configure_repository_window(new_window);
+        let button1 = get_button(&builder, "button1", "Add");
+        let button2 = get_button(&builder, "button2", "Commit");
+        let button3 = get_button(&builder, "button3", "Push");
+        let button4 = get_button(&builder, "button4", "Push");
+        let button5 = get_button(&builder, "button5", "Push");
+        let button6 = get_button(&builder, "button6", "Push");
+        let button7 = get_button(&builder, "button7", "Push");
+        let button8 = get_button(&builder, "button8", "Push");
+
+
+        apply_button_style(&button1);
+        apply_button_style(&button2);
+        apply_button_style(&button3);
+        apply_button_style(&button4);
+        apply_button_style(&button5);
+        apply_button_style(&button6);
+        apply_button_style(&button7);
+        apply_button_style(&button8);
     }
    
 }
@@ -64,6 +81,7 @@ fn show_repository_window() {
 fn configure_repository_window(new_window: gtk::Window) {
     new_window.set_default_size(800, 600);
     apply_window_style(&new_window);
+    
     new_window.show_all();
 }
 
@@ -187,7 +205,7 @@ fn apply_window_style(window: &gtk::Window) {
 fn get_button(builder: &Builder, button_id: &str, label_text: &str) -> gtk::Button {
     let button: gtk::Button = builder.get_object(button_id).expect(&format!("Failed to get the button {}", label_text));
     let label = button.get_child().unwrap().downcast::<gtk::Label>().unwrap();
-    let pango_desc = pango::FontDescription::from_string("Sans 30");
+    let pango_desc = pango::FontDescription::from_string("Sans 20");
     label.override_font(&pango_desc);
     button.show();
     button
