@@ -3,19 +3,18 @@ use std::{
     fs,
     io::{self, Error, Read, Write},
     net::TcpStream,
-    path::PathBuf,
+    path::{PathBuf, Path},
     str::from_utf8,
     vec,
 };
 
 // multi_ack_detailed side-band-64k thin-pack include-tag ofs-delta deepen-since deepen-not
 
-const PORT: &str = "9418";
 const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
 const CAPABILITIES: &str = "multi_ack_detailed side-band-64k wait-for-done";
 #[derive(Debug)]
-struct Client {
+pub struct Client {
     git_dir: PathBuf,
     address: String,
     repository: String,
@@ -106,8 +105,8 @@ impl Client {
         let (mut size, mut line) = read_pkt_line_tcp(self.socket()?);
 
         while size > 0 {
-            if let Some((hash, mut ref_path)) = line.split_once(" ") {
-                if let Some(("HEAD", _capabilities)) = ref_path.split_once("\0") {
+            if let Some((hash, mut ref_path)) = line.split_once(' ') {
+                if let Some(("HEAD", _capabilities)) = ref_path.split_once('\0') {
                     // self.capabilities = capabilities.to_string();
                     ref_path = "HEAD";
                 }
@@ -123,7 +122,7 @@ impl Client {
     fn socket(&mut self) -> io::Result<&mut TcpStream> {
         match &mut self.socket {
             Some(ref mut socket) => Ok(socket),
-            None => return Err(connection_not_established_error()),
+            None => Err(connection_not_established_error()),
         }
     }
 
@@ -199,7 +198,7 @@ impl Client {
         // self.send(PKT_FLUSH)?;
         // despues de todo -> DONE
         self.done()?;
-        Ok(Some(String::from(hash)))
+        Ok(Some(hash))
 
         // }
         // Ok(())
@@ -214,13 +213,13 @@ impl Client {
         //     (size, line) = read_pkt_line(&mut reader);
         // }
 
-        let mut socket = self.socket()?;
+        let socket = self.socket()?;
 
-        let (mut size, mut line) = read_pkt_line_tcp(&mut socket);
+        let (mut size, mut line) = read_pkt_line_tcp(socket);
 
         while size > 0 {
             print!("{}", line);
-            (size, line) = read_pkt_line_tcp(&mut socket);
+            (size, line) = read_pkt_line_tcp(socket);
         }
         println!();
         Ok(())
@@ -236,10 +235,7 @@ fn connection_not_established_error() -> Error {
 
 fn read_pkt_line_tcp(socket: &mut TcpStream) -> (usize, String) {
     let size = read_n_to_string_tcp(socket, 4);
-    let size = match usize::from_str_radix(&size, 16) {
-        Ok(n) => n,
-        Err(_) => 0,
-    };
+    let size = usize::from_str_radix(&size, 16).unwrap_or(0);
 
     if size < 4 {
         return (size, String::new());
@@ -265,7 +261,7 @@ fn pkt_line(line: &str) -> String {
     len_hex + line
 }
 
-fn get_local_refs(git_dir: &PathBuf) -> io::Result<HashMap<String, String>> {
+fn get_local_refs(git_dir: &Path) -> io::Result<HashMap<String, String>> {
     let mut refs = HashMap::new();
     let heads = git_dir.join("refs").join("heads");
     for entry in fs::read_dir(&heads)? {
@@ -276,7 +272,7 @@ fn get_local_refs(git_dir: &PathBuf) -> io::Result<HashMap<String, String>> {
         let ref_path = path
             .to_string_lossy()
             .to_string()
-            .split_once("/")
+            .split_once('/')
             .ok_or(Error::new(io::ErrorKind::Other, "Unknown error"))?
             .1
             .to_string();
@@ -304,51 +300,5 @@ fn get_local_refs(git_dir: &PathBuf) -> io::Result<HashMap<String, String>> {
 impl Drop for Client {
     fn drop(&mut self) {
         let _ = self.end_connection();
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    // Command to raise a git server with git daemon is a directory with git directories inside.
-    // git-daemon-export-ok file should exist in .git directory in the repo
-    // git daemon --base-path=. --reuseaddr --informative-errors --verbose
-    #[test]
-    #[ignore]
-    fn test_get_refs() -> io::Result<()> {
-        let address = "localhost:".to_owned() + PORT;
-        let mut client = Client::new(&address, "repo", "localhost")?;
-        assert!(!client.get_refs()?.is_empty());
-        Ok(())
-    }
-
-    #[test]
-    #[ignore]
-    fn test_get_refs2() -> io::Result<()> {
-        let address = "localhost:".to_owned() + PORT;
-        let mut client = Client::new(&address, "repo", "localhost")?;
-        client.get_refs()?;
-        client.get_refs()?;
-        assert!(!client.get_refs()?.is_empty());
-        Ok(())
-    }
-
-    #[test]
-    #[ignore]
-    fn test_refs_has_head() -> io::Result<()> {
-        let address = "localhost:".to_owned() + PORT;
-        let mut client = Client::new(&address, "repo", "localhost")?;
-        let refs = client.get_refs()?;
-        assert!(refs.contains(&"HEAD".to_string()));
-        Ok(())
-    }
-
-    #[test]
-    #[ignore]
-    fn test_upload_pack() -> io::Result<()> {
-        let address = "localhost:".to_owned() + PORT;
-        let mut client = Client::new(&address, "repo", "localhost")?;
-        client.upload_pack(Some("HEAD"), ".mgit")?;
-        Ok(())
     }
 }
