@@ -1,9 +1,9 @@
 use std::{
-    collections::{btree_map::Entry, HashMap},
+    collections::HashMap,
     fs,
-    io::{self, BufRead, BufReader, Error, Read, Write},
+    io::{self, Error, Read, Write},
     net::TcpStream,
-    path::{Path, PathBuf},
+    path::PathBuf,
     str::from_utf8,
     vec,
 };
@@ -13,7 +13,7 @@ use std::{
 const PORT: &str = "9418";
 const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
-
+const CAPABILITIES: &str = "multi_ack_detailed side-band-64k wait-for-done";
 #[derive(Debug)]
 struct Client {
     git_dir: PathBuf,
@@ -22,7 +22,6 @@ struct Client {
     host: String,
     socket: Option<TcpStream>,
     refs: HashMap<String, String>,
-    capabilities: String,
 }
 
 /// This is a git client that is able to connect to a git server
@@ -39,7 +38,6 @@ impl Client {
         let repository = repository.to_owned();
         let host = host.to_owned();
         let address = address.to_owned();
-        let capabilities = String::from("multi_ack_detailed side-band-64k wait-for-done");
         Ok(Self {
             git_dir: PathBuf::new(),
             address,
@@ -47,7 +45,6 @@ impl Client {
             host,
             socket: None,
             refs,
-            capabilities,
         })
     }
 
@@ -69,14 +66,14 @@ impl Client {
         self.connect()?;
         self.initiate_connection()?;
         self.git_dir = PathBuf::from(git_dir);
-        self.wait_refs();
+        self.wait_refs()?;
 
         if let Some(wanted_ref) = wanted_ref {
             if let Some(hash) = self.want_ref(wanted_ref)? {
                 self.update_fetch_head(&hash)?;
+                println!("Leo response de want");
+                self.read_response_until_flush()?;
             }
-            println!("Leo response de want");
-            self.read_response_until_flush();
         }
         // std::thread::sleep(std::time::Duration::from_secs(5));
 
@@ -105,7 +102,6 @@ impl Client {
     // Auxiliar function. Waits for the refs and loads them in self
     // Should be called only aftes: initiate_connection
     fn wait_refs(&mut self) -> io::Result<()> {
-
         let (_, _) = read_pkt_line_tcp(self.socket()?);
         let (mut size, mut line) = read_pkt_line_tcp(self.socket()?);
 
@@ -115,7 +111,8 @@ impl Client {
                     // self.capabilities = capabilities.to_string();
                     ref_path = "HEAD";
                 }
-                self.refs.insert(ref_path.trim().to_string(), hash.to_string());
+                self.refs
+                    .insert(ref_path.trim().to_string(), hash.to_string());
             }
             (size, line) = read_pkt_line_tcp(self.socket()?);
         }
@@ -180,16 +177,16 @@ impl Client {
             }
         };
 
-        // let actual_refs = get_refs(&self.git_dir)?;
+        let local_refs = get_local_refs(&self.git_dir)?;
 
-        // if let Some(actual_hash) = actual_refs.get(wanted_ref) {
-        //     if &hash == actual_hash {
-        //         println!("Already up to date.");
-        //         return Ok(None);
-        //     }
-        // }
+        if let Some(local_hash) = local_refs.get(wanted_ref) {
+            if &hash == local_hash {
+                println!("Already up to date.");
+                return Ok(None);
+            }
+        }
 
-        let want = format!("want {} {}\n", hash, &self.capabilities);
+        let want = format!("want {} {}\n", hash, CAPABILITIES);
         let want = pkt_line(&want);
         dbg!(&want);
         self.send(&want)?;
@@ -259,28 +256,6 @@ fn read_n_to_string_tcp(socket: &mut TcpStream, n: usize) -> String {
     }
 }
 
-fn read_pkt_line(buf_reader: &mut BufReader<impl Read>) -> (usize, String) {
-    let size = read_n_to_string(buf_reader, 4);
-    let size = match usize::from_str_radix(&size, 16) {
-        Ok(n) => n,
-        Err(_) => 0,
-    };
-
-    if size < 4 {
-        return (size, String::new());
-    }
-    let line = read_n_to_string(buf_reader, size - 4);
-    (size, line)
-}
-
-fn read_n_to_string(buf_reader: &mut BufReader<impl Read>, n: usize) -> String {
-    let mut buf = vec![0u8; n];
-    match (buf_reader.read_exact(&mut buf), from_utf8(&buf)) {
-        (Ok(_), Ok(content)) => content.to_owned(),
-        _ => String::new(),
-    }
-}
-
 fn pkt_line(line: &str) -> String {
     let len = line.len() + 4; // len
     let mut len_hex = format!("{len:x}");
@@ -290,16 +265,39 @@ fn pkt_line(line: &str) -> String {
     len_hex + line
 }
 
-fn get_refs(git_dir: &PathBuf) -> io::Result<HashMap<String, String>> {
+fn get_local_refs(git_dir: &PathBuf) -> io::Result<HashMap<String, String>> {
     let mut refs = HashMap::new();
-    let heads = git_dir.join("refs/heads");
-    for entry in fs::read_dir(heads)? {
+    let heads = git_dir.join("refs").join("heads");
+    for entry in fs::read_dir(&heads)? {
         let entry = entry?;
         let filename = entry.file_name().to_string_lossy().to_string();
-        let path = String::from("refs/heads") + &filename;
-        let hash = fs::read_to_string(&filename)?;
-        refs.insert(path, hash);
+        let path = heads.join(filename);
+        let hash: String = fs::read_to_string(&path)?.trim().into();
+        let ref_path = path
+            .to_string_lossy()
+            .to_string()
+            .split_once("/")
+            .ok_or(Error::new(io::ErrorKind::Other, "Unknown error"))?
+            .1
+            .to_string();
+
+        refs.insert(ref_path, hash);
     }
+
+    let head = git_dir.join("HEAD");
+
+    let head_content: String = fs::read_to_string(head)?.trim().into();
+    match head_content.split_once(": ") {
+        Some((_, branch)) => {
+            if let Some(hash) = refs.get(branch) {
+                refs.insert("HEAD".to_string(), hash.trim().into());
+            }
+        }
+        None => {
+            refs.insert("HEAD".to_string(), head_content);
+        }
+    };
+    dbg!(&refs);
     Ok(refs)
 }
 
