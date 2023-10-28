@@ -35,8 +35,8 @@
                 <property name="can-focus">False</property>
               </object>
               <packing>
-                <property name="name">Fixed</property>
-                <property name="title" translatable="yes">Fixed</property>
+                <property name="name">Add</property>
+                <property name="title" translatable="yes">Add</property>
               </packing>
             </child>
             <child>
@@ -44,6 +44,7 @@
               <object class="GtkGrid" id="grid">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="column-homogeneous">True</property>
                 <child>
                   <object class="GtkButton" id="button">
                     <property name="label" translatable="yes">click me</property>
@@ -53,6 +54,17 @@
                   </object>
                   <packing>
                     <property name="left-attach">3</property>
+                    <property name="top-attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="label">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label" translatable="yes">hola</property>
+                  </object>
+                  <packing>
+                    <property name="left-attach">0</property>
                     <property name="top-attach">0</property>
                   </packing>
                 </child>
@@ -125,14 +137,68 @@
                 <child>
                   <placeholder/>
                 </child>
-                <child>
-                  <placeholder/>
+              </object>
+              <packing>
+                <property name="name">push</property>
+                <property name="title" translatable="yes">push</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkListBox" id="list">
+                <property name="name">list</property>
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="selection-mode">multiple</property>
+                <child type="placeholder">
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">button</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                  </object>
                 </child>
               </object>
               <packing>
-                <property name="name">grid</property>
-                <property name="title" translatable="yes">grid</property>
-                <property name="position">1</property>
+                <property name="name">pull</property>
+                <property name="title" translatable="yes">pull</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">label</property>
+              </object>
+              <packing>
+                <property name="name">page1</property>
+                <property name="title" translatable="yes">commit</property>
+                <property name="position">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">label</property>
+              </object>
+              <packing>
+                <property name="name">page2</property>
+                <property name="title" translatable="yes">branch</property>
+                <property name="position">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">label</property>
+              </object>
+              <packing>
+                <property name="name">page0</property>
+                <property name="title" translatable="yes">checkout</property>
+                <property name="position">5</property>
               </packing>
             </child>
           </object>
