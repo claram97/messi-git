@@ -1,18 +1,20 @@
 use std::{
     collections::HashMap,
     fs,
-    io::{self, Error, Read, Write},
+    io::{self, BufReader, Error, Read, Write},
     net::TcpStream,
-    path::{PathBuf, Path},
+    path::{Path, PathBuf},
     str::from_utf8,
     vec,
 };
+
+use flate2::bufread::ZlibDecoder;
 
 // multi_ack_detailed side-band-64k thin-pack include-tag ofs-delta deepen-since deepen-not
 
 const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
-const CAPABILITIES: &str = "multi_ack_detailed side-band-64k wait-for-done";
+const CAPABILITIES: &str = "multi_ack side-band-64k ofs-delta";
 #[derive(Debug)]
 pub struct Client {
     git_dir: PathBuf,
@@ -70,14 +72,13 @@ impl Client {
         if let Some(wanted_ref) = wanted_ref {
             if let Some(hash) = self.want_ref(wanted_ref)? {
                 self.update_fetch_head(&hash)?;
-                println!("Leo response de want");
                 self.read_response_until_flush()?;
             }
         }
-        // std::thread::sleep(std::time::Duration::from_secs(5));
+        println!("Termino upload-pack");
+        Ok(())
 
-        println!("Termino conexion");
-        self.flush()
+        // self.flush()
     }
 
     // Establish the first conversation with the server
@@ -189,8 +190,12 @@ impl Client {
         let want = pkt_line(&want);
         dbg!(&want);
         self.send(&want)?;
+
         self.flush()?;
+
         self.send_haves(local_refs)?;
+        // std::thread::sleep(std::time::Duration::from_secs(5));
+        // self.read_response_until_flush()?;
         self.done()?;
         Ok(Some(hash))
     }
@@ -200,7 +205,7 @@ impl Client {
             for hash in local_refs.values() {
                 let have = format!("have {}\n", hash);
                 let have = pkt_line(&have);
-                dbg!(&have);
+                // dbg!(&have);
                 self.send(&have)?;
             }
             self.flush()?;
@@ -210,18 +215,48 @@ impl Client {
 
     // Auxiliar function. Reads the socket until a 'flush' signal is read
     fn read_response_until_flush(&mut self) -> io::Result<()> {
-
         let socket = self.socket()?;
+        let mut buf = vec![];
+        socket.read_to_end(&mut buf)?;
 
-        let (mut size, mut line) = read_pkt_line_tcp(socket);
+        let mut start = 0;
+        let mut bytes_to_read = buf.get(..4);
 
-        while size > 0 {
-            print!("{}", line);
-            (size, line) = read_pkt_line_tcp(socket);
+        while let Some(size_hex) = bytes_to_read {
+            let bytes = from_utf8(size_hex).unwrap_or("");
+            print!("{}", bytes);
+            let bytes = usize::from_str_radix(bytes, 16).unwrap_or(0);
+
+            let end = start + bytes;
+            start += 4;
+            let content = buf.get(start..end).unwrap_or(&[]);
+            match from_utf8(content) {
+                Ok(content) => {
+                    print!("{}", content)
+                }
+                Err(_) => {
+                    read_pack_file(content);
+                    break;
+                }
+            };
+
+            start = end;
+            bytes_to_read = buf.get(start..start + 4);
         }
-        println!();
+
         Ok(())
     }
+}
+
+fn read_pack_file(buf: &[u8]) {
+    let signature = buf.get(1..5).unwrap_or(&[]);
+    let is_packfile = match from_utf8(signature) {
+        Ok(sig) => sig == "PACK",
+        Err(_) => false
+    };
+    let start = 5;
+    let packfile = buf.get(start..).unwrap_or(&[]);
+    println!("{:?}", packfile);
 }
 
 fn connection_not_established_error() -> Error {
@@ -242,11 +277,34 @@ fn read_pkt_line_tcp(socket: &mut TcpStream) -> (usize, String) {
     (size, line)
 }
 
+fn read_pkt_line_tcp_raw(socket: &mut TcpStream) -> (usize, String) {
+    let mut line = read_n_to_string_tcp(socket, 4);
+    let size = usize::from_str_radix(&line, 16).unwrap_or(0);
+
+    if size < 4 {
+        return (size, line);
+    }
+
+    line = format!("{}{}", line, read_n_to_string_tcp(socket, size - 4));
+    (size, line)
+}
+
 fn read_n_to_string_tcp(socket: &mut TcpStream, n: usize) -> String {
     let mut buf = vec![0u8; n];
-    match (socket.read_exact(&mut buf), from_utf8(&buf)) {
-        (Ok(_), Ok(content)) => content.to_owned(),
-        _ => String::new(),
+    // match (socket.read_exact(&mut buf), from_utf8(&buf)) {
+    //     (Ok(_), Ok(content)) => content.to_owned(),
+    //     _ => String::new(),
+    // }
+    match socket.read_exact(&mut buf) {
+        Ok(_) => match from_utf8(&buf) {
+            Ok(content) => content.to_owned(),
+            Err(_) => {
+                println!("FALLA ACAAA JAJAJ");
+                dbg!(buf);
+                todo!()
+            }
+        },
+        Err(_) => todo!(),
     }
 }
 
