@@ -165,7 +165,7 @@ impl Client {
     // (DEBERIA TRAER EL PACKFILE PERO TODAVIA NO LO HACE)
     fn want_ref(&mut self, wanted_ref: &str) -> io::Result<Option<String>> {
         println!("Pido: {}", wanted_ref);
-        // for wanted_ref in wanted_refs {
+
         let hash = match self.refs.get(wanted_ref) {
             Some(hash) => hash.clone(),
             None => {
@@ -189,29 +189,27 @@ impl Client {
         let want = pkt_line(&want);
         dbg!(&want);
         self.send(&want)?;
-        // despues de todos los want -> flush
         self.flush()?;
-        // despues de flush -> los have
-        // let have = pkt_line("have fd443c581db78b7f422f5eb4052aef10af1c01b5\n");
-        // self.send(have)?;
-        // despues de todos los have -> flush
-        // self.send(PKT_FLUSH)?;
-        // despues de todo -> DONE
+        self.send_haves(local_refs)?;
         self.done()?;
         Ok(Some(hash))
+    }
 
-        // }
-        // Ok(())
+    fn send_haves(&mut self, local_refs: HashMap<String, String>) -> io::Result<()> {
+        if !local_refs.is_empty() {
+            for hash in local_refs.values() {
+                let have = format!("have {}\n", hash);
+                let have = pkt_line(&have);
+                dbg!(&have);
+                self.send(&have)?;
+            }
+            self.flush()?;
+        }
+        Ok(())
     }
 
     // Auxiliar function. Reads the socket until a 'flush' signal is read
     fn read_response_until_flush(&mut self) -> io::Result<()> {
-        // let mut reader = BufReader::new(&self.socket);
-        // let (mut size, mut line) = read_pkt_line(&mut reader);
-        // while size > 0 {
-        //     print!("{}", line);
-        //     (size, line) = read_pkt_line(&mut reader);
-        // }
 
         let socket = self.socket()?;
 
