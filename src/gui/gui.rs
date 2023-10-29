@@ -9,6 +9,7 @@ use crate::branch::list_branches;
 use crate::utils::find_git_directory;
 use crate::branch::git_branch_for_ui;
 use crate::branch::create_new_branch;
+use crate::gui::style::apply_button_style;
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -191,7 +192,7 @@ fn create_text_entry_window(message: &str, on_text_entered: impl Fn(String) + 's
         let text = entry.get_text().to_string();
         close_all_windows();
         show_repository_window();
-        on_text_entered(text); // Llama al cierre con el texto ingresado
+        on_text_entered(text); 
     });
 
     entry_window.show_all();
@@ -206,12 +207,10 @@ fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) {
             create_text_entry_window("Enter the branch", |_| {
                 
             });
-            // create_text_entry_window( "Enter the branch");
         } else if button_type == "option3" {
             create_text_entry_window("Enter the template path", |_| {
                 
             });
-            // create_text_entry_window( "Enter the template path");
         } else if button_type == "option1" {
             close_all_windows();
             show_repository_window();
@@ -301,18 +300,4 @@ fn get_button(builder: &Builder, button_id: &str, label_text: &str) -> gtk::Butt
     button
 }
 
-fn apply_button_style(button: &gtk::Button) {
-    let css_provider = gtk::CssProvider::new();
-    css_provider
-        .load_from_data("button {
-            background-color: #87CEEB; /* Sky Blue */
-            color: #1e3799; /* Dark Blue Text Color */
-            border: 10px solid #1e3799; /* Dark Blue Border */
-            padding: 10px; /* Padding around content */
-        }"
-        .as_bytes())
-        .expect("Failed to load CSS");
 
-    let style_context = button.get_style_context();
-    style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-}

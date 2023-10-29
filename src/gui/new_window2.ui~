@@ -132,7 +132,7 @@
             <property name="can-focus">False</property>
             <property name="label" translatable="yes">label</property>
             <attributes>
-              <attribute name="font-desc" value="Liberation Mono Bold 30"/>
+              <attribute name="font-desc" value="Liberation Mono Bold 20"/>
               <attribute name="foreground" value="#1a1a5f5fb4b4"/>
             </attributes>
           </object>
@@ -143,7 +143,7 @@
         </child>
         <child>
           <object class="GtkButton" id="button9">
-            <property name="label" translatable="yes">View branches</property>
+            <property name="label" translatable="yes">View branch</property>
             <property name="width-request">200</property>
             <property name="height-request">30</property>
             <property name="visible">True</property>
