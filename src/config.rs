@@ -13,12 +13,11 @@ pub struct Config {
 
 impl Config {
     fn new(config_file_path: String) -> Config {
-        let config = Config {
+        Config {
             config_file_path,
             remotes: Vec::new(),
             branches: Vec::new(),
-        };
-        config
+        }
     }
 
     /// Loads a Git configuration from the specified directory.
@@ -36,7 +35,7 @@ impl Config {
     /// Returns a `Result` containing a `Config` struct if the configuration is successfully loaded, or an
     /// `std::io::Error` in case of any errors during the loading process.
     ///
-    /* 
+    /*
     pub fn load(git_dir: &str) -> io::Result<Config> {
         let file_name = format!("{}/config", git_dir);
         let mut config = Config::new((&file_name).to_string());
@@ -94,7 +93,7 @@ impl Config {
     /// This function reads and parses the Git configuration file from the provided Git directory path.
     /// The configuration is used to populate a `Config` struct, including remote repositories and branch information.
     /// It needs to have, at least, basic information provided when git init is run. If it's empty, it will behave weirdly.
-    /// 
+    ///
     /// # Arguments
     ///
     /// - `git_dir`: A string representing the path to the Git directory where the configuration is located.
@@ -108,14 +107,14 @@ impl Config {
         let file_name = format!("{}/config", git_dir);
         let mut config = Config::new(file_name.clone());
         let file = File::open(&file_name)?;
-    
+
         let relevant_lines = Self::extract_relevant_lines(file)?;
-    
+
         Self::process_lines(&mut config, relevant_lines);
-    
+
         Ok(config)
     }
-    
+
     /// Extracts relevant lines from a Git configuration file.
     ///
     /// This function reads a Git configuration file and extracts relevant lines, skipping the
@@ -135,15 +134,15 @@ impl Config {
     fn extract_relevant_lines(file: File) -> io::Result<Vec<String>> {
         let reader = BufReader::new(file);
         let mut lines = reader.lines().skip(5);
-    
+
         let mut relevant_lines: Vec<String> = Vec::new();
         while let Some(Ok(line)) = lines.next() {
             relevant_lines.push(line);
         }
-    
+
         Ok(relevant_lines)
     }
-    
+
     /// Processes relevant lines from a Git configuration file and populates a `Config` struct.
     ///
     /// This function takes a vector of relevant lines from a Git configuration file and processes
@@ -157,18 +156,18 @@ impl Config {
     fn process_lines(config: &mut Config, lines: Vec<String>) {
         let mut buffer: Vec<String> = Vec::new();
         let mut count = 0;
-    
+
         for line in lines {
             buffer.push(line);
             count += 1;
-    
+
             if count == 3 {
                 if let Some(remote) = Self::parse_remote(&buffer) {
                     config.remotes.push(remote);
                 } else if let Some(branch) = Self::parse_branch(&buffer) {
                     config.branches.push(branch);
                 }
-    
+
                 buffer.clear();
                 count = 0;
             }
@@ -191,7 +190,7 @@ impl Config {
     /// Returns an `Option` containing a `Remote` object if the lines match a remote repository format,
     /// or `None` if they do not.
     ///
-    fn parse_remote(buffer: &Vec<String>) -> Option<Remote> {
+    fn parse_remote(buffer: &[String]) -> Option<Remote> {
         if buffer[0].starts_with("[remote") {
             let name = buffer[0].split('"').nth(1)?.to_string();
             let url = buffer[1].split(' ').nth(2)?.to_string();
@@ -201,7 +200,7 @@ impl Config {
             None
         }
     }
-    
+
     /// Parses relevant lines to extract information about a Git branch.
     ///
     /// This function takes a vector of relevant lines and attempts to extract information about
@@ -217,7 +216,7 @@ impl Config {
     /// Returns an `Option` containing a `Branch` object if the lines match a branch format,
     /// or `None` if they do not.
     ///
-    fn parse_branch(buffer: &Vec<String>) -> Option<Branch> {
+    fn parse_branch(buffer: &[String]) -> Option<Branch> {
         if buffer[0].starts_with("[branch") {
             let name = buffer[0].split('"').nth(1)?.to_string();
             let remote = buffer[1].split(' ').nth(2)?.to_string();
@@ -262,11 +261,7 @@ impl Config {
                 format!("error: remote {} already exists", name),
             ));
         }
-        let remote = Remote::new(
-            (&name).to_string(),
-            (&url).to_string(),
-            (&fetch).to_string(),
-        );
+        let remote = Remote::new(name.to_string(), url.to_string(), fetch.to_string());
         self.remotes.push(remote);
         let mut file = OpenOptions::new()
             .append(true)
@@ -279,7 +274,7 @@ impl Config {
         file.flush()?;
         Ok(())
     }
- 
+
     /// Adds a new branch to the Git configuration.
     ///
     /// This function adds a new branch to the Git configuration, updating both the in-memory
@@ -314,11 +309,7 @@ impl Config {
                 format!("error: remote {} already exists", name),
             ));
         }
-        let branch = Branch::new(
-            (&name).to_string(),
-            (&remote).to_string(),
-            (&merge).to_string(),
-        );
+        let branch = Branch::new(name.to_string(), remote.to_string(), merge.to_string());
         self.branches.push(branch);
         let mut file = OpenOptions::new()
             .append(true)
@@ -331,7 +322,6 @@ impl Config {
         file.flush()?;
         Ok(())
     }
-
 
     /// Removes a section (remote or branch) from the Git configuration file.
     ///
@@ -353,7 +343,7 @@ impl Config {
         let input_file = File::open(&self.config_file_path)?;
         let reader = BufReader::new(input_file);
 
-        let temp_file_path = (&self.config_file_path).to_string() + "2";
+        let temp_file_path = self.config_file_path.to_string() + "2";
         let output_file = File::create(&temp_file_path)?;
         let mut writer = io::BufWriter::new(output_file);
 
@@ -432,7 +422,7 @@ impl Config {
         }
         Ok(())
     }
-    
+
     /// Updates a remote repository's configuration in the Git configuration file.
     ///
     /// This function updates the configuration of a remote repository in the Git configuration file,
@@ -454,16 +444,16 @@ impl Config {
         remote: &Remote,
         remote_initial_name: Option<&str>,
     ) -> io::Result<()> {
-        let initial_name;
-        if remote_initial_name.is_some() {
-            initial_name = remote_initial_name.unwrap().to_string();
+        let initial_name = if let Some(name) = remote_initial_name {
+            name.to_string()
         } else {
-            initial_name = remote.name.clone();
-        }
+            remote.name.clone()
+        };
+
         let input_file = File::open(&self.config_file_path)?;
         let reader = BufReader::new(input_file);
 
-        let temp_file_path = (&self.config_file_path).to_string() + "2";
+        let temp_file_path = self.config_file_path.to_string() + "2";
         let output_file = File::create(&temp_file_path)?;
         let mut writer = io::BufWriter::new(output_file);
 
@@ -474,15 +464,13 @@ impl Config {
             let line = line?;
             if skip_lines > 0 {
                 skip_lines -= 1;
+            } else if line.starts_with(&format!("[remote \"{}\"]", initial_name)) {
+                skip_lines = 3;
+                buffer.push(format!("[remote \"{}\"]", remote.name));
+                buffer.push(format!("\turl = {}", remote.url));
+                buffer.push(format!("\tfetch = {}", &remote.fetch));
             } else {
-                if line.starts_with(&format!("[remote \"{}\"]", initial_name)) {
-                    skip_lines = 3;
-                    buffer.push(format!("[remote \"{}\"]", remote.name));
-                    buffer.push(format!("\turl = {}", remote.url));
-                    buffer.push(format!("\tfetch = {}", &remote.fetch));
-                } else {
-                    buffer.push(line);
-                }
+                buffer.push(line);
             }
         }
 
@@ -515,16 +503,16 @@ impl Config {
         if let Some(index) = self.remotes.iter().position(|r| r.name == remote_name) {
             if let Some(remote) = self.remotes.get(index) {
                 output.write_all(remote.url.as_bytes())?;
-                return Ok(())
+                Ok(())
             } else {
                 let error_message = format!("error: No such remote '{}'", remote_name);
                 output.write_all(error_message.as_bytes())?;
-                return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
+                Err(io::Error::new(io::ErrorKind::InvalidInput, error_message))
             }
         } else {
             let error_message = format!("error: No such remote '{}'", remote_name);
             output.write_all(error_message.as_bytes())?;
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
+            Err(io::Error::new(io::ErrorKind::InvalidInput, error_message))
         }
     }
 
@@ -560,7 +548,7 @@ impl Config {
                     let new_remote = Remote::new(
                         (&remote_name).to_string(),
                         (&new_url).to_string(),
-                        (&remote.fetch).to_string(),
+                        remote.fetch.to_string(),
                     );
                     self.change_remote_from_file(&new_remote, None)?;
                     self.remotes.remove(index);
@@ -605,25 +593,23 @@ impl Config {
         output: &mut impl Write,
     ) -> io::Result<()> {
         if let Some(index) = self.remotes.iter().position(|r| r.name == remote_name) {
-            if let Some(_) = self.remotes.iter().position(|s| s.name == remote_new_name) {
+            if self.remotes.iter().any(|s| s.name == remote_new_name) {
                 let error_message = format!("error: remote {} already exists.", remote_new_name);
                 output.write_all(error_message.as_bytes())?;
                 return Err(io::Error::new(io::ErrorKind::AlreadyExists, error_message));
+            } else if let Some(remote) = self.remotes.get(index) {
+                let new_remote = Remote::new(
+                    remote_new_name.to_string(),
+                    remote.url.to_string(),
+                    remote.fetch.to_string(),
+                );
+                self.change_remote_from_file(&new_remote, Some(remote_name))?;
+                self.remotes.remove(index);
+                self.remotes.push(new_remote);
             } else {
-                if let Some(remote) = self.remotes.get(index) {
-                    let new_remote = Remote::new(
-                        remote_new_name.to_string(),
-                        (&remote.url).to_string(),
-                        (&remote.fetch).to_string(),
-                    );
-                    self.change_remote_from_file(&new_remote, Some(remote_name))?;
-                    self.remotes.remove(index);
-                    self.remotes.push(new_remote);
-                } else {
-                    let error_message = format!("error: No such remote '{}'", remote_name);
-                    output.write_all(error_message.as_bytes())?;
-                    return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
-                }
+                let error_message = format!("error: No such remote '{}'", remote_name);
+                output.write_all(error_message.as_bytes())?;
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
             }
         } else {
             let error_message = format!("error: No such remote '{}'", remote_name);

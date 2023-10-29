@@ -25,16 +25,16 @@ use crate::config::Config;
 /// - `line`: A vector of strings containing the command line split into arguments.
 /// - `output`: An object implementing the `Write` trait where the results or errors will be written.
 ///
-pub fn git_remote(config : &mut Config, line: Vec<&str>, output: &mut impl Write) -> io::Result<()> {
+pub fn git_remote(config: &mut Config, line: Vec<&str>, output: &mut impl Write) -> io::Result<()> {
     if (line.len() != 2) && (line.len() != 3) {
-        let error_message = format!("Invalid arguments.\n");
+        let error_message = "Invalid arguments.\n".to_string();
         output.write_all(error_message.as_bytes())?;
         return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
     }
-    let _comand = match line[0] {
+    match line[0] {
         "add" => {
             if line.len() != 3 {
-                let error_message = format!("Invalid arguments.\n");
+                let error_message = "Invalid arguments.\n".to_string();
                 output.write_all(error_message.as_bytes())?;
                 return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
             }
@@ -43,7 +43,7 @@ pub fn git_remote(config : &mut Config, line: Vec<&str>, output: &mut impl Write
         }
         "remove" => {
             if line.len() != 2 {
-                let error_message = format!("Invalid arguments.\n");
+                let error_message = "Invalid arguments.\n".to_string();
                 output.write_all(error_message.as_bytes())?;
                 return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
             }
@@ -51,7 +51,7 @@ pub fn git_remote(config : &mut Config, line: Vec<&str>, output: &mut impl Write
         }
         "set-url" => {
             if line.len() != 3 {
-                let error_message = format!("Invalid arguments.\n");
+                let error_message = "Invalid arguments.\n".to_string();
                 output.write_all(error_message.as_bytes())?;
                 return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
             }
@@ -59,7 +59,7 @@ pub fn git_remote(config : &mut Config, line: Vec<&str>, output: &mut impl Write
         }
         "get-url" => {
             if line.len() != 2 {
-                let error_message = format!("Invalid arguments.\n");
+                let error_message = "Invalid arguments.\n".to_string();
                 output.write_all(error_message.as_bytes())?;
                 return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
             }
@@ -67,7 +67,7 @@ pub fn git_remote(config : &mut Config, line: Vec<&str>, output: &mut impl Write
         }
         "rename" => {
             if line.len() != 3 {
-                let error_message = format!("Invalid arguments.\n");
+                let error_message = "Invalid arguments.\n".to_string();
                 output.write_all(error_message.as_bytes())?;
                 return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
             }
@@ -86,11 +86,14 @@ pub fn git_remote(config : &mut Config, line: Vec<&str>, output: &mut impl Write
 mod test {
     use super::*;
 
-    use std::{fs::File, path::Path, io::{self, Read}};
+    use std::{
+        fs::File,
+        io::{self, Read},
+        path::Path,
+    };
 
-    use crate::{init, config};
+    use crate::{config, init};
 
-    
     fn create_if_not_exists(path: &str, is_dir: bool) -> io::Result<()> {
         if !Path::new(path).exists() {
             if is_dir {
@@ -104,14 +107,14 @@ mod test {
 
     #[test]
     fn test_invalid_arguments_lenght() -> io::Result<()> {
-        let line = vec!["","","",""];
-        let mut output : Vec<u8> = vec![];
+        let line = vec!["", "", "", ""];
+        let mut output: Vec<u8> = vec![];
         create_if_not_exists("tests/remote_fake_repo_0", true)?;
         create_if_not_exists("tests/remote_fake_repo_0/.mgit", true)?;
         create_if_not_exists("tests/remote_fake_repo_0/.mgit/config", false)?;
         let git_dir_path = "tests/remote_fake_repo_0/.mgit";
         let mut config = Config::load(git_dir_path)?;
-        let result = git_remote(&mut config, line,&mut output);
+        let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_err());
         std::fs::remove_dir_all("tests/remote_fake_repo_0")?;
         Ok(())
@@ -123,10 +126,10 @@ mod test {
         init::git_init("tests/remote_fake_repo_1", "current_branch", None)?;
         create_if_not_exists("tests/remote_fake_repo_1/.mgit/config", false)?;
         let line = vec!["something"];
-        let mut output : Vec<u8> = vec![];
+        let mut output: Vec<u8> = vec![];
         let git_dir_path = "tests/remote_fake_repo_1/.mgit";
         let mut config = Config::load(git_dir_path)?;
-        let result = git_remote(&mut config, line,&mut output);
+        let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_err());
         std::fs::remove_dir_all("tests/remote_fake_repo_1")?;
         Ok(())
@@ -138,10 +141,10 @@ mod test {
         init::git_init("tests/remote_fake_repo_2", "current_branch", None)?;
         create_if_not_exists("tests/remote_fake_repo_2/.mgit/config", false)?;
         let line = vec!["add"];
-        let mut output : Vec<u8> = vec![];
+        let mut output: Vec<u8> = vec![];
         let git_dir_path = "tests/remote_fake_repo_2/.mgit";
         let mut config = Config::load(git_dir_path)?;
-        let result = git_remote(&mut config, line,&mut output);
+        let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_err());
         std::fs::remove_dir_all("tests/remote_fake_repo_2")?;
         Ok(())
@@ -152,11 +155,11 @@ mod test {
         create_if_not_exists("tests/remote_fake_repo_3", true)?;
         init::git_init("tests/remote_fake_repo_3", "current_branch", None)?;
         create_if_not_exists("tests/remote_fake_repo_3/.mgit/config", false)?;
-        let line = vec!["add","new_remote","url","something else"];
-        let mut output : Vec<u8> = vec![];
+        let line = vec!["add", "new_remote", "url", "something else"];
+        let mut output: Vec<u8> = vec![];
         let git_dir_path = "tests/remote_fake_repo_3/.mgit";
         let mut config = Config::load(git_dir_path)?;
-        let result = git_remote(&mut config, line,&mut output);
+        let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_err());
         std::fs::remove_dir_all("tests/remote_fake_repo_3")?;
         Ok(())
@@ -169,11 +172,12 @@ mod test {
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create("tests/remote_fake_repo_4/.mgit/config")?;
         config_file.write_all(config_data.as_bytes())?;
-        config_file.flush()?;        let line = vec!["add","new_remote","url"];
-        let mut output : Vec<u8> = vec![];
+        config_file.flush()?;
+        let line = vec!["add", "new_remote", "url"];
+        let mut output: Vec<u8> = vec![];
         let git_dir_path = "tests/remote_fake_repo_4/.mgit";
         let mut config = Config::load(git_dir_path)?;
-        let result = git_remote(&mut config, line,&mut output);
+        let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_ok());
         std::fs::remove_dir_all("tests/remote_fake_repo_4")?;
         Ok(())
@@ -187,11 +191,11 @@ mod test {
         let mut config_file = File::create("tests/remote_fake_repo_5/.mgit/config")?;
         config_file.write_all(config_data.as_bytes())?;
         config_file.flush()?;
-        let line = vec!["remove","remote_name","something else"];
-        let mut output : Vec<u8> = vec![];
+        let line = vec!["remove", "remote_name", "something else"];
+        let mut output: Vec<u8> = vec![];
         let git_dir_path = "tests/remote_fake_repo_5/.mgit";
         let mut config = Config::load(git_dir_path)?;
-        let result = git_remote(&mut config, line,&mut output);
+        let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_err());
         std::fs::remove_dir_all("tests/remote_fake_repo_5")?;
         Ok(())
@@ -206,10 +210,10 @@ mod test {
         config_file.write_all(config_data.as_bytes())?;
         config_file.flush()?;
         let line = vec!["remove"];
-        let mut output : Vec<u8> = vec![];
+        let mut output: Vec<u8> = vec![];
         let git_dir_path = "tests/remote_fake_repo_6/.mgit";
         let mut config = Config::load(git_dir_path)?;
-        let result = git_remote(&mut config, line,&mut output);
+        let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_err());
         std::fs::remove_dir_all("tests/remote_fake_repo_6")?;
         Ok(())
@@ -227,9 +231,9 @@ mod test {
         config_file.write_all(config_data.as_bytes())?;
         config_file.flush()?;
         let line = vec!["set-url"];
-        let mut output : Vec<u8> = vec![];
+        let mut output: Vec<u8> = vec![];
         let mut config = Config::load(&git_dir_path)?;
-        let result = git_remote(&mut config,  line, &mut output);
+        let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_err());
         std::fs::remove_dir_all(path)?;
         Ok(())
@@ -245,10 +249,11 @@ mod test {
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
-        config_file.flush()?;        let line = vec!["set-url","remote","url","extra_arg"];
-        let mut output : Vec<u8> = vec![];
+        config_file.flush()?;
+        let line = vec!["set-url", "remote", "url", "extra_arg"];
+        let mut output: Vec<u8> = vec![];
         let mut config = Config::load(&git_dir_path)?;
-        let result = git_remote(&mut config,  line, &mut output);
+        let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_err());
         std::fs::remove_dir_all(path)?;
         Ok(())
@@ -264,10 +269,11 @@ mod test {
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
-        config_file.flush()?;        let line = vec!["get-url"];
-        let mut output : Vec<u8> = vec![];
+        config_file.flush()?;
+        let line = vec!["get-url"];
+        let mut output: Vec<u8> = vec![];
         let mut config = Config::load(&git_dir_path)?;
-        let result = git_remote(&mut config,  line, &mut output);
+        let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_err());
         std::fs::remove_dir_all(path)?;
         Ok(())
@@ -283,10 +289,11 @@ mod test {
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
-        config_file.flush()?;        let line = vec!["get-url","remote", "extra_arg"];
-        let mut output : Vec<u8> = vec![];
+        config_file.flush()?;
+        let line = vec!["get-url", "remote", "extra_arg"];
+        let mut output: Vec<u8> = vec![];
         let mut config = Config::load(&git_dir_path)?;
-        let result = git_remote(&mut config,  line, &mut output);
+        let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_err());
         std::fs::remove_dir_all(path)?;
         Ok(())
@@ -302,8 +309,9 @@ mod test {
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
-        config_file.flush()?;        let line = vec!["rename"];
-        let mut output : Vec<u8> = vec![];
+        config_file.flush()?;
+        let line = vec!["rename"];
+        let mut output: Vec<u8> = vec![];
         let mut config = Config::load(&git_dir_path)?;
         let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_err());
@@ -322,10 +330,10 @@ mod test {
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
         config_file.flush()?;
-        let line = vec!["rename","remote","new_name","extra_arg"];
-        let mut output : Vec<u8> = vec![];
+        let line = vec!["rename", "remote", "new_name", "extra_arg"];
+        let mut output: Vec<u8> = vec![];
         let mut config = Config::load(&git_dir_path)?;
-        let result = git_remote(&mut config,  line, &mut output);
+        let result = git_remote(&mut config, line, &mut output);
         assert!(result.is_err());
         std::fs::remove_dir_all(path)?;
         Ok(())
@@ -342,14 +350,14 @@ mod test {
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
         config_file.flush()?;
-        let mut config = Config::load(&git_dir_path)?; 
+        let mut config = Config::load(&git_dir_path)?;
 
-        let line = vec!["add","new_remote","url"];
-        let mut output : Vec<u8> = vec![];
-        let _result = git_remote(&mut config ,line,&mut output);
- 
-        let remove_line = vec!["remove","new_remote"];
-        let mut new_output : Vec<u8> = vec![];
+        let line = vec!["add", "new_remote", "url"];
+        let mut output: Vec<u8> = vec![];
+        let _result = git_remote(&mut config, line, &mut output);
+
+        let remove_line = vec!["remove", "new_remote"];
+        let mut new_output: Vec<u8> = vec![];
         let result = git_remote(&mut config, remove_line, &mut new_output);
         assert!(result.is_ok());
         std::fs::remove_dir_all(path)?;
@@ -367,20 +375,20 @@ mod test {
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
         config_file.flush()?;
-        let mut config = Config::load(&git_dir_path)?; 
+        let mut config = Config::load(&git_dir_path)?;
 
-        let line = vec!["add","new_remote","url"];
-        let mut output : Vec<u8> = vec![];
-        let _result = git_remote(&mut config ,line,&mut output);
- 
-        let remove_line = vec!["rename","new_remote", "remote"];
-        let mut new_output : Vec<u8> = vec![];
+        let line = vec!["add", "new_remote", "url"];
+        let mut output: Vec<u8> = vec![];
+        let _result = git_remote(&mut config, line, &mut output);
+
+        let remove_line = vec!["rename", "new_remote", "remote"];
+        let mut new_output: Vec<u8> = vec![];
         let result = git_remote(&mut config, remove_line, &mut new_output);
         assert!(result.is_ok());
         std::fs::remove_dir_all(path)?;
         Ok(())
     }
-    
+
     #[test]
     fn test_valid_set_url_command_returns_ok() -> io::Result<()> {
         let path = "tests/remote_fake_repo_15";
@@ -392,19 +400,17 @@ mod test {
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
         config_file.flush()?;
-        let mut config = Config::load(&git_dir_path)?; 
+        let mut config = Config::load(&git_dir_path)?;
 
-        let line = vec!["add","new_remote","url"];
-        let mut output : Vec<u8> = vec![];
-        let _result = git_remote(&mut config ,line,&mut output);
- 
-        let remove_line = vec!["set-url","new_remote", "new_url"];
-        let mut new_output : Vec<u8> = vec![];
+        let line = vec!["add", "new_remote", "url"];
+        let mut output: Vec<u8> = vec![];
+        let _result = git_remote(&mut config, line, &mut output);
+
+        let remove_line = vec!["set-url", "new_remote", "new_url"];
+        let mut new_output: Vec<u8> = vec![];
         let result = git_remote(&mut config, remove_line, &mut new_output);
         assert!(result.is_ok());
         std::fs::remove_dir_all(path)?;
         Ok(())
     }
-
 }
-

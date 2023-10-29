@@ -1,5 +1,3 @@
-use std::fs::File;
-
 #[derive(Default, PartialEq)]
 pub struct Remote {
     pub name: String,

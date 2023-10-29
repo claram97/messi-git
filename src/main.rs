@@ -1,13 +1,12 @@
 use std::{
     fs::File,
-    io::{self, BufRead, BufReader, Write},
+    io::{self, Write},
 };
 
 use messi::{
     config::Config,
-    parse_commands::{get_user_input, handle_git_command, parse_git_command},
-    remote_handler::Remote,
-    utils, remote::{git_remote, self},
+    remote::{self},
+    utils,
 };
 
 // fn main() {
@@ -27,7 +26,7 @@ use messi::{
 
 fn main() -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = match utils::find_git_directory(&mut current_dir, ".mgit") {
+    let _git_dir = match utils::find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir,
         None => {
             return Err(io::Error::new(
@@ -39,7 +38,7 @@ fn main() -> io::Result<()> {
 
     //Esto lo tiene que crear init
     let path = "/home/claram97/taller/23C2-messi/prueba/config";
-    let mut file = File::create(&path)?;
+    let mut file = File::create(path)?;
     file.write_all(b"[core]\n")?;
     file.write_all(b"    repositoryformatversion = 0\n")?;
     file.write_all(b"    filemode = true\n")?;
@@ -49,10 +48,10 @@ fn main() -> io::Result<()> {
 
     let mut config = Config::load("/home/claram97/taller/23C2-messi/prueba")?;
     println!("len: {}", config.remotes.len());
-    let line = vec!["add","new_remote","my_url"];
+    let line = vec!["add", "new_remote", "my_url"];
     remote::git_remote(&mut config, line, &mut io::stdout())?;
     println!("len: {}", config.remotes.len());
-    let line = vec!["get-url","new_remote"];
+    let line = vec!["get-url", "new_remote"];
     let result = remote::git_remote(&mut config, line, &mut io::stdout());
     if result.is_ok() {
         println!("Ok!");
@@ -62,6 +61,5 @@ fn main() -> io::Result<()> {
     // let _result = remote::git_remote(&mut config, line, &mut io::stdout())?;
     // println!("len: {}", config.remotes.len());
 
- 
     Ok(())
 }
