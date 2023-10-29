@@ -5,11 +5,10 @@ use gtk::CssProvider;
 use std::rc::Rc;
 use core::cell::RefCell;
 use gtk::Label;
-use crate::branch::list_branches_string;
 use crate::branch::list_branches;
 use crate::utils::find_git_directory;
-use crate::branch::git_branch2;
-use crate::branch::git_branch;
+use crate::branch::git_branch_for_ui;
+use crate::branch::create_new_branch;
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -60,15 +59,12 @@ fn add_to_open_windows(window: &gtk::Window) {
 }
 
 fn obtener_texto_desde_funcion() -> Result<String, std::io::Error> {
-    match git_branch2(None) {
+    match git_branch_for_ui(None) {
         Ok(result) => Ok(result),
         Err(err) => Err(err),
     }
 }
 
-
-
- 
 fn show_repository_window() {
     let builder = gtk::Builder::new();
     if let Some(new_window) = load_and_get_window(&builder,"src/gui/new_window2.ui", "window") {
@@ -130,8 +126,6 @@ fn show_repository_window() {
                     eprintln!("Error al obtener el texto: {}", err);
                 }
             }
-            //label.set_text(&texto_desde_funcion);
-            git_branch(None);
         });
 
         button8.connect_clicked(move |_| {

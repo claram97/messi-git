@@ -72,29 +72,6 @@ pub fn create_new_branch(
     file.write_all(content.as_bytes())?;
     Ok(())
 }
-pub fn list_branches_string(git_dir: &str) -> io::Result<Vec<String>> {
-    let heads_dir = (&git_dir).to_string() + "/refs/heads";
-    let entries = fs::read_dir(&heads_dir)?;
-    let current_branch = commit::get_branch_name(git_dir)?;
-    let mut branches_output = Vec::new();
-
-    if entries.count() > 0 {
-        let entries = fs::read_dir(&heads_dir)?;
-        for entry in entries {
-            let entry = entry?;
-            if current_branch.eq(&entry.file_name().to_string_lossy().to_string()) {
-                let branch_line = format!("*\x1B[32m {}\x1B[0m", entry.file_name().to_string_lossy());
-                branches_output.push(branch_line);
-            } else {
-                let branch_line = format!("  {}", entry.file_name().to_string_lossy());
-                branches_output.push(branch_line);
-            }
-        }
-    }
-
-    Ok(branches_output)
-}
-
 
 /// Lists all the branches in the repo. It writes the output in the given output.
 /// If the branch is the current one, it will be marked with a `*` and in green.
@@ -148,6 +125,18 @@ pub fn git_branch(name: Option<String>) -> io::Result<()> {
     }
     Ok(())
 }
+
+/// Removes ANSI escape codes from the input string.
+/// 
+/// This function takes an input string and removes ANSI escape codes used for color formatting.
+/// 
+/// # Arguments
+/// 
+/// * `input` - The input string with ANSI escape codes.
+/// 
+/// # Returns
+/// 
+/// A new string with the ANSI escape codes removed.
 fn remove_ansi_escape_codes(input: &str) -> String {
     let mut output = String::new();
     let mut in_escape = false;
@@ -167,41 +156,18 @@ fn remove_ansi_escape_codes(input: &str) -> String {
     output
 }
 
-// pub fn git_branch2(name: Option<String>) -> io::Result<String> {
-//     let mut current_dir = std::env::current_dir()?;
-//     let git_dir = match utils::find_git_directory(&mut current_dir, ".mgit") {
-//         Some(git_dir) => git_dir,
-//         None => {
-//             return Err(io::Error::new(
-//                 io::ErrorKind::NotFound,
-//                 "Git directory not found\n",
-//             ));
-//         }
-//     };
-
-//     if let Some(branch_name) = name {
-//         create_new_branch(&git_dir, &branch_name, &mut io::stdout());
-//         Ok("Branch created successfully".to_string())
-//     } else {
-//         let mut output: Vec<u8> = vec![];
-//         list_branches(&git_dir, &mut output)?;
-
-//         // Filtrar códigos de escape ANSI y convertir la salida en una cadena
-//         let output_string = remove_ansi_escape_codes(&String::from_utf8(output));
-//         // Convierte los bytes en una cadena y la devuelve
-//         if let Ok(output_string) = String::from_utf8(output) {
-//             return Ok(output_string);
-//         } else {
-//             Err(io::Error::new(
-//                 io::ErrorKind::InvalidData,
-//                 "Failed to convert branch list to string\n",
-//             ));
-//         }
-//         Ok(output_string)
-//     }
-// }
-
-pub fn git_branch2(name: Option<String>) -> io::Result<String> {
+/// Retrieves a Git branch for a user interface (UI).
+/// 
+/// This function provides the Git branch information in a format suitable for a user interface.
+/// 
+/// # Arguments
+/// 
+/// * `name` - An optional branch name to create. If `None`, retrieves the list of branches.
+/// 
+/// # Returns
+/// 
+/// An `io::Result` containing the branch information as a `String`.
+pub fn git_branch_for_ui(name: Option<String>) -> io::Result<String> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match utils::find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir,
@@ -221,17 +187,9 @@ pub fn git_branch2(name: Option<String>) -> io::Result<String> {
         list_branches(&git_dir, &mut output)?;
         let output_string = remove_ansi_escape_codes(&String::from_utf8(output).unwrap_or_else(|e| {
             eprintln!("Error converting bytes to string: {}", e);
-            String::new() // O proporcionar otra cadena por defecto si lo prefieres
+            String::new() 
         }));
-                // Convierte los bytes en una cadena y la devuelve
-       // if let Ok(output_string) = String::from_utf8(output) {
-            Ok(output_string)
-        // } else {
-        //     Err(io::Error::new(
-        //         io::ErrorKind::InvalidData,
-        //         "Failed to convert branch list to string\n",
-        //     ))
-        // }
+        Ok(output_string)
     }
 }
 
@@ -251,6 +209,31 @@ mod tests {
             }
         }
         Ok(())
+    }
+    
+    #[test]
+    fn test_remove_ansi_escape_codes() {
+        let input = "\x1B[32mThis is green text\x1B[0m";
+        let expected_output = "This is green text";
+        let output = remove_ansi_escape_codes(input);
+        assert_eq!(output, expected_output);
+    }
+
+    #[test]
+    fn test_remove_ansi_escape_codes_no_escape_codes() {
+        let input = "This is plain text";
+        let expected_output = "This is plain text";
+        let output = remove_ansi_escape_codes(input);
+        assert_eq!(output, expected_output);
+    }
+
+    #[test]
+    fn test_git_branch_for_ui_create_branch() {
+        let branch_name = "new_branch".to_string();
+        let output = git_branch_for_ui(Some(branch_name));
+        assert!(output.is_ok());
+        let expected_output = "Branch created successfully".to_string();
+        assert_eq!(output.unwrap(), expected_output);
     }
 
     #[test]
