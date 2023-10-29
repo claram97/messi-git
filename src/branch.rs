@@ -6,6 +6,7 @@ use std::{
 
 use crate::{commit, utils};
 
+
 /// Returns the path inside the HEAD file.
 /// The one that contains the path to the current branch.
 /// If the file is empty, it returns an error.
@@ -147,6 +148,59 @@ pub fn git_branch(name: Option<String>) -> io::Result<()> {
     }
     Ok(())
 }
+fn remove_ansi_escape_codes(input: &str) -> String {
+    let mut output = String::new();
+    let mut in_escape = false;
+
+    for c in input.chars() {
+        if in_escape {
+            if c == 'm' {
+                in_escape = false;
+            }
+        } else if c == '\x1B' {
+            in_escape = true;
+        } else {
+            output.push(c);
+        }
+    }
+
+    output
+}
+
+// pub fn git_branch2(name: Option<String>) -> io::Result<String> {
+//     let mut current_dir = std::env::current_dir()?;
+//     let git_dir = match utils::find_git_directory(&mut current_dir, ".mgit") {
+//         Some(git_dir) => git_dir,
+//         None => {
+//             return Err(io::Error::new(
+//                 io::ErrorKind::NotFound,
+//                 "Git directory not found\n",
+//             ));
+//         }
+//     };
+
+//     if let Some(branch_name) = name {
+//         create_new_branch(&git_dir, &branch_name, &mut io::stdout());
+//         Ok("Branch created successfully".to_string())
+//     } else {
+//         let mut output: Vec<u8> = vec![];
+//         list_branches(&git_dir, &mut output)?;
+
+//         // Filtrar códigos de escape ANSI y convertir la salida en una cadena
+//         let output_string = remove_ansi_escape_codes(&String::from_utf8(output));
+//         // Convierte los bytes en una cadena y la devuelve
+//         if let Ok(output_string) = String::from_utf8(output) {
+//             return Ok(output_string);
+//         } else {
+//             Err(io::Error::new(
+//                 io::ErrorKind::InvalidData,
+//                 "Failed to convert branch list to string\n",
+//             ));
+//         }
+//         Ok(output_string)
+//     }
+// }
+
 pub fn git_branch2(name: Option<String>) -> io::Result<String> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match utils::find_git_directory(&mut current_dir, ".mgit") {
@@ -165,16 +219,19 @@ pub fn git_branch2(name: Option<String>) -> io::Result<String> {
     } else {
         let mut output: Vec<u8> = vec![];
         list_branches(&git_dir, &mut output)?;
-        
-        // Convierte los bytes en una cadena y la devuelve
-        if let Ok(output_string) = String::from_utf8(output) {
+        let output_string = remove_ansi_escape_codes(&String::from_utf8(output).unwrap_or_else(|e| {
+            eprintln!("Error converting bytes to string: {}", e);
+            String::new() // O proporcionar otra cadena por defecto si lo prefieres
+        }));
+                // Convierte los bytes en una cadena y la devuelve
+       // if let Ok(output_string) = String::from_utf8(output) {
             Ok(output_string)
-        } else {
-            Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "Failed to convert branch list to string\n",
-            ))
-        }
+        // } else {
+        //     Err(io::Error::new(
+        //         io::ErrorKind::InvalidData,
+        //         "Failed to convert branch list to string\n",
+        //     ))
+        // }
     }
 }
 
