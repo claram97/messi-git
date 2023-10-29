@@ -9,7 +9,7 @@ use crate::branch::list_branches;
 use crate::utils::find_git_directory;
 use crate::branch::git_branch_for_ui;
 use crate::branch::create_new_branch;
-use crate::gui::style::apply_button_style;
+use crate::gui::style::{apply_button_style, get_button};
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -291,13 +291,6 @@ fn apply_window_style(window: &gtk::Window) {
     style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
-fn get_button(builder: &Builder, button_id: &str, label_text: &str) -> gtk::Button {
-    let button: gtk::Button = builder.get_object(button_id).expect(&format!("Failed to get the button {}", label_text));
-    let label = button.get_child().unwrap().downcast::<gtk::Label>().unwrap();
-    let pango_desc = pango::FontDescription::from_string("Sans 20");
-    label.override_font(&pango_desc);
-    button.show();
-    button
-}
+
 
 

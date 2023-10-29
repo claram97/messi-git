@@ -1,6 +1,44 @@
 use gtk::CssProviderExt;
 use gtk::WidgetExt;
 use gtk::StyleContextExt;
+use gtk::BinExt;
+use std::thread::Builder as OtherBuilder;
+use gtk::prelude::*;
+use gtk::Builder;
+
+
+/// Retrieves a GTK button from a `gtk::Builder` by its ID and applies a specific style.
+///
+/// This function looks for a button in the provided `builder` using the given `button_id`.
+/// If the button is found, it retrieves the child widget and attempts to downcast it to a
+/// `gtk::Label`. If successful, it applies a custom font style and shows the button.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a `gtk::Builder` containing the button.
+/// - `button_id`: The ID of the button to retrieve.
+/// - `label_text`: The label text for the button.
+///
+/// # Returns
+///
+/// A `gtk::Button` widget if it was successfully retrieved, otherwise, it returns an
+/// empty `gtk::Button`.
+///
+pub fn get_button(builder: &Builder, button_id: &str, label_text: &str) -> gtk::Button {
+    if let Some(button) = builder.get_object::<gtk::Button>(button_id) {
+        if let Some(child) = button.get_child() {
+            if let Ok(label) = child.downcast::<gtk::Label>() {
+                let pango_desc = pango::FontDescription::from_string("Sans 20");
+                label.override_font(&pango_desc);
+                button.show();
+            }
+        }
+        return button;
+    }
+    
+    eprintln!("Failed to get the button {}", label_text);
+    gtk::Button::new()
+}
 
 /// Applies a custom button style using CSS to the provided `gtk::Button`.
 ///
