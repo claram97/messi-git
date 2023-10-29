@@ -118,11 +118,9 @@ fn show_repository_window() {
             let texto_desde_funcion = obtener_texto_desde_funcion();
             match texto_desde_funcion {
                 Ok(texto) => {
-                    // La función fue exitosa, `texto` contiene la cadena
                     label.set_text(&texto);
                 }
                 Err(err) => {
-                    // Hubo un error, puedes manejarlo aquí, por ejemplo, mostrar un mensaje de error.
                     eprintln!("Error al obtener el texto: {}", err);
                 }
             }
@@ -185,7 +183,6 @@ fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) {
         }
     });
 }
-
 
 fn configure_init_window(new_window_init: &gtk::Window, builder: &gtk::Builder) {
     add_to_open_windows(new_window_init);

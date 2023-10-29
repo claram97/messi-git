@@ -131,6 +131,10 @@
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="label" translatable="yes">label</property>
+            <attributes>
+              <attribute name="font-desc" value="Liberation Mono Bold 30"/>
+              <attribute name="foreground" value="#1a1a5f5fb4b4"/>
+            </attributes>
           </object>
           <packing>
             <property name="x">150</property>
