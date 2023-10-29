@@ -1,7 +1,5 @@
 use std::fs;
 
-const MGIT_IGNORE: &str = ".mgitignore";
-
 /// This is a helper structure that will help some git commands
 /// to know if a path has to be ignored or not according to
 /// the content of git ignore file.
@@ -13,8 +11,8 @@ pub struct Ignorer {
 impl Ignorer {
     /// This method loads the git ignore file and returns an
     /// Ignorer ready to use
-    pub fn load() -> Self {
-        match fs::read_to_string(MGIT_IGNORE) {
+    pub fn load(gitignore_path: &str) -> Self {
+        match fs::read_to_string(gitignore_path) {
             Ok(file) => Self {
                 paths: file.lines().map(str::to_string).collect(),
             },
@@ -46,14 +44,18 @@ pub fn is_subpath(subpath: &str, path: &str) -> bool {
     let path_child: Vec<&str> = get_subpaths(subpath);
 
     for i in 0..path_parent.len() {
-        if path_parent[i] != path_child[i] {
-            return false;
+        match (path_parent.get(i), path_child.get(i)) {
+            (Some(subpath_parent), Some(subpath_child)) => {
+                if subpath_parent != subpath_child {
+                    return false;
+                }
+            }
+            _ => return false,
         }
     }
     true
 }
 
-// hacer tests de integracion con file real
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -81,5 +83,22 @@ mod tests {
     #[test]
     fn test_5() {
         assert!(is_subpath("src/data.txt", "src/data.txt"));
+    }
+
+    #[test]
+    fn test_6() {
+        assert!(!is_subpath("src/data", "src/data/data.txt"));
+    }
+
+    #[test]
+    fn test_7() {
+        assert!(is_subpath("src/data/data.txt", "src/data"));
+    }
+
+    #[test]
+    fn test_8() {
+        let mut ignorer = Ignorer::default();
+        ignorer.paths.push("init.rs".to_string());
+        assert!(!ignorer.ignore("src/init.rs"));
     }
 }

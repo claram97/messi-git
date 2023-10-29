@@ -5,6 +5,11 @@ use gtk::CssProvider;
 use std::rc::Rc;
 use core::cell::RefCell;
 use gtk::Label;
+use crate::branch::list_branches_string;
+use crate::branch::list_branches;
+use crate::utils::find_git_directory;
+use crate::branch::git_branch2;
+use crate::branch::git_branch;
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -53,10 +58,15 @@ fn add_to_open_windows(window: &gtk::Window) {
         }
     }
 }
-fn obtener_texto_desde_funcion() -> String {
-    // Aquí puedes colocar el código de tu función para obtener el texto
-    "Hola, mundo".to_string() // Ejemplo: Retorna un texto fijo
+
+fn obtener_texto_desde_funcion() -> Result<String, std::io::Error> {
+    match git_branch2(None) {
+        Ok(result) => Ok(result),
+        Err(err) => Err(err),
+    }
 }
+
+
 
  
 fn show_repository_window() {
@@ -110,7 +120,18 @@ fn show_repository_window() {
         button7.connect_clicked(move |_| {
             let label: Label = builder.get_object("label").unwrap();
             let texto_desde_funcion = obtener_texto_desde_funcion();
-            label.set_text(&texto_desde_funcion);
+            match texto_desde_funcion {
+                Ok(texto) => {
+                    // La función fue exitosa, `texto` contiene la cadena
+                    label.set_text(&texto);
+                }
+                Err(err) => {
+                    // Hubo un error, puedes manejarlo aquí, por ejemplo, mostrar un mensaje de error.
+                    eprintln!("Error al obtener el texto: {}", err);
+                }
+            }
+            //label.set_text(&texto_desde_funcion);
+            git_branch(None);
         });
 
         button8.connect_clicked(move |_| {

@@ -11,4 +11,4 @@ flate2 = "1.0"
 rand = "0.8"
 gtk = "0.9.0"
 pango = "0.9"
-
+chrono = "0.4.31"
