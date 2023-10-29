@@ -1,9 +1,3 @@
-//git remote add origin https://ejemplo.com/repo.git
-//git remote remove origin
-//git remote set-url origin https://nueva-url.com/repo.git
-//git remote get-url origin
-//git remote rename nombre-viejo nombre-nuevo
-
 use std::io::{self, Write};
 
 use crate::config::Config;
@@ -26,73 +20,190 @@ use crate::config::Config;
 /// - `output`: An object implementing the `Write` trait where the results or errors will be written.
 ///
 pub fn git_remote(config: &mut Config, line: Vec<&str>, output: &mut impl Write) -> io::Result<()> {
-    if (line.len() != 2) && (line.len() != 3) {
-        let error_message = "Invalid arguments.\n".to_string();
-        output.write_all(error_message.as_bytes())?;
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
+    if line.is_empty() || line.len() > 3 {
+        return report_error(output, "Invalid arguments.");
     }
+
     match line[0] {
-        "add" => {
-            if line.len() != 3 {
-                let error_message = "Invalid arguments.\n".to_string();
-                output.write_all(error_message.as_bytes())?;
-                return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
-            }
-            let fetch = "fetch".to_string(); //Esto hay que ver bien de dónde sale para armarlo como coresponde
-            config.add_remote(line[1].to_string(), line[2].to_string(), fetch, output)?;
-        }
-        "remove" => {
-            if line.len() != 2 {
-                let error_message = "Invalid arguments.\n".to_string();
-                output.write_all(error_message.as_bytes())?;
-                return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
-            }
-            config.remove_remote(line[1], output)?;
-        }
-        "set-url" => {
-            if line.len() != 3 {
-                let error_message = "Invalid arguments.\n".to_string();
-                output.write_all(error_message.as_bytes())?;
-                return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
-            }
-            config.set_url(line[1], line[2], output)?;
-        }
-        "get-url" => {
-            if line.len() != 2 {
-                let error_message = "Invalid arguments.\n".to_string();
-                output.write_all(error_message.as_bytes())?;
-                return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
-            }
-            config.get_url(line[1], output)?;
-        }
-        "rename" => {
-            if line.len() != 3 {
-                let error_message = "Invalid arguments.\n".to_string();
-                output.write_all(error_message.as_bytes())?;
-                return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
-            }
-            config.change_remote_name(line[1], line[2], &mut io::stdout())?;
-        }
-        _ => {
-            let error_message = format!("error: Unknown subcommand {}\n", line[0]);
-            output.write_all(error_message.as_bytes())?;
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
-        }
-    };
-    Ok(())
+        "add" => handle_add_command(config, &line, output),
+        "remove" => handle_remove_command(config, &line, output),
+        "set-url" => handle_set_url_command(config, &line, output),
+        "get-url" => handle_get_url_command(config, &line, output),
+        "rename" => handle_rename_command(config, &line, output),
+        _ => report_error(output, &format!("error: Unknown subcommand {}\n", line[0])),
+    }
+}
+
+/// Writes an error message to the specified output and returns an error.
+///
+/// This function writes the provided error message to the output, typically a writable stream,
+/// and creates an error with the same message. It is used to report errors in the `git_remote`
+/// function and its subcommand handlers.
+///
+/// # Arguments
+///
+/// - `output`: A mutable reference to an object implementing the `Write` trait, where the error message
+///   will be written.
+/// - `error_message`: A string representing the error message to report.
+///
+/// # Returns
+///
+/// Returns an error of type `io::Error` with the specified error message.
+///
+fn report_error(output: &mut impl Write, error_message: &str) -> io::Result<()> {
+    output.write_all(error_message.as_bytes())?;
+    Err(io::Error::new(io::ErrorKind::InvalidInput, error_message))
+}
+
+/// Handles the "add" subcommand for Git remotes.
+///
+/// This function processes the "add" subcommand for Git remotes, validates the arguments, and
+/// adds a new remote to the Git configuration if the arguments are valid.
+///
+/// # Arguments
+///
+/// - `config`: A mutable reference to the Git configuration.
+/// - `line`: A reference to a vector of string slices representing the subcommand and its arguments.
+/// - `output`: A mutable reference to an object implementing the `Write` trait, where error messages
+///   or output will be written.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the "add" subcommand is successfully executed. If invalid arguments are provided,
+/// it returns an error with an error message.
+///
+fn handle_add_command(
+    config: &mut Config,
+    line: &Vec<&str>,
+    output: &mut impl Write,
+) -> io::Result<()> {
+    if line.len() != 3 {
+        return report_error(output, "Invalid arguments.");
+    }
+    let fetch = format!("+refs/heads/*:refs/remotes/{}/name/*", line[1]);
+    config.add_remote(line[1].to_string(), line[2].to_string(), fetch, output)
+}
+
+/// Handles the "remove" subcommand for Git remotes.
+///
+/// This function processes the "remove" subcommand for Git remotes, validates the arguments, and
+/// removes a remote from the Git configuration if the arguments are valid.
+///
+/// # Arguments
+///
+/// - `config`: A mutable reference to the Git configuration.
+/// - `line`: A reference to a vector of string slices representing the subcommand and its arguments.
+/// - `output`: A mutable reference to an object implementing the `Write` trait, where error messages
+///   or output will be written.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the "remove" subcommand is successfully executed. If invalid arguments are provided,
+/// it returns an error with an error message.
+///
+fn handle_remove_command(
+    config: &mut Config,
+    line: &Vec<&str>,
+    output: &mut impl Write,
+) -> io::Result<()> {
+    if line.len() != 2 {
+        return report_error(output, "Invalid arguments.");
+    }
+    config.remove_remote(line[1], output)
+}
+
+/// Handles the "set-url" subcommand for Git remotes.
+///
+/// This function processes the "set-url" subcommand for Git remotes, validates the arguments, and
+/// sets a new URL for an existing remote in the Git configuration if the arguments are valid.
+///
+/// # Arguments
+///
+/// - `config`: A mutable reference to the Git configuration.
+/// - `line`: A reference to a vector of string slices representing the subcommand and its arguments.
+/// - `output`: A mutable reference to an object implementing the `Write` trait, where error messages
+///   or output will be written.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the "set-url" subcommand is successfully executed. If invalid arguments are provided,
+/// it returns an error with an error message.
+///
+fn handle_set_url_command(
+    config: &mut Config,
+    line: &Vec<&str>,
+    output: &mut impl Write,
+) -> io::Result<()> {
+    if line.len() != 3 {
+        return report_error(output, "Invalid arguments.");
+    }
+    config.set_url(line[1], line[2], output)
+}
+
+/// Handles the "get-url" subcommand for Git remotes.
+///
+/// This function processes the "get-url" subcommand for Git remotes, validates the arguments, and
+/// retrieves and writes the URL of an existing remote to the specified output.
+///
+/// # Arguments
+///
+/// - `config`: A mutable reference to the Git configuration.
+/// - `line`: A reference to a vector of string slices representing the subcommand and its arguments.
+/// - `output`: A mutable reference to an object implementing the `Write` trait, where the remote's URL
+///   or error message will be written.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the "get-url" subcommand is successfully executed. If invalid arguments are provided
+/// or the specified remote doesn't exist, it returns an error with an error message.
+///
+fn handle_get_url_command(
+    config: &mut Config,
+    line: &Vec<&str>,
+    output: &mut impl Write,
+) -> io::Result<()> {
+    if line.len() != 2 {
+        return report_error(output, "Invalid arguments.");
+    }
+    config.get_url(line[1], output)
+}
+
+/// Handles the "rename" subcommand for Git remotes.
+///
+/// This function processes the "rename" subcommand for Git remotes, validates the arguments, and
+/// renames an existing remote in the Git configuration if the arguments are valid.
+///
+/// # Arguments
+///
+/// - `config`: A mutable reference to the Git configuration.
+/// - `line`: A reference to a vector of string slices representing the subcommand and its arguments.
+/// - `output`: A mutable reference to an object implementing the `Write` trait, where error messages
+///   or output will be written.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the "rename" subcommand is successfully executed. If invalid arguments are provided,
+/// a remote with the new name already exists, or the specified remote doesn't exist, it returns an error
+/// with an error message.
+///
+fn handle_rename_command(
+    config: &mut Config,
+    line: &Vec<&str>,
+    output: &mut impl Write,
+) -> io::Result<()> {
+    if line.len() != 3 {
+        return report_error(output, "Invalid arguments.");
+    }
+    config.change_remote_name(line[1], line[2], output)
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
 
-    use std::{
-        fs::File,
-        io::{self, Read},
-        path::Path,
-    };
+    use std::{fs::File, path::Path};
 
-    use crate::{config, init};
+    use crate::init;
 
     fn create_if_not_exists(path: &str, is_dir: bool) -> io::Result<()> {
         if !Path::new(path).exists() {

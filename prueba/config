@@ -5,4 +5,4 @@
     logallrefupdates = true
 [remote "new_remote"]
 	url = my_url
-	fetch = fetch
+	fetch = +refs/heads/*:refs/remotes/new_remote/name/*
