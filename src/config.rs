@@ -7,12 +7,11 @@ use std::{
 #[derive(Default)]
 pub struct Config {
     config_file_path: String,
-    remotes: Vec<Remote>,
+    pub remotes: Vec<Remote>,
     branches: Vec<Branch>,
 }
 
 impl Config {
-    // Constructor
     fn new(config_file_path: String) -> Config {
         let config = Config {
             config_file_path,
@@ -22,6 +21,22 @@ impl Config {
         config
     }
 
+    /// Loads a Git configuration from the specified directory.
+    ///
+    /// This function reads and parses the Git configuration file from the provided Git directory path.
+    /// The configuration is used to populate a `Config` struct, including remote repositories and branch information.
+    /// It needs to have, at least, basic information provided when git init is run. If it's empty, it will behave weirdly.
+    ///
+    /// # Arguments
+    ///
+    /// - `git_dir`: A string representing the path to the Git directory where the configuration is located.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing a `Config` struct if the configuration is successfully loaded, or an
+    /// `std::io::Error` in case of any errors during the loading process.
+    ///
+    /* 
     pub fn load(git_dir: &str) -> io::Result<Config> {
         let file_name = format!("{}/config", git_dir);
         let mut config = Config::new((&file_name).to_string());
@@ -41,7 +56,6 @@ impl Config {
                         let url = (&splitted_url[2]).to_string();
                         let splitted_fetch: Vec<&str> = (&buffer[2]).split(' ').collect();
                         let fetch = (&splitted_fetch[2]).to_string();
-                        //println!("name {} url {} fetch {}",name,url,fetch);
                         let remote = Remote::new(name, url, fetch);
                         config.remotes.push(remote);
                     } else if line.starts_with("[branch") {
@@ -51,7 +65,6 @@ impl Config {
                         let remote = (&splitted_remote[2]).to_string();
                         let splitted_merge: Vec<&str> = (&buffer[2]).split(' ').collect();
                         let merge = (&splitted_merge[2]).to_string();
-                        //println!("name {} remote {} merge {}",name,remote,merge);
                         let branch = Branch::new(name, remote, merge);
                         config.branches.push(branch);
                     }
@@ -74,8 +87,166 @@ impl Config {
             }
         }
         Ok(config)
+    }*/
+
+    /// Loads a Git configuration from the specified directory.
+    ///
+    /// This function reads and parses the Git configuration file from the provided Git directory path.
+    /// The configuration is used to populate a `Config` struct, including remote repositories and branch information.
+    /// It needs to have, at least, basic information provided when git init is run. If it's empty, it will behave weirdly.
+    /// 
+    /// # Arguments
+    ///
+    /// - `git_dir`: A string representing the path to the Git directory where the configuration is located.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing a `Config` struct if the configuration is successfully loaded, or an
+    /// `std::io::Error` in case of any errors during the loading process.
+    ///
+    pub fn load(git_dir: &str) -> io::Result<Config> {
+        let file_name = format!("{}/config", git_dir);
+        let mut config = Config::new(file_name.clone());
+        let file = File::open(&file_name)?;
+    
+        let relevant_lines = Self::extract_relevant_lines(file)?;
+    
+        Self::process_lines(&mut config, relevant_lines);
+    
+        Ok(config)
+    }
+    
+    /// Extracts relevant lines from a Git configuration file.
+    ///
+    /// This function reads a Git configuration file and extracts relevant lines, skipping the
+    /// initial lines that are not needed for configuration parsing. The relevant lines contain
+    /// information about remote repositories and branches.
+    ///
+    /// # Arguments
+    ///
+    /// - `file`: A file object representing the opened Git configuration file.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing a vector of strings representing the relevant lines from
+    /// the configuration file if the extraction is successful, or an `std::io::Error` in case of
+    /// any errors during the extraction process.
+    ///
+    fn extract_relevant_lines(file: File) -> io::Result<Vec<String>> {
+        let reader = BufReader::new(file);
+        let mut lines = reader.lines().skip(5);
+    
+        let mut relevant_lines: Vec<String> = Vec::new();
+        while let Some(Ok(line)) = lines.next() {
+            relevant_lines.push(line);
+        }
+    
+        Ok(relevant_lines)
+    }
+    
+    /// Processes relevant lines from a Git configuration file and populates a `Config` struct.
+    ///
+    /// This function takes a vector of relevant lines from a Git configuration file and processes
+    /// them to populate the provided `Config` struct with remote repositories and branch information.
+    ///
+    /// # Arguments
+    ///
+    /// - `config`: A mutable reference to the `Config` struct where the parsed data will be stored.
+    /// - `lines`: A vector of strings containing the relevant lines from the configuration file.
+    ///
+    fn process_lines(config: &mut Config, lines: Vec<String>) {
+        let mut buffer: Vec<String> = Vec::new();
+        let mut count = 0;
+    
+        for line in lines {
+            buffer.push(line);
+            count += 1;
+    
+            if count == 3 {
+                if let Some(remote) = Self::parse_remote(&buffer) {
+                    config.remotes.push(remote);
+                } else if let Some(branch) = Self::parse_branch(&buffer) {
+                    config.branches.push(branch);
+                }
+    
+                buffer.clear();
+                count = 0;
+            }
+        }
     }
 
+    /// Parses relevant lines to extract information about a remote repository.
+    ///
+    /// This function takes a vector of relevant lines and attempts to extract information about
+    /// a remote repository. If the lines correspond to a remote repository, it creates a `Remote`
+    /// object and returns it as an `Option`. If the lines do not match a remote repository format,
+    /// it returns `None`.
+    ///
+    /// # Arguments
+    ///
+    /// - `buffer`: A reference to a vector of strings containing the relevant lines.
+    ///
+    /// # Returns
+    ///
+    /// Returns an `Option` containing a `Remote` object if the lines match a remote repository format,
+    /// or `None` if they do not.
+    ///
+    fn parse_remote(buffer: &Vec<String>) -> Option<Remote> {
+        if buffer[0].starts_with("[remote") {
+            let name = buffer[0].split('"').nth(1)?.to_string();
+            let url = buffer[1].split(' ').nth(2)?.to_string();
+            let fetch = buffer[2].split(' ').nth(2)?.to_string();
+            Some(Remote::new(name, url, fetch))
+        } else {
+            None
+        }
+    }
+    
+    /// Parses relevant lines to extract information about a Git branch.
+    ///
+    /// This function takes a vector of relevant lines and attempts to extract information about
+    /// a Git branch. If the lines correspond to a branch, it creates a `Branch` object and returns
+    /// it as an `Option`. If the lines do not match a branch format, it returns `None`.
+    ///
+    /// # Arguments
+    ///
+    /// - `buffer`: A reference to a vector of strings containing the relevant lines.
+    ///
+    /// # Returns
+    ///
+    /// Returns an `Option` containing a `Branch` object if the lines match a branch format,
+    /// or `None` if they do not.
+    ///
+    fn parse_branch(buffer: &Vec<String>) -> Option<Branch> {
+        if buffer[0].starts_with("[branch") {
+            let name = buffer[0].split('"').nth(1)?.to_string();
+            let remote = buffer[1].split(' ').nth(2)?.to_string();
+            let merge = buffer[2].split(' ').nth(2)?.to_string();
+            Some(Branch::new(name, remote, merge))
+        } else {
+            None
+        }
+    }
+
+    /// Adds a new remote repository to the Git configuration.
+    ///
+    /// This function adds a new remote repository to the Git configuration, updating both the in-memory
+    /// `Config` struct and the actual configuration file on disk. If a remote with the same name already
+    /// exists, it returns an error and does not modify the configuration.
+    ///
+    /// # Arguments
+    ///
+    /// - `name`: A string representing the name of the remote repository to add.
+    /// - `url`: A string representing the URL of the remote repository.
+    /// - `fetch`: A string representing the fetch URL for the remote repository.
+    /// - `output`: A mutable reference to an object implementing the `Write` trait, where error messages
+    ///    or output will be written.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the remote repository is successfully added to the configuration. If a remote
+    /// with the same name already exists, it returns an error of type `io::ErrorKind::AlreadyExists`.
+    ///
     pub fn add_remote(
         &mut self,
         name: String,
@@ -108,7 +279,26 @@ impl Config {
         file.flush()?;
         Ok(())
     }
-
+ 
+    /// Adds a new branch to the Git configuration.
+    ///
+    /// This function adds a new branch to the Git configuration, updating both the in-memory
+    /// `Config` struct and the actual configuration file on disk. If a branch with the same name
+    /// already exists, it returns an error and does not modify the configuration.
+    ///
+    /// # Arguments
+    ///
+    /// - `name`: A string representing the name of the branch to add.
+    /// - `remote`: A string representing the remote associated with the branch.
+    /// - `merge`: A string representing the merge reference for the branch.
+    /// - `output`: A mutable reference to an object implementing the `Write` trait, where error messages
+    ///    or output will be written.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the branch is successfully added to the configuration. If a branch with the
+    /// same name already exists, it returns an error of type `io::ErrorKind::AlreadyExists`.
+    ///
     pub fn add_branch(
         &mut self,
         name: String,
@@ -142,6 +332,23 @@ impl Config {
         Ok(())
     }
 
+
+    /// Removes a section (remote or branch) from the Git configuration file.
+    ///
+    /// This function removes a section, either a remote or branch, from the Git configuration file.
+    /// It opens the configuration file, skips the lines of the specified section to be removed, and
+    /// then writes the rest of the file to a temporary file. Afterward, it renames the temporary file
+    /// to replace the original configuration file.
+    ///
+    /// # Arguments
+    ///
+    /// - `name`: A string representing the name of the section (remote or branch) to remove.
+    /// - `type_`: A string specifying the type of the section to remove (e.g., "remote" or "branch").
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the specified section is successfully removed from the configuration file.
+    ///
     pub fn remove_from_file(&mut self, name: &str, type_: &str) -> io::Result<()> {
         let input_file = File::open(&self.config_file_path)?;
         let reader = BufReader::new(input_file);
@@ -168,6 +375,23 @@ impl Config {
         Ok(())
     }
 
+    /// Removes a remote repository from the Git configuration.
+    ///
+    /// This function removes a remote repository with the specified name from both the in-memory
+    /// `Config` struct and the actual configuration file on disk. If a remote with the given name
+    /// does not exist, it returns an error.
+    ///
+    /// # Arguments
+    ///
+    /// - `name`: A string representing the name of the remote repository to remove.
+    /// - `output`: A mutable reference to an object implementing the `Write` trait, where error messages
+    ///    or output will be written.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the remote repository is successfully removed from the configuration. If a
+    /// remote with the specified name does not exist, it returns an error of type `io::ErrorKind::InvalidInput`.
+    ///
     pub fn remove_remote(&mut self, name: &str, output: &mut impl Write) -> io::Result<()> {
         if let Some(index) = self.remotes.iter().position(|r| r.name == name) {
             self.remotes.remove(index);
@@ -180,6 +404,23 @@ impl Config {
         Ok(())
     }
 
+    /// Removes a branch from the Git configuration.
+    ///
+    /// This function removes a branch with the specified name from both the in-memory `Config` struct
+    /// and the actual configuration file on disk. If a branch with the given name does not exist, it
+    /// returns an error.
+    ///
+    /// # Arguments
+    ///
+    /// - `name`: A string representing the name of the branch to remove.
+    /// - `output`: A mutable reference to an object implementing the `Write` trait, where error messages
+    ///    or output will be written.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the branch is successfully removed from the configuration. If a branch with
+    /// the specified name does not exist, it returns an error of type `io::ErrorKind::InvalidInput`.
+    ///
     pub fn remove_branch(&mut self, name: &str, output: &mut impl Write) -> io::Result<()> {
         if let Some(index) = self.branches.iter().position(|b| b.name == name) {
             self.branches.remove(index);
@@ -191,7 +432,23 @@ impl Config {
         }
         Ok(())
     }
-
+    
+    /// Updates a remote repository's configuration in the Git configuration file.
+    ///
+    /// This function updates the configuration of a remote repository in the Git configuration file,
+    /// both in-memory and on disk. It allows for changing the name, URL, or fetch configuration of
+    /// the remote repository.
+    ///
+    /// # Arguments
+    ///
+    /// - `remote`: A reference to a `Remote` object containing the updated configuration for the remote repository.
+    /// - `remote_initial_name`: An optional string representing the initial name of the remote repository. If provided,
+    ///   the function will use this name to locate and update the remote section in the configuration file.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the remote repository's configuration is successfully updated in the configuration file.
+    ///
     fn change_remote_from_file(
         &self,
         remote: &Remote,
@@ -238,10 +495,27 @@ impl Config {
         Ok(())
     }
 
+    /// Retrieves and writes the URL of a remote repository to the specified output.
+    ///
+    /// This function retrieves the URL of a remote repository with the specified name and writes it
+    /// to the provided output, typically a writable stream. If no remote with the given name is found,
+    /// it returns an error.
+    ///
+    /// # Arguments
+    ///
+    /// - `remote_name`: A string representing the name of the remote repository for which to retrieve the URL.
+    /// - `output`: A mutable reference to an object implementing the `Write` trait, where the remote URL will be written.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the URL of the remote repository is successfully retrieved and written to the output.
+    /// If no remote with the specified name is found, it returns an error of type `io::ErrorKind::InvalidInput`.
+    ///
     pub fn get_url(&self, remote_name: &str, output: &mut impl Write) -> io::Result<()> {
         if let Some(index) = self.remotes.iter().position(|r| r.name == remote_name) {
             if let Some(remote) = self.remotes.get(index) {
                 output.write_all(remote.url.as_bytes())?;
+                return Ok(())
             } else {
                 let error_message = format!("error: No such remote '{}'", remote_name);
                 output.write_all(error_message.as_bytes())?;
@@ -252,9 +526,26 @@ impl Config {
             output.write_all(error_message.as_bytes())?;
             return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
         }
-        Ok(())
     }
 
+    /// Sets the URL of a remote repository in the Git configuration.
+    ///
+    /// This function updates the URL of a remote repository with the specified name in both the
+    /// in-memory `Config` struct and the actual configuration file on disk. If no remote with the given
+    /// name is found, it returns an error. If the URL is already the same as the new URL, no changes are made.
+    ///
+    /// # Arguments
+    ///
+    /// - `remote_name`: A string representing the name of the remote repository for which to set the new URL.
+    /// - `new_url`: A string representing the new URL to set for the remote repository.
+    /// - `output`: A mutable reference to an object implementing the `Write` trait, where error messages
+    ///    or output will be written.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the URL of the remote repository is successfully updated in the configuration.
+    /// If no remote with the specified name is found, it returns an error of type `io::ErrorKind::InvalidInput`.
+    ///
     pub fn set_url(
         &mut self,
         remote_name: &str,
@@ -288,6 +579,25 @@ impl Config {
         Ok(())
     }
 
+    /// Renames a remote repository in the Git configuration.
+    ///
+    /// This function renames a remote repository in both the in-memory `Config` struct and the actual
+    /// configuration file on disk. If no remote with the specified name is found or if a remote with
+    /// the new name already exists, it returns an error.
+    ///
+    /// # Arguments
+    ///
+    /// - `remote_name`: A string representing the current name of the remote repository to rename.
+    /// - `remote_new_name`: A string representing the new name for the remote repository.
+    /// - `output`: A mutable reference to an object implementing the `Write` trait, where error messages
+    ///    or output will be written.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the remote repository is successfully renamed in the configuration. If no
+    /// remote with the current name is found, a remote with the new name already exists, or any other
+    /// errors occur, it returns an appropriate error.
+    ///
     pub fn change_remote_name(
         &mut self,
         remote_name: &str,
