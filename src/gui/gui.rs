@@ -78,6 +78,9 @@ fn show_repository_window() {
         let button6 = get_button(&builder, "button6", "Push");
         let button7 = get_button(&builder, "button7", "Push");
         let button8 = get_button(&builder, "button8", "Push");
+        let button9 = get_button(&builder, "button9", "Push");
+        let button10 = get_button(&builder, "button10", "Push");
+
 
 
         apply_button_style(&button1);
@@ -88,6 +91,11 @@ fn show_repository_window() {
         apply_button_style(&button6);
         apply_button_style(&button7);
         apply_button_style(&button8);
+        apply_button_style(&button9);
+        apply_button_style(&button10);
+        
+        button9.set_visible(false);
+        button10.set_visible(false);
 
         button1.connect_clicked(move |_| {
             println!("Button 1 (Add) clicked.");
@@ -114,16 +122,40 @@ fn show_repository_window() {
         });
 
         button7.connect_clicked(move |_| {
-            let label: Label = builder.get_object("label").unwrap();
-            let texto_desde_funcion = obtener_texto_desde_funcion();
-            match texto_desde_funcion {
-                Ok(texto) => {
-                    label.set_text(&texto);
-                }
-                Err(err) => {
-                    eprintln!("Error al obtener el texto: {}", err);
-                }
-            }
+            button9.set_visible(true);
+            button10.set_visible(true);
+            let builder_clone = builder.clone();
+
+
+            // let mini_window = gtk::Window::new(gtk::WindowType::Toplevel);
+            // mini_window.set_default_size(300, 100);
+    
+            // let button1 = gtk::Button::with_label("Button 1");
+            // let button2 = gtk::Button::with_label("Button 2");
+            button9.connect_clicked(move |_| {
+                let label: Label = builder_clone.get_object("label").unwrap();
+                let texto_desde_funcion = obtener_texto_desde_funcion();
+                match texto_desde_funcion {
+                    Ok(texto) => {
+                        label.set_text(&texto);
+                    }
+                    Err(err) => {
+                        eprintln!("Error al obtener el texto: {}", err);
+                    }
+                }            });
+    
+            button10.connect_clicked(move |_| {
+            });
+    
+            // let vbox = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            // vbox.pack_start(&button1, true, true, 0);
+            // vbox.pack_start(&button2, true, true, 0);
+    
+            // mini_window.add(&vbox);
+            // mini_window.show_all();
+
+
+           
         });
 
         button8.connect_clicked(move |_| {
