@@ -126,7 +126,8 @@ mod tests {
     use crate::commit;
 
     use super::*;
-    const NAME_OF_GIT_DIRECTORY: &str = "tests/merge/test_ffmerge";
+    const NAME_OF_GIT_DIRECTORY_1: &str = "tests/merge/test_common_ancestor_1/.mgit";
+    const NAME_OF_GIT_DIRECTORY_2: &str = "tests/merge/test_common_ancestor_2/.mgit";
 
     #[test]
     fn is_fast_forward_returns_true_when_our_branch_commit_is_equal_to_common_commit() {
@@ -148,5 +149,114 @@ mod tests {
             is_fast_forward(our_branch_commit, common_commit),
             false
         );
+    }
+
+    fn create_mock_git_dir(git_dir: &str) {
+        fs::create_dir_all(&git_dir).unwrap();
+        let objects_dir = format!("{}/objects", git_dir);
+        fs::create_dir_all(&objects_dir).unwrap();
+        let refs_dir = format!("{}/refs/heads", git_dir);
+        fs::create_dir_all(&refs_dir).unwrap();
+        let head_file_path = format!("{}/HEAD", git_dir);
+        let mut head_file = fs::File::create(&head_file_path).unwrap();
+        head_file.write_all(b"ref: refs/heads/main").unwrap();
+        let main_file_path = format!("{}/main", refs_dir);
+        let mut main_file = fs::File::create(&main_file_path).unwrap();
+        main_file.write_all(b"hash_del_commit_anterior").unwrap();
+        let index_file_path = format!("{}/index", git_dir);
+        let mut index_file = fs::File::create(&index_file_path).unwrap();
+        index_file.write_all(b"111111111 src/main.c").unwrap();
+    }
+
+
+    #[test]
+    fn find_common_ancestor_returns_the_first_common_ancestor_between_two_commits_ff() {
+        //Setup
+        //Mock a git directory
+        let git_dir = NAME_OF_GIT_DIRECTORY_1;
+        create_mock_git_dir(NAME_OF_GIT_DIRECTORY_1);
+        //Create a commit
+        let commit_message = "Initial commit";
+        let commit_1_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+
+        //Create a branch
+        let branch_name = "test";
+        let _ = branch::create_new_branch(&git_dir, "test", &mut io::stdout());
+        //Change to the branch updating the HEAD file
+        let head_file_path = format!("{}/HEAD", git_dir);
+        let mut head_file = fs::File::create(&head_file_path).unwrap();
+        head_file.write_all(format!("ref: refs/heads/{}", branch_name).as_bytes()).unwrap();
+
+        //Add to the index file
+        let index_file_path = format!("{}/index", git_dir);
+        let mut index_file = fs::File::create(&index_file_path).unwrap();
+        index_file.write_all(b"111111111 src/main.c\n222222222 src/hello.c").unwrap();
+        //Create a commit
+        let commit_message = "Second commit";
+        let _commit_2_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+        //Add to the index file
+        let index_file_path = format!("{}/index", git_dir);
+        let mut index_file = fs::File::create(&index_file_path).unwrap();
+        index_file.write_all(b"111111111 src/main.c\n222222222 src/hello.c\n333333333 src/bye.c").unwrap();
+        //Create another commit
+        let commit_message = "Third commit";
+        let commit_3_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+        //Call the function
+        let common_ancestor = find_common_ancestor(&commit_1_hash, &commit_3_hash, &git_dir).unwrap();
+        assert_eq!(common_ancestor, commit_1_hash);
+
+        //Cleanup
+        fs::remove_dir_all(NAME_OF_GIT_DIRECTORY_1).unwrap();
+    }
+
+
+    #[test]
+    fn find_common_ancestor_returns_the_first_common_ancestor_between_two_commits_true_merge() {
+        let git_dir = NAME_OF_GIT_DIRECTORY_2;
+        create_mock_git_dir(NAME_OF_GIT_DIRECTORY_2);
+
+        //Create a commit
+        let commit_message = "Initial commit";
+        let _commit_1_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+                
+        //Add to the index file
+        let index_file_path = format!("{}/index", git_dir);
+        let mut index_file = fs::File::create(&index_file_path).unwrap();
+        index_file.write_all(b"111111111 src/main.c\n222222222 src/hello.c").unwrap();
+
+        //Create a commit
+        let commit_message = "Second commit";
+        let commit_2_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+
+        //Create a branch
+        let branch_name = "branch1";
+        let _ = branch::create_new_branch(&git_dir, branch_name, &mut io::stdout());
+
+        //Change to the branch updating the HEAD file
+        let head_file_path = format!("{}/HEAD", git_dir);
+        let mut head_file = fs::File::create(&head_file_path).unwrap();
+        head_file.write_all(format!("ref: refs/heads/{branch_name}").as_bytes()).unwrap();
+        
+        //Add to the index file
+        let index_file_path = format!("{}/index", git_dir);
+        let mut index_file = fs::File::create(&index_file_path).unwrap();
+        index_file.write_all(b"111111111 src/main.c\n222222222 src/hello.c\n333333333 src/bye.c").unwrap();
+
+        //Create another commit
+        let commit_message = "Third commit";
+        let commit_3_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+        
+        //Change to the branch updating the HEAD file
+        let head_file_path = format!("{}/HEAD", git_dir);
+        let mut head_file = fs::File::create(&head_file_path).unwrap();
+        head_file.write_all(format!("ref: refs/heads/main").as_bytes()).unwrap();
+
+        //Create a commit
+        let commit_message = "Fourth commit";
+        let commit_4_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+
+        //Call the function
+        let common_ancestor = find_common_ancestor(&commit_3_hash, &commit_4_hash, &git_dir).unwrap();
+        assert_eq!(common_ancestor, commit_2_hash);
     }
 }
