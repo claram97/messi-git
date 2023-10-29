@@ -78,3 +78,54 @@ pub fn apply_button_style(button: &gtk::Button) -> Result<(), String> {
 
     Ok(())
 }
+
+/// Apply a custom CSS style to a GTK window.
+///
+/// This function takes a reference to a `gtk::Window` and applies a custom CSS style to it
+/// to change its background color.
+///
+/// # Arguments
+///
+/// * `window` - A reference to the `gtk::Window` to which the style will be applied.
+///
+pub fn apply_window_style(window: &gtk::Window) -> Result<(), Box<dyn std::error::Error>> {
+    let css_data = "window {
+        background-color: #87CEEB; /* Sky Blue */
+    }";
+
+    let css_provider = gtk::CssProvider::new();
+    css_provider.load_from_data(css_data.as_bytes())?;
+
+    let style_context = window.get_style_context();
+    style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    Ok(())
+}
+
+/// Load a GTK window from a UI file and retrieve it from a GTK builder.
+///
+/// This function loads a GTK window from a UI file and retrieves it from a GTK builder using
+/// the specified window name.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to the `gtk::Builder` used to load the window.
+/// * `ui_path` - A string specifying the path to the UI file.
+/// * `window_name` - A string specifying the name of the window to retrieve.
+///
+/// # Returns
+///
+/// An `Option<gtk::Window>` containing the loaded window if successful, or `None` on failure.
+///
+pub fn load_and_get_window(builder: &gtk::Builder, ui_path: &str, window_name: &str) -> Option<gtk::Window> {
+    match builder.add_from_file(ui_path) {
+        Ok(_) => {
+            builder.get_object(window_name)
+        }
+        Err(err) => {
+            eprintln!("Error loading the UI file: {}", err);
+            None
+        }
+    }
+}
+

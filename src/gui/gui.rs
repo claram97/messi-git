@@ -9,10 +9,14 @@ use crate::branch::list_branches;
 use crate::utils::find_git_directory;
 use crate::branch::git_branch_for_ui;
 use crate::branch::create_new_branch;
-use crate::gui::style::{apply_button_style, get_button};
+use crate::gui::style::{apply_button_style, get_button, apply_window_style, load_and_get_window};
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
+/// Runs the main window of a GTK application.
+///
+/// This function initializes and displays the main window of the application using a UI builder. It configures the window, adds buttons for actions such as "Clone" and "Init," and connects these buttons to their respective event handlers.
+///
 pub fn run_main_window() {
     unsafe {
         OPEN_WINDOWS = Some(Mutex::new(Vec::new()));
@@ -38,6 +42,10 @@ pub fn run_main_window() {
    
 }
 
+/// Closes all open GTK windows in a GTK application.
+///
+/// This function iterates through the list of open windows maintained by the application and closes each window. It ensures that all open windows are properly closed and their references are removed from the list.
+///
 pub fn close_all_windows() {
     unsafe {
         if let Some(ref mutex) = OPEN_WINDOWS {
@@ -50,6 +58,14 @@ pub fn close_all_windows() {
     }
 }
 
+/// Adds a GTK window to the list of open windows in a GTK application.
+///
+/// This function takes a reference to a GTK window (`window`) and adds it to the list of open windows maintained by the application. The list of open windows is managed using a mutex to ensure thread safety.
+///
+/// # Arguments
+///
+/// - `window`: A reference to the GTK window to be added to the list of open windows.
+///
 fn add_to_open_windows(window: &gtk::Window) {
     unsafe {
         if let Some(ref mutex) = OPEN_WINDOWS {
@@ -59,6 +75,15 @@ fn add_to_open_windows(window: &gtk::Window) {
     }
 }
 
+/// Obtains text data from a function and returns it as a result.
+///
+/// This function invokes another function, `git_branch_for_ui`, to retrieve text data and returns it as a `Result`. If the data is obtained successfully, it is wrapped in a `Result::Ok`, and if an error occurs during the data retrieval, it is wrapped in a `Result::Err`.
+///
+/// # Returns
+///
+/// - `Ok(String)`: If the text data is successfully obtained, it contains the text.
+/// - `Err(std::io::Error)`: If an error occurs during data retrieval, it contains the error information.
+///
 fn obtener_texto_desde_funcion() -> Result<String, std::io::Error> {
     match git_branch_for_ui(None) {
         Ok(result) => Ok(result),
@@ -66,6 +91,10 @@ fn obtener_texto_desde_funcion() -> Result<String, std::io::Error> {
     }
 }
 
+/// Displays a repository window with various buttons and actions in a GTK application.
+///
+/// This function initializes and displays a GTK repository window using a UI builder. It configures the window, adds buttons with specific actions, and sets their styles and click event handlers. The repository window provides buttons for actions like "Add," "Commit," "Push," and more.
+///
 fn show_repository_window() {
     let builder = gtk::Builder::new();
     if let Some(new_window) = load_and_get_window(&builder,"src/gui/new_window2.ui", "window") {
@@ -164,12 +193,29 @@ fn show_repository_window() {
    
 }
 
+/// Configures the properties of a repository window in a GTK application.
+///
+/// This function takes a GTK window (`new_window`) as input and configures the repository window's properties, such as setting its default size and applying a specific window style, before displaying it.
+///
+/// # Arguments
+///
+/// - `new_window`: The GTK window to be configured as a repository window.
+///
 fn configure_repository_window(new_window: gtk::Window) {
     new_window.set_default_size(800, 600);
     apply_window_style(&new_window);
     new_window.show_all();
 }
 
+/// Creates a GTK text entry window for user input with a message and a callback function.
+///
+/// This function generates a new GTK window with a text entry field and an "OK" button. It allows users to input text and invokes a provided callback function when the "OK" button is clicked. The window can display a custom message as its title.
+///
+/// # Arguments
+///
+/// - `message`: A string message to be displayed as the window's title.
+/// - `on_text_entered`: A callback function that takes a string parameter and is called when the user confirms the text input.
+///
 fn create_text_entry_window(message: &str, on_text_entered: impl Fn(String) + 'static) {
     let entry_window = gtk::Window::new(gtk::WindowType::Toplevel);
     add_to_open_windows(&entry_window);
@@ -198,7 +244,15 @@ fn create_text_entry_window(message: &str, on_text_entered: impl Fn(String) + 's
     entry_window.show_all();
 }
 
-
+/// Connects a GTK button in an initialization window to specific actions based on its type.
+///
+/// This function takes a reference to a GTK button (`button`) and a button type (`button_type`) as input and connects a click event handler. The handler performs different actions based on the button's type, such as opening text entry dialogs, closing all windows, or showing a repository window.
+///
+/// # Arguments
+///
+/// - `button`: A reference to the GTK button to which the event handler will be connected.
+/// - `button_type`: A string indicating the type of button, which determines the action to be taken when the button is clicked.
+///
 fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) {
     let button_type = button_type.to_owned(); 
 
@@ -218,6 +272,15 @@ fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) {
     });
 }
 
+/// Configures the properties of a clone window in a GTK application.
+///
+/// This function takes a reference to a GTK window (`new_window_clone`) and a GTK builder (`builder`) as input and configures the clone window's properties, including adding it to the list of open windows, applying a specific window style, and setting its default size.
+///
+/// # Arguments
+///
+/// - `new_window_clone`: A reference to the GTK window to be configured.
+/// - `builder`: A reference to the GTK builder used for UI construction.
+///
 fn configure_init_window(new_window_init: &gtk::Window, builder: &gtk::Builder) {
     add_to_open_windows(new_window_init);
     apply_window_style(new_window_init);
@@ -236,6 +299,15 @@ fn configure_init_window(new_window_init: &gtk::Window, builder: &gtk::Builder) 
     connect_button_clicked_init_window(&button3, "option3");
 }
 
+/// Configures the properties of a clone window in a GTK application.
+///
+/// This function takes a reference to a GTK window (`new_window_clone`) and a GTK builder (`builder`) as input and configures the clone window's properties, including adding it to the list of open windows, applying a specific window style, and setting its default size.
+///
+/// # Arguments
+///
+/// - `new_window_clone`: A reference to the GTK window to be configured.
+/// - `builder`: A reference to the GTK builder used for UI construction.
+///
 fn configure_clone_window(new_window_clone: &gtk::Window, builder: &gtk::Builder) {
     add_to_open_windows(new_window_clone);
     apply_window_style(new_window_clone);
@@ -243,6 +315,16 @@ fn configure_clone_window(new_window_clone: &gtk::Window, builder: &gtk::Builder
 
 }
 
+/// Connects a GTK button to a specific action.
+///
+/// This function takes a GTK button and a button type as input and sets an event handler for the "clicked" event of the button.
+/// When the button is clicked, it performs a specific action based on the provided button type.
+///
+/// # Arguments
+///
+/// - `button`: A reference to the GTK button to which the event handler will be connected.
+/// - `button_type`: A string indicating the button type, which determines the action to be taken when the button is clicked.
+///
 fn connect_button_clicked_main_window(button: &gtk::Button, button_type: &str) {
     let button_type = button_type.to_owned();
     
@@ -266,30 +348,9 @@ fn connect_button_clicked_main_window(button: &gtk::Button, button_type: &str) {
     });
 }
 
-fn load_and_get_window(builder: &gtk::Builder, ui_path: &str, window_name: &str) -> Option<gtk::Window> {
-    match builder.add_from_file(ui_path) {
-        Ok(_) => {
-            builder.get_object(window_name)
-        }
-        Err(err) => {
-            eprintln!("Error loading the UI file: {}", err);
-            None
-        }
-    }
-}
 
-fn apply_window_style(window: &gtk::Window) {
-    let css_provider = gtk::CssProvider::new();
-    css_provider
-        .load_from_data("window {
-            background-color: #87CEEB; /* Sky Blue */
-        }"
-        .as_bytes())
-        .expect("Failed to load CSS");
 
-    let style_context = window.get_style_context();
-    style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-}
+
 
 
 
