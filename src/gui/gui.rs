@@ -68,7 +68,8 @@ fn obtener_texto_desde_funcion() -> Result<String, std::io::Error> {
 fn show_repository_window() {
     let builder = gtk::Builder::new();
     if let Some(new_window) = load_and_get_window(&builder,"src/gui/new_window2.ui", "window") {
-        let new_window_clone = new_window.clone(); // Clonamos la ventana
+        let new_window_clone = new_window.clone(); 
+        add_to_open_windows(&new_window);
         configure_repository_window(new_window);
         let button1 = get_button(&builder, "button1", "Add");
         let button2 = get_button(&builder, "button2", "Commit");
@@ -127,11 +128,7 @@ fn show_repository_window() {
             let builder_clone = builder.clone();
 
 
-            // let mini_window = gtk::Window::new(gtk::WindowType::Toplevel);
-            // mini_window.set_default_size(300, 100);
-    
-            // let button1 = gtk::Button::with_label("Button 1");
-            // let button2 = gtk::Button::with_label("Button 2");
+            
             button9.connect_clicked(move |_| {
                 let label: Label = builder_clone.get_object("label").unwrap();
                 let texto_desde_funcion = obtener_texto_desde_funcion();
@@ -145,14 +142,13 @@ fn show_repository_window() {
                 }            });
     
             button10.connect_clicked(move |_| {
+                create_text_entry_window("Enter the name of the branch", |text| {
+                    git_branch_for_ui(Some(text));                
+                });
+                
+                
             });
     
-            // let vbox = gtk::Box::new(gtk::Orientation::Vertical, 0);
-            // vbox.pack_start(&button1, true, true, 0);
-            // vbox.pack_start(&button2, true, true, 0);
-    
-            // mini_window.add(&vbox);
-            // mini_window.show_all();
 
 
            
@@ -173,7 +169,7 @@ fn configure_repository_window(new_window: gtk::Window) {
     new_window.show_all();
 }
 
-fn create_text_entry_window( message: &str) {
+fn create_text_entry_window(message: &str, on_text_entered: impl Fn(String) + 'static) {
     let entry_window = gtk::Window::new(gtk::WindowType::Toplevel);
     add_to_open_windows(&entry_window);
     apply_window_style(&entry_window);
@@ -193,22 +189,29 @@ fn create_text_entry_window( message: &str) {
 
     ok_button.connect_clicked(move |_| {
         let text = entry.get_text().to_string();
-        println!("Entered Text: {}", text);
         close_all_windows();
         show_repository_window();
+        on_text_entered(text); // Llama al cierre con el texto ingresado
     });
 
     entry_window.show_all();
 }
+
 
 fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) {
     let button_type = button_type.to_owned(); 
 
     button.connect_clicked(move |_| {
         if button_type == "option2" {
-            create_text_entry_window( "Enter the branch");
+            create_text_entry_window("Enter the branch", |_| {
+                
+            });
+            // create_text_entry_window( "Enter the branch");
         } else if button_type == "option3" {
-            create_text_entry_window( "Enter the template path");
+            create_text_entry_window("Enter the template path", |_| {
+                
+            });
+            // create_text_entry_window( "Enter the template path");
         } else if button_type == "option1" {
             close_all_windows();
             show_repository_window();
