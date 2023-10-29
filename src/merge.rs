@@ -9,7 +9,9 @@ pub fn is_fast_forward(our_branch_commit: &str, common_commit: &str) -> bool {
     false
 }
 
-pub fn find_common_ancestor(
+//Given two commits, finds the first common ancestor between them.
+//Returns an error if no common ancestor is found. (Thing that should never happen)
+fn find_common_ancestor(
     our_branch_commit: &str,
     their_branch_commit: &str,
     git_dir: &str,
@@ -34,6 +36,9 @@ pub fn find_common_ancestor(
     Ok(common_ancestor)
 }
 
+/// Given two branches, fast forwards `our_branch` to `their_branch`.
+/// This means that `our_branch` will point to the same commit as `their_branch`
+/// And the working directory will be updated to match the one of `their_branch`.
 fn fast_forward_merge(
     our_branch: &str,
     their_branch: &str,
@@ -41,10 +46,10 @@ fn fast_forward_merge(
     root_dir: &str,
 ) -> io::Result<()> {
     branch::update_branch_commit_hash(our_branch, their_branch, git_dir)?;
-    let our_commit = branch::get_branch_commit_hash(our_branch, git_dir).unwrap();
+    let our_commit = branch::get_branch_commit_hash(our_branch, git_dir)?;
     let old_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
 
-    let their_commit = branch::get_branch_commit_hash(their_branch, git_dir).unwrap();
+    let their_commit = branch::get_branch_commit_hash(their_branch, git_dir)?;
     let new_tree = tree_handler::load_tree_from_commit(&their_commit, git_dir)?;
     old_tree.delete_directories(root_dir)?;
     new_tree.create_directories(root_dir, git_dir)?;
@@ -54,20 +59,21 @@ fn fast_forward_merge(
     Ok(())
 }
 
+/// Given two branches, merges `our_branch` with `their_branch`.
+/// `our_branch` will point to a new commit that contains the changes of both branches.
+/// The working directory will be updated to match the one of the new commit.
+/// If there are conflicts, the user will have to resolve them.
 fn two_way_merge(
     our_branch: &str,
     their_branch: &str,
     git_dir: &str,
     root_dir: &str,
 ) -> io::Result<()> {
-    let our_commit = branch::get_branch_commit_hash(our_branch, git_dir).unwrap();
-    let their_commit = branch::get_branch_commit_hash(their_branch, git_dir).unwrap();
-
+    let our_commit = branch::get_branch_commit_hash(our_branch, git_dir)?;
+    let their_commit = branch::get_branch_commit_hash(their_branch, git_dir)?;
     let our_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
     let their_tree = tree_handler::load_tree_from_commit(&their_commit, git_dir)?;
-
-    let mut new_tree = tree_handler::merge_trees(&our_tree, &their_tree, git_dir);
-
+    let new_tree = tree_handler::merge_trees(&our_tree, &their_tree, git_dir);
     our_tree.delete_directories(root_dir)?;
     new_tree.create_directories(root_dir, git_dir)?;
     let index_path = utils::get_index_file_path(git_dir);
@@ -76,7 +82,21 @@ fn two_way_merge(
     Ok(())
 }
 
-
+/// Given two branches, merges `our_branch` with `their_branch`.
+/// It will try to do a fast forward merge, if it is not possible, it will do a two way merge.
+/// `our_branch` will point to a new commit that contains the changes of both branches.
+/// The working directory will be updated to match the changes.
+/// If there are conflicts, the user will have to resolve them.
+/// 
+/// # Arguments
+/// * `our_branch` - The name of the branch that will be updated.
+/// * `their_branch` - The name of the branch that will be merged with `our_branch`.
+/// * `git_dir` - The path to the git directory.
+/// * `root_dir` - The path to the root directory.
+/// 
+/// # Errors
+/// Returns an error if the merge fails.
+/// 
 pub fn git_merge(
     our_branch: &str,
     their_branch: &str,

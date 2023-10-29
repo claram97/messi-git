@@ -360,10 +360,13 @@ pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> Tree {
     let our_tree_vec = our_tree.squash_tree_into_vec("");
     let mut new_tree = Tree::new();
     for (path, hash) in our_tree_vec {
-        let their_hash = their_tree.get_hash_from_path(&path);
-        match their_hash {
+        match their_tree.get_hash_from_path(&path) {
             None => new_tree.add_file(&path, &hash),
             Some(their_hash) => {
+                if hash == their_hash {
+                    new_tree.add_file(&path, &hash);
+                    continue;
+                }
                 let diff_string = diff::return_object_diff_string(&hash, &their_hash, git_dir);
                 match diff_string {
                     Ok(diff_string) => {
@@ -382,6 +385,14 @@ pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> Tree {
                     }
                 }
             }
+        }
+    }
+
+    let their_tree_vec = their_tree.squash_tree_into_vec("");
+    for (path, hash) in their_tree_vec {
+        match our_tree.get_hash_from_path(&path) {
+            None => new_tree.add_file(&path, &hash),
+            Some(_) => {}
         }
     }
     new_tree
