@@ -8,6 +8,7 @@ pub struct Ignorer {
     paths: Vec<String>,
 }
 
+/// ignorer
 impl Ignorer {
     /// This method loads the git ignore file and returns an
     /// Ignorer ready to use

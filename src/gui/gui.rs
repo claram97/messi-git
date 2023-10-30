@@ -24,6 +24,7 @@ use super::style::apply_label_style;
 use super::style::get_entry;
 use super::style::get_label;
 
+
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
 /// Runs the main window of a GTK application.
