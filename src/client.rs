@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     fs::{self, File},
-    io::{self, Error, Read, Write, BufReader},
+    io::{self, BufReader, Error, Read, Write},
     net::TcpStream,
     path::{Path, PathBuf},
     str::from_utf8,
@@ -216,33 +216,31 @@ impl Client {
     // Auxiliar function. Reads the socket until a 'flush' signal is read
     fn read_response_until_flush(&mut self) -> io::Result<()> {
         let socket = self.socket()?;
-        let mut buf = vec![];
-        socket.read_to_end(&mut buf)?;
 
-        let mut start = 0;
-        let mut bytes_to_read = buf.get(..4);
+        let mut buf: [u8; 4] = [0, 0, 0, 0];
+        let mut reader = BufReader::new(socket);
 
-        while let Some(size_hex) = bytes_to_read {
-            let bytes = from_utf8(size_hex).unwrap_or_default();
+        reader.read_exact(&mut buf)?;
+
+        while buf != "0000".as_bytes() {
+            let bytes = from_utf8(&buf).unwrap_or_default();
             print!("{}", bytes);
             let bytes = usize::from_str_radix(bytes, 16).unwrap_or_default();
 
-            let end = start + bytes;
-            start += 4;
-            let content = buf.get(start..end).unwrap_or_default();
+            let mut content = vec![0; bytes-4];
+            reader.read_exact(&mut content)?;
+
             let is_header_start = content[0] == 1;
+
             if is_header_start {
-                let packfile = content.get(1+12..).unwrap_or_default();
-                let mut packfile = Vec::from(packfile);
-                return read_pack_file(&mut packfile);
+                return read_pack_file(&mut content);
             } else {
-                let content = from_utf8(content)
+                let content = from_utf8(&content)
                     .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
                 print!("{}", content);
             };
 
-            start = end;
-            bytes_to_read = buf.get(start..start + 4);
+            reader.read_exact(&mut buf)?;
         }
 
         Ok(())
@@ -250,40 +248,27 @@ impl Client {
 }
 
 fn read_pack_file(packfile: &[u8]) -> io::Result<()> {
-    let bytes_to_read = 4;
-    let mut start = 0;
+    let mut buf: [u8; 4] = [0, 0, 0, 0];
+    let mut reader = BufReader::new(packfile);
 
-    let signature = packfile
-        .get(start..start + bytes_to_read)
-        .unwrap_or_default();
+    reader.read_exact(&mut [0])?;
+    reader.read_exact(&mut buf)?;
 
-    start += bytes_to_read;
-
-    let signature = from_utf8(&signature)
-        .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
+    let signature =
+        from_utf8(&buf).map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
 
     if signature == "PACK" {
-        let version = packfile
-            .get(start..start + bytes_to_read)
-            .unwrap_or_default();
-        let version: [u8; 4] = version[..4].try_into().unwrap_or_default();
-        let version = u32::from_be_bytes(version);
-        start += bytes_to_read;
-        
-        let objects_quantity = packfile
-            .get(start..start + bytes_to_read)
-            .unwrap_or_default();
-        let objects_quantity: [u8; 4] = objects_quantity[..4].try_into().unwrap_or_default();
-        let objects_quantity = u32::from_be_bytes(objects_quantity);
-        start += bytes_to_read;
+        reader.read_exact(&mut buf)?;
+        let version = u32::from_be_bytes(buf);
+
+        reader.read_exact(&mut buf)?;
+        let objects_quantity = u32::from_be_bytes(buf);
 
         println!("PACK");
         println!("VERSION: {:?}", version);
         println!("QUANTITY: {:?}", objects_quantity);
-
-        let content = packfile.get(start..).unwrap_or_default();
-        let object_type = content[0] & 111;
-        dbg!(object_type);
+        let mut content = vec![];
+        reader.read_to_end(&mut content)?;
 
         println!("{:?}", content);
     }
