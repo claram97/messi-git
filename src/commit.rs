@@ -31,7 +31,7 @@ fn create_new_commit_file(
     let time = chrono::Local::now();
     let commit_content = format!(
         "tree {tree_hash}
-        \nparent  {parent_commit}
+        \nparent {parent_commit}
         \nauthor {} {} {time}
         \ncommitter {} {} {time}
         \n\n{message}\0",
