@@ -97,6 +97,39 @@ pub fn new_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> i
     Ok(commit_hash)
 }
 
+/// Creates a new merge commit. merge commits are special as they have two parents. This function should only be used when merging two branches.
+/// 
+/// The commit file will be created with the following format:
+/// tree <tree_hash>
+/// parent <parent_hash>
+/// parent <parent_hash>
+/// author <author>
+/// 
+/// <message>
+/// 
+pub fn new_merge_commit(
+    git_dir_path: &str,
+    message: &str,
+    parent_hash: &str,
+    parent_hash2: &str,
+    git_ignore_path: &str,
+) -> io::Result<String> {
+    let index_path = git_dir_path.to_string() + "/" + INDEX_FILE_NAME;
+    let commit_tree = tree_handler::build_tree_from_index(&index_path, git_dir_path, git_ignore_path)?;
+    let (tree_hash, _) = tree_handler::write_tree(&commit_tree, git_dir_path)?;
+    let time = chrono::Local::now().format("%d/%m/%Y %H:%M").to_string();
+    let commit_content = format!(
+        "tree {tree_hash}\nparent {parent_hash}\nparent {parent_hash2}\nauthor {}\ndate: {time}\n\n{message}\0",
+        "user"
+    );
+    let commit_hash = hash_object::store_string_to_file(&commit_content, git_dir_path, "commit")?;
+    let branch_name = get_branch_name(git_dir_path)?;
+    let branch_path = git_dir_path.to_string() + "/refs/heads/" + &branch_name;
+    let mut branch_file = std::fs::File::create(&branch_path)?;
+    branch_file.write_all(commit_hash.as_bytes())?;
+    Ok(commit_hash)
+}
+
 /// Returns the parent hash of the given commit hash.
 /// If the commit is not found, it returns an error.
 ///

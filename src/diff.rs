@@ -95,13 +95,13 @@ fn diff_to_vec(x: &Vec<String>, y: &Vec<String>, i: usize, j: usize) -> Vec<Stri
 
     if i > 0 && j > 0 && x[i-1] == y[j-1] {
         output.append(&mut diff_to_vec(x, y, i-1, j-1));
-        output.push(format!("  {}\n", x[i-1]));
+        output.push(format!("{}\n", x[i-1]));
     } else if j > 0 && (i == 0 || c[i][j-1] >= c[i-1][j]) {
         output.append(&mut diff_to_vec(x, y, i, j-1));
-        output.push(format!(">> {}\n", y[j-1]));
+        output.push(format!(">>>>>>> {}\n", y[j-1]));
     } else if i > 0 && (j == 0 || c[i][j-1] < c[i-1][j]) {
         output.append(&mut diff_to_vec(x, y, i-1, j));
-        output.push(format!("<< {}\n", x[i-1]));
+        output.push(format!("<<<<<<< {}\n", x[i-1]));
     }
     output
 }
@@ -136,5 +136,5 @@ pub fn return_object_diff_string(hash_a: &str, hash_b: &str, git_dir: &str) -> R
         output.push(line);
     }
 
-    Ok(output.join("\n"))
+    Ok(output.join(""))
 }
