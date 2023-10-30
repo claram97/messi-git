@@ -1,11 +1,10 @@
-use gtk::CssProviderExt;
-use gtk::WidgetExt;
-use gtk::StyleContextExt;
-use gtk::BinExt;
-use std::thread::Builder as OtherBuilder;
 use gtk::prelude::*;
+use gtk::BinExt;
 use gtk::Builder;
-
+use gtk::CssProviderExt;
+use gtk::StyleContextExt;
+use gtk::WidgetExt;
+use std::thread::Builder as OtherBuilder;
 
 /// Retrieves a GTK button from a `gtk::Builder` by its ID and applies a specific style.
 ///
@@ -35,7 +34,7 @@ pub fn get_button(builder: &Builder, button_id: &str, label_text: &str) -> gtk::
         }
         return button;
     }
-    
+
     eprintln!("Failed to get the button {}", label_text);
     gtk::Button::new()
 }
@@ -64,12 +63,15 @@ pub fn get_button(builder: &Builder, button_id: &str, label_text: &str) -> gtk::
 /// ```
 pub fn apply_button_style(button: &gtk::Button) -> Result<(), String> {
     let css_provider = gtk::CssProvider::new();
-    if let Err(err) = css_provider.load_from_data("button {
+    if let Err(err) = css_provider.load_from_data(
+        "button {
         background-color: #87CEEB; /* Sky Blue */
         color: #1e3799; /* Dark Blue Text Color */
         border: 10px solid #1e3799; /* Dark Blue Border */
         padding: 10px; /* Padding around content */
-    }".as_bytes()) {
+    }"
+        .as_bytes(),
+    ) {
         return Err(format!("Failed to load CSS: {}", err));
     }
 
@@ -138,11 +140,13 @@ pub fn apply_window_style(window: &gtk::Window) -> Result<(), Box<dyn std::error
 ///
 /// An `Option<gtk::Window>` containing the loaded window if successful, or `None` on failure.
 ///
-pub fn load_and_get_window(builder: &gtk::Builder, ui_path: &str, window_name: &str) -> Option<gtk::Window> {
+pub fn load_and_get_window(
+    builder: &gtk::Builder,
+    ui_path: &str,
+    window_name: &str,
+) -> Option<gtk::Window> {
     match builder.add_from_file(ui_path) {
-        Ok(_) => {
-            builder.get_object(window_name)
-        }
+        Ok(_) => builder.get_object(window_name),
         Err(err) => {
             eprintln!("Error loading the UI file: {}", err);
             None
@@ -152,11 +156,14 @@ pub fn load_and_get_window(builder: &gtk::Builder, ui_path: &str, window_name: &
 
 pub fn apply_clone_button_style(button: &gtk::Button) {
     let css_provider = gtk::CssProvider::new();
-    if let Err(err) = css_provider.load_from_data("button {
+    if let Err(err) = css_provider.load_from_data(
+        "button {
         background-color: #FFFFFF; /* Fondo blanco */
         color: #1e3799; /* Texto azul */
         border: 2px solid #1e3799; /* Borde azul */
-    }".as_bytes()) {
+    }"
+        .as_bytes(),
+    ) {
         eprintln!("Failed to load CSS for button: {}", err);
     }
 
@@ -166,9 +173,12 @@ pub fn apply_clone_button_style(button: &gtk::Button) {
 
 pub fn apply_label_style(label: &gtk::Label) {
     let css_provider = gtk::CssProvider::new();
-    if let Err(err) = css_provider.load_from_data("label {
+    if let Err(err) = css_provider.load_from_data(
+        "label {
         color: #1e3799; /* Texto azul */
-    }".as_bytes()) {
+    }"
+        .as_bytes(),
+    ) {
         eprintln!("Failed to load CSS for label: {}", err);
     }
 
@@ -178,13 +188,15 @@ pub fn apply_label_style(label: &gtk::Label) {
 
 pub fn apply_entry_style(entry: &gtk::Entry) {
     let css_provider = gtk::CssProvider::new();
-    if let Err(err) = css_provider.load_from_data("entry {
+    if let Err(err) = css_provider.load_from_data(
+        "entry {
         /* Estilos personalizados para las entradas */
-    }".as_bytes()) {
+    }"
+        .as_bytes(),
+    ) {
         eprintln!("Failed to load CSS for entry: {}", err);
     }
 
     let style_context = entry.get_style_context();
     style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
-

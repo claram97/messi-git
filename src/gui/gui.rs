@@ -1,29 +1,28 @@
-use gtk::FileChooserAction;
-use gtk::FileChooserDialog;
+use crate::branch::create_new_branch;
+use crate::branch::git_branch_for_ui;
+use crate::branch::list_branches;
+use crate::gui::style::{apply_button_style, apply_window_style, get_button, load_and_get_window};
+use crate::log::accumulate_logs;
+use crate::log::log;
+use crate::log::print_logs;
+use crate::log::Log;
+use crate::utils::find_git_directory;
+use core::cell::RefCell;
 use gtk::prelude::*;
 use gtk::Builder;
-use std::sync::Mutex;
 use gtk::CssProvider;
-use std::rc::Rc;
-use core::cell::RefCell;
+use gtk::FileChooserAction;
+use gtk::FileChooserDialog;
 use gtk::Label;
-use crate::branch::list_branches;
-use crate::utils::find_git_directory;
-use crate::branch::git_branch_for_ui;
-use crate::branch::create_new_branch;
-use crate::gui::style::{apply_button_style, get_button, apply_window_style, load_and_get_window};
-use crate::log::log;
 use std::io;
-use crate::log::Log;
-use crate::log::accumulate_logs;
-use crate::log::print_logs;
+use std::rc::Rc;
+use std::sync::Mutex;
 
 use super::style::apply_clone_button_style;
 use super::style::apply_entry_style;
 use super::style::apply_label_style;
 use super::style::get_entry;
 use super::style::get_label;
-
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -37,23 +36,21 @@ pub fn run_main_window() {
     }
 
     let builder = Builder::new();
-    if let Some(window) = load_and_get_window(&builder,"src/gui/part3.ui", "window") {
-        
+    if let Some(window) = load_and_get_window(&builder, "src/gui/part3.ui", "window") {
         window.set_default_size(800, 600);
         add_to_open_windows(&window);
         apply_window_style(&window);
-    
+
         let button_clone: gtk::Button = get_button(&builder, "buttonclone", "Clone");
         let button_init: gtk::Button = get_button(&builder, "buttoninit", "Init");
         apply_button_style(&button_clone);
         apply_button_style(&button_init);
-    
+
         connect_button_clicked_main_window(&button_clone, "Clone");
         connect_button_clicked_main_window(&button_init, "Init");
-        
+
         window.show_all();
     }
-   
 }
 
 /// Closes all open GTK windows in a GTK application.
@@ -65,9 +62,9 @@ pub fn close_all_windows() {
         if let Some(ref mutex) = OPEN_WINDOWS {
             let mut open_windows = mutex.lock().expect("Mutex lock failed");
             for window in open_windows.iter() {
-                window.close(); 
+                window.close();
             }
-            open_windows.clear(); 
+            open_windows.clear();
         }
     }
 }
@@ -117,20 +114,18 @@ fn obtener_texto_desde_log() -> Result<String, std::io::Error> {
         }
     };
 
-    let log_iter=  log(None, &git_dir, 10, 0, true) ;
+    let log_iter = log(None, &git_dir, 10, 0, true);
     let log_iter = log_iter.unwrap();
     let log_text = get_logs_as_string(log_iter);
 
-        
     Ok(log_text)
-
 }
 pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
     let mut log_text = String::new();
 
     for log in log_iter {
-        log_text.push_str(&log.to_string()); 
-        log_text.push('\n'); 
+        log_text.push_str(&log.to_string());
+        log_text.push('\n');
     }
 
     log_text
@@ -142,8 +137,8 @@ pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
 ///
 fn show_repository_window() {
     let builder = gtk::Builder::new();
-    if let Some(new_window) = load_and_get_window(&builder,"src/gui/new_window2.ui", "window") {
-        let new_window_clone = new_window.clone(); 
+    if let Some(new_window) = load_and_get_window(&builder, "src/gui/new_window2.ui", "window") {
+        let new_window_clone = new_window.clone();
         let builder_clone = builder.clone();
         add_to_open_windows(&new_window);
         configure_repository_window(new_window);
@@ -159,8 +154,6 @@ fn show_repository_window() {
         let button10 = get_button(&builder, "button10", "Push");
         let button11 = get_button(&builder, "button11", "Push");
 
-
-
         apply_button_style(&button1);
         apply_button_style(&button2);
         apply_button_style(&button3);
@@ -173,7 +166,6 @@ fn show_repository_window() {
         apply_button_style(&button10);
         apply_button_style(&button11);
 
-        
         button9.set_visible(false);
         button10.set_visible(false);
 
@@ -195,7 +187,6 @@ fn show_repository_window() {
                 }
             }
         });
-        
 
         button2.connect_clicked(move |_| {
             println!("Button 2 (Commit) clicked.");
@@ -222,8 +213,6 @@ fn show_repository_window() {
             button10.set_visible(true);
             let builder_clone = builder.clone();
 
-
-            
             button9.connect_clicked(move |_| {
                 let label: Label = builder_clone.get_object("label").unwrap();
                 let texto_desde_funcion = obtener_texto_desde_funcion();
@@ -234,20 +223,14 @@ fn show_repository_window() {
                     Err(err) => {
                         eprintln!("Error al obtener el texto: {}", err);
                     }
-                }            
+                }
             });
-    
+
             button10.connect_clicked(move |_| {
                 create_text_entry_window("Enter the name of the branch", |text| {
-                    git_branch_for_ui(Some(text));                
+                    git_branch_for_ui(Some(text));
                 });
-                
-                
             });
-    
-
-
-           
         });
 
         button8.connect_clicked(move |_| {
@@ -255,8 +238,6 @@ fn show_repository_window() {
             run_main_window();
         });
     }
-    
-   
 }
 
 /// Configures the properties of a repository window in a GTK application.
@@ -304,7 +285,7 @@ fn create_text_entry_window(message: &str, on_text_entered: impl Fn(String) + 's
         let text = entry.get_text().to_string();
         close_all_windows();
         show_repository_window();
-        on_text_entered(text); 
+        on_text_entered(text);
     });
 
     entry_window.show_all();
@@ -320,17 +301,13 @@ fn create_text_entry_window(message: &str, on_text_entered: impl Fn(String) + 's
 /// - `button_type`: A string indicating the type of button, which determines the action to be taken when the button is clicked.
 ///
 fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) {
-    let button_type = button_type.to_owned(); 
+    let button_type = button_type.to_owned();
 
     button.connect_clicked(move |_| {
         if button_type == "option2" {
-            create_text_entry_window("Enter the branch", |_| {
-                
-            });
+            create_text_entry_window("Enter the branch", |_| {});
         } else if button_type == "option3" {
-            create_text_entry_window("Enter the template path", |_| {
-                
-            });
+            create_text_entry_window("Enter the template path", |_| {});
         } else if button_type == "option1" {
             close_all_windows();
             show_repository_window();
@@ -377,42 +354,42 @@ fn configure_init_window(new_window_init: &gtk::Window, builder: &gtk::Builder) 
 fn configure_clone_window(new_window_clone: &gtk::Window, builder: &gtk::Builder) {
     add_to_open_windows(new_window_clone);
     apply_window_style(new_window_clone);
-    let browse_button = get_button(builder,"browse-button","Browse");
-    let clone_button = get_button(builder,"clone-button","Clone the repo!");
-    
+    let browse_button = get_button(builder, "browse-button", "Browse");
+    let clone_button = get_button(builder, "clone-button", "Clone the repo!");
+
     apply_clone_button_style(&browse_button);
     apply_clone_button_style(&clone_button);
 
-     // Conectar la señal "clicked" del botón "Browse" para abrir el cuadro de diálogo de selección de directorio
-     let new_window_clone_clone = new_window_clone.clone();
-     let dir_to_clone_entry = get_entry(builder, "dir-to-clone-entry").unwrap(); // Asume que esto es un campo de entrada para mostrar el directorio seleccionado
-     let dir_to_clone_entry_clone = dir_to_clone_entry.clone(); // Clonar la entrada para pasarlo a la función de manejo de clic
-     browse_button.connect_clicked(move |_| {
-         let dialog = FileChooserDialog::new(
-             Some("Seleccionar Carpeta"),
-             Some(&new_window_clone_clone),
-             FileChooserAction::SelectFolder,
-         );
- 
-         dialog.add_button("Cancelar", gtk::ResponseType::Cancel);
-         dialog.add_button("Seleccionar", gtk::ResponseType::Ok);
- 
-         if dialog.run() == gtk::ResponseType::Ok {
-             if let Some(folder) = dialog.get_filename() {
-                 println!("Carpeta seleccionada: {:?}", folder);
-                 // Actualiza la entrada de directorio con la carpeta seleccionada
-                 dir_to_clone_entry_clone.set_text(&folder.to_string_lossy());
-                 // Aquí puedes realizar acciones adicionales con la carpeta seleccionada
-             }
-         }
- 
-         unsafe { dialog.destroy() };
-     });
-     
+    // Conectar la señal "clicked" del botón "Browse" para abrir el cuadro de diálogo de selección de directorio
+    let new_window_clone_clone = new_window_clone.clone();
+    let dir_to_clone_entry = get_entry(builder, "dir-to-clone-entry").unwrap(); // Asume que esto es un campo de entrada para mostrar el directorio seleccionado
+    let dir_to_clone_entry_clone = dir_to_clone_entry.clone(); // Clonar la entrada para pasarlo a la función de manejo de clic
+    browse_button.connect_clicked(move |_| {
+        let dialog = FileChooserDialog::new(
+            Some("Seleccionar Carpeta"),
+            Some(&new_window_clone_clone),
+            FileChooserAction::SelectFolder,
+        );
+        dialog.set_position(gtk::WindowPosition::CenterOnParent);
+
+        dialog.add_button("Cancelar", gtk::ResponseType::Cancel);
+        dialog.add_button("Seleccionar", gtk::ResponseType::Ok);
+
+        if dialog.run() == gtk::ResponseType::Ok {
+            if let Some(folder) = dialog.get_filename() {
+                println!("Carpeta seleccionada: {:?}", folder);
+                // Actualiza la entrada de directorio con la carpeta seleccionada
+                dir_to_clone_entry_clone.set_text(&folder.to_string_lossy());
+                // Aquí puedes realizar acciones adicionales con la carpeta seleccionada
+            }
+        }
+
+        unsafe { dialog.destroy() };
+    });
     let url_label = get_label(builder, "url-label", 12.0).unwrap();
-    let clone_dir_label = get_label(builder,"clone-dir-label",12.0).unwrap();
+    let clone_dir_label = get_label(builder, "clone-dir-label", 12.0).unwrap();
     let clone_info_label = get_label(builder, "clone-info-label", 26.0).unwrap();
-    
+
     apply_label_style(&url_label);
     apply_label_style(&clone_dir_label);
     apply_label_style(&clone_info_label);
@@ -423,7 +400,6 @@ fn configure_clone_window(new_window_clone: &gtk::Window, builder: &gtk::Builder
     apply_entry_style(&dir_to_clone_entry);
     apply_entry_style(&url_entry);
     new_window_clone.set_default_size(800, 600);
-
 }
 
 /// Connects a GTK button to a specific action.
@@ -438,31 +414,27 @@ fn configure_clone_window(new_window_clone: &gtk::Window, builder: &gtk::Builder
 ///
 fn connect_button_clicked_main_window(button: &gtk::Button, button_type: &str) {
     let button_type = button_type.to_owned();
-    
+
     button.connect_clicked(move |_| {
         let builder = gtk::Builder::new();
         match button_type.as_str() {
             "Init" => {
-                if let Some(new_window_init) = load_and_get_window(&builder, "src/gui/windowInit.ui", "window") {
+                if let Some(new_window_init) =
+                    load_and_get_window(&builder, "src/gui/windowInit.ui", "window")
+                {
                     configure_init_window(&new_window_init, &builder);
                     new_window_init.show_all();
                 }
-            },
+            }
             "Clone" => {
-                if let Some(new_window_clone) = load_and_get_window(&builder, "src/gui/windowClone.ui", "window") {
+                if let Some(new_window_clone) =
+                    load_and_get_window(&builder, "src/gui/windowClone.ui", "window")
+                {
                     configure_clone_window(&new_window_clone, &builder);
                     new_window_clone.show_all();
                 }
-            },
+            }
             _ => eprintln!("Unknown button type: {}", button_type),
         }
     });
 }
-
-
-
-
-
-
-
-

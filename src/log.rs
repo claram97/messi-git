@@ -218,8 +218,6 @@ pub fn accumulate_logs(log_iter: impl Iterator<Item = Log>) -> String {
     log_text
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;

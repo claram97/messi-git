@@ -1,6 +1,5 @@
-
-use messi::parse_commands::{get_user_input, handle_git_command, parse_git_command};
 use messi::gui::run_main_window;
+use messi::parse_commands::{get_user_input, handle_git_command, parse_git_command};
 fn main() {
     if gtk::init().is_err() {
         println!("Failed to initialize GTK.");

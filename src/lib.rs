@@ -2,6 +2,7 @@ pub mod add;
 pub mod branch;
 pub mod cat_file;
 pub mod commit;
+pub mod gui;
 pub mod hash_object;
 pub mod ignorer;
 pub mod index;
@@ -12,5 +13,3 @@ pub mod parse_commands;
 pub mod rm;
 pub mod tree_handler;
 pub mod utils;
-pub mod gui;
-

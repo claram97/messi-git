@@ -6,7 +6,6 @@ use std::{
 
 use crate::{commit, utils};
 
-
 /// Returns the path inside the HEAD file.
 /// The one that contains the path to the current branch.
 /// If the file is empty, it returns an error.
@@ -127,15 +126,15 @@ pub fn git_branch(name: Option<String>) -> io::Result<()> {
 }
 
 /// Removes ANSI escape codes from the input string.
-/// 
+///
 /// This function takes an input string and removes ANSI escape codes used for color formatting.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `input` - The input string with ANSI escape codes.
-/// 
+///
 /// # Returns
-/// 
+///
 /// A new string with the ANSI escape codes removed.
 fn remove_ansi_escape_codes(input: &str) -> String {
     let mut output = String::new();
@@ -157,15 +156,15 @@ fn remove_ansi_escape_codes(input: &str) -> String {
 }
 
 /// Retrieves a Git branch for a user interface (UI).
-/// 
+///
 /// This function provides the Git branch information in a format suitable for a user interface.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `name` - An optional branch name to create. If `None`, retrieves the list of branches.
-/// 
+///
 /// # Returns
-/// 
+///
 /// An `io::Result` containing the branch information as a `String`.
 pub fn git_branch_for_ui(name: Option<String>) -> io::Result<String> {
     let mut current_dir = std::env::current_dir()?;
@@ -185,14 +184,14 @@ pub fn git_branch_for_ui(name: Option<String>) -> io::Result<String> {
     } else {
         let mut output: Vec<u8> = vec![];
         list_branches(&git_dir, &mut output)?;
-        let output_string = remove_ansi_escape_codes(&String::from_utf8(output).unwrap_or_else(|e| {
-            eprintln!("Error converting bytes to string: {}", e);
-            String::new() 
-        }));
+        let output_string =
+            remove_ansi_escape_codes(&String::from_utf8(output).unwrap_or_else(|e| {
+                eprintln!("Error converting bytes to string: {}", e);
+                String::new()
+            }));
         Ok(output_string)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -210,7 +209,7 @@ mod tests {
         }
         Ok(())
     }
-    
+
     #[test]
     fn test_remove_ansi_escape_codes() {
         let input = "\x1B[32mThis is green text\x1B[0m";
