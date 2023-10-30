@@ -28,11 +28,16 @@ fn create_new_commit_file(
         return Err(io::Error::new(io::ErrorKind::Other, "No changes were made"));
     }
 
-    let time = chrono::Local::now().format("%d/%m/%Y %H:%M").to_string();
+    let time = chrono::Local::now();
     let commit_content = format!(
-        "tree {tree_hash}\nparent {parent_commit}\nauthor {}\ndate: {time}\n\n{message}\0",
-        "user"
+        "tree {tree_hash}
+        \nparent  {parent_commit}
+        \nauthor {} {} {time}
+        \ncommitter {} {} {time}
+        \n\n{message}\0",
+        "user", "email@email", "user", "email@email"
     );
+
 
     let commit_hash = hash_object::store_string_to_file(&commit_content, directory, "commit")?;
     Ok(commit_hash)

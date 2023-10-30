@@ -105,7 +105,7 @@ fn obtener_texto_desde_funcion() -> Result<String, std::io::Error> {
 
 fn obtener_texto_desde_log() -> Result<String, std::io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = match find_git_directory(&mut current_dir, ".git") {
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir,
         None => {
             return Err(io::Error::new(
