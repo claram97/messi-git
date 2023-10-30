@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
-    fs,
-    io::{self, BufReader, Error, Read, Write},
+    fs::{self, File},
+    io::{self, Error, Read, Write, BufReader},
     net::TcpStream,
     path::{Path, PathBuf},
     str::from_utf8,
@@ -14,7 +14,7 @@ use flate2::bufread::ZlibDecoder;
 
 const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
-const CAPABILITIES: &str = "multi_ack side-band-64k ofs-delta";
+const CAPABILITIES: &str = "multi_ack side-band-64k";
 #[derive(Debug)]
 pub struct Client {
     git_dir: PathBuf,
@@ -223,21 +223,22 @@ impl Client {
         let mut bytes_to_read = buf.get(..4);
 
         while let Some(size_hex) = bytes_to_read {
-            let bytes = from_utf8(size_hex).unwrap_or("");
+            let bytes = from_utf8(size_hex).unwrap_or_default();
             print!("{}", bytes);
-            let bytes = usize::from_str_radix(bytes, 16).unwrap_or(0);
+            let bytes = usize::from_str_radix(bytes, 16).unwrap_or_default();
 
             let end = start + bytes;
             start += 4;
-            let content = buf.get(start..end).unwrap_or(&[]);
-            match from_utf8(content) {
-                Ok(content) => {
-                    print!("{}", content)
-                }
-                Err(_) => {
-                    read_pack_file(content);
-                    break;
-                }
+            let content = buf.get(start..end).unwrap_or_default();
+            let is_header_start = content[0] == 1;
+            if is_header_start {
+                let packfile = content.get(1+12..).unwrap_or_default();
+                let mut packfile = Vec::from(packfile);
+                return read_pack_file(&mut packfile);
+            } else {
+                let content = from_utf8(content)
+                    .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
+                print!("{}", content);
             };
 
             start = end;
@@ -248,15 +249,45 @@ impl Client {
     }
 }
 
-fn read_pack_file(buf: &[u8]) {
-    let signature = buf.get(1..5).unwrap_or(&[]);
-    let is_packfile = match from_utf8(signature) {
-        Ok(sig) => sig == "PACK",
-        Err(_) => false
-    };
-    let start = 5;
-    let packfile = buf.get(start..).unwrap_or(&[]);
-    println!("{:?}", packfile);
+fn read_pack_file(packfile: &[u8]) -> io::Result<()> {
+    let bytes_to_read = 4;
+    let mut start = 0;
+
+    let signature = packfile
+        .get(start..start + bytes_to_read)
+        .unwrap_or_default();
+
+    start += bytes_to_read;
+
+    let signature = from_utf8(&signature)
+        .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
+
+    if signature == "PACK" {
+        let version = packfile
+            .get(start..start + bytes_to_read)
+            .unwrap_or_default();
+        let version: [u8; 4] = version[..4].try_into().unwrap_or_default();
+        let version = u32::from_be_bytes(version);
+        start += bytes_to_read;
+        
+        let objects_quantity = packfile
+            .get(start..start + bytes_to_read)
+            .unwrap_or_default();
+        let objects_quantity: [u8; 4] = objects_quantity[..4].try_into().unwrap_or_default();
+        let objects_quantity = u32::from_be_bytes(objects_quantity);
+        start += bytes_to_read;
+
+        println!("PACK");
+        println!("VERSION: {:?}", version);
+        println!("QUANTITY: {:?}", objects_quantity);
+
+        let content = packfile.get(start..).unwrap_or_default();
+        let object_type = content[0] & 111;
+        dbg!(object_type);
+
+        println!("{:?}", content);
+    }
+    Ok(())
 }
 
 fn connection_not_established_error() -> Error {
@@ -277,30 +308,13 @@ fn read_pkt_line_tcp(socket: &mut TcpStream) -> (usize, String) {
     (size, line)
 }
 
-fn read_pkt_line_tcp_raw(socket: &mut TcpStream) -> (usize, String) {
-    let mut line = read_n_to_string_tcp(socket, 4);
-    let size = usize::from_str_radix(&line, 16).unwrap_or(0);
-
-    if size < 4 {
-        return (size, line);
-    }
-
-    line = format!("{}{}", line, read_n_to_string_tcp(socket, size - 4));
-    (size, line)
-}
-
 fn read_n_to_string_tcp(socket: &mut TcpStream, n: usize) -> String {
     let mut buf = vec![0u8; n];
-    // match (socket.read_exact(&mut buf), from_utf8(&buf)) {
-    //     (Ok(_), Ok(content)) => content.to_owned(),
-    //     _ => String::new(),
-    // }
+
     match socket.read_exact(&mut buf) {
         Ok(_) => match from_utf8(&buf) {
             Ok(content) => content.to_owned(),
             Err(_) => {
-                println!("FALLA ACAAA JAJAJ");
-                dbg!(buf);
                 todo!()
             }
         },
