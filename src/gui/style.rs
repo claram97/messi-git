@@ -79,6 +79,27 @@ pub fn apply_button_style(button: &gtk::Button) -> Result<(), String> {
     Ok(())
 }
 
+pub fn get_label(builder: &gtk::Builder, label_id: &str, font_size: f64) -> Option<gtk::Label> {
+    if let Some(label) = builder.get_object::<gtk::Label>(label_id) {
+        let pango_desc = pango::FontDescription::from_string(&format!("Sans {:.1}", font_size));
+        label.override_font(&pango_desc);
+        label.show();
+        Some(label)
+    } else {
+        eprintln!("Failed to get the label with ID: {}", label_id);
+        None
+    }
+}
+
+pub fn get_entry(builder: &gtk::Builder, entry_id: &str) -> Option<gtk::Entry> {
+    if let Some(entry) = builder.get_object::<gtk::Entry>(entry_id) {
+        Some(entry)
+    } else {
+        eprintln!("Failed to get the entry with ID: {}", entry_id);
+        None
+    }
+}
+
 /// Apply a custom CSS style to a GTK window.
 ///
 /// This function takes a reference to a `gtk::Window` and applies a custom CSS style to it
@@ -127,5 +148,43 @@ pub fn load_and_get_window(builder: &gtk::Builder, ui_path: &str, window_name: &
             None
         }
     }
+}
+
+pub fn apply_clone_button_style(button: &gtk::Button) {
+    let css_provider = gtk::CssProvider::new();
+    if let Err(err) = css_provider.load_from_data("button {
+        background-color: #FFFFFF; /* Fondo blanco */
+        color: #1e3799; /* Texto azul */
+        border: 2px solid #1e3799; /* Borde azul */
+    }".as_bytes()) {
+        eprintln!("Failed to load CSS for button: {}", err);
+    }
+
+    let style_context = button.get_style_context();
+    style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+}
+
+pub fn apply_label_style(label: &gtk::Label) {
+    let css_provider = gtk::CssProvider::new();
+    if let Err(err) = css_provider.load_from_data("label {
+        color: #1e3799; /* Texto azul */
+    }".as_bytes()) {
+        eprintln!("Failed to load CSS for label: {}", err);
+    }
+
+    let style_context = label.get_style_context();
+    style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+}
+
+pub fn apply_entry_style(entry: &gtk::Entry) {
+    let css_provider = gtk::CssProvider::new();
+    if let Err(err) = css_provider.load_from_data("entry {
+        /* Estilos personalizados para las entradas */
+    }".as_bytes()) {
+        eprintln!("Failed to load CSS for entry: {}", err);
+    }
+
+    let style_context = entry.get_style_context();
+    style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 

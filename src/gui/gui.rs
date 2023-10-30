@@ -1,3 +1,5 @@
+use gtk::FileChooserAction;
+use gtk::FileChooserDialog;
 use gtk::prelude::*;
 use gtk::Builder;
 use std::sync::Mutex;
@@ -15,6 +17,12 @@ use std::io;
 use crate::log::Log;
 use crate::log::accumulate_logs;
 use crate::log::print_logs;
+
+use super::style::apply_clone_button_style;
+use super::style::apply_entry_style;
+use super::style::apply_label_style;
+use super::style::get_entry;
+use super::style::get_label;
 
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
@@ -369,6 +377,51 @@ fn configure_init_window(new_window_init: &gtk::Window, builder: &gtk::Builder) 
 fn configure_clone_window(new_window_clone: &gtk::Window, builder: &gtk::Builder) {
     add_to_open_windows(new_window_clone);
     apply_window_style(new_window_clone);
+    let browse_button = get_button(builder,"browse-button","Browse");
+    let clone_button = get_button(builder,"clone-button","Clone the repo!");
+    
+    apply_clone_button_style(&browse_button);
+    apply_clone_button_style(&clone_button);
+
+     // Conectar la señal "clicked" del botón "Browse" para abrir el cuadro de diálogo de selección de directorio
+     let new_window_clone_clone = new_window_clone.clone();
+     let dir_to_clone_entry = get_entry(builder, "dir-to-clone-entry").unwrap(); // Asume que esto es un campo de entrada para mostrar el directorio seleccionado
+     let dir_to_clone_entry_clone = dir_to_clone_entry.clone(); // Clonar la entrada para pasarlo a la función de manejo de clic
+     browse_button.connect_clicked(move |_| {
+         let dialog = FileChooserDialog::new(
+             Some("Seleccionar Carpeta"),
+             Some(&new_window_clone_clone),
+             FileChooserAction::SelectFolder,
+         );
+ 
+         dialog.add_button("Cancelar", gtk::ResponseType::Cancel);
+         dialog.add_button("Seleccionar", gtk::ResponseType::Ok);
+ 
+         if dialog.run() == gtk::ResponseType::Ok {
+             if let Some(folder) = dialog.get_filename() {
+                 println!("Carpeta seleccionada: {:?}", folder);
+                 // Actualiza la entrada de directorio con la carpeta seleccionada
+                 dir_to_clone_entry_clone.set_text(&folder.to_string_lossy());
+                 // Aquí puedes realizar acciones adicionales con la carpeta seleccionada
+             }
+         }
+ 
+         unsafe { dialog.destroy() };
+     });
+     
+    let url_label = get_label(builder, "url-label", 12.0).unwrap();
+    let clone_dir_label = get_label(builder,"clone-dir-label",12.0).unwrap();
+    let clone_info_label = get_label(builder, "clone-info-label", 26.0).unwrap();
+    
+    apply_label_style(&url_label);
+    apply_label_style(&clone_dir_label);
+    apply_label_style(&clone_info_label);
+
+    let dir_to_clone_entry = get_entry(builder, "dir-to-clone-entry").unwrap();
+    let url_entry = get_entry(builder, "url-entry").unwrap();
+
+    apply_entry_style(&dir_to_clone_entry);
+    apply_entry_style(&url_entry);
     new_window_clone.set_default_size(800, 600);
 
 }
