@@ -14,7 +14,7 @@
         <property name="can-focus">False</property>
         <child>
           <object class="GtkButton" id="button1">
-            <property name="label" translatable="yes">Add</property>
+            <property name="label" translatable="yes">Log</property>
             <property name="width-request">200</property>
             <property name="height-request">50</property>
             <property name="visible">True</property>
@@ -130,9 +130,9 @@
             <property name="height-request">500</property>
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="label" translatable="yes">label</property>
+            <property name="label" translatable="yes">Repository opened Succesfully !!!</property>
             <attributes>
-              <attribute name="font-desc" value="Liberation Mono Bold 20"/>
+              <attribute name="font-desc" value="Liberation Mono Bold 8"/>
               <attribute name="foreground" value="#1a1a5f5fb4b4"/>
             </attributes>
           </object>
@@ -167,6 +167,20 @@
           <packing>
             <property name="x">500</property>
             <property name="y">550</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="button11">
+            <property name="label" translatable="yes">Add</property>
+            <property name="width-request">200</property>
+            <property name="height-request">50</property>
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">True</property>
+          </object>
+          <packing>
+            <property name="x">5</property>
+            <property name="y">390</property>
           </packing>
         </child>
       </object>

@@ -10,6 +10,12 @@ use crate::utils::find_git_directory;
 use crate::branch::git_branch_for_ui;
 use crate::branch::create_new_branch;
 use crate::gui::style::{apply_button_style, get_button, apply_window_style, load_and_get_window};
+use crate::log::log;
+use std::io;
+use crate::log::Log;
+use crate::log::accumulate_logs;
+use crate::log::print_logs;
+
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -91,6 +97,37 @@ fn obtener_texto_desde_funcion() -> Result<String, std::io::Error> {
     }
 }
 
+fn obtener_texto_desde_log() -> Result<String, std::io::Error> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir = match find_git_directory(&mut current_dir, ".git") {
+        Some(git_dir) => git_dir,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ))
+        }
+    };
+
+    let log_iter=  log(None, &git_dir, 10, 0, true) ;
+    let log_iter = log_iter.unwrap();
+    let log_text = get_logs_as_string(log_iter);
+
+        
+    Ok(log_text)
+
+}
+pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
+    let mut log_text = String::new();
+
+    for log in log_iter {
+        log_text.push_str(&log.to_string()); 
+        log_text.push('\n'); 
+    }
+
+    log_text
+}
+
 /// Displays a repository window with various buttons and actions in a GTK application.
 ///
 /// This function initializes and displays a GTK repository window using a UI builder. It configures the window, adds buttons with specific actions, and sets their styles and click event handlers. The repository window provides buttons for actions like "Add," "Commit," "Push," and more.
@@ -99,6 +136,7 @@ fn show_repository_window() {
     let builder = gtk::Builder::new();
     if let Some(new_window) = load_and_get_window(&builder,"src/gui/new_window2.ui", "window") {
         let new_window_clone = new_window.clone(); 
+        let builder_clone = builder.clone();
         add_to_open_windows(&new_window);
         configure_repository_window(new_window);
         let button1 = get_button(&builder, "button1", "Add");
@@ -111,6 +149,7 @@ fn show_repository_window() {
         let button8 = get_button(&builder, "button8", "Push");
         let button9 = get_button(&builder, "button9", "Push");
         let button10 = get_button(&builder, "button10", "Push");
+        let button11 = get_button(&builder, "button11", "Push");
 
 
 
@@ -124,13 +163,31 @@ fn show_repository_window() {
         apply_button_style(&button8);
         apply_button_style(&button9);
         apply_button_style(&button10);
+        apply_button_style(&button11);
+
         
         button9.set_visible(false);
         button10.set_visible(false);
 
         button1.connect_clicked(move |_| {
-            println!("Button 1 (Add) clicked.");
+            let label: Label = builder_clone.get_object("label").unwrap();
+            let texto_desde_funcion = obtener_texto_desde_log();
+            match texto_desde_funcion {
+                Ok(texto) => {
+                    let font_description = pango::FontDescription::from_string("Sans 2"); // Cambia "Serif 12" al tamaño y estilo de fuente deseado
+                    label.override_font(&font_description);
+                    label.set_hexpand(true);
+                    label.set_halign(gtk::Align::Start);
+
+                    label.set_ellipsize(pango::EllipsizeMode::End);
+                    label.set_text(&texto);
+                }
+                Err(err) => {
+                    eprintln!("Error al obtener el texto: {}", err);
+                }
+            }
         });
+        
 
         button2.connect_clicked(move |_| {
             println!("Button 2 (Commit) clicked.");
@@ -169,7 +226,8 @@ fn show_repository_window() {
                     Err(err) => {
                         eprintln!("Error al obtener el texto: {}", err);
                     }
-                }            });
+                }            
+            });
     
             button10.connect_clicked(move |_| {
                 create_text_entry_window("Enter the name of the branch", |text| {
