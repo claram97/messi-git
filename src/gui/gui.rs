@@ -17,6 +17,7 @@ use gtk::Label;
 use std::io;
 use std::rc::Rc;
 use std::sync::Mutex;
+use crate::init::git_init;
 
 
 use super::style::apply_clone_button_style;
@@ -231,6 +232,8 @@ fn show_repository_window() {
             button10.connect_clicked(move |_| {
                 create_text_entry_window("Enter the name of the branch", |text| {
                     git_branch_for_ui(Some(text));
+                    close_all_windows();
+                    show_repository_window();
                 });
             });
         });
@@ -285,8 +288,8 @@ fn create_text_entry_window(message: &str, on_text_entered: impl Fn(String) + 's
 
     ok_button.connect_clicked(move |_| {
         let text = entry.get_text().to_string();
-        close_all_windows();
-        show_repository_window();
+        // close_all_windows();
+        // show_repository_window();
         on_text_entered(text);
     });
 
@@ -301,21 +304,66 @@ fn create_text_entry_window(message: &str, on_text_entered: impl Fn(String) + 's
 ///
 /// - `button`: A reference to the GTK button to which the event handler will be connected.
 /// - `button_type`: A string indicating the type of button, which determines the action to be taken when the button is clicked.
-///
 fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) {
     let button_type = button_type.to_owned();
 
     button.connect_clicked(move |_| {
-        if button_type == "option2" {
-            create_text_entry_window("Enter the branch", |_| {});
-        } else if button_type == "option3" {
-            create_text_entry_window("Enter the template path", |_| {});
-        } else if button_type == "option1" {
-            close_all_windows();
-            show_repository_window();
+        let current_dir = std::env::current_dir();
+        
+        if let Ok(current_dir) = current_dir {
+            let dir_str = current_dir.to_str().unwrap_or("").to_string();
+
+            if button_type == "option2" {
+                create_text_entry_window("Enter the branch",  move|text| {  
+                    let result = git_init(&dir_str, &text, None);
+                    match result {
+                        Ok(_) => {
+                            close_all_windows();
+                            show_repository_window();
+                        }
+                        Err(err) => {
+                            close_all_windows();
+                            run_main_window();
+                        }
+                    }
+
+                });
+            } else if button_type == "option3" {
+                create_text_entry_window("Enter the template path",  move|text|{
+                    let result = git_init(&dir_str,"main" , Some(&text));
+                    match result {
+                        Ok(_) => {
+                            close_all_windows();
+                            show_repository_window();
+                        }
+                        Err(err) => {
+                            close_all_windows();
+                            run_main_window();
+                        }
+                    }
+                });
+            } else if button_type == "option1" {
+                let result = git_init(&dir_str, "main", None);
+                match result {
+                    Ok(_) => {
+                        close_all_windows();
+                        show_repository_window();
+                    }
+                    Err(err) => {
+                        close_all_windows();
+                        run_main_window();
+                    }
+                }
+            }
+        } else {
+            eprintln!("No se pudo obtener el directorio actual.");
         }
     });
 }
+
+
+
+
 
 /// Configures the properties of a clone window in a GTK application.
 ///
