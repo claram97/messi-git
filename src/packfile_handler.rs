@@ -1,54 +1,124 @@
 use std::{
     io::{self, BufReader, Error, Read},
+    net::ToSocketAddrs,
     str::from_utf8,
-    vec,
+    vec, fmt::Display,
 };
 
 use flate2::bufread::ZlibDecoder;
 use sha1::{Digest, Sha1};
 
-pub fn read_pack_file(packfile: &[u8]) -> io::Result<()> {
-    let mut buf: [u8; 4] = [0, 0, 0, 0];
-    let mut reader = BufReader::new(packfile);
-
-    reader.read_exact(&mut [0])?;
-    reader.read_exact(&mut buf)?;
-
-    let signature =
-        from_utf8(&buf).map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
-
-    if signature != "PACK" {
-        return Err(Error::new(
-            io::ErrorKind::InvalidData,
-            format!("Invalid packfile signature: {}", signature),
-        ));
-    }
-
-    reader.read_exact(&mut buf)?;
-    let version = u32::from_be_bytes(buf);
-
-    if version != 2 {
-        return Err(Error::new(
-            io::ErrorKind::InvalidData,
-            format!(
-                "Packfile version not supported: {}. Please use v2.",
-                version
-            ),
-        ));
-    }
-
-    reader.read_exact(&mut buf)?;
-    let objects_quantity = u32::from_be_bytes(buf);
-    for _ in 0..objects_quantity {
-        process_packfile_object(&mut reader)?;
-    }
-    Ok(())
+pub struct PackfileItem {
+    obj_type: String,
+    content: String,
 }
 
-fn read_byte(reader: &mut impl Read) -> io::Result<u8> {
-    let mut buf: [u8; 1] = [0];
-    reader.read(&mut buf)?;
-    Ok(buf[0])
+impl PackfileItem {
+    fn new(obj_type: &str, content: &str) -> Self {
+        Self {
+            obj_type: obj_type.to_string(),
+            content: content.to_string(),
+        }
+    }
+
+    pub fn obj_type(&self) -> &str {
+        &self.obj_type
+    }
+
+    pub fn content(&self) -> &str {
+        &self.content
+    }
+}
+pub struct Packfile<R>
+where
+    R: Read,
+{
+    bufreader: BufReader<R>,
+    position: u32,
+    total: u32,
+}
+
+impl<R> Packfile<R>
+where
+    R: Read,
+{
+    pub fn new(packfile: R) -> io::Result<Self> {
+        let mut packfile = Self {
+            bufreader: BufReader::new(packfile),
+            position: 0,
+            total: 0,
+        };
+        packfile.validate()?;
+        packfile.count_objects()?;
+        Ok(packfile)
+    }
+
+    fn validate(&mut self) -> io::Result<()> {
+        let mut buf: [u8; 4] = [0, 0, 0, 0];
+        self.bufreader.read_exact(&mut [0])?;
+        self.bufreader.read_exact(&mut buf)?;
+
+        let signature = from_utf8(&buf)
+            .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
+
+        if signature != "PACK" {
+            return Err(Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Invalid packfile signature: {}", signature),
+            ));
+        }
+
+        self.bufreader.read_exact(&mut buf)?;
+        let version = u32::from_be_bytes(buf);
+
+        if version != 2 {
+            return Err(Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "Packfile version not supported: {}. Please use v2.",
+                    version
+                ),
+            ));
+        }
+
+        Ok(())
+    }
+
+    fn count_objects(&mut self) -> io::Result<()> {
+        let mut buf: [u8; 4] = [0, 0, 0, 0];
+        self.bufreader.read_exact(&mut buf)?;
+        self.total = u32::from_be_bytes(buf);
+        Ok(())
+    }
+
+    fn get_next(&mut self) -> io::Result<PackfileItem> {
+        let mut byte = self.read_byte()?;
+        let obj_type_number = byte.clone();
+        let obj_type = match get_object_type(obj_type_number) {
+            Ok(t) => t,
+            Err(_) => return Ok(PackfileItem::new("", "")),
+        };
+        let mut obj_size = byte & 0x0f;
+        let mut bshift = 4;
+        while (byte & 0x80) != 0 {
+            byte = self.read_byte()?;
+            obj_size |= (byte & 0x7f) << bshift;
+            bshift += 7;
+        }
+
+        let mut decompressor = ZlibDecoder::new(&mut self.bufreader);
+        let mut obj = vec![];
+        decompressor.read_to_end(&mut obj)?;
+
+        let content = String::from_utf8_lossy(&obj);
+        Ok(PackfileItem::new(&obj_type, &content))
+    }
+
+    fn read_byte(&mut self) -> io::Result<u8> {
+        let mut buf: [u8; 1] = [0];
+        self.bufreader.read(&mut buf)?;
+        Ok(buf[0])
+    }
 }
 
 fn get_object_type(byte: u8) -> io::Result<String> {
@@ -57,44 +127,34 @@ fn get_object_type(byte: u8) -> io::Result<String> {
         2 => Ok(String::from("tree")),
         3 => Ok(String::from("blob")),
         4 => Ok(String::from("tag")),
-        t => Err(Error::new(io::ErrorKind::InvalidData, format!("Unsopported object type: {}", t))),
+        t => Err(Error::new(
+            io::ErrorKind::InvalidData,
+            format!("Unsopported object type: {}", t),
+        )),
     }
 }
 
-fn process_packfile_object(bufreader: &mut BufReader<&[u8]>) -> io::Result<()> {
-    let mut byte = read_byte(bufreader)?;
-    let obj_type_number = byte.clone();
-    let obj_type = get_object_type(obj_type_number)?;
-    println!("Obj type: {}", obj_type);
-    let mut obj_size = byte & 0x0f;
-    let mut bshift = 4;
-    while (byte & 0x80) != 0 {
-        byte = read_byte(bufreader)?;
-        obj_size |= (byte & 0x7f) << bshift;
-        bshift += 7;
+impl<R> Iterator for Packfile<R>
+where
+    R: Read,
+{
+    type Item = PackfileItem;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.position >= self.total - 1 {
+            return None;
+        }
+        self.position += 1;
+
+        match self.get_next() {
+            Ok(obj) => Some(obj),
+            Err(_) => None,
+        }
     }
-
-    let mut decompressor = ZlibDecoder::new(bufreader);
-    let mut obj = vec![];
-    decompressor.read_to_end(&mut obj)?;
-
-    let content = String::from_utf8_lossy(&obj);
-
-    println!("{}", content);
-    let file_content = format!("{obj_type} {}\0", content.len());
-    let mut hasher = Sha1::new();
-    hasher.update(file_content.as_bytes());
-    hasher.update(content.as_bytes());
-    let result = hasher.finalize();
-    println!("hash generado: {}", format!("{:x}", result));
-
-    Ok(())
 }
 
-fn decompress_packfile_object(bufreader: &mut BufReader<&[u8]>) -> io::Result<()> {
-    let mut decompressor = ZlibDecoder::new(bufreader);
-    let mut obj = vec![];
-    decompressor.read_to_end(&mut obj)?;
-
-    Ok(())
+impl Display for PackfileItem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "type: {}\ncontent:\n{}\n", &self.obj_type, &self.content)
+    }
 }

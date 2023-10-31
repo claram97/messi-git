@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    fs::{self, File},
+    fs,
     io::{self, BufReader, Error, Read, Write},
     net::TcpStream,
     path::{Path, PathBuf},
@@ -8,7 +8,7 @@ use std::{
     vec,
 };
 
-use crate::packfile_handler::read_pack_file;
+use crate::packfile_handler::Packfile;
 
 // multi_ack_detailed side-band-64k thin-pack include-tag ofs-delta deepen-since deepen-not
 
@@ -278,7 +278,10 @@ impl Client {
             let is_header_start = content[0] == 1;
 
             if is_header_start {
-                return read_pack_file(&mut content);
+                let packfile = Packfile::new(&content[..])?;
+                for obj in packfile {
+                    println!("{}", obj)
+                }
             } else {
                 let content = from_utf8(&content)
                     .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
