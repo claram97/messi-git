@@ -67,19 +67,18 @@ pub fn find_untracked_files(
         let entry_path = entry.path();
         if let Ok(relative_entry_path) = entry_path.strip_prefix(base_directory) {
             let relative_entry_path_str = relative_entry_path.to_string_lossy().to_string();
-            if !relative_entry_path_str.starts_with(".") {
-                if !index.path_should_be_ignored(&relative_entry_path_str)
-                    && !index.contains(&relative_entry_path_str)
-                {
-                    if entry_path.is_dir() {
-                        let buffer = format!("\x1b[31m\t\t{}x1b[0m\n", relative_entry_path_str);
-                        output.write_all(buffer.as_bytes())?;
-                        find_untracked_files(&entry_path, base_directory, index, output)?
-                    }
-                    if entry_path.is_file() {
-                        let buffer = format!("\t\t{}\n", relative_entry_path_str);
-                        output.write_all(buffer.as_bytes())?;
-                    }
+            if !relative_entry_path_str.starts_with('.')
+                && !index.path_should_be_ignored(&relative_entry_path_str)
+                && !index.contains(&relative_entry_path_str)
+            {
+                if entry_path.is_dir() {
+                    let buffer = format!("\x1b[31m\t\t{}x1b[0m\n", relative_entry_path_str);
+                    output.write_all(buffer.as_bytes())?;
+                    find_untracked_files(&entry_path, base_directory, index, output)?
+                }
+                if entry_path.is_file() {
+                    let buffer = format!("\t\t{}\n", relative_entry_path_str);
+                    output.write_all(buffer.as_bytes())?;
                 }
             }
         } else {
