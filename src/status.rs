@@ -1,6 +1,6 @@
 pub(crate) const NAME_OF_INDEX_FILE: &str = "index-file";
 pub(crate) const NAME_OF_GIT_DIRECTORY: &str = ".git";
-use sha1::{Digest, Sha1};
+use messi::hash_object;
 use std::collections::HashSet;
 use std::env;
 use std::fs::File;
@@ -70,21 +70,23 @@ pub fn find_git_directory() -> Option<String> {
  * ```
  */
 fn read_index_file(file: &mut File) -> io::Result<()> {
+    let git_directory = match find_git_directory() {
+        Some(dir) => dir,
+        None => return Err(io::Error::new(ErrorKind::NotFound, "Git directory not found."))
+    };
     let reader = BufReader::new(file);
+
     for line in reader.lines() {
         match line {
             Ok(line_content) => {
                 let splitted_line: Vec<&str> = line_content.split_whitespace().collect();
-                if let Some(path) = find_git_directory() {
-                    if let Some(parent) = Path::new(&path).parent() {
-                        let file_path =
-                            parent.to_string_lossy().to_string() + "/" + splitted_line[1];
-                        let hash = hash_file_content(&file_path)?;
-                        if !hash.eq(splitted_line[0]) {
-                            println!("File {} has changed since last commit.", splitted_line[1]);
-                        }
+                if let Some(parent) = Path::new(&git_directory).parent() {
+                    let file_path = parent.to_string_lossy().to_string() + "/" + splitted_line[1];
+                    let hash = hash_object::hash_file_content(&file_path)?;
+                    if !hash.eq(splitted_line[0]) {
+                        println!("File {} has changed since last commit.", splitted_line[1]);
                     }
-                }
+                }   
             }
             Err(e) => {
                 eprintln!("Error trying to read the line: {}", e);
@@ -132,68 +134,6 @@ pub fn find_files_that_changed_since_last_commit() -> io::Result<()> {
             "Git index file couldn't be opened.",
         )),
     }
-}
-
-/**
- * Hashes the provided string content using the SHA-1 algorithm.
- *
- * This function takes a reference to a string `content`, computes its SHA-1 hash, and returns the hash
- * as a hexadecimal string representation.
- *
- * # Arguments
- *
- * - `content`: A reference to the string content that you want to hash.
- *
- * # Returns
- *
- * Returns the SHA-1 hash of the input `content` as a hexadecimal string.
- *
- * # Example
- *
- * ```
- * let content = "This is the content to be hashed.";
- * let hash = hash_string(content);
- * println!("SHA-1 Hash: {}", hash);
- * ```
- */
-pub fn hash_string(content: &str) -> String {
-    let mut hasher = Sha1::new();
-    hasher.update(content.as_bytes());
-    let result = hasher.finalize();
-    format!("{:x}", result)
-}
-
-/**
- * Hashes the content of a file at the specified path using the SHA-1 algorithm.
- *
- * This function reads the content of a file at the given `path`, computes its SHA-1 hash, and returns
- * the hash as a hexadecimal string representation.
- *
- * # Arguments
- *
- * - `path`: A string representing the path to the file whose content you want to hash.
- *
- * # Returns
- *
- * Returns an `io::Result` where `Ok(hash)` contains the SHA-1 hash of the file's content as a hexadecimal string,
- * or an error if there are any issues reading the file or hashing its content.
- *
- * # Example
- *
- * ```
- * use std::io;
- *
- * match hash_file_content("path/to/file.txt") {
- *     Ok(hash) => println!("SHA-1 Hash of the file's content: {}", hash),
- *     Err(e) => eprintln!("Error while hashing file content: {}", e),
- * }
- * ```
- */
-pub fn hash_file_content(path: &str) -> io::Result<String> {
-    let content = std::fs::read_to_string(path)?;
-    let header = format!("blob {}\0", content.len());
-    let complete = header + &content;
-    Ok(hash_string(&complete))
 }
 
 /**
