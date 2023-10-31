@@ -776,18 +776,18 @@ mod test {
         config_file.read_to_string(&mut initial_config_file_content)?;
         assert!(initial_config_file_content
              .eq("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n[remote \"my_remote\"]\n\turl = url\n\tfetch = fetch\n"));
-         let mut output: Vec<u8> = vec![];
-         let result = config.change_remote_name("my_remote", "new_remote", &mut output);
-         assert!(result.is_ok());
-         drop(config_file);
-         let mut config_file = File::open("tests/config_fake_repo_11/.mgit/config")?;
-         let mut final_config_file_content = String::new();
-         config_file.read_to_string(&mut final_config_file_content)?;
-         assert!(
+        let mut output: Vec<u8> = vec![];
+        let result = config.change_remote_name("my_remote", "new_remote", &mut output);
+        assert!(result.is_ok());
+        drop(config_file);
+        let mut config_file = File::open("tests/config_fake_repo_11/.mgit/config")?;
+        let mut final_config_file_content = String::new();
+        config_file.read_to_string(&mut final_config_file_content)?;
+        assert!(
              final_config_file_content.eq("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n[remote \"new_remote\"]\n\turl = url\n\tfetch = fetch\n")
          );
-         assert!(initial_config_file_content.ne(&final_config_file_content));
-         std::fs::remove_dir_all("tests/config_fake_repo_11")?;
+        assert!(initial_config_file_content.ne(&final_config_file_content));
+        std::fs::remove_dir_all("tests/config_fake_repo_11")?;
         Ok(())
     }
 
