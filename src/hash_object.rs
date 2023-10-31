@@ -114,7 +114,7 @@ pub fn store_string_to_file(
     git_dir_path: &str,
     file_type: &str,
 ) -> io::Result<String> {
-    let content_hash = hash_string(content);
+    let content_hash = hash_string(&format!("{} {}\0{}", file_type, content.len(), content));
 
     let output_file_dir = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
     create_directory(&output_file_dir)?;
