@@ -14,5 +14,6 @@ pub mod parse_commands;
 pub mod remote;
 pub mod remote_handler;
 pub mod rm;
+pub mod status;
 pub mod tree_handler;
 pub mod utils;
