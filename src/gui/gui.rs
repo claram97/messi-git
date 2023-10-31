@@ -18,6 +18,7 @@ use std::io;
 use std::rc::Rc;
 use std::sync::Mutex;
 use crate::init::git_init;
+use crate::add::add;
 
 
 use super::style::apply_clone_button_style;
@@ -143,6 +144,8 @@ fn show_repository_window() {
     if let Some(new_window) = load_and_get_window(&builder, "src/gui/new_window2.ui", "window") {
         let new_window_clone = new_window.clone();
         let builder_clone = builder.clone();
+        let builder_clone1 = builder.clone();
+
         add_to_open_windows(&new_window);
         configure_repository_window(new_window);
         let button1 = get_button(&builder, "button1", "Add");
@@ -242,7 +245,48 @@ fn show_repository_window() {
             new_window_clone.close();
             run_main_window();
         });
+        
+        button11.connect_clicked(move |_| {
+            let label: Label = builder_clone1.get_object("label").unwrap();
+            create_text_entry_window("Enter the path of the file", move |text| {
+
+                let resultado = obtener_texto_desde_add(&text);
+            
+                match resultado {
+                    Ok(texto) => {
+                        label.set_text(&texto);
+                    }
+                    Err(err) => {
+                        eprintln!("Error al obtener el texto: {}", err);
+                    }
+                }
+               
+            });
+        });
     }
+}
+fn obtener_texto_desde_add(texto: &str) -> Result<String, io::Error> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(git_dir) => git_dir,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ))
+        }
+    };
+    let index_path = format!("{}{}", texto, git_dir);
+        
+    match add(&texto, &index_path, ".mgit", "", None) {
+        Ok(_) => {
+            println!("La función 'add' se ejecutó correctamente.");
+        }
+        Err(err) => {
+            eprintln!("Error al llamar a la función 'add': {:?}", err);
+        }
+    }
+    Ok("hola".to_string())
 }
 
 /// Configures the properties of a repository window in a GTK application.
