@@ -11,5 +11,6 @@ pub mod log;
 pub mod logger;
 pub mod parse_commands;
 pub mod rm;
+pub mod status;
 pub mod tree_handler;
 pub mod utils;
