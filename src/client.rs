@@ -8,13 +8,14 @@ use std::{
     vec,
 };
 
-use flate2::bufread::ZlibDecoder;
+use crate::packfile_handler::read_pack_file;
 
 // multi_ack_detailed side-band-64k thin-pack include-tag ofs-delta deepen-since deepen-not
 
 const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
-const CAPABILITIES: &str = "multi_ack side-band-64k";
+const GIT_RECEIVE_PACK: &str = "git-receive-pack";
+const CAPABILITIES_UPLOAD: &str = "multi_ack side-band-64k ofs-delta";
 #[derive(Debug)]
 pub struct Client {
     git_dir: PathBuf,
@@ -56,7 +57,7 @@ impl Client {
     // May fail due to I/O errors
     pub fn get_refs(&mut self) -> io::Result<Vec<String>> {
         self.connect()?;
-        self.initiate_connection()?;
+        self.initiate_connection(GIT_UPLOAD_PACK)?;
         self.wait_refs()?;
         self.flush()?;
         Ok(self.refs.keys().map(String::from).collect())
@@ -65,14 +66,14 @@ impl Client {
     // REVISAR: deberia ser como el upload-pack the git
     pub fn upload_pack(&mut self, wanted_ref: Option<&str>, git_dir: &str) -> io::Result<()> {
         self.connect()?;
-        self.initiate_connection()?;
+        self.initiate_connection(GIT_UPLOAD_PACK)?;
         self.git_dir = PathBuf::from(git_dir);
         self.wait_refs()?;
 
         if let Some(wanted_ref) = wanted_ref {
             if let Some(hash) = self.want_ref(wanted_ref)? {
                 self.update_fetch_head(&hash)?;
-                self.read_response_until_flush()?;
+                self.wait_packfile()?;
             }
         }
         println!("Termino upload-pack");
@@ -81,10 +82,49 @@ impl Client {
         // self.flush()
     }
 
+    pub fn receive_pack(&mut self, pushing_ref: &str, git_dir: &str) -> io::Result<()> {
+        self.connect()?;
+        self.initiate_connection(GIT_RECEIVE_PACK)?;
+        self.flush()?;
+        self.git_dir = PathBuf::from(git_dir);
+
+        // ya se que tiene el servidor
+        self.wait_refs()?;
+
+        let local_refs = get_local_refs(&self.git_dir)?;
+        let new_hash = match local_refs.get(pushing_ref) {
+            Some(hash) => hash,
+            None => return Err(Error::new(io::ErrorKind::NotFound, "Ref not found")),
+        };
+
+        let prev_hash = match self.refs.get(pushing_ref) {
+            Some(hash) => hash.clone(),
+            None => String::new(),
+        };
+
+        if prev_hash.is_empty() {
+            self.receive_pack_create(pushing_ref, new_hash)
+        } else {
+            self.receive_pack_update(pushing_ref, &prev_hash, new_hash)
+        }
+    }
+
+    fn receive_pack_create(&mut self, pushing_ref: &str, hash: &str) -> io::Result<()> {
+        Ok(())
+    }
+    fn receive_pack_update(
+        &mut self,
+        pushing_ref: &str,
+        prev_hash: &str,
+        new_hash: &str,
+    ) -> io::Result<()> {
+        Ok(())
+    }
+
     // Establish the first conversation with the server
     // Lets the server know that an upload-pack is requested
-    fn initiate_connection(&mut self) -> io::Result<()> {
-        let mut command = format!("{} /{}", GIT_UPLOAD_PACK, self.repository);
+    fn initiate_connection(&mut self, command: &str) -> io::Result<()> {
+        let mut command = format!("{} /{}", command, self.repository);
 
         command = format!("{}\0host={}\0", command, self.host);
 
@@ -102,14 +142,15 @@ impl Client {
     // Auxiliar function. Waits for the refs and loads them in self
     // Should be called only aftes: initiate_connection
     fn wait_refs(&mut self) -> io::Result<()> {
+        self.refs.clear();
         let (_, _) = read_pkt_line_tcp(self.socket()?);
         let (mut size, mut line) = read_pkt_line_tcp(self.socket()?);
 
         while size > 0 {
             if let Some((hash, mut ref_path)) = line.split_once(' ') {
-                if let Some(("HEAD", _capabilities)) = ref_path.split_once('\0') {
+                if let Some((head, _capabilities)) = ref_path.split_once('\0') {
                     // self.capabilities = capabilities.to_string();
-                    ref_path = "HEAD";
+                    ref_path = head;
                 }
                 self.refs
                     .insert(ref_path.trim().to_string(), hash.to_string());
@@ -186,7 +227,7 @@ impl Client {
             }
         }
 
-        let want = format!("want {} {}\n", hash, CAPABILITIES);
+        let want = format!("want {} {}\n", hash, CAPABILITIES_UPLOAD);
         let want = pkt_line(&want);
         dbg!(&want);
         self.send(&want)?;
@@ -195,7 +236,7 @@ impl Client {
 
         self.send_haves(local_refs)?;
         // std::thread::sleep(std::time::Duration::from_secs(5));
-        // self.read_response_until_flush()?;
+        // self.wait_packfile()?;
         self.done()?;
         Ok(Some(hash))
     }
@@ -214,7 +255,7 @@ impl Client {
     }
 
     // Auxiliar function. Reads the socket until a 'flush' signal is read
-    fn read_response_until_flush(&mut self) -> io::Result<()> {
+    fn wait_packfile(&mut self) -> io::Result<()> {
         let socket = self.socket()?;
 
         let mut buf: [u8; 4] = [0, 0, 0, 0];
@@ -227,7 +268,11 @@ impl Client {
             print!("{}", bytes);
             let bytes = usize::from_str_radix(bytes, 16).unwrap_or_default();
 
-            let mut content = vec![0; bytes-4];
+            if bytes < 4 {
+                break;
+            }
+
+            let mut content = vec![0; bytes - 4];
             reader.read_exact(&mut content)?;
 
             let is_header_start = content[0] == 1;
@@ -245,34 +290,6 @@ impl Client {
 
         Ok(())
     }
-}
-
-fn read_pack_file(packfile: &[u8]) -> io::Result<()> {
-    let mut buf: [u8; 4] = [0, 0, 0, 0];
-    let mut reader = BufReader::new(packfile);
-
-    reader.read_exact(&mut [0])?;
-    reader.read_exact(&mut buf)?;
-
-    let signature =
-        from_utf8(&buf).map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
-
-    if signature == "PACK" {
-        reader.read_exact(&mut buf)?;
-        let version = u32::from_be_bytes(buf);
-
-        reader.read_exact(&mut buf)?;
-        let objects_quantity = u32::from_be_bytes(buf);
-
-        println!("PACK");
-        println!("VERSION: {:?}", version);
-        println!("QUANTITY: {:?}", objects_quantity);
-        let mut content = vec![];
-        reader.read_to_end(&mut content)?;
-
-        println!("{:?}", content);
-    }
-    Ok(())
 }
 
 fn connection_not_established_error() -> Error {

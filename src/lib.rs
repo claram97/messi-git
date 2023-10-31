@@ -13,3 +13,4 @@ pub mod rm;
 pub mod tree_handler;
 pub mod utils;
 pub mod client;
+pub mod packfile_handler;
