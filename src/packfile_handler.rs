@@ -97,10 +97,10 @@ where
             Err(_) => return Ok(PackfileItem::new(None, "")),
         };
         let mut obj_size = (byte & 0x0f) as usize;
-        let mut bshift = 4;
+        let mut bshift: usize = 4;
         while (byte & 0x80) != 0 {
             byte = self.read_byte()?;
-            obj_size |= ((byte & 0x7f) << bshift) as usize;
+            obj_size |= ((byte & 0x7f) as usize) << bshift;
             bshift += 7;
         }
 
