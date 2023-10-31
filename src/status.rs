@@ -45,12 +45,13 @@ pub fn find_git_directory() -> Option<String> {
 //hash path
 fn read_index_file(file: &mut File) -> io::Result<()> {
     let reader = BufReader::new(file);
-
     for line in reader.lines() {
         match line {
             Ok(line_content) => {
                 let splitted_line: Vec<&str> = line_content.split_whitespace().collect();
-                let file_path = "../".to_string() + splitted_line[1];
+                // let file_path = "../".to_string() + splitted_line[1];
+                let file_path = splitted_line[1];
+                println!("file_path: {}", file_path);
                 let hash = hash_file_content(&file_path)?;
                 if !hash.eq(splitted_line[0]) {
                     println!("File {} has changed since last commit.", splitted_line[1]);
@@ -69,7 +70,7 @@ fn read_index_file(file: &mut File) -> io::Result<()> {
 pub fn find_files_that_changed_since_last_commit() -> io::Result<()> {
     match find_git_directory() {
         Some(dir) => {
-            let file_path = dir + NAME_OF_INDEX_FILE;
+            let file_path = dir + "/" + NAME_OF_INDEX_FILE;
             let mut file = File::open(file_path)?;
             read_index_file(&mut file)?;
             Ok(())
@@ -90,7 +91,9 @@ pub fn hash_string(content: &str) -> String {
 
 pub fn hash_file_content(path: &str) -> io::Result<String> {
     let content = std::fs::read_to_string(path)?;
-    Ok(hash_string(&content))
+    let header = format!("blob {}\0", content.len());
+    let complete = header + &content;
+    Ok(hash_string(&complete))
 }
 
 fn buscar_en_directorio(
