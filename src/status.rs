@@ -89,7 +89,6 @@ pub fn find_untracked_files(
     Ok(())
 }
 
-
 /// Find and write information about unstaged changes in a Git repository's index.
 ///
 /// This function compares the hash of files in the provided `Index` with their current content
@@ -161,7 +160,6 @@ pub fn find_unstaged_changes(
 #[cfg(test)]
 mod tests {
     use std::{
-
         fs::{File, OpenOptions},
         io::Read,
     };
