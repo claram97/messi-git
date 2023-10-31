@@ -112,6 +112,7 @@ impl Tree {
         None
     }
 
+    /// Given a tree, recreates the directories and files stored in the tree in the working tree.
     pub fn create_directories(&self, parent_dir: &str, git_dir_path: &str) -> io::Result<()> {
         if parent_dir.is_empty() && self.name.is_empty() {
             let dir_path = self.name.to_string();
@@ -143,6 +144,8 @@ impl Tree {
         Ok(())
     }
 
+    /// Given a tree, it deletes all the files and directories in the working tree that correspond to the tree.
+    /// The tree itself is not modified.
     pub fn delete_directories(&self, parent_dir: &str) -> io::Result<()> {
         let dir_path = if parent_dir.is_empty() {
             parent_dir.to_string() + &self.name
@@ -173,7 +176,7 @@ impl Tree {
     }
 
     /// Squash the tree into a vector of tuples (file_name, hash). So a file that is in a subtree will have its complete path from the root tree.
-    pub fn squash_tree_into_vec(&self, parent_dir: &str) -> Vec<(String, String)> {
+    fn squash_tree_into_vec(&self, parent_dir: &str) -> Vec<(String, String)> {
         let mut result = Vec::new();
         let dir_path = if parent_dir.is_empty() {
             parent_dir.to_string() + &self.name
@@ -191,6 +194,11 @@ impl Tree {
         result
     }
 
+    /// Builds an index file from the tree.
+    /// The index file will contain all the files in the tree.
+    /// It follows the same format as the index file created by the index module.
+    /// That is "path/to/file hash\n"
+    /// The index file will be stored in the same directory as the tree.
     pub fn build_index_file_from_tree(
         &self,
         index_path: &str,
@@ -397,6 +405,58 @@ fn merge_their_tree_into_ours(our_tree: &Tree, their_tree: &Tree, mut new_tree: 
     new_tree
 }
 
+/// Merges a file from the current branch with the same file on the other branch if it exists.
+fn merge_file(
+    path: &str,
+    hash: &str,
+    their_tree: &Tree,
+    current_tree: &mut Tree,
+    filename: &str,
+    git_dir: &str,
+) -> io::Result<()> {
+    let their_hash = their_tree.get_hash_from_path(path);
+    match their_hash {
+        Some(their_hash) => {
+            if their_hash == hash {
+                current_tree.add_file(filename, hash);
+            } else {
+                let mut new_file = fs::File::create(path)?;
+                let diff = diff::return_object_diff_string(&their_hash, hash, git_dir);
+
+                match diff {
+                    Ok(diff) => {
+                        new_file.write_all(diff.as_bytes())?;
+                        let new_hash = hash_object::store_string_to_file(&diff, git_dir, "blob")?;
+                        current_tree.add_file(filename, &new_hash);
+                    }
+                    Err(_) => {
+                        current_tree.add_file(filename, hash);
+                    }
+                }
+            }
+        }
+        None => {
+            current_tree.add_file(filename, hash);
+        }
+    }
+    Ok(())
+}
+
+/// Given two trees, it merges them into a new tree.
+/// The new tree will have the files of both trees.
+/// There are three cases:
+/// * If a file is in both trees and has the same hash, it will be added to the new tree.
+/// * If a file is in both trees and has different hashes, the diff between the two files will be calculated and added to the new tree.
+/// * If a file is in one tree but not in the other, it will be added to the new tree.
+///
+/// ## Arguments
+/// * `our_tree`: The tree of the current branch.
+/// * `their_tree`: The tree of the branch we want to merge.
+/// * `git_dir`: The path to the git folder.
+///
+/// ## Errors
+/// This function can return I/O (`io::Result`) errors if there are issues when reading
+/// the content of the commit or loading the tree from the filesystem.
 pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> io::Result<Tree> {
     let our_tree_vec = our_tree.squash_tree_into_vec("");
     let mut new_tree = Tree::new("");
@@ -412,37 +472,11 @@ pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> io::Res
                 ))
             }
         };
-
         let mut current_tree = &mut new_tree;
         for dir in path_vec {
             current_tree = current_tree.get_or_create_dir(dir);
         }
-        let their_hash = their_tree.get_hash_from_path(&path);
-        match their_hash {
-            Some(their_hash) => {
-                if their_hash == hash {
-                    current_tree.add_file(filename, &hash);
-                } else {
-                    let mut new_file = fs::File::create(&path)?;
-                    let diff = diff::return_object_diff_string(&their_hash, &hash, git_dir);
-
-                    match diff {
-                        Ok(diff) => {
-                            new_file.write_all(diff.as_bytes())?;
-                            let new_hash =
-                                hash_object::store_string_to_file(&diff, git_dir, "blob")?;
-                            current_tree.add_file(filename, &new_hash);
-                        }
-                        Err(_) => {
-                            current_tree.add_file(filename, &hash);
-                        }
-                    }
-                }
-            }
-            None => {
-                current_tree.add_file(filename, &hash);
-            }
-        }
+        merge_file(&path, &hash, their_tree, current_tree, filename, git_dir)?;
     }
 
     let new_tree = merge_their_tree_into_ours(our_tree, their_tree, new_tree);
