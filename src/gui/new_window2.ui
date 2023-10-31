@@ -8,179 +8,145 @@
     <property name="default-width">800</property>
     <property name="default-height">600</property>
     <child>
-      <object class="GtkFixed">
-        <property name="name">fix</property>
+      <object class="GtkPaned">
         <property name="visible">True</property>
-        <property name="can-focus">False</property>
+        <property name="can-focus">True</property>
+        <property name="position">150</property>
         <child>
-          <object class="GtkButton" id="button1">
-            <property name="label" translatable="yes">Log</property>
-            <property name="width-request">200</property>
-            <property name="height-request">50</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-          </object>
-          <packing>
-            <property name="x">5</property>
-            <property name="y">5</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="button2">
-            <property name="label" translatable="yes">Commit</property>
-            <property name="width-request">200</property>
-            <property name="height-request">50</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-          </object>
-          <packing>
-            <property name="x">5</property>
-            <property name="y">60</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="button3">
-            <property name="label" translatable="yes">Push</property>
-            <property name="width-request">200</property>
-            <property name="height-request">50</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-          </object>
-          <packing>
-            <property name="x">5</property>
-            <property name="y">115</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="button4">
-            <property name="label" translatable="yes">Pull</property>
-            <property name="width-request">200</property>
-            <property name="height-request">50</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-          </object>
-          <packing>
-            <property name="x">5</property>
-            <property name="y">170</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="button5">
-            <property name="label" translatable="yes">Merge</property>
-            <property name="width-request">200</property>
-            <property name="height-request">50</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-          </object>
-          <packing>
-            <property name="x">5</property>
-            <property name="y">225</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="button6">
-            <property name="label" translatable="yes">Status</property>
-            <property name="width-request">200</property>
-            <property name="height-request">50</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-          </object>
-          <packing>
-            <property name="x">5</property>
-            <property name="y">280</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="button7">
-            <property name="label" translatable="yes">Branch</property>
-            <property name="width-request">200</property>
-            <property name="height-request">50</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-          </object>
-          <packing>
-            <property name="x">5</property>
-            <property name="y">335</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="button8">
-            <property name="label" translatable="yes">Close Repo</property>
-            <property name="width-request">200</property>
-            <property name="height-request">30</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-          </object>
-          <packing>
-            <property name="x">5</property>
-            <property name="y">550</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel" id="label">
-            <property name="width-request">600</property>
-            <property name="height-request">500</property>
+          <object class="GtkStackSidebar" id="main-stack-bar">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="label" translatable="yes">Repository opened Succesfully !!!</property>
-            <attributes>
-              <attribute name="font-desc" value="Liberation Mono Bold 8"/>
-              <attribute name="foreground" value="#1a1a5f5fb4b4"/>
-            </attributes>
+            <property name="stack">main-stack</property>
           </object>
           <packing>
-            <property name="x">150</property>
-            <property name="y">5</property>
+            <property name="resize">False</property>
+            <property name="shrink">True</property>
           </packing>
         </child>
         <child>
-          <object class="GtkButton" id="button9">
-            <property name="label" translatable="yes">View branch</property>
-            <property name="width-request">200</property>
-            <property name="height-request">30</property>
+          <object class="GtkStack" id="main-stack">
             <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
+            <property name="can-focus">False</property>
+            <child>
+              <object class="GtkPaned">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="orientation">vertical</property>
+                <property name="position-set">True</property>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <object class="GtkPaned">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkTextView" id="log-text">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="editable">False</property>
+                        <property name="justification">fill</property>
+                        <property name="cursor-visible">False</property>
+                        <property name="input-purpose">terminal</property>
+                      </object>
+                      <packing>
+                        <property name="resize">False</property>
+                        <property name="shrink">False</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="show-log-button">
+                        <property name="label" translatable="yes">Show log</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="valign">end</property>
+                      </object>
+                      <packing>
+                        <property name="resize">True</property>
+                        <property name="shrink">True</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="resize">True</property>
+                    <property name="shrink">True</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="name">Log</property>
+                <property name="title" translatable="yes">Log</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkPaned">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkTextView" id="show-branches-text">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                  </object>
+                  <packing>
+                    <property name="resize">True</property>
+                    <property name="shrink">True</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButtonBox">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="halign">center</property>
+                    <property name="valign">end</property>
+                    <property name="spacing">11</property>
+                    <property name="homogeneous">True</property>
+                    <property name="layout-style">start</property>
+                    <child>
+                      <object class="GtkButton" id="show-branches-button">
+                        <property name="label" translatable="yes">Show branches</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="new-branch-button">
+                        <property name="label" translatable="yes">Create new branch</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="resize">True</property>
+                    <property name="shrink">True</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="name">Branch</property>
+                <property name="title" translatable="yes">Branch</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
           </object>
           <packing>
-            <property name="x">250</property>
-            <property name="y">550</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="button10">
-            <property name="label" translatable="yes">New branch</property>
-            <property name="width-request">200</property>
-            <property name="height-request">30</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-          </object>
-          <packing>
-            <property name="x">500</property>
-            <property name="y">550</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="button11">
-            <property name="label" translatable="yes">Add</property>
-            <property name="width-request">200</property>
-            <property name="height-request">50</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-          </object>
-          <packing>
-            <property name="x">5</property>
-            <property name="y">390</property>
+            <property name="resize">True</property>
+            <property name="shrink">True</property>
           </packing>
         </child>
       </object>

@@ -148,8 +148,8 @@ fn show_repository_window() {
 
         add_to_open_windows(&new_window);
         configure_repository_window(new_window);
-        let button1 = get_button(&builder, "button1", "Add");
-        let button2 = get_button(&builder, "button2", "Commit");
+        let button1 = get_button(&builder, "show-log-button", "Log");
+        let button2 = get_button(&builder, "show-branches-button", "Commit");
         let button3 = get_button(&builder, "button3", "Push");
         let button4 = get_button(&builder, "button4", "Push");
         let button5 = get_button(&builder, "button5", "Push");
@@ -157,11 +157,11 @@ fn show_repository_window() {
         let button7 = get_button(&builder, "button7", "Push");
         let button8 = get_button(&builder, "button8", "Push");
         let button9 = get_button(&builder, "button9", "Push");
-        let button10 = get_button(&builder, "button10", "Push");
+        let button10 = get_button(&builder, "new-branch-button", "Push");
         let button11 = get_button(&builder, "button11", "Push");
 
         apply_button_style(&button1);
-        apply_button_style(&button2);
+        //apply_button_style(&button2);
         apply_button_style(&button3);
         apply_button_style(&button4);
         apply_button_style(&button5);
@@ -169,24 +169,30 @@ fn show_repository_window() {
         apply_button_style(&button7);
         apply_button_style(&button8);
         apply_button_style(&button9);
-        apply_button_style(&button10);
+        //apply_button_style(&button10);
         apply_button_style(&button11);
 
-        button9.set_visible(false);
-        button10.set_visible(false);
+        // button9.set_visible(false);
+        // button10.set_visible(false);
 
         button1.connect_clicked(move |_| {
-            let label: Label = builder_clone.get_object("label").unwrap();
+            let log_text_view: gtk::TextView = builder_clone.get_object("log-text").unwrap();
+
+            //let label: Label = builder_clone.get_object("show-log-label").unwrap();
             let texto_desde_funcion = obtener_texto_desde_log();
             match texto_desde_funcion {
                 Ok(texto) => {
-                    let font_description = pango::FontDescription::from_string("Sans 2"); // Cambia "Serif 12" al tamaño y estilo de fuente deseado
-                    label.override_font(&font_description);
-                    label.set_hexpand(true);
-                    label.set_halign(gtk::Align::Start);
+                    //let font_description = pango::FontDescription::from_string("Sans 2"); // Cambia "Serif 12" al tamaño y estilo de fuente deseado
+                    //log_text_view.override_font(&font_description);
+                    log_text_view.set_hexpand(true);
+                    log_text_view.set_halign(gtk::Align::Start);
 
-                    label.set_ellipsize(pango::EllipsizeMode::End);
-                    label.set_text(&texto);
+                    // label.set_ellipsize(pango::EllipsizeMode::End);
+                    // label.set_text(&texto);
+                    //let text_view: TextView = builder.get_object("text_view").unwrap();
+                    let buffer = log_text_view.get_buffer().unwrap();
+                    buffer.set_text(texto.as_str());
+
                 }
                 Err(err) => {
                     eprintln!("Error al obtener el texto: {}", err);
@@ -195,7 +201,27 @@ fn show_repository_window() {
         });
 
         button2.connect_clicked(move |_| {
-            println!("Button 2 (Commit) clicked.");
+            let builder_clone = builder.clone();
+            let branch_text_view: gtk::TextView = builder_clone.get_object("show-branches-text").unwrap();
+
+                let texto_desde_funcion = obtener_texto_desde_funcion();
+                match texto_desde_funcion {
+                    Ok(texto) => {
+                        let buffer = branch_text_view.get_buffer().unwrap();
+                        buffer.set_text(texto.as_str());
+                    }
+                    Err(err) => {
+                        eprintln!("Error al obtener el texto: {}", err);
+                    }
+                }
+        });
+
+        button10.connect_clicked(move |_| {
+            create_text_entry_window("Enter the name of the branch", |text| {
+                git_branch_for_ui(Some(text));
+                close_all_windows();
+                show_repository_window();
+            });
         });
 
         button3.connect_clicked(move |_| {
@@ -214,32 +240,24 @@ fn show_repository_window() {
             println!("Button 6 clicked.");
         });
 
-        button7.connect_clicked(move |_| {
-            button9.set_visible(true);
-            button10.set_visible(true);
-            let builder_clone = builder.clone();
+        // button7.connect_clicked(move |_| {
+        //     button9.set_visible(true);
+        //     button10.set_visible(true);
+        //     let builder_clone = builder.clone();
 
-            button9.connect_clicked(move |_| {
-                let label: Label = builder_clone.get_object("label").unwrap();
-                let texto_desde_funcion = obtener_texto_desde_funcion();
-                match texto_desde_funcion {
-                    Ok(texto) => {
-                        label.set_text(&texto);
-                    }
-                    Err(err) => {
-                        eprintln!("Error al obtener el texto: {}", err);
-                    }
-                }
-            });
-
-            button10.connect_clicked(move |_| {
-                create_text_entry_window("Enter the name of the branch", |text| {
-                    git_branch_for_ui(Some(text));
-                    close_all_windows();
-                    show_repository_window();
-                });
-            });
-        });
+        //     button9.connect_clicked(move |_| {
+        //         let label: Label = builder_clone.get_object("label").unwrap();
+        //         let texto_desde_funcion = obtener_texto_desde_funcion();
+        //         match texto_desde_funcion {
+        //             Ok(texto) => {
+        //                 label.set_text(&texto);
+        //             }
+        //             Err(err) => {
+        //                 eprintln!("Error al obtener el texto: {}", err);
+        //             }
+        //         }
+        //     });
+        // });
 
         button8.connect_clicked(move |_| {
             new_window_clone.close();
