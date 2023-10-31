@@ -3,12 +3,10 @@ use std::{
     fs,
     io::{self, BufReader, Error, Read, Write},
     net::TcpStream,
-    path::{Path, PathBuf},
+    path::PathBuf,
     str::from_utf8,
     vec,
 };
-
-use sha1::{Sha1, digest::Digest};
 
 use crate::hash_object;
 use crate::packfile_handler::Packfile;
@@ -76,13 +74,11 @@ impl Client {
         if let Some(wanted_ref) = wanted_ref {
             if let Some(hash) = self.want_ref(wanted_ref)? {
                 self.update_fetch_head(&hash)?;
+                self.update_remote(wanted_ref, &hash)?;
                 self.wait_packfile()?;
             }
         }
-        println!("Termino upload-pack");
         Ok(())
-
-        // self.flush()
     }
 
     pub fn receive_pack(&mut self, pushing_ref: &str, git_dir: &str) -> io::Result<()> {
@@ -152,7 +148,6 @@ impl Client {
         while size > 0 {
             if let Some((hash, mut ref_path)) = line.split_once(' ') {
                 if let Some((head, _capabilities)) = ref_path.split_once('\0') {
-                    // self.capabilities = capabilities.to_string();
                     ref_path = head;
                 }
                 self.refs
@@ -160,7 +155,6 @@ impl Client {
             }
             (size, line) = read_pkt_line_tcp(self.socket()?);
         }
-        dbg!(&self.refs);
         Ok(())
     }
 
@@ -198,11 +192,23 @@ impl Client {
         self.send("0009done\n")
     }
 
+    // Updates FETCH_HEAD file overwritting it
     fn update_fetch_head(&self, hash: &str) -> io::Result<()> {
         let pathbuf = PathBuf::from(&self.git_dir);
         let fetch_head = pathbuf.join("FETCH_HEAD");
         let mut fetch_head = fs::File::create(fetch_head)?;
         writeln!(fetch_head, "{}", hash)
+    }
+
+    // Updates remote head with the fetched hash
+    // REVISAR: ver que onda de donde saco el remote
+    fn update_remote(&self, remote_ref: &str, hash: &str) -> io::Result<()> {
+        let pathbuf = PathBuf::from(&self.git_dir);
+        let remote = pathbuf.join("refs").join("remotes").join("origin");
+        fs::create_dir_all(&remote)?;
+        let remote = remote.join(remote_ref);
+        let mut file = fs::File::create(remote)?;
+        writeln!(file, "{}", hash)
     }
 
     // Tells the server which refs are required
@@ -259,56 +265,32 @@ impl Client {
     // Auxiliar function. Reads the socket until a 'flush' signal is read
     fn wait_packfile(&mut self) -> io::Result<()> {
         let socket = self.socket()?;
-
         let mut buf: [u8; 4] = [0, 0, 0, 0];
         let mut reader = BufReader::new(socket);
-
         reader.read_exact(&mut buf)?;
 
         while buf != "0000".as_bytes() {
             let bytes = from_utf8(&buf).unwrap_or_default();
-            print!("{}", bytes);
             let bytes = usize::from_str_radix(bytes, 16).unwrap_or_default();
-
             if bytes < 4 {
                 break;
             }
-
             let mut content = vec![0; bytes - 4];
             reader.read_exact(&mut content)?;
 
-            let is_header_start = content[0] == 1;
-
-            if is_header_start {
+            if content[0] == 1 {
                 let packfile = Packfile::new(&content[..])?;
                 for obj in packfile {
-                    println!("{}", obj);
                     if let Some(obj_type) = obj.obj_type() {
-                        let hash = hash_object::store_string_to_file(
-                            obj.content(),
-                            &self.git_dir,
-                            &obj_type,
-                        )?;
-                        println!("HASH: {}", hash);
-
-                        let mut hasher = Sha1::new();
-                        let content = obj.content();
-                        hasher.update(format!("{} {}\0{}", obj_type, content.len(), content).as_bytes());
-                        let result = hasher.finalize();
-                        println!("HASH2: {:x}", result)
+                        hash_object::store_string_to_file(obj.content(), &self.git_dir, &obj_type)?;
                     }
                 }
                 return Ok(());
-            } else {
-                let content = from_utf8(&content)
-                    .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
-                print!("{}", content);
-            };
+            }
 
-            reader.read_exact(&mut buf)?;
+            reader.read_exact(&mut buf)?
         }
-
-        Ok(())
+        Err(Error::new(io::ErrorKind::NotFound, "Packfile not found"))
     }
 }
 
