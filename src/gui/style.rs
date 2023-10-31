@@ -51,16 +51,6 @@ pub fn get_button(builder: &Builder, button_id: &str, label_text: &str) -> gtk::
 ///
 /// Returns a `Result<(), String>` where `Ok(())` indicates success, and `Err` contains an error message if the CSS loading fails.
 ///
-/// # Examples
-///
-/// ```rust
-/// use gtk::Button;
-///
-/// let my_button = Button::new_with_label("Custom Button");
-/// if let Err(err) = apply_button_style(&my_button) {
-///     eprintln!("Error applying button style: {}", err);
-/// }
-/// ```
 pub fn apply_button_style(button: &gtk::Button) -> Result<(), String> {
     let css_provider = gtk::CssProvider::new();
     if let Err(err) = css_provider.load_from_data(
