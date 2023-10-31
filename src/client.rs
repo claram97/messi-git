@@ -8,6 +8,9 @@ use std::{
     vec,
 };
 
+use sha1::{Sha1, digest::Digest};
+
+use crate::hash_object;
 use crate::packfile_handler::Packfile;
 
 // multi_ack_detailed side-band-64k thin-pack include-tag ofs-delta deepen-since deepen-not
@@ -18,7 +21,7 @@ const GIT_RECEIVE_PACK: &str = "git-receive-pack";
 const CAPABILITIES_UPLOAD: &str = "multi_ack side-band-64k ofs-delta";
 #[derive(Debug)]
 pub struct Client {
-    git_dir: PathBuf,
+    git_dir: String,
     address: String,
     repository: String,
     host: String,
@@ -41,7 +44,7 @@ impl Client {
         let host = host.to_owned();
         let address = address.to_owned();
         Ok(Self {
-            git_dir: PathBuf::new(),
+            git_dir: String::new(),
             address,
             repository,
             host,
@@ -67,7 +70,7 @@ impl Client {
     pub fn upload_pack(&mut self, wanted_ref: Option<&str>, git_dir: &str) -> io::Result<()> {
         self.connect()?;
         self.initiate_connection(GIT_UPLOAD_PACK)?;
-        self.git_dir = PathBuf::from(git_dir);
+        self.git_dir = git_dir.to_string();
         self.wait_refs()?;
 
         if let Some(wanted_ref) = wanted_ref {
@@ -86,7 +89,7 @@ impl Client {
         self.connect()?;
         self.initiate_connection(GIT_RECEIVE_PACK)?;
         self.flush()?;
-        self.git_dir = PathBuf::from(git_dir);
+        self.git_dir = git_dir.to_string();
 
         // ya se que tiene el servidor
         self.wait_refs()?;
@@ -196,15 +199,14 @@ impl Client {
     }
 
     fn update_fetch_head(&self, hash: &str) -> io::Result<()> {
-        let fetch_head = self.git_dir.join("FETCH_HEAD");
+        let pathbuf = PathBuf::from(&self.git_dir);
+        let fetch_head = pathbuf.join("FETCH_HEAD");
         let mut fetch_head = fs::File::create(fetch_head)?;
         writeln!(fetch_head, "{}", hash)
     }
 
     // Tells the server which refs are required
     // If the provided ref name does not exist in remote, then an error is returned.
-    //
-    // (DEBERIA TRAER EL PACKFILE PERO TODAVIA NO LO HACE)
     fn want_ref(&mut self, wanted_ref: &str) -> io::Result<Option<String>> {
         println!("Pido: {}", wanted_ref);
 
@@ -280,8 +282,23 @@ impl Client {
             if is_header_start {
                 let packfile = Packfile::new(&content[..])?;
                 for obj in packfile {
-                    println!("{}", obj)
+                    println!("{}", obj);
+                    if let Some(obj_type) = obj.obj_type() {
+                        let hash = hash_object::store_string_to_file(
+                            obj.content(),
+                            &self.git_dir,
+                            &obj_type,
+                        )?;
+                        println!("HASH: {}", hash);
+
+                        let mut hasher = Sha1::new();
+                        let content = obj.content();
+                        hasher.update(format!("{} {}\0{}", obj_type, content.len(), content).as_bytes());
+                        let result = hasher.finalize();
+                        println!("HASH2: {:x}", result)
+                    }
                 }
+                return Ok(());
             } else {
                 let content = from_utf8(&content)
                     .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
@@ -336,9 +353,11 @@ fn pkt_line(line: &str) -> String {
     len_hex + line
 }
 
-fn get_local_refs(git_dir: &Path) -> io::Result<HashMap<String, String>> {
+fn get_local_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
     let mut refs = HashMap::new();
-    let heads = git_dir.join("refs").join("heads");
+    let pathbuf = PathBuf::from(git_dir);
+    let heads = pathbuf.join("refs").join("heads");
+    dbg!(&heads);
     for entry in fs::read_dir(&heads)? {
         let entry = entry?;
         let filename = entry.file_name().to_string_lossy().to_string();
@@ -355,7 +374,7 @@ fn get_local_refs(git_dir: &Path) -> io::Result<HashMap<String, String>> {
         refs.insert(ref_path, hash);
     }
 
-    let head = git_dir.join("HEAD");
+    let head = pathbuf.join("HEAD");
 
     let head_content: String = fs::read_to_string(head)?.trim().into();
     match head_content.split_once(": ") {

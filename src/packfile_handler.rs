@@ -1,27 +1,25 @@
 use std::{
     io::{self, BufReader, Error, Read},
-    net::ToSocketAddrs,
     str::from_utf8,
     vec, fmt::Display,
 };
 
 use flate2::bufread::ZlibDecoder;
-use sha1::{Digest, Sha1};
 
 pub struct PackfileItem {
-    obj_type: String,
+    obj_type: Option<String>,
     content: String,
 }
 
 impl PackfileItem {
-    fn new(obj_type: &str, content: &str) -> Self {
+    fn new(obj_type: Option<String>, content: &str) -> Self {
         Self {
-            obj_type: obj_type.to_string(),
+            obj_type: obj_type,
             content: content.to_string(),
         }
     }
 
-    pub fn obj_type(&self) -> &str {
+    pub fn obj_type(&self) -> &Option<String> {
         &self.obj_type
     }
 
@@ -96,13 +94,13 @@ where
         let obj_type_number = byte.clone();
         let obj_type = match get_object_type(obj_type_number) {
             Ok(t) => t,
-            Err(_) => return Ok(PackfileItem::new("", "")),
+            Err(_) => return Ok(PackfileItem::new(None, "")),
         };
-        let mut obj_size = byte & 0x0f;
+        let mut obj_size = (byte & 0x0f) as usize;
         let mut bshift = 4;
         while (byte & 0x80) != 0 {
             byte = self.read_byte()?;
-            obj_size |= (byte & 0x7f) << bshift;
+            obj_size |= ((byte & 0x7f) << bshift) as usize;
             bshift += 7;
         }
 
@@ -111,7 +109,7 @@ where
         decompressor.read_to_end(&mut obj)?;
 
         let content = String::from_utf8_lossy(&obj);
-        Ok(PackfileItem::new(&obj_type, &content))
+        Ok(PackfileItem::new(Some(obj_type), &content))
     }
 
     fn read_byte(&mut self) -> io::Result<u8> {
@@ -155,6 +153,6 @@ where
 
 impl Display for PackfileItem {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "type: {}\ncontent:\n{}\n", &self.obj_type, &self.content)
+        writeln!(f, "type: {:?}\ncontent:\n|{}|", self.obj_type, &self.content)
     }
 }
