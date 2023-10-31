@@ -1,13 +1,13 @@
 use std::{
     fs,
     io::{self, Write},
-    path::{PathBuf, Path},
+    path::{Path, PathBuf},
 };
 
 use crate::{
     cat_file::{self, cat_file_return_content},
-    hash_object,
-    index::{self}, diff,
+    diff, hash_object,
+    index::{self},
 };
 
 const BLOB_NORMAL_MODE: &str = "100644";
@@ -119,8 +119,7 @@ impl Tree {
                 subdirs.create_directories(&dir_path, git_dir_path)?;
             }
             return Ok(());
-        } 
-        println!("Creating directory {}", parent_dir);
+        }
         let dir_path = if parent_dir.is_empty() {
             parent_dir.to_string() + &self.name
         } else if self.name.is_empty() {
@@ -128,7 +127,7 @@ impl Tree {
         } else {
             parent_dir.to_string() + "/" + &self.name
         };
-        
+
         if !Path::new(&dir_path).exists() {
             fs::create_dir_all(&dir_path)?;
         }
@@ -152,7 +151,6 @@ impl Tree {
         } else {
             parent_dir.to_string() + "/" + &self.name
         };
-        println!("Deleting directory {}", dir_path);
         for subdirs in &self.directories {
             subdirs.delete_directories(&dir_path)?;
         }
@@ -161,7 +159,6 @@ impl Tree {
             if Path::new(&path).exists() {
                 fs::remove_file(path)?;
             }
-                
         }
 
         if dir_path.is_empty() {
@@ -175,7 +172,7 @@ impl Tree {
         Ok(())
     }
 
-        /// Squash the tree into a vector of tuples (file_name, hash). So a file that is in a subtree will have its complete path from the root tree.
+    /// Squash the tree into a vector of tuples (file_name, hash). So a file that is in a subtree will have its complete path from the root tree.
     pub fn squash_tree_into_vec(&self, parent_dir: &str) -> Vec<(String, String)> {
         let mut result = Vec::new();
         let dir_path = if parent_dir.is_empty() {
@@ -194,7 +191,12 @@ impl Tree {
         result
     }
 
-    pub fn build_index_file_from_tree(&self, index_path: &str, git_dir_path: &str, gitignore_path: &str) -> io::Result<index::Index> {
+    pub fn build_index_file_from_tree(
+        &self,
+        index_path: &str,
+        git_dir_path: &str,
+        gitignore_path: &str,
+    ) -> io::Result<index::Index> {
         let mut index = index::Index::new(index_path, git_dir_path, gitignore_path);
         let entries = self.squash_tree_into_vec("");
         for entry in entries {
@@ -202,7 +204,6 @@ impl Tree {
         }
         Ok(index)
     }
-
 }
 
 /// Builds a tree from the index file.
@@ -375,11 +376,11 @@ pub fn print_tree_console(tree: &Tree, depth: usize) {
 fn merge_their_tree_into_ours(our_tree: &Tree, their_tree: &Tree, mut new_tree: Tree) -> Tree {
     let their_tree_vec = their_tree.squash_tree_into_vec("");
 
-    for(path, hash) in their_tree_vec {
+    for (path, hash) in their_tree_vec {
         let mut path_vec = path.split('/').collect::<Vec<&str>>();
         let filename = match path_vec.pop() {
             Some(filename) => filename,
-            None => panic!("Invalid path in index file.")
+            None => panic!("Invalid path in index file."),
         };
         let mut current_tree = &mut new_tree;
         for dir in path_vec {
@@ -393,25 +394,25 @@ fn merge_their_tree_into_ours(our_tree: &Tree, their_tree: &Tree, mut new_tree: 
             }
         }
     }
-
     new_tree
 }
-
 
 pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> io::Result<Tree> {
     let our_tree_vec = our_tree.squash_tree_into_vec("");
     let mut new_tree = Tree::new("");
-    
+
     for (path, hash) in our_tree_vec {
         let mut path_vec = path.split('/').collect::<Vec<&str>>();
         let filename = match path_vec.pop() {
             Some(filename) => filename,
-            None => return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Invalid path in index file.",
-            ))
+            None => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "Invalid path in index file.",
+                ))
+            }
         };
-        
+
         let mut current_tree = &mut new_tree;
         for dir in path_vec {
             current_tree = current_tree.get_or_create_dir(dir);
@@ -428,7 +429,8 @@ pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> io::Res
                     match diff {
                         Ok(diff) => {
                             new_file.write_all(diff.as_bytes())?;
-                            let new_hash = hash_object::store_string_to_file(&diff, git_dir, "blob")?;
+                            let new_hash =
+                                hash_object::store_string_to_file(&diff, git_dir, "blob")?;
                             current_tree.add_file(filename, &new_hash);
                         }
                         Err(_) => {
@@ -445,9 +447,7 @@ pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> io::Res
 
     let new_tree = merge_their_tree_into_ours(our_tree, their_tree, new_tree);
     Ok(new_tree)
-    
 }
-
 
 //Tests
 #[cfg(test)]

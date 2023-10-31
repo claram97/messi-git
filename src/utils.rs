@@ -42,7 +42,10 @@ pub fn get_branch_commit_history(commit_hash: &str, git_dir: &str) -> io::Result
     Ok(parents)
 }
 
-pub fn get_branch_commit_history_set(commit_hash: &str, git_dir: &str) -> io::Result<HashSet<String>> {
+pub fn get_branch_commit_history_set(
+    commit_hash: &str,
+    git_dir: &str,
+) -> io::Result<HashSet<String>> {
     let mut parents = HashSet::new();
     parents.insert(commit_hash.to_string());
     let mut commit_parent = commit::get_parent_hash(commit_hash, git_dir);
