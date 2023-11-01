@@ -1,15 +1,21 @@
 use crate::add::add;
+use crate::branch;
 use crate::branch::create_new_branch;
 use crate::branch::git_branch_for_ui;
 use crate::branch::list_branches;
+use crate::commit;
 use crate::gui::style::{apply_button_style, apply_window_style, get_button, load_and_get_window};
 use crate::init::git_init;
+use crate::index;
 use crate::log::accumulate_logs;
 use crate::log::log;
 use crate::log::print_logs;
 use crate::log::Log;
+use crate::status;
+use crate::tree_handler;
 use crate::utils::find_git_directory;
 use core::cell::RefCell;
+use gtk::Dialog;
 use gtk::prelude::*;
 use gtk::Builder;
 use gtk::CssProvider;
@@ -145,12 +151,14 @@ fn show_repository_window() {
         let new_window_clone = new_window.clone();
         let builder_clone = builder.clone();
         let builder_clone1 = builder.clone();
-
+        set_staging_area_texts(&builder);
+        
         add_to_open_windows(&new_window);
         configure_repository_window(new_window);
         let button1 = get_button(&builder, "show-log-button", "Log");
         let button2 = get_button(&builder, "show-branches-button", "Commit");
-        let button3 = get_button(&builder, "button3", "Push");
+
+        let button3 = get_button(&builder, "add-path-button", "Add path");
         let button4 = get_button(&builder, "button4", "Push");
         let button5 = get_button(&builder, "button5", "Push");
         let button6 = get_button(&builder, "button6", "Push");
@@ -224,9 +232,34 @@ fn show_repository_window() {
             });
         });
 
-        button3.connect_clicked(move |_| {
-            println!("Button 3 (Push) clicked.");
-        });
+
+        // button3.connect_clicked(move |_| {
+        //     let builder_clone = builder.clone();
+        //     let new_window_clone_clone = new_window_clone.clone();
+        //     let dialog = Dialog::with_buttons(
+        //         Some("Insert the path"),
+        //         Some(&new_window_clone_clone),
+        //         gtk::DialogFlags::MODAL,
+        //         &[("OK", gtk::ResponseType::Ok), ("Cancel", gtk::ResponseType::Cancel)],
+        //     );
+
+        //     dialog.set_position(gtk::WindowPosition::CenterOnParent);
+
+        //     let content_area = dialog.get_content_area();
+        //     let entry = gtk::Entry::new();
+        //     entry.set_text("Default Text");
+        //     content_area.add(&entry);
+        //     dialog.show_all();
+
+        //     dialog.connect_response(move |dialog, response| {
+        //         if response == gtk::ResponseType::Ok {
+        //             let text = entry.get_text().to_string();
+        //             let label: Label = builder_clone.get_object("label").unwrap();
+        //             label.set_text(&text);
+        //         }
+        //         dialog.close();
+        //     });
+        // });
 
         button4.connect_clicked(move |_| {
             println!("Button 4 clicked.");
@@ -259,11 +292,11 @@ fn show_repository_window() {
         //     });
         // });
 
-        button8.connect_clicked(move |_| {
-            new_window_clone.close();
-            run_main_window();
-        });
-
+        // button8.connect_clicked(move |_| {
+        //     new_window_clone.close();
+        //     run_main_window();
+        // });
+        
         button11.connect_clicked(move |_| {
             let label: Label = builder_clone1.get_object("label").unwrap();
             create_text_entry_window("Enter the path of the file", move |text| {
@@ -281,6 +314,30 @@ fn show_repository_window() {
         });
     }
 }
+
+fn set_staging_area_texts(builder: &gtk::Builder) {
+    let staging_area_text_view: gtk::TextView = builder.get_object("not-staged-view").unwrap();
+    let buffer = staging_area_text_view.get_buffer().unwrap();
+    let mut current_dir = std::env::current_dir().unwrap();
+    let binding = current_dir.clone();
+    let current_dir_str = binding.to_str().unwrap();
+    let git_dir = find_git_directory(&mut current_dir, ".mgit").unwrap();
+    let index_file = format!("{}{}", git_dir, "/index");
+    let gitignore_path = format!("{}{}", current_dir.to_str().unwrap(), "/.gitignore");
+    let index = index::Index::load(&index_file, &git_dir, &gitignore_path).unwrap();
+    let not_staged_files = status::get_unstaged_changes(&index, &current_dir_str).unwrap();
+    buffer.set_text(&not_staged_files);
+
+    let staged_area_text_view: gtk::TextView = builder.get_object("staged-view").unwrap();
+    let staged_buffer = staged_area_text_view.get_buffer().unwrap();
+    //Get the repos last commit
+    let last_commit = branch::get_current_branch_commit(&git_dir).unwrap();
+    let last_commit_tree = tree_handler::load_tree_from_commit(&last_commit, &git_dir).unwrap();
+    let staged_files = status::get_staged_changes(&index, &last_commit_tree).unwrap();
+    staged_buffer.set_text(&staged_files);
+}
+
+
 fn obtener_texto_desde_add(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
@@ -547,7 +604,7 @@ fn configure_clone_window(
 
     let new_window_clone_clone = new_window_clone.clone();
     browse_button.connect_clicked(move |_| {
-        let dialog = FileChooserDialog::new(
+        let dialog: FileChooserDialog = FileChooserDialog::new(
             Some("Seleccionar Carpeta"),
             Some(&new_window_clone_clone),
             FileChooserAction::SelectFolder,
