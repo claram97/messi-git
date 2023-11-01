@@ -90,7 +90,7 @@ impl Client {
         // ya se que tiene el servidor
         self.wait_refs()?;
 
-        let local_refs = get_local_refs(&self.git_dir)?;
+        let local_refs = get_refs_heads(&self.git_dir)?;
         let new_hash = match local_refs.get(pushing_ref) {
             Some(hash) => hash,
             None => return Err(Error::new(io::ErrorKind::NotFound, "Ref not found")),
@@ -142,8 +142,8 @@ impl Client {
     // Should be called only aftes: initiate_connection
     fn wait_refs(&mut self) -> io::Result<()> {
         self.refs.clear();
-        let (_, _) = read_pkt_line_tcp(self.socket()?);
-        let (mut size, mut line) = read_pkt_line_tcp(self.socket()?);
+        let (_, _) = read_pkt_line(self.socket()?)?;
+        let (mut size, mut line) = read_pkt_line(self.socket()?)?;
 
         while size > 0 {
             if let Some((hash, mut ref_path)) = line.split_once(' ') {
@@ -153,7 +153,7 @@ impl Client {
                 self.refs
                     .insert(ref_path.trim().to_string(), hash.to_string());
             }
-            (size, line) = read_pkt_line_tcp(self.socket()?);
+            (size, line) = read_pkt_line(self.socket()?)?;
         }
         Ok(())
     }
@@ -226,7 +226,7 @@ impl Client {
             }
         };
 
-        let local_refs = get_local_refs(&self.git_dir)?;
+        let local_refs = get_refs_heads(&self.git_dir)?;
 
         if let Some(local_hash) = local_refs.get(wanted_ref) {
             if &hash == local_hash {
@@ -265,21 +265,12 @@ impl Client {
     // Auxiliar function. Reads the socket until a 'flush' signal is read
     fn wait_packfile(&mut self) -> io::Result<()> {
         let socket = self.socket()?;
-        let mut buf: [u8; 4] = [0, 0, 0, 0];
-        let mut reader = BufReader::new(socket);
-        reader.read_exact(&mut buf)?;
-
-        while buf != "0000".as_bytes() {
-            let bytes = from_utf8(&buf).unwrap_or_default();
-            let bytes = usize::from_str_radix(bytes, 16).unwrap_or_default();
-            if bytes < 4 {
+        while let Ok((size, bytes)) = read_pkt_line_bytes(socket) {
+            if size < 4 {
                 break;
             }
-            let mut content = vec![0; bytes - 4];
-            reader.read_exact(&mut content)?;
-
-            if content[0] == 1 {
-                let packfile = Packfile::new(&content[..])?;
+            if bytes[0] == 1 {
+                let packfile = Packfile::new(&bytes[..])?;
                 for obj in packfile {
                     if let Some(obj_type) = obj.obj_type() {
                         hash_object::store_string_to_file(obj.content(), &self.git_dir, &obj_type)?;
@@ -287,10 +278,14 @@ impl Client {
                 }
                 return Ok(());
             }
-
-            reader.read_exact(&mut buf)?
         }
         Err(Error::new(io::ErrorKind::NotFound, "Packfile not found"))
+    }
+}
+
+impl Drop for Client {
+    fn drop(&mut self) {
+        let _ = self.end_connection();
     }
 }
 
@@ -301,31 +296,32 @@ fn connection_not_established_error() -> Error {
     )
 }
 
-fn read_pkt_line_tcp(socket: &mut TcpStream) -> (usize, String) {
-    let size = read_n_to_string_tcp(socket, 4);
+// Read a line in PKT format in a TcpStream
+// Returns the size of the line and its content
+fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
+    let (size, bytes) = read_pkt_line_bytes(socket)?;
+    let line = from_utf8(&bytes).unwrap_or_default().to_string();
+    Ok((size, line))
+}
+
+fn read_pkt_line_bytes(socket: &mut TcpStream) -> io::Result<(usize, Vec<u8>)> {
+    let mut buf = vec![0u8; 4];
+    socket.read_exact(&mut buf)?;
+
+    let size = from_utf8(&buf).unwrap_or_default();
     let size = usize::from_str_radix(&size, 16).unwrap_or(0);
 
     if size < 4 {
-        return (size, String::new());
+        return Ok((size, vec![]));
     }
-    let line = read_n_to_string_tcp(socket, size - 4);
-    (size, line)
+
+    let mut buf = vec![0u8; size - 4];
+    socket.read_exact(&mut buf)?;
+    Ok((size, buf))
 }
 
-fn read_n_to_string_tcp(socket: &mut TcpStream, n: usize) -> String {
-    let mut buf = vec![0u8; n];
-
-    match socket.read_exact(&mut buf) {
-        Ok(_) => match from_utf8(&buf) {
-            Ok(content) => content.to_owned(),
-            Err(_) => {
-                todo!()
-            }
-        },
-        Err(_) => todo!(),
-    }
-}
-
+// Given a text to send a git client/server, this function transform it to a
+// string in PKT format
 fn pkt_line(line: &str) -> String {
     let len = line.len() + 4; // len
     let mut len_hex = format!("{len:x}");
@@ -335,14 +331,13 @@ fn pkt_line(line: &str) -> String {
     len_hex + line
 }
 
-fn get_local_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
+// Auxiliar function which get refs under refs/heads
+fn get_refs_heads(git_dir: &str) -> io::Result<HashMap<String, String>> {
     let mut refs = HashMap::new();
     let pathbuf = PathBuf::from(git_dir);
     let heads = pathbuf.join("refs").join("heads");
-    dbg!(&heads);
     for entry in fs::read_dir(&heads)? {
-        let entry = entry?;
-        let filename = entry.file_name().to_string_lossy().to_string();
+        let filename = entry?.file_name().to_string_lossy().to_string();
         let path = heads.join(filename);
         let hash: String = fs::read_to_string(&path)?.trim().into();
         let ref_path = path
@@ -355,26 +350,19 @@ fn get_local_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
 
         refs.insert(ref_path, hash);
     }
-
     let head = pathbuf.join("HEAD");
-
-    let head_content: String = fs::read_to_string(head)?.trim().into();
-    match head_content.split_once(": ") {
-        Some((_, branch)) => {
-            if let Some(hash) = refs.get(branch) {
-                refs.insert("HEAD".to_string(), hash.trim().into());
+    if head.exists() {
+        let head_content: String = fs::read_to_string(head)?.trim().into();
+        match head_content.split_once(": ") {
+            Some((_, branch)) => {
+                if let Some(hash) = refs.get(branch) {
+                    refs.insert("HEAD".to_string(), hash.trim().into());
+                }
             }
-        }
-        None => {
-            refs.insert("HEAD".to_string(), head_content);
-        }
-    };
-    dbg!(&refs);
-    Ok(refs)
-}
-
-impl Drop for Client {
-    fn drop(&mut self) {
-        let _ = self.end_connection();
+            None => {
+                refs.insert("HEAD".to_string(), head_content);
+            }
+        };
     }
+    Ok(refs)
 }
