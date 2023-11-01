@@ -1,10 +1,75 @@
 use std::{
     io::{self, BufReader, Error, Read},
     str::from_utf8,
-    vec
+    vec, fmt::Display
 };
 
 use flate2::bufread::ZlibDecoder;
+
+#[derive(Debug, Clone, Copy)]
+pub enum ObjectType {
+    Commit,
+    Tree,
+    Blob,
+    Tag
+}
+
+impl Display for ObjectType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ObjectType::Commit =>write!(f, "commit"),
+            ObjectType::Tree =>write!(f, "tree"),
+            ObjectType::Blob =>write!(f, "blob"),
+            ObjectType::Tag =>write!(f, "tag"),
+        }
+    }
+}
+
+impl TryFrom<&str> for ObjectType {
+    type Error = io::Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "commit" => Ok(Self::Commit),
+            "tree" => Ok(Self::Tree),
+            "blob" => Ok(Self::Blob),
+            "tag" => Ok(Self::Tag),
+            t => Err(Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Unsopported object type: {}", t),
+            ))
+        }
+    }
+}
+
+impl TryFrom<u8> for ObjectType {
+    type Error = io::Error;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(Self::Commit),
+            2 => Ok(Self::Tree),
+            3 => Ok(Self::Blob),
+            4 => Ok(Self::Tag),
+            t => Err(Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Unsopported object type: {}", t),
+            ))
+        }
+    }
+}
+
+pub struct PackfileEntry {
+    pub obj_type: ObjectType,
+    pub size: usize,
+    pub content: String
+}
+
+impl PackfileEntry {
+    pub fn new(obj_type: ObjectType, size: usize, content: &str) -> Self {
+        Self { obj_type, size, content: content.to_string() }
+    }
+}
 
 pub struct Packfile<R>
 where
@@ -69,9 +134,10 @@ where
         Ok(())
     }
 
-    fn get_next(&mut self) -> io::Result<(String, String)> {
+    fn get_next(&mut self) -> io::Result<PackfileEntry> {
         let mut byte = self.read_byte()?;
-        let obj_type = get_object_type(byte)?;
+        // let obj_type = get_object_type(byte)?;
+        let obj_type = ObjectType::try_from((byte & 0x70) >> 4)?;
 
         let mut obj_size = (byte & 0x0f) as usize;
         let mut bshift: usize = 4;
@@ -86,12 +152,12 @@ where
         let bytes_read = decompressor.read_to_end(&mut obj)?;
 
         if obj_size != bytes_read {
-            println!("type {}. bytes:\n{:?}", obj_type, obj);
+            println!("type {:?}. bytes:\n{:?}", obj_type, obj);
             return Err(Error::new(io::ErrorKind::InvalidInput, "Corrupted packfile. Size is not correct"))
         }
         
         let content = String::from_utf8_lossy(&obj);
-        Ok((obj_type, content.to_string()))
+        Ok(PackfileEntry::new(obj_type, obj_size, &content))
     }
 
     fn read_byte(&mut self) -> io::Result<u8> {
@@ -101,24 +167,11 @@ where
     }
 }
 
-fn get_object_type(byte: u8) -> io::Result<String> {
-    match (byte & 0x70) >> 4 {
-        1 => Ok(String::from("commit")),
-        2 => Ok(String::from("tree")),
-        3 => Ok(String::from("blob")),
-        4 => Ok(String::from("tag")),
-        t => Err(Error::new(
-            io::ErrorKind::InvalidData,
-            format!("Unsopported object type: {}", t),
-        )),
-    }
-}
-
 impl<R> Iterator for Packfile<R>
 where
     R: Read,
 {
-    type Item = io::Result<(String, String)>;
+    type Item = io::Result<PackfileEntry>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.position >= self.total {

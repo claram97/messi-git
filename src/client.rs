@@ -8,8 +8,9 @@ use std::{
     vec,
 };
 
-use crate::hash_object;
+use crate::{hash_object, tree_handler::Tree, packfile_handler::{PackfileEntry, ObjectType}};
 use crate::packfile_handler::Packfile;
+use crate::cat_file;
 
 // multi_ack_detailed side-band-64k thin-pack include-tag ofs-delta deepen-since deepen-not
 
@@ -101,22 +102,32 @@ impl Client {
             None => String::new(),
         };
 
-        if prev_hash.is_empty() {
-            self.receive_pack_create(pushing_ref, new_hash)
-        } else {
-            self.receive_pack_update(pushing_ref, &prev_hash, new_hash)
+        if &prev_hash == new_hash {
+            println!("Already up to date.");
+            return Ok(());
         }
-    }
 
-    fn receive_pack_create(&mut self, _pushing_ref: &str, _hash: &str) -> io::Result<()> {
+        if prev_hash.is_empty() {
+            self.receive_pack_create(pushing_ref, new_hash)?;
+        } else {
+            self.receive_pack_update(pushing_ref, &prev_hash, new_hash)?;
+        };
+
+        // self.update_remote(pushing_ref, &new_hash)?;
         Ok(())
     }
+
+    fn receive_pack_create(&mut self, pushing_ref: &str, hash: &str) -> io::Result<()> {
+        self.receive_pack_update(pushing_ref, "0", hash)
+    }
+
     fn receive_pack_update(
         &mut self,
         _pushing_ref: &str,
-        _prev_hash: &str,
-        _new_hash: &str,
+        prev_hash: &str,
+        new_hash: &str,
     ) -> io::Result<()> {
+        get_missing_objects_from(new_hash, prev_hash, &self.git_dir)?;
         Ok(())
     }
 
@@ -271,12 +282,9 @@ impl Client {
             }
             if bytes[0] == 1 {
                 let packfile = Packfile::new(&bytes[..])?;
-                for obj in packfile {
-                    let (obj_type, content) = obj?;
-                    let hash = hash_object::store_string_to_file(&content, &self.git_dir, &obj_type)?;
-                    dbg!(obj_type);
-                    dbg!(content);
-                    dbg!(hash);
+                for entry in packfile {
+                    let entry = entry?;
+                    hash_object::store_string_to_file(&entry.content, &self.git_dir, &entry.obj_type.to_string())?;
                 }
                 return Ok(());
             }
@@ -368,3 +376,71 @@ fn get_refs_heads(git_dir: &str) -> io::Result<HashMap<String, String>> {
     }
     Ok(refs)
 }
+
+fn get_missing_objects_from(
+    new_hash: &str,
+    prev_hash: &str,
+    git_dir: &str,
+) -> io::Result<Vec<(ObjectType, String)>> {
+    let mut missing = vec![];
+    let mut hash = new_hash;
+    while let Ok(commit) = Commit::new(hash, git_dir) {
+        if hash == prev_hash {
+            break
+        }
+        missing.push((ObjectType::Commit, commit.hash.to_string()));
+        missing.push((ObjectType::Tree, commit.tree.to_string()));
+        
+        for parent in commit.parent {
+            let _missing = get_missing_objects_from(&parent, prev_hash, git_dir)?;
+            _missing.iter().for_each(|p| missing.push((p.0, p.1.clone())));
+        }
+    }
+    Ok(missing)
+}
+
+#[derive(Debug, Default)]
+struct Commit {
+    hash: String,
+    tree: String,
+    parent: Vec<String>
+}
+
+impl Commit {
+    fn new(hash: &str, git_dir: &str) -> io::Result<Self> {
+        let commit_content = cat_file::cat_file_return_content(hash, git_dir)?;
+        let header_lines = commit_content.lines().position(|line| line.is_empty());
+        match header_lines {
+            Some(n) => {
+                let mut commit = Self::default();
+                for line in commit_content.lines().take(n) {
+                    commit.parse_commit(line)
+                }
+                commit.hash = hash.to_string();
+                Ok(commit)
+            }
+            None => Err(Error::new(io::ErrorKind::InvalidData, format!("Commit: {}", hash))),
+        }
+    }
+
+    fn parse_commit(&mut self, line: &str) {
+        match line.split_once(' ') {
+            Some(("tree", hash)) => self.tree = hash.to_string(),
+            Some(("parent", hash)) => self.parent.push(hash.to_string()),
+            _ => {}
+        }
+    }
+}
+
+// struct Tree {
+
+// }
+
+// impl Tree {
+//     fn list_objects(hash: &str, git_dir: &str) -> io::Result<Vec<String>> {
+//         let objects = vec![];
+//         let tree_content = cat_file::cat_file_return_content(hash, git_dir)?;
+
+//         Ok(objects)
+//     }
+// }
