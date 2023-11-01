@@ -28,6 +28,15 @@ fn get_current_branch_path(git_dir_path: &str) -> io::Result<String> {
     Ok(path_final.to_string())
 }
 
+pub fn get_current_branch_commit(git_dir_path: &str) -> io::Result<String> {
+    let branch_path = get_current_branch_path(git_dir_path)?;
+    let complete_path = git_dir_path.to_string() + "/" + &branch_path;
+    let mut branch_file = File::open(complete_path)?;
+    let mut branch_content = String::new();
+    branch_file.read_to_string(&mut branch_content)?;
+    Ok(branch_content)
+}
+
 /// Creates a new branch in the repo with the given name.
 /// The new branch will point to the same commit as the current branch.
 /// HEAD won't be updated.

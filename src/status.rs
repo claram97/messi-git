@@ -121,6 +121,25 @@ pub fn changes_to_be_committed(
     Ok(())
 }
 
+/// Return a string containing all staged changes in a Git repository's index.
+pub fn get_staged_changes(index: &Index, commit_tree: &Tree) -> Result<String, io::Error> {
+    let mut output: Vec<u8> = vec![];
+    changes_to_be_committed(index, commit_tree, &mut output)?;
+    let result: Result<String, std::string::FromUtf8Error> = String::from_utf8(output);
+    //Clean the output
+    if result.is_ok() {
+        let mut resultado = result.unwrap();
+        resultado = resultado.replace("\x1b[31m\t\tmodified:\t ", "");
+        resultado = resultado.replace("\x1b[0m\n", "\n");
+        return Ok(resultado);
+    } else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Parent hash not found",
+        ));
+    }
+}
+
 /// Find and write information about unstaged changes in a Git repository's index.
 ///
 /// This function compares the hash of files in the provided `Index` with their current content
@@ -145,15 +164,32 @@ pub fn find_unstaged_changes(
 ) -> io::Result<()> {
     for (path, hash) in index.iter() {
         let complete_path = git_dir.to_string() + "/" + path;
-        println!("complete path: {}", complete_path);
         let new_hash = hash_object::hash_file_content(&complete_path, BLOB)?;
         if hash.ne(&new_hash) {
             let buffer = format!("\x1b[31m\t\tmodified:\t {}\x1b[0m\n", path);
             output.write_all(buffer.as_bytes())?;
         }
     }
-
     Ok(())
+}
+
+/// Return a string containing all unstaged changes in a Git repository's index.
+pub fn get_unstaged_changes(index: &Index, git_dir: &str) -> Result<String, io::Error> {
+    let mut output: Vec<u8> = vec![];
+    find_unstaged_changes(index, git_dir, &mut output)?;
+    let result: Result<String, std::string::FromUtf8Error> = String::from_utf8(output);
+    //Clean the output
+    if result.is_ok() {
+        let mut resultado = result.unwrap();
+        resultado = resultado.replace("\x1b[31m\t\tmodified:\t ", "");
+        resultado = resultado.replace("\x1b[0m\n", "\n");
+        return Ok(resultado);
+    } else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Parent hash not found",
+        ));
+    }
 }
 
 #[cfg(test)]
