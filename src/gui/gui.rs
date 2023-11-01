@@ -1,7 +1,9 @@
+use crate::add::add;
 use crate::branch::create_new_branch;
 use crate::branch::git_branch_for_ui;
 use crate::branch::list_branches;
 use crate::gui::style::{apply_button_style, apply_window_style, get_button, load_and_get_window};
+use crate::init::git_init;
 use crate::log::accumulate_logs;
 use crate::log::log;
 use crate::log::print_logs;
@@ -15,18 +17,15 @@ use gtk::FileChooserAction;
 use gtk::FileChooserDialog;
 use gtk::Label;
 use std::io;
+use std::path::Path;
 use std::rc::Rc;
 use std::sync::Mutex;
-use crate::init::git_init;
-use crate::add::add;
-
 
 use super::style::apply_clone_button_style;
 use super::style::apply_entry_style;
 use super::style::apply_label_style;
 use super::style::get_entry;
 use super::style::get_label;
-
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -124,6 +123,7 @@ fn obtener_texto_desde_log() -> Result<String, std::io::Error> {
 
     Ok(log_text)
 }
+
 pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
     let mut log_text = String::new();
 
@@ -192,7 +192,6 @@ fn show_repository_window() {
                     //let text_view: TextView = builder.get_object("text_view").unwrap();
                     let buffer = log_text_view.get_buffer().unwrap();
                     buffer.set_text(texto.as_str());
-
                 }
                 Err(err) => {
                     eprintln!("Error al obtener el texto: {}", err);
@@ -202,18 +201,19 @@ fn show_repository_window() {
 
         button2.connect_clicked(move |_| {
             let builder_clone = builder.clone();
-            let branch_text_view: gtk::TextView = builder_clone.get_object("show-branches-text").unwrap();
+            let branch_text_view: gtk::TextView =
+                builder_clone.get_object("show-branches-text").unwrap();
 
-                let texto_desde_funcion = obtener_texto_desde_funcion();
-                match texto_desde_funcion {
-                    Ok(texto) => {
-                        let buffer = branch_text_view.get_buffer().unwrap();
-                        buffer.set_text(texto.as_str());
-                    }
-                    Err(err) => {
-                        eprintln!("Error al obtener el texto: {}", err);
-                    }
+            let texto_desde_funcion = obtener_texto_desde_funcion();
+            match texto_desde_funcion {
+                Ok(texto) => {
+                    let buffer = branch_text_view.get_buffer().unwrap();
+                    buffer.set_text(texto.as_str());
                 }
+                Err(err) => {
+                    eprintln!("Error al obtener el texto: {}", err);
+                }
+            }
         });
 
         button10.connect_clicked(move |_| {
@@ -263,13 +263,12 @@ fn show_repository_window() {
             new_window_clone.close();
             run_main_window();
         });
-        
+
         button11.connect_clicked(move |_| {
             let label: Label = builder_clone1.get_object("label").unwrap();
             create_text_entry_window("Enter the path of the file", move |text| {
-
                 let resultado = obtener_texto_desde_add(&text);
-            
+
                 match resultado {
                     Ok(texto) => {
                         label.set_text(&texto);
@@ -278,7 +277,6 @@ fn show_repository_window() {
                         eprintln!("Error al obtener el texto: {}", err);
                     }
                 }
-               
             });
         });
     }
@@ -294,16 +292,29 @@ fn obtener_texto_desde_add(texto: &str) -> Result<String, io::Error> {
             ))
         }
     };
-    let index_path = format!("{}{}", texto, git_dir);
-        
-    match add(&texto, &index_path, ".mgit", "", None) {
+    let index_path = format!("{}/{}", git_dir, "index");
+    let git_dir_parent = match Path::new(&git_dir).parent() {
+        Some(git_dir_parent) => git_dir_parent,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Gitignore filey not found\n",
+            ))
+        }
+    };
+    let git_ignore_path = format!(
+        "{}/{}",
+        git_dir_parent.to_string_lossy().to_string(),
+        ".mgitignore"
+    );
+    match add(&texto, &index_path, &git_dir, &git_ignore_path, None) {
         Ok(_) => {
             println!("La función 'add' se ejecutó correctamente.");
         }
         Err(err) => {
             eprintln!("Error al llamar a la función 'add': {:?}", err);
         }
-    }
+    };
     Ok("hola".to_string())
 }
 
@@ -371,12 +382,12 @@ fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) {
 
     button.connect_clicked(move |_| {
         let current_dir = std::env::current_dir();
-        
+
         if let Ok(current_dir) = current_dir {
             let dir_str = current_dir.to_str().unwrap_or("").to_string();
 
             if button_type == "option2" {
-                create_text_entry_window("Enter the branch",  move|text| {  
+                create_text_entry_window("Enter the branch", move |text| {
                     let result = git_init(&dir_str, &text, None);
                     match result {
                         Ok(_) => {
@@ -388,11 +399,10 @@ fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) {
                             run_main_window();
                         }
                     }
-
                 });
             } else if button_type == "option3" {
-                create_text_entry_window("Enter the template path",  move|text|{
-                    let result = git_init(&dir_str,"main" , Some(&text));
+                create_text_entry_window("Enter the template path", move |text| {
+                    let result = git_init(&dir_str, "main", Some(&text));
                     match result {
                         Ok(_) => {
                             close_all_windows();
@@ -422,10 +432,6 @@ fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) {
         }
     });
 }
-
-
-
-
 
 /// Configures the properties of a clone window in a GTK application.
 ///
@@ -463,25 +469,90 @@ fn configure_init_window(new_window_init: &gtk::Window, builder: &gtk::Builder) 
 /// - `new_window_clone`: A reference to the GTK window to be configured.
 /// - `builder`: A reference to the GTK builder used for UI construction.
 ///
-fn configure_clone_window(new_window_clone: &gtk::Window, builder: &gtk::Builder) {
+fn configure_clone_window(
+    new_window_clone: &gtk::Window,
+    builder: &gtk::Builder,
+) -> io::Result<()> {
     add_to_open_windows(new_window_clone);
-    apply_window_style(new_window_clone);
+    let result = apply_window_style(&new_window_clone);
+    if result.is_err() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Interrupted,
+            "Fatal error.\n",
+        ));
+    }
+
+    let url_entry = match get_entry(builder, "url-entry") {
+        Some(entry) => entry,
+        None => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Entry not found: url-entry\n",
+            ))
+        }
+    };
+
+    apply_entry_style(&url_entry);
+    let dir_to_clone_entry = match get_entry(builder, "dir-to-clone-entry") {
+        Some(entry) => entry,
+        None => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Entry not found.\n",
+            ))
+        }
+    };
+    let dir_to_clone_entry_clone = dir_to_clone_entry.clone();
+
+    apply_entry_style(&dir_to_clone_entry);
+
     let browse_button = get_button(builder, "browse-button", "Browse");
     let clone_button = get_button(builder, "clone-button", "Clone the repo!");
+
+    let new_window_clone_clone = new_window_clone.clone();
+    clone_button.connect_clicked(move |_| {
+        let url_text = url_entry.get_text().to_string();
+        let dir_text = dir_to_clone_entry.get_text().to_string();
+
+        if url_text.is_empty() || dir_text.is_empty() {
+            let error_dialog = gtk::MessageDialog::new(
+                Some(&new_window_clone_clone),
+                gtk::DialogFlags::MODAL,
+                gtk::MessageType::Error,
+                gtk::ButtonsType::Ok,
+                "Faltan datos: URL o directorio de clonación.",
+            );
+            error_dialog.run();
+            error_dialog.close();
+        } else {
+            println!("Ok!");
+            // Si ambos campos tienen datos, llama a la función de clonación
+            // (asume que ya tienes una función llamada clone_repository)
+            // if let Err(err) = clone_repository(&url_text, &dir_text) {
+            //     // Si hubo un error al clonar, muestra un mensaje de error
+            //     let error_dialog = gtk::MessageDialog::new(
+            //         Some(new_window_clone_clone),
+            //         gtk::DialogFlags::MODAL,
+            //         gtk::MessageType::Error,
+            //         gtk::ButtonsType::Ok,
+            //         &format!("Error al clonar el repositorio: {}", err));
+            //     error_dialog.run();
+            //     error_dialog.close();
+            // }
+        }
+    });
 
     apply_clone_button_style(&browse_button);
     apply_clone_button_style(&clone_button);
 
-    // Conectar la señal "clicked" del botón "Browse" para abrir el cuadro de diálogo de selección de directorio
     let new_window_clone_clone = new_window_clone.clone();
-    let dir_to_clone_entry = get_entry(builder, "dir-to-clone-entry").unwrap(); // Asume que esto es un campo de entrada para mostrar el directorio seleccionado
-    let dir_to_clone_entry_clone = dir_to_clone_entry.clone(); // Clonar la entrada para pasarlo a la función de manejo de clic
     browse_button.connect_clicked(move |_| {
         let dialog = FileChooserDialog::new(
             Some("Seleccionar Carpeta"),
             Some(&new_window_clone_clone),
             FileChooserAction::SelectFolder,
         );
+
         dialog.set_position(gtk::WindowPosition::CenterOnParent);
 
         dialog.add_button("Cancelar", gtk::ResponseType::Cancel);
@@ -489,29 +560,48 @@ fn configure_clone_window(new_window_clone: &gtk::Window, builder: &gtk::Builder
 
         if dialog.run() == gtk::ResponseType::Ok {
             if let Some(folder) = dialog.get_filename() {
-                println!("Carpeta seleccionada: {:?}", folder);
-                // Actualiza la entrada de directorio con la carpeta seleccionada
                 dir_to_clone_entry_clone.set_text(&folder.to_string_lossy());
-                // Aquí puedes realizar acciones adicionales con la carpeta seleccionada
             }
         }
 
-        unsafe { dialog.destroy() };
+        dialog.close();
     });
-    let url_label = get_label(builder, "url-label", 12.0).unwrap();
-    let clone_dir_label = get_label(builder, "clone-dir-label", 12.0).unwrap();
-    let clone_info_label = get_label(builder, "clone-info-label", 26.0).unwrap();
+    let url_label = match get_label(builder, "url-label", 14.0) {
+        Some(label) => label,
+        None => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Label not found: url-label\n",
+            ))
+        }
+    };
+
+    let clone_dir_label = match get_label(builder, "clone-dir-label", 14.0) {
+        Some(label) => label,
+        None => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Label not found: clone-dir-label\n",
+            ))
+        }
+    };
+
+    let clone_info_label = match get_label(builder, "clone-info-label", 26.0) {
+        Some(label) => label,
+        None => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Label not found: clone-info-label\n",
+            ))
+        }
+    };
 
     apply_label_style(&url_label);
     apply_label_style(&clone_dir_label);
     apply_label_style(&clone_info_label);
 
-    let dir_to_clone_entry = get_entry(builder, "dir-to-clone-entry").unwrap();
-    let url_entry = get_entry(builder, "url-entry").unwrap();
-
-    apply_entry_style(&dir_to_clone_entry);
-    apply_entry_style(&url_entry);
     new_window_clone.set_default_size(800, 600);
+    Ok(())
 }
 
 /// Connects a GTK button to a specific action.

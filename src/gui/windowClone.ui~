@@ -12,13 +12,14 @@
           <object class="GtkButton" id="browse-button">
             <property name="label" translatable="yes">Browse</property>
             <property name="width-request">100</property>
-            <property name="height-request">40</property>
+            <property name="height-request">20</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
+            <property name="resize-mode">queue</property>
           </object>
           <packing>
-            <property name="x">670</property>
+            <property name="x">520</property>
             <property name="y">120</property>
           </packing>
         </child>
@@ -26,13 +27,14 @@
           <object class="GtkButton" id="clone-button">
             <property name="label" translatable="yes">Clone the repo!</property>
             <property name="width-request">100</property>
-            <property name="height-request">40</property>
+            <property name="height-request">20</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
+            <property name="resize-mode">immediate</property>
           </object>
           <packing>
-            <property name="x">566</property>
+            <property name="x">410</property>
             <property name="y">240</property>
           </packing>
         </child>
@@ -45,7 +47,7 @@
             <property name="label" translatable="yes">Clone a repo:</property>
           </object>
           <packing>
-            <property name="x">150</property>
+            <property name="x">100</property>
             <property name="y">45</property>
           </packing>
         </child>
@@ -58,7 +60,7 @@
             <property name="label" translatable="yes">Where to clone to</property>
           </object>
           <packing>
-            <property name="x">360</property>
+            <property name="x">210</property>
             <property name="y">120</property>
           </packing>
         </child>
@@ -71,7 +73,7 @@
             <property name="label" translatable="yes">URL</property>
           </object>
           <packing>
-            <property name="x">400</property>
+            <property name="x">250</property>
             <property name="y">180</property>
           </packing>
         </child>
@@ -83,7 +85,7 @@
             <property name="can-focus">True</property>
           </object>
           <packing>
-            <property name="x">500</property>
+            <property name="x">350</property>
             <property name="y">120</property>
           </packing>
         </child>
@@ -95,7 +97,7 @@
             <property name="can-focus">True</property>
           </object>
           <packing>
-            <property name="x">500</property>
+            <property name="x">350</property>
             <property name="y">180</property>
           </packing>
         </child>

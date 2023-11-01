@@ -148,10 +148,10 @@ pub fn apply_clone_button_style(button: &gtk::Button) {
     let css_provider = gtk::CssProvider::new();
     if let Err(err) = css_provider.load_from_data(
         "button {
-        background-color: #FFFFFF; /* Fondo blanco */
-        color: #1e3799; /* Texto azul */
-        border: 2px solid #1e3799; /* Borde azul */
-    }"
+            background-color: #FFFFFF; /* Fondo blanco */
+            color: #1e3799; /* Texto azul */
+            border: 2px solid #1e3799; /* Borde azul */
+        }"
         .as_bytes(),
     ) {
         eprintln!("Failed to load CSS for button: {}", err);
@@ -180,7 +180,10 @@ pub fn apply_entry_style(entry: &gtk::Entry) {
     let css_provider = gtk::CssProvider::new();
     if let Err(err) = css_provider.load_from_data(
         "entry {
-        /* Estilos personalizados para las entradas */
+            background-color: #FFFFFF; /* Fondo blanco */
+            color: #000000; /* Texto negro */
+            border: 1px solid #1e3799; /* Borde azul */
+            padding: 5px; /* Espacio interno */
     }"
         .as_bytes(),
     ) {
