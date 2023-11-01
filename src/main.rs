@@ -27,19 +27,4 @@ fn main() {
     if let Some(git_command) = parse_git_command(second_argument) {
         handle_git_command(git_command, args);
     }
-
-    // let index_path: &str = &format!("{}/{}", ".mgit", "index");
-    // let git_dir_path = ".mgit";
-    // let gitignore_path = "";
-    // add::add("test.txt", index_path, git_dir_path, gitignore_path, None);
-
-    // commit::new_commit(git_dir_path, "Primer commit", gitignore_path);
-
-    // add::add("test2.txt", index_path, git_dir_path, gitignore_path, None);
-
-    // commit::new_commit(git_dir_path, "Segundocommit", gitignore_path);
-
-    // add::add("test3.txt", index_path, git_dir_path, gitignore_path, None);
-
-    // commit::new_commit(git_dir_path, "Commit nro 3", gitignore_path);
 }
