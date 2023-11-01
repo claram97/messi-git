@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     fs,
-    io::{self, BufReader, Error, Read, Write},
+    io::{self, Error, Read, Write},
     net::TcpStream,
     path::PathBuf,
     str::from_utf8,
@@ -108,14 +108,14 @@ impl Client {
         }
     }
 
-    fn receive_pack_create(&mut self, pushing_ref: &str, hash: &str) -> io::Result<()> {
+    fn receive_pack_create(&mut self, _pushing_ref: &str, _hash: &str) -> io::Result<()> {
         Ok(())
     }
     fn receive_pack_update(
         &mut self,
-        pushing_ref: &str,
-        prev_hash: &str,
-        new_hash: &str,
+        _pushing_ref: &str,
+        _prev_hash: &str,
+        _new_hash: &str,
     ) -> io::Result<()> {
         Ok(())
     }
@@ -272,9 +272,11 @@ impl Client {
             if bytes[0] == 1 {
                 let packfile = Packfile::new(&bytes[..])?;
                 for obj in packfile {
-                    if let Some(obj_type) = obj.obj_type() {
-                        hash_object::store_string_to_file(obj.content(), &self.git_dir, &obj_type)?;
-                    }
+                    let (obj_type, content) = obj?;
+                    let hash = hash_object::store_string_to_file(&content, &self.git_dir, &obj_type)?;
+                    dbg!(obj_type);
+                    dbg!(content);
+                    dbg!(hash);
                 }
                 return Ok(());
             }
@@ -309,7 +311,7 @@ fn read_pkt_line_bytes(socket: &mut TcpStream) -> io::Result<(usize, Vec<u8>)> {
     socket.read_exact(&mut buf)?;
 
     let size = from_utf8(&buf).unwrap_or_default();
-    let size = usize::from_str_radix(&size, 16).unwrap_or(0);
+    let size = usize::from_str_radix(size, 16).unwrap_or(0);
 
     if size < 4 {
         return Ok((size, vec![]));

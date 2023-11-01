@@ -1,32 +1,11 @@
 use std::{
     io::{self, BufReader, Error, Read},
     str::from_utf8,
-    vec, fmt::Display,
+    vec
 };
 
 use flate2::bufread::ZlibDecoder;
 
-pub struct PackfileItem {
-    obj_type: Option<String>,
-    content: String,
-}
-
-impl PackfileItem {
-    fn new(obj_type: Option<String>, content: &str) -> Self {
-        Self {
-            obj_type: obj_type,
-            content: content.to_string(),
-        }
-    }
-
-    pub fn obj_type(&self) -> &Option<String> {
-        &self.obj_type
-    }
-
-    pub fn content(&self) -> &str {
-        &self.content
-    }
-}
 pub struct Packfile<R>
 where
     R: Read,
@@ -86,16 +65,14 @@ where
         let mut buf: [u8; 4] = [0, 0, 0, 0];
         self.bufreader.read_exact(&mut buf)?;
         self.total = u32::from_be_bytes(buf);
+        dbg!(self.total);
         Ok(())
     }
 
-    fn get_next(&mut self) -> io::Result<PackfileItem> {
+    fn get_next(&mut self) -> io::Result<(String, String)> {
         let mut byte = self.read_byte()?;
-        let obj_type_number = byte.clone();
-        let obj_type = match get_object_type(obj_type_number) {
-            Ok(t) => t,
-            Err(_) => return Ok(PackfileItem::new(None, "")),
-        };
+        let obj_type = get_object_type(byte)?;
+
         let mut obj_size = (byte & 0x0f) as usize;
         let mut bshift: usize = 4;
         while (byte & 0x80) != 0 {
@@ -106,15 +83,20 @@ where
 
         let mut decompressor = ZlibDecoder::new(&mut self.bufreader);
         let mut obj = vec![];
-        decompressor.read_to_end(&mut obj)?;
+        let bytes_read = decompressor.read_to_end(&mut obj)?;
 
+        if obj_size != bytes_read {
+            println!("type {}. bytes:\n{:?}", obj_type, obj);
+            return Err(Error::new(io::ErrorKind::InvalidInput, "Corrupted packfile. Size is not correct"))
+        }
+        
         let content = String::from_utf8_lossy(&obj);
-        Ok(PackfileItem::new(Some(obj_type), &content))
+        Ok((obj_type, content.to_string()))
     }
 
     fn read_byte(&mut self) -> io::Result<u8> {
         let mut buf: [u8; 1] = [0];
-        self.bufreader.read(&mut buf)?;
+        self.bufreader.read_exact(&mut buf)?;
         Ok(buf[0])
     }
 }
@@ -136,23 +118,13 @@ impl<R> Iterator for Packfile<R>
 where
     R: Read,
 {
-    type Item = PackfileItem;
+    type Item = io::Result<(String, String)>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.position >= self.total - 1 {
+        if self.position >= self.total {
             return None;
         }
         self.position += 1;
-
-        match self.get_next() {
-            Ok(obj) => Some(obj),
-            Err(_) => None,
-        }
-    }
-}
-
-impl Display for PackfileItem {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "type: {:?}\ncontent:\n|{}|", self.obj_type, &self.content)
+        Some(self.get_next())
     }
 }
