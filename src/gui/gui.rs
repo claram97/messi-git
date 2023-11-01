@@ -13,6 +13,7 @@ use crate::log::print_logs;
 use crate::log::Log;
 use crate::status;
 use crate::tree_handler;
+use crate::utils;
 use crate::utils::find_git_directory;
 use core::cell::RefCell;
 use gtk::Dialog;
@@ -151,30 +152,31 @@ fn show_repository_window() {
         let new_window_clone = new_window.clone();
         let builder_clone = builder.clone();
         let builder_clone1 = builder.clone();
-        set_staging_area_texts(&builder);
+        set_staging_area_texts(&builder_clone);
+        set_commit_history_view(&builder_clone1);
         
         add_to_open_windows(&new_window);
         configure_repository_window(new_window);
-        let button1 = get_button(&builder, "show-log-button", "Log");
-        let button2 = get_button(&builder, "show-branches-button", "Commit");
+        let show_log_button = get_button(&builder, "show-log-button", "Log");
+        let show_branches_button = get_button(&builder, "show-branches-button", "Commit");
 
-        let button3 = get_button(&builder, "add-path-button", "Add path");
-        let button4 = get_button(&builder, "button4", "Push");
-        let button5 = get_button(&builder, "button5", "Push");
-        let button6 = get_button(&builder, "button6", "Push");
-        let button7 = get_button(&builder, "button7", "Push");
+        let add_path_button = get_button(&builder, "add-path-button", "Add path");
+        let add_all_button: gtk::Button = get_button(&builder, "add-all-button", "Add all");
+        let remove_path_button = get_button(&builder, "remove-path-button", "Remove path");
+        let remove_all_button = get_button(&builder, "remove-all-button", "Push");
+        let commit_changes_button = get_button(&builder, "commit-changes-button", "Commit changes");
         let button8 = get_button(&builder, "button8", "Push");
         let button9 = get_button(&builder, "button9", "Push");
         let button10 = get_button(&builder, "new-branch-button", "Push");
         let button11 = get_button(&builder, "button11", "Push");
 
-        apply_button_style(&button1);
-        //apply_button_style(&button2);
-        apply_button_style(&button3);
-        apply_button_style(&button4);
-        apply_button_style(&button5);
-        apply_button_style(&button6);
-        apply_button_style(&button7);
+        apply_button_style(&show_log_button);
+        //apply_button_style(&show_branches_button);
+        apply_button_style(&add_path_button);
+        apply_button_style(&add_all_button);
+        apply_button_style(&remove_path_button);
+        apply_button_style(&remove_all_button);
+        apply_button_style(&commit_changes_button);
         apply_button_style(&button8);
         apply_button_style(&button9);
         //apply_button_style(&button10);
@@ -183,7 +185,7 @@ fn show_repository_window() {
         // button9.set_visible(false);
         // button10.set_visible(false);
 
-        button1.connect_clicked(move |_| {
+        show_log_button.connect_clicked(move |_| {
             let log_text_view: gtk::TextView = builder_clone.get_object("log-text").unwrap();
 
             //let label: Label = builder_clone.get_object("show-log-label").unwrap();
@@ -207,7 +209,7 @@ fn show_repository_window() {
             }
         });
 
-        button2.connect_clicked(move |_| {
+        show_branches_button.connect_clicked(move |_| {
             let builder_clone = builder.clone();
             let branch_text_view: gtk::TextView =
                 builder_clone.get_object("show-branches-text").unwrap();
@@ -232,45 +234,46 @@ fn show_repository_window() {
             });
         });
 
+        add_path_button.connect_clicked(move |_| {
+            create_text_entry_window("Enter the path of the file", move |text| {
+                let resultado = obtener_texto_desde_add(&text);
+                match resultado {
+                    Ok(texto) => {
+                        println!("Texto: {}", texto);
+                    }
+                    Err(err) => {
+                        eprintln!("Error al obtener el texto: {}", err);
+                    }
+                }
 
-        // button3.connect_clicked(move |_| {
-        //     let builder_clone = builder.clone();
-        //     let new_window_clone_clone = new_window_clone.clone();
-        //     let dialog = Dialog::with_buttons(
-        //         Some("Insert the path"),
-        //         Some(&new_window_clone_clone),
-        //         gtk::DialogFlags::MODAL,
-        //         &[("OK", gtk::ResponseType::Ok), ("Cancel", gtk::ResponseType::Cancel)],
-        //     );
-
-        //     dialog.set_position(gtk::WindowPosition::CenterOnParent);
-
-        //     let content_area = dialog.get_content_area();
-        //     let entry = gtk::Entry::new();
-        //     entry.set_text("Default Text");
-        //     content_area.add(&entry);
-        //     dialog.show_all();
-
-        //     dialog.connect_response(move |dialog, response| {
-        //         if response == gtk::ResponseType::Ok {
-        //             let text = entry.get_text().to_string();
-        //             let label: Label = builder_clone.get_object("label").unwrap();
-        //             label.set_text(&text);
-        //         }
-        //         dialog.close();
-        //     });
-        // });
-
-        button4.connect_clicked(move |_| {
-            println!("Button 4 clicked.");
+            });
         });
 
-        button5.connect_clicked(move |_| {
+        let builder_clone2 = builder_clone1.clone();
+        add_all_button.connect_clicked(move |_| {
+            let result = obtener_texto_desde_add(".");
+            match result {
+                Ok(texto) => {
+                    println!("Texto: {}", texto);
+                }
+                Err(err) => {
+                    eprintln!("Error al obtener el texto: {}", err);
+                }
+            }
+            set_staging_area_texts(&builder_clone1);
+        });
+
+        remove_path_button.connect_clicked(move |_| {
             println!("Button 5 clicked.");
         });
 
-        button6.connect_clicked(move |_| {
+        remove_all_button.connect_clicked(move |_| {
             println!("Button 6 clicked.");
+        });
+
+        commit_changes_button.connect_clicked(move |_| {
+            make_commit(&builder_clone2);
+            println!("Commit button clicked");
         });
 
         // button7.connect_clicked(move |_| {
@@ -297,21 +300,21 @@ fn show_repository_window() {
         //     run_main_window();
         // });
         
-        button11.connect_clicked(move |_| {
-            let label: Label = builder_clone1.get_object("label").unwrap();
-            create_text_entry_window("Enter the path of the file", move |text| {
-                let resultado = obtener_texto_desde_add(&text);
+        // button11.connect_clicked(move |_| {
+        //     let label: Label = builder_clone1.get_object("label").unwrap();
+        //     create_text_entry_window("Enter the path of the file", move |text| {
+        //         let resultado = obtener_texto_desde_add(&text);
 
-                match resultado {
-                    Ok(texto) => {
-                        label.set_text(&texto);
-                    }
-                    Err(err) => {
-                        eprintln!("Error al obtener el texto: {}", err);
-                    }
-                }
-            });
-        });
+        //         match resultado {
+        //             Ok(texto) => {
+        //                 label.set_text(&texto);
+        //             }
+        //             Err(err) => {
+        //                 eprintln!("Error al obtener el texto: {}", err);
+        //             }
+        //         }
+        //     });
+        // });
     }
 }
 
@@ -326,6 +329,13 @@ fn set_staging_area_texts(builder: &gtk::Builder) {
     let gitignore_path = format!("{}{}", current_dir.to_str().unwrap(), "/.gitignore");
     let index = index::Index::load(&index_file, &git_dir, &gitignore_path).unwrap();
     let not_staged_files = status::get_unstaged_changes(&index, &current_dir_str).unwrap();
+    let mut untracked_files_output: Vec<u8> = Vec::new();
+    status::find_untracked_files(&current_dir, &current_dir, &index, &mut untracked_files_output);
+    let mut untracked_string = String::from_utf8(untracked_files_output).unwrap();
+    untracked_string = untracked_string.replace("\x1b[31m\t\t", "");
+    untracked_string = untracked_string.replace("x1b[0m\n", "\n");
+    let not_staged_files = not_staged_files + &untracked_string;
+    
     buffer.set_text(&not_staged_files);
 
     let staged_area_text_view: gtk::TextView = builder.get_object("staged-view").unwrap();
@@ -335,6 +345,51 @@ fn set_staging_area_texts(builder: &gtk::Builder) {
     let last_commit_tree = tree_handler::load_tree_from_commit(&last_commit, &git_dir).unwrap();
     let staged_files = status::get_staged_changes(&index, &last_commit_tree).unwrap();
     staged_buffer.set_text(&staged_files);
+}
+
+fn format_branch_history(history_vec: Vec<(String, String)>) -> String {
+    let mut string_result: String = "".to_string();
+    for commit in history_vec {
+        let hash_abridged = &commit.0[..6];
+        let commit_line = hash_abridged.to_string() + "\t" + &commit.1 + "\n";
+        string_result.push_str(&commit_line);      
+    }
+    string_result.to_string()
+}
+
+fn set_commit_history_view(builder: &gtk::Builder) {
+    let label_current_branch: gtk::Label = builder.get_object("commit-current-branch-commit").unwrap();
+    let mut current_dir = std::env::current_dir().unwrap();
+    let binding = current_dir.clone();
+    let current_dir_str = binding.to_str().unwrap();
+    let git_dir_path: String = utils::find_git_directory(&mut current_dir, ".mgit").unwrap();
+    let current_branch_name: String = commit::get_branch_name(&git_dir_path).unwrap();
+    let current_branch_text: String = "Current branch: ".to_owned() + &current_branch_name;
+
+    label_current_branch.set_text(&current_branch_text);
+    let branch_last_commit = branch::get_current_branch_commit(&git_dir_path).unwrap();
+    let branch_commits_history = utils::get_branch_commit_history_with_messages(&branch_last_commit, &git_dir_path).unwrap();
+    let branch_history_formatted = format_branch_history(branch_commits_history);
+    
+    let text_view_history: gtk::TextView = builder.get_object("commit-history-view").unwrap();
+    let history_buffer = text_view_history.get_buffer().unwrap();
+    history_buffer.set_text(&branch_history_formatted);
+}
+
+fn make_commit(builder: &gtk::Builder) {
+    let mut current_dir = std::env::current_dir().unwrap();
+    let binding = current_dir.clone();
+    let current_dir_str = binding.to_str().unwrap();
+    let git_dir_path: String = utils::find_git_directory(&mut current_dir, ".mgit").unwrap();
+
+    let git_ignore_path = format!("{}/{}", current_dir_str, ".mgitignore");
+
+    let message_view: gtk::Entry = builder.get_object("commit-message-text-view").unwrap();
+    let message = message_view.get_text().to_string();
+
+    let result = commit::new_commit(&git_dir_path, &message, &git_ignore_path);
+    println!("{:?}", result);
+    set_commit_history_view(builder);
 }
 
 
@@ -364,6 +419,19 @@ fn obtener_texto_desde_add(texto: &str) -> Result<String, io::Error> {
         git_dir_parent.to_string_lossy().to_string(),
         ".mgitignore"
     );
+
+    if texto == "." {
+        let options = Some(vec!["-u".to_string()]);
+        match add("", &index_path, &git_dir, &git_ignore_path, options) {
+            Ok(_) => {
+                println!("La función 'add' se ejecutó correctamente.");
+            }
+            Err(err) => {
+                eprintln!("Error al llamar a la función 'add': {:?}", err);
+            }
+        };
+    }
+
     match add(&texto, &index_path, &git_dir, &git_ignore_path, None) {
         Ok(_) => {
             println!("La función 'add' se ejecutó correctamente.");
@@ -372,7 +440,7 @@ fn obtener_texto_desde_add(texto: &str) -> Result<String, io::Error> {
             eprintln!("Error al llamar a la función 'add': {:?}", err);
         }
     };
-    Ok("hola".to_string())
+    Ok("Ok".to_string())
 }
 
 /// Configures the properties of a repository window in a GTK application.

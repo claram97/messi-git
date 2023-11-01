@@ -159,6 +159,20 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
     Ok(parent_hash.to_string())
 }
 
+pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
+    let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
+    let message: &str = match commit_file.split('\n').nth(5) {
+        Some(message) => message,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Message not found",
+            ))
+        }
+    };
+    Ok(message.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     fn create_git_dir(git_dir_path: &str) {
@@ -323,4 +337,20 @@ mod tests {
         );
         let _ = std::fs::remove_dir_all(git_dir_path);
     }
+
+    #[test]
+    fn test_get_message_works_correctly() {
+        let git_dir_path: &str = "tests/commit/.mgit_test_message";
+        create_git_dir(git_dir_path);
+        let refs_dir = git_dir_path.to_string() + "/refs/heads/main";
+        let mut ref_actual = std::fs::File::open(&refs_dir).unwrap();
+        let mut ref_actual_content = String::new();
+        ref_actual.read_to_string(&mut ref_actual_content).unwrap();
+        let message = "test commit";
+        let commit_hash = new_commit(git_dir_path, message, "").unwrap();
+        let commit_message = get_commit_message(&commit_hash, git_dir_path).unwrap();
+        assert_eq!(commit_message, message);
+        let _ = std::fs::remove_dir_all(git_dir_path);
+    }
+
 }
