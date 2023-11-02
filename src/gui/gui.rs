@@ -18,6 +18,7 @@ use gtk::FileChooserDialog;
 use std::io;
 use std::path::Path;
 use std::sync::Mutex;
+use crate::rm::git_rm;
 
 use super::style::apply_clone_button_style;
 use super::style::apply_entry_style;
@@ -310,7 +311,17 @@ fn show_repository_window() -> io::Result<()> {
         });
 
         remove_path_button.connect_clicked(move |_| {
-            println!("Button 5 clicked.");
+            create_text_entry_window("Enter the path of the file", move |text| {
+                let resultado = obtener_texto_desde_remove(&text);
+                match resultado {
+                    Ok(texto) => {
+                        println!("Texto: {}", texto);
+                    }
+                    Err(err) => {
+                        eprintln!("Error al obtener el texto: {}", err);
+                    }
+                }
+            });
         });
 
         remove_all_button.connect_clicked(move |_| {
@@ -479,6 +490,45 @@ fn make_commit(builder: &gtk::Builder) {
     println!("{:?}", result);
     set_commit_history_view(builder);
 }
+fn obtener_texto_desde_remove(texto: &str) -> Result<String, io::Error> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(git_dir) => git_dir,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ))
+        }
+    };
+    let index_path = format!("{}/{}", git_dir, "index");
+    let git_dir_parent = match Path::new(&git_dir).parent() {
+        Some(git_dir_parent) => git_dir_parent,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Gitignore filey not found\n",
+            ))
+        }
+    };
+    let git_ignore_path = format!(
+        "{}/{}",
+        git_dir_parent.to_string_lossy().to_string(),
+        ".mgitignore"
+    );
+    println!("INDEX PATH {}.", index_path);
+
+    match git_rm(&texto, &index_path, &git_dir, &git_ignore_path) {
+        Ok(_) => {
+            println!("La función 'rm' se ejecutó correctamente.");
+        }
+        Err(err) => {
+            eprintln!("Error al llamar a la función 'rm': {:?}", err);
+        }
+    };
+    Ok("Ok".to_string())
+}
+
 
 fn obtener_texto_desde_add(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
