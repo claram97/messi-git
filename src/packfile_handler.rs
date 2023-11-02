@@ -1,26 +1,45 @@
 use std::{
-    io::{self, BufReader, Error, Read},
+    collections::HashSet,
+    fmt::Display,
+    io::{self, BufReader, Error, Read, Write},
     str::from_utf8,
-    vec, fmt::Display
+    vec,
 };
 
-use flate2::bufread::ZlibDecoder;
+use flate2::{
+    bufread::ZlibDecoder,
+    write::ZlibEncoder,
+    Compression,
+};
+
+use crate::cat_file::cat_file_return_content;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObjectType {
     Commit,
     Tree,
     Blob,
-    Tag
+    Tag,
+}
+
+impl ObjectType {
+    fn as_byte(&self) -> u8 {
+        match self {
+            ObjectType::Commit => 1,
+            ObjectType::Tree => 2,
+            ObjectType::Blob => 3,
+            ObjectType::Tag => 4,
+        }
+    }
 }
 
 impl Display for ObjectType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ObjectType::Commit =>write!(f, "commit"),
-            ObjectType::Tree =>write!(f, "tree"),
-            ObjectType::Blob =>write!(f, "blob"),
-            ObjectType::Tag =>write!(f, "tag"),
+            ObjectType::Commit => write!(f, "commit"),
+            ObjectType::Tree => write!(f, "tree"),
+            ObjectType::Blob => write!(f, "blob"),
+            ObjectType::Tag => write!(f, "tag"),
         }
     }
 }
@@ -37,7 +56,7 @@ impl TryFrom<&str> for ObjectType {
             t => Err(Error::new(
                 io::ErrorKind::InvalidData,
                 format!("Unsopported object type: {}", t),
-            ))
+            )),
         }
     }
 }
@@ -54,7 +73,7 @@ impl TryFrom<u8> for ObjectType {
             t => Err(Error::new(
                 io::ErrorKind::InvalidData,
                 format!("Unsopported object type: {}", t),
-            ))
+            )),
         }
     }
 }
@@ -62,12 +81,16 @@ impl TryFrom<u8> for ObjectType {
 pub struct PackfileEntry {
     pub obj_type: ObjectType,
     pub size: usize,
-    pub content: String
+    pub content: String,
 }
 
 impl PackfileEntry {
     pub fn new(obj_type: ObjectType, size: usize, content: &str) -> Self {
-        Self { obj_type, size, content: content.to_string() }
+        Self {
+            obj_type,
+            size,
+            content: content.to_string(),
+        }
     }
 }
 
@@ -153,9 +176,12 @@ where
 
         if obj_size != bytes_read {
             println!("type {:?}. bytes:\n{:?}", obj_type, obj);
-            return Err(Error::new(io::ErrorKind::InvalidInput, "Corrupted packfile. Size is not correct"))
+            return Err(Error::new(
+                io::ErrorKind::InvalidInput,
+                "Corrupted packfile. Size is not correct",
+            ));
         }
-        
+
         let content = String::from_utf8_lossy(&obj);
         Ok(PackfileEntry::new(obj_type, obj_size, &content))
     }
@@ -165,6 +191,7 @@ where
         self.bufreader.read_exact(&mut buf)?;
         Ok(buf[0])
     }
+
 }
 
 impl<R> Iterator for Packfile<R>
@@ -180,4 +207,62 @@ where
         self.position += 1;
         Some(self.get_next())
     }
+}
+
+pub fn create_packfile_from_set(
+    objects: HashSet<(ObjectType, String)>,
+    git_dir: &str,
+) -> io::Result<Vec<u8>> {
+    let mut packfile = vec![];
+    // header start (ver si va aca o no)
+    packfile.push(1);
+    packfile.push(b'P');
+    packfile.push(b'A');
+    packfile.push(b'C');
+    packfile.push(b'K');
+    let version: [u8; 4] = (2 as u32).to_be_bytes();
+    packfile.extend(version);
+    let obj_count: [u8; 4] = (objects.len() as u32).to_be_bytes();
+    packfile.extend(obj_count);
+    append_objects(&mut packfile, objects, git_dir)?;
+    // ver lo del checksum aca al final
+    Ok(packfile)
+}
+
+fn append_objects(
+    packfile: &mut Vec<u8>,
+    objects: HashSet<(ObjectType, String)>,
+    git_dir: &str,
+) -> io::Result<()> {
+    for (obj_type, hash) in objects {
+        
+        let content = cat_file_return_content(&hash, git_dir)?;
+        let size = content.len() as u64;
+        let mut compressor = ZlibEncoder::new(Vec::<u8>::new(), Compression::default());
+        compressor.write_all(content.as_bytes())?;
+        let compressed_content = compressor.finish()?;
+        
+        
+        let t = (obj_type.as_byte() << 4) & 0x70;
+        packfile.push(t);
+        packfile.extend(encode_varint(size));
+        packfile.extend(compressed_content);
+        // ver si hace falta meterle un EOF
+    }
+    Ok(())
+}
+
+// 
+fn encode_varint(mut n: u64) -> Vec<u8> {
+    let mut bytes = Vec::new();
+
+    while n >= 0x80 {
+        let byte = ((n & 0x7F) | 0x80) as u8;
+        bytes.push(byte);
+        n >>= 7;
+    }
+
+    bytes.push(n as u8);
+
+    bytes
 }

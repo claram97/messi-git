@@ -2,7 +2,7 @@ use std::{
     collections::{HashMap, HashSet},
     fs,
     io::{self, Error, Read, Write},
-    net::{TcpStream, ToSocketAddrs},
+    net::TcpStream,
     path::PathBuf,
     str::from_utf8,
     vec,
@@ -12,7 +12,7 @@ use crate::cat_file;
 use crate::packfile_handler::Packfile;
 use crate::{
     hash_object,
-    packfile_handler::{ObjectType, PackfileEntry},
+    packfile_handler::{ObjectType, self},
 };
 
 // multi_ack_detailed side-band-64k thin-pack include-tag ofs-delta deepen-since deepen-not
@@ -134,7 +134,9 @@ impl Client {
         prev_hash: &str,
         new_hash: &str,
     ) -> io::Result<()> {
-        get_missing_objects_from(new_hash, prev_hash, &self.git_dir)?;
+        let missing_objects = get_missing_objects_from(new_hash, prev_hash, &self.git_dir)?;
+        let packfile = packfile_handler::create_packfile_from_set(missing_objects, &self.git_dir)?;
+        // supongo que send y ver si hay que meter un flush o done
         Ok(())
     }
 
