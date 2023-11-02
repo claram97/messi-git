@@ -194,6 +194,13 @@ fn show_repository_window() -> io::Result<()> {
         let button11 = get_button(&builder, "button11", "Push");
         let close_repo_button = get_button(&builder, "close", "Push");
 
+        let checkout1_button = get_button(&builder, "checkout1", "Push");
+        let checkout2_button = get_button(&builder, "checkout2", "Push");
+        let checkout3_button = get_button(&builder, "checkout3", "Push");
+        let checkout4_button = get_button(&builder, "checkout4", "Push");
+        let checkout5_button = get_button(&builder, "checkout5", "Push");
+
+
         apply_button_style(&show_log_button)
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
         apply_button_style(&show_branches_button)
@@ -219,6 +226,18 @@ fn show_repository_window() -> io::Result<()> {
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
         apply_button_style(&close_repo_button)
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        
+        apply_button_style(&checkout1_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&checkout2_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&checkout3_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&checkout4_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&checkout5_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+
 
         close_repo_button.connect_clicked(move |_| {
             close_all_windows();
