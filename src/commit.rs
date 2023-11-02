@@ -30,10 +30,9 @@ fn create_new_commit_file(
         return Err(io::Error::new(io::ErrorKind::Other, "No changes were made"));
     }
 
-    let time = chrono::Local::now().format("%d/%m/%Y %H:%M").to_string();
+    let time = chrono::Local::now();
     let commit_content = format!(
-        "tree {tree_hash}\nparent {parent_commit}\nauthor {}\ndate: {time}\n\n{message}\0",
-        "user"
+        "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0","user", "email@email", "user", "email@email"
     );
 
     let commit_hash = hash_object::store_string_to_file(&commit_content, directory, "commit")?;
@@ -99,6 +98,38 @@ pub fn new_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> i
     Ok(commit_hash)
 }
 
+/// Creates a new merge commit. merge commits are special as they have two parents. This function should only be used when merging two branches.
+///
+/// The commit file will be created with the following format:
+/// tree <tree_hash>
+/// parent <parent_hash>
+/// parent <parent_hash>
+/// author <author>
+///
+/// <message>
+///
+pub fn new_merge_commit(
+    git_dir_path: &str,
+    message: &str,
+    parent_hash: &str,
+    parent_hash2: &str,
+    git_ignore_path: &str,
+) -> io::Result<String> {
+    let index_path = git_dir_path.to_string() + "/" + INDEX_FILE_NAME;
+    let commit_tree =
+        tree_handler::build_tree_from_index(&index_path, git_dir_path, git_ignore_path)?;
+    let (tree_hash, _) = tree_handler::write_tree(&commit_tree, git_dir_path)?;
+    let time = chrono::Local::now();
+    let commit_content = format!("tree {tree_hash}\nparent {parent_hash}\nparent {parent_hash2}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0", "user", "email@email", "user", "email@email"
+    );
+    let commit_hash = hash_object::store_string_to_file(&commit_content, git_dir_path, "commit")?;
+    let branch_name = get_branch_name(git_dir_path)?;
+    let branch_path = git_dir_path.to_string() + "/refs/heads/" + &branch_name;
+    let mut branch_file = std::fs::File::create(branch_path)?;
+    branch_file.write_all(commit_hash.as_bytes())?;
+    Ok(commit_hash)
+}
+
 /// Returns the parent hash of the given commit hash.
 /// If the commit is not found, it returns an error.
 ///
@@ -109,7 +140,8 @@ pub fn new_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> i
 ///
 pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
-    let parent_hash = match commit_file.split('\n').nth(1) {
+
+    let parent_hash: &str = match commit_file.split('\n').nth(1) {
         Some(parent_hash) => match parent_hash.split(' ').nth(1) {
             Some(parent_hash) => parent_hash,
             None => {
@@ -155,26 +187,24 @@ pub fn read_head_commit_hash(git_dir: &str) -> io::Result<String> {
 mod tests {
     fn create_git_dir(git_dir_path: &str) {
         let _ = std::fs::remove_dir_all(git_dir_path);
-        let _ = std::fs::create_dir(git_dir_path);
-        let _ = std::fs::create_dir(git_dir_path.to_string() + "/refs");
-        let _ = std::fs::create_dir(git_dir_path.to_string() + "/refs/heads");
-        let _ = std::fs::create_dir(git_dir_path.to_string() + "/objects");
-        let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs");
-        let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs/refs");
-        let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs/refs/heads");
+        let _ = std::fs::create_dir_all(git_dir_path);
+        let _ = std::fs::create_dir_all(git_dir_path.to_string() + "/refs");
+        let _ = std::fs::create_dir_all(git_dir_path.to_string() + "/refs/heads");
+        let _ = std::fs::create_dir_all(git_dir_path.to_string() + "/objects");
+        let _ = std::fs::create_dir_all(git_dir_path.to_string() + "/logs");
+        let _ = std::fs::create_dir_all(git_dir_path.to_string() + "/logs/refs");
+        let _ = std::fs::create_dir_all(git_dir_path.to_string() + "/logs/refs/heads");
         let mut head_file = std::fs::File::create(git_dir_path.to_string() + "/HEAD").unwrap();
         head_file
             .write_all("ref: refs/heads/main".as_bytes())
             .unwrap();
 
-        //Create the refs/heads/main file
         let mut refs_file =
             std::fs::File::create(git_dir_path.to_string() + "/refs/heads/main").unwrap();
         refs_file
             .write_all("hash_del_commit_anterior".as_bytes())
             .unwrap();
 
-        //Create the index file
         let mut index_file = std::fs::File::create(git_dir_path.to_string() + "/index").unwrap();
         let index_file_content = "hashhashhashhash1 probando.txt\nhashhashhashhash2 src/probando.c\nhashhashhashhash3 src/pruebita.c\nhashhashhashhash4 src/prueba/prueba.c";
         index_file.write_all(index_file_content.as_bytes()).unwrap();

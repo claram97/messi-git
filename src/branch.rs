@@ -28,6 +28,27 @@ pub fn get_current_branch_path(git_dir_path: &str) -> io::Result<String> {
     Ok(path_final.to_string())
 }
 
+pub fn get_branch_commit_hash(branch_name: &str, git_dir: &str) -> io::Result<String> {
+    let branch_path = git_dir.to_string() + "/refs/heads/" + branch_name;
+    let mut branch_file = std::fs::File::open(branch_path)?;
+    let mut branch_content = String::new();
+    branch_file.read_to_string(&mut branch_content)?;
+    let nombre: Vec<&str> = branch_content.split('\n').collect();
+    let path_final = nombre[0];
+    Ok(path_final.to_string())
+}
+
+pub fn update_branch_commit_hash(
+    branch_name: &str,
+    commit_hash: &str,
+    git_dir: &str,
+) -> io::Result<()> {
+    let branch_path = git_dir.to_string() + "/refs/heads/" + branch_name;
+    let mut branch_file = std::fs::File::create(branch_path)?;
+    branch_file.write_all(commit_hash.as_bytes())?;
+    Ok(())
+}
+
 pub fn get_current_branch_commit(git_dir_path: &str) -> io::Result<String> {
     let branch_path = get_current_branch_path(git_dir_path)?;
     let complete_path = git_dir_path.to_string() + "/" + &branch_path;
@@ -46,6 +67,7 @@ pub fn delete_branch(git_dir: &str, branch_name: &str) -> io::Result<()> {
         let buffer = format!("error: branch '{}' not found\n", branch_name);
         io::stdout().write_all(buffer.as_bytes())?;
     }
+
     Ok(())
 }
 

@@ -301,7 +301,7 @@ fn replace_working_tree(
     //     None => return Err(io::Error::new(io::ErrorKind::Other, "Error when reading parent dir")),
     // };
 
-    latest_tree.delete_directories2(Path::new(root_dir))?;
+    latest_tree.delete_directories(root_dir)?;
     commit_tree.create_directories(root_dir, git_dir)?;
     Ok(())
 }
