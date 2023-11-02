@@ -126,18 +126,16 @@ pub fn changes_to_be_committed(
 pub fn get_staged_changes(index: &Index, commit_tree: &Tree) -> Result<String, io::Error> {
     let mut output: Vec<u8> = vec![];
     changes_to_be_committed(index, commit_tree, &mut output)?;
-    let result: Result<String, std::string::FromUtf8Error> = String::from_utf8(output);
-    //Clean the output
-    if result.is_ok() {
-        let mut resultado = result.unwrap();
+    if let Ok(result) = String::from_utf8(output) {
+        let mut resultado = result;
         resultado = resultado.replace("\x1b[31m\t\tmodified:\t ", "");
         resultado = resultado.replace("\x1b[0m\n", "\n");
-        return Ok(resultado);
+        Ok(resultado)
     } else {
-        return Err(io::Error::new(
+        Err(io::Error::new(
             io::ErrorKind::NotFound,
             "Parent hash not found",
-        ));
+        ))
     }
 }
 
@@ -178,18 +176,16 @@ pub fn find_unstaged_changes(
 pub fn get_unstaged_changes(index: &Index, git_dir: &str) -> Result<String, io::Error> {
     let mut output: Vec<u8> = vec![];
     find_unstaged_changes(index, git_dir, &mut output)?;
-    let result: Result<String, std::string::FromUtf8Error> = String::from_utf8(output);
-    //Clean the output
-    if result.is_ok() {
-        let mut resultado = result.unwrap();
+    if let Ok(result) = String::from_utf8(output) {
+        let mut resultado = result;
         resultado = resultado.replace("\x1b[31m\t\tmodified:\t ", "");
         resultado = resultado.replace("\x1b[0m\n", "\n");
-        return Ok(resultado);
+        Ok(resultado)
     } else {
-        return Err(io::Error::new(
+        Err(io::Error::new(
             io::ErrorKind::NotFound,
             "Parent hash not found",
-        ));
+        ))
     }
 }
 

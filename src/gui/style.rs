@@ -4,7 +4,6 @@ use gtk::Builder;
 use gtk::CssProviderExt;
 use gtk::StyleContextExt;
 use gtk::WidgetExt;
-use std::thread::Builder as OtherBuilder;
 
 /// Retrieves a GTK button from a `gtk::Builder` by its ID and applies a specific style.
 ///
@@ -23,7 +22,7 @@ use std::thread::Builder as OtherBuilder;
 /// A `gtk::Button` widget if it was successfully retrieved, otherwise, it returns an
 /// empty `gtk::Button`.
 ///
-pub fn get_button(builder: &Builder, button_id: &str, label_text: &str) -> gtk::Button {
+pub fn get_button(builder: &Builder, button_id: &str) -> gtk::Button {
     if let Some(button) = builder.get_object::<gtk::Button>(button_id) {
         if let Some(child) = button.get_child() {
             if let Ok(label) = child.downcast::<gtk::Label>() {
@@ -70,23 +69,23 @@ pub fn apply_button_style(button: &gtk::Button) -> Result<(), String> {
     Ok(())
 }
 
-/// Get a GTK label with the specified ID and customize its font size.
+/// Retrieve a GTK label widget from a GTK builder and apply a custom font size.
 ///
-/// This function searches for a GTK label with the given `label_id` within the GTK Builder.
-/// If the label is found, it customizes the font size using the provided `font_size` and returns
-/// the label wrapped in an `Option`. If the label is not found, it returns `None`.
+/// This function attempts to retrieve a GTK label widget using its ID from the provided GTK builder.
+/// If successful, it overrides the font size for the label with the specified `font_size` and makes
+/// the label visible. If the label is not found, it logs an error message and returns `None`.
 ///
 /// # Arguments
 ///
-/// * `builder` - A reference to a GTK Builder instance.
-/// * `label_id` - The ID of the label to search for in the builder.
-/// * `font_size` - The desired font size for the label.
+/// * `builder` - A reference to the `gtk::Builder` containing the UI definition.
+/// * `label_id` - The ID of the label widget to retrieve from the builder.
+/// * `font_size` - The font size to apply to the label.
 ///
 /// # Returns
 ///
-/// - `Some(gtk::Label)` if the label is found and customized.
-/// - `None` if the label is not found.
-///
+/// An `Option<gtk::Label>`:
+/// - Some(label) if the label is found and styled successfully.
+/// - None if the label with the specified ID is not found in the builder.
 pub fn get_label(builder: &gtk::Builder, label_id: &str, font_size: f64) -> Option<gtk::Label> {
     if let Some(label) = builder.get_object::<gtk::Label>(label_id) {
         let pango_desc = pango::FontDescription::from_string(&format!("Sans {:.1}", font_size));
@@ -99,6 +98,22 @@ pub fn get_label(builder: &gtk::Builder, label_id: &str, font_size: f64) -> Opti
     }
 }
 
+/// Retrieve a GTK entry widget from a GTK builder.
+///
+/// This function attempts to retrieve a GTK entry widget using its ID from the provided GTK builder.
+/// If successful, it returns the entry widget. If the entry is not found, it logs an error message and
+/// returns `None`.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to the `gtk::Builder` containing the UI definition.
+/// * `entry_id` - The ID of the entry widget to retrieve from the builder.
+///
+/// # Returns
+///
+/// An `Option<gtk::Entry>`:
+/// - Some(entry) if the entry is found in the builder.
+/// - None if the entry with the specified ID is not found in the builder.
 pub fn get_entry(builder: &gtk::Builder, entry_id: &str) -> Option<gtk::Entry> {
     if let Some(entry) = builder.get_object::<gtk::Entry>(entry_id) {
         Some(entry)
@@ -160,6 +175,14 @@ pub fn load_and_get_window(
     }
 }
 
+/// Applies a custom CSS style to a GTK button.
+///
+/// This function sets the background color to white, text color to blue, and a blue border for the button.
+/// It uses a CSS provider to load the styles and applies them to the button's style context.
+///
+/// # Arguments
+///
+/// * `button` - A reference to the `gtk::Button` widget to style.
 pub fn apply_clone_button_style(button: &gtk::Button) {
     let css_provider = gtk::CssProvider::new();
     if let Err(err) = css_provider.load_from_data(
@@ -177,6 +200,14 @@ pub fn apply_clone_button_style(button: &gtk::Button) {
     style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
+/// Applies a custom CSS style to a GTK label.
+///
+/// This function sets the text color to blue for the label.
+/// It uses a CSS provider to load the styles and applies them to the label's style context.
+///
+/// # Arguments
+///
+/// * `label` - A reference to the `gtk::Label` widget to style.
 pub fn apply_label_style(label: &gtk::Label) {
     let css_provider = gtk::CssProvider::new();
     if let Err(err) = css_provider.load_from_data(
@@ -192,6 +223,15 @@ pub fn apply_label_style(label: &gtk::Label) {
     style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
+/// Applies a custom CSS style to a GTK entry.
+///
+/// This function sets the background color to white, text color to black, adds a blue border,
+/// and sets padding for the entry.
+/// It uses a CSS provider to load the styles and applies them to the entry's style context.
+///
+/// # Arguments
+///
+/// * `entry` - A reference to the `gtk::Entry` widget to style.
 pub fn apply_entry_style(entry: &gtk::Entry) {
     let css_provider = gtk::CssProvider::new();
     if let Err(err) = css_provider.load_from_data(

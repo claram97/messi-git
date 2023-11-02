@@ -169,7 +169,7 @@ pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<S
     };
     Ok(message.to_string())
 }
-    pub fn read_head_commit_hash(git_dir: &str) -> io::Result<String> {
+pub fn read_head_commit_hash(git_dir: &str) -> io::Result<String> {
     let head_path = format!("{}/HEAD", git_dir);
     let head_content = fs::read_to_string(head_path)?;
     let last_commit_ref = head_content.trim().split(": ").last();

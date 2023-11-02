@@ -56,17 +56,6 @@ pub fn process_args(git_dir_path: &str, root_dir: &str) -> io::Result<()> {
 /// * `root_dir` - A string representing the path to the root directory of the repository.
 /// * `branch_name` - A string representing the name of the branch to be checked out.
 ///
-/// # Example
-///
-/// ```
-/// use std::path::Path;
-/// use messi::checkout::checkout_branch;
-/// let git_dir = Path::new(".mgit");
-/// let branch_name = "my_branch";
-/// let root_dir = ".";
-/// checkout_branch(&git_dir, root_dir, branch_name);
-/// ```
-///
 /// This function checks if the specified branch reference file exists. If it exists, the content of
 /// the reference file is read to determine the commit it points to. Then, it updates the HEAD file
 /// to point to the new branch and replaces the working tree with the contents of the new branch. When the
@@ -135,17 +124,6 @@ fn checkout_branch_references(git_dir: &Path, branch_name: &str) -> io::Result<S
 /// * `root_dir` - A string representing the path to the root directory of the repository.
 /// * `branch_name` - A string representing the name of the new branch to be created and checked out.
 ///
-/// # Example
-///
-/// ```
-/// use std::path::Path;
-/// use messi::checkout::create_and_checkout_branch;
-/// let git_dir = Path::new(".mgit");
-/// let branch_name = "my_new_branch";
-/// let root_dir = ".";
-/// create_and_checkout_branch(&git_dir, root_dir, branch_name);
-/// ```
-///
 /// This function checks if the branch already exists in the repository. If it does, it prints an
 /// error message and advises using the `-B` option to reset the branch. If the branch does not
 /// exist, it creates a reference file for the new branch and writes an initial reference value
@@ -197,20 +175,6 @@ fn create_and_checkout_branch_references(
 /// * `git_dir` - A reference to the `std::path::Path` representing the Git repository directory.
 /// * `branch_name` - A string containing the name of the branch to create or reset.
 ///
-/// # Example
-///
-/// ```
-/// use std::path::Path;
-/// use messi::checkout::create_or_reset_branch;
-/// let git_dir = Path::new(".mgit");
-/// let branch_name = "my_branch";
-/// let root_dir = ".";
-/// create_or_reset_branch(&git_dir, root_dir, branch_name);
-/// ```
-///
-/// This example demonstrates how to use the `create_or_reset_branch` function to create or reset a branch
-/// named "my_branch" in a Git-like repository. If the branch already exists, it will be reset, and the
-/// HEAD reference will be updated to point to the branch.
 pub fn create_or_reset_branch(git_dir: &Path, root_dir: &str, branch_name: &str) -> io::Result<()> {
     let refs_dir = git_dir.join("refs").join("heads");
     let branch_ref_file = refs_dir.join(branch_name);
@@ -245,20 +209,6 @@ pub fn create_or_reset_branch(git_dir: &Path, root_dir: &str, branch_name: &str)
 /// * `git_dir` - A reference to the `std::path::Path` representing the Git repository directory.
 /// * `commit_id` - A string containing the ID of the commit to check out in detached mode.
 ///
-/// # Example
-///
-/// ```
-/// use std::path::Path;
-/// use messi::checkout::checkout_commit_detached;
-/// let git_dir = Path::new(".mgit");
-/// let commit_id = "a1b2c3d4e5"; // Replace with an actual commit ID.
-/// let root_dir = ".";
-/// checkout_commit_detached(&git_dir, root_dir, commit_id);
-/// ```
-///
-/// This example demonstrates how to use the `checkout_commit_detached` function to switch to a specific
-/// commit in detached mode within a Git-like repository. Make sure to replace `"a1b2c3d4e5"` with the
-/// actual commit ID you want to check out.
 pub fn checkout_commit_detached(git_dir: &Path, root_dir: &str, commit_id: &str) -> io::Result<()> {
     let git_dir_str = match git_dir.to_str() {
         Some(path) => path,
@@ -320,19 +270,6 @@ fn replace_working_tree(
 /// * `branch_or_commit` - A string containing the branch name (e.g., "my_branch") or the commit
 ///                       ID (e.g., "a1b2c3d4e5").
 ///
-/// # Example
-///
-/// ```
-/// use std::path::Path;
-/// use messi::checkout::force_checkout;
-/// let git_dir = Path::new(".mgit");
-/// let branch_or_commit = "my_branch"; // Replace with a branch name or commit ID.
-/// force_checkout(&git_dir, branch_or_commit);
-/// ```
-///
-/// This example demonstrates how to use the `force_checkout` function to forcibly switch to a
-/// specific branch or commit within a Git-like repository. You can replace `"my_branch"` with
-/// the actual branch name or commit ID you want to switch to.
 pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) {
     // Check if a branch or a commit is provided
     let is_branch = branch_or_commit.starts_with("refs/heads/");
