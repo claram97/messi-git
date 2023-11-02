@@ -19,7 +19,8 @@ use std::io;
 use std::path::Path;
 use std::sync::Mutex;
 use crate::rm::git_rm;
-
+use crate::checkout::checkout_branch;
+use std::path::PathBuf;
 use super::style::apply_clone_button_style;
 use super::style::apply_entry_style;
 use super::style::apply_label_style;
@@ -238,6 +239,19 @@ fn show_repository_window() -> io::Result<()> {
         apply_button_style(&checkout5_button)
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
 
+        checkout1_button.connect_clicked(move |_| {
+            create_text_entry_window("Enter the path of the file", move |text| {
+                let resultado = obtener_texto_desde_checkout1(&text);
+                match resultado {
+                    Ok(texto) => {
+                        println!("Texto: {}", texto);
+                    }
+                    Err(err) => {
+                        eprintln!("Error al obtener el texto: {}", err);
+                    }
+                }
+            });
+        });
 
         close_repo_button.connect_clicked(move |_| {
             close_all_windows();
@@ -598,6 +612,38 @@ fn obtener_texto_desde_add(texto: &str) -> Result<String, io::Error> {
     };
     Ok("Ok".to_string())
 }
+fn obtener_texto_desde_checkout1(texto: &str) -> Result<String, io::Error> {
+    let mut current_dir = std::env::current_dir()?;
+    
+    // Encuentra el directorio Git como un PathBuf
+    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(git_dir) => git_dir.into(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ));
+        }
+    };
+    
+    // Obtén el directorio padre como un Path
+    let git_dir_parent: &Path = git_dir.parent().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
+    })?;
+    
+    // Llama a checkout_branch con git_dir como un Path y git_dir_parent como un &Path
+    match checkout_branch(&git_dir, git_dir_parent.to_string_lossy().as_ref(), texto) {
+        Ok(_) => {
+            println!("La función 'checkout branch' se ejecutó correctamente.");
+        }
+        Err(err) => {
+            eprintln!("Error al llamar a la función 'checkout branch': {:?}", err);
+        }
+    };
+    
+    Ok("Ok".to_string())
+}
+
 
 /// Configures the properties of a repository window in a GTK application.
 ///
