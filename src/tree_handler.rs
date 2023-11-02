@@ -112,6 +112,7 @@ impl Tree {
         None
     }
 
+
     /// Given a tree, recreates the directories and files stored in the tree in the working tree.
     pub fn create_directories(&self, parent_dir: &str, git_dir_path: &str) -> io::Result<()> {
         if parent_dir.is_empty() && self.name.is_empty() {
@@ -132,6 +133,7 @@ impl Tree {
         if !Path::new(&dir_path).exists() {
             fs::create_dir_all(&dir_path)?;
         }
+
         for file in &self.files {
             let path = dir_path.to_string() + "/" + &file.0;
             let mut new_file = fs::File::create(path)?;
@@ -144,6 +146,7 @@ impl Tree {
         Ok(())
     }
 
+
     /// Given a tree, it deletes all the files and directories in the working tree that correspond to the tree.
     /// The tree itself is not modified.
     pub fn delete_directories(&self, parent_dir: &str) -> io::Result<()> {
@@ -154,14 +157,17 @@ impl Tree {
         } else {
             parent_dir.to_string() + "/" + &self.name
         };
+
         for subdirs in &self.directories {
             subdirs.delete_directories(&dir_path)?;
         }
         for file in &self.files {
             let path = dir_path.to_string() + "/" + &file.0;
+
             if Path::new(&path).exists() {
                 fs::remove_file(path)?;
             }
+
         }
 
         if dir_path.is_empty() {
@@ -211,6 +217,29 @@ impl Tree {
             index.add_file(&entry.0, &entry.1)?;
         }
         Ok(index)
+
+    // Build a function similar to delete_directories but that works using absolute paths
+
+    pub fn delete_directories2(&self, parent_dir: &Path) -> io::Result<()> {
+        let dir_path = parent_dir.join(&self.name);
+        for subdirs in &self.directories {
+            subdirs.delete_directories2(&dir_path)?;
+        }
+        for file in &self.files {
+            let path = dir_path.join(&file.0);
+            //let path = dir_path.to_string() + "/" + &file.0;
+            fs::remove_file(path)?;
+        }
+
+        if dir_path == Path::new("") {
+            return Ok(());
+        }
+        let dir_path_buf = PathBuf::from(&dir_path);
+        let is_empty = dir_path_buf.read_dir()?.next().is_none();
+        if is_empty {
+            fs::remove_dir(dir_path)?;
+        }
+        Ok(())
     }
 }
 
@@ -281,6 +310,7 @@ pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)> 
 fn _load_tree_from_file(tree_hash: &str, directory: &str, name: &str) -> io::Result<Tree> {
     let tree_content = cat_file_return_content(tree_hash, directory)?;
     let mut tree = Tree::new(name);
+
     let lines = tree_content.lines();
 
     for line in lines {
@@ -305,7 +335,7 @@ fn _load_tree_from_file(tree_hash: &str, directory: &str, name: &str) -> io::Res
 /// The tree and its subtrees must be stored in the objects folder, probably by using the write_tree function.
 /// The result of the function is a tree with the same structure as the one that was stored.
 pub fn load_tree_from_file(tree_hash: &str, directory: &str) -> io::Result<Tree> {
-    let tree = _load_tree_from_file(tree_hash, directory, "root")?;
+    let tree = _load_tree_from_file(tree_hash, directory, "")?;
     Ok(tree)
 }
 
