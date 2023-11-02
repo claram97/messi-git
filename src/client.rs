@@ -101,7 +101,7 @@ impl Client {
         let local_refs = get_refs_heads(&self.git_dir)?;
         let new_hash = match local_refs.get(pushing_ref) {
             Some(hash) => hash,
-            None => return Err(Error::new(io::ErrorKind::NotFound, "Ref not found")),
+            None => return Err(Error::new(io::ErrorKind::NotFound, format!("Ref not found in local: {}", pushing_ref))),
         };
 
         let prev_hash = match self.refs.get(pushing_ref) {
@@ -318,6 +318,13 @@ fn connection_not_established_error() -> Error {
     )
 }
 
+fn invalid_tree_data_error() -> Error {
+    Error::new(
+        io::ErrorKind::InvalidData,
+        "Invalid data in tree",
+    )
+}
+
 // Read a line in PKT format in a TcpStream
 // Returns the size of the line and its content
 fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
@@ -371,9 +378,8 @@ fn get_refs_heads(git_dir: &str) -> io::Result<HashMap<String, String>> {
         let hash: String = fs::read_to_string(&path)?.trim().into();
         let ref_path = path
             .to_string_lossy()
-            .to_string()
             .split_once('/')
-            .ok_or(Error::new(io::ErrorKind::Other, "Unknown error"))?
+            .ok_or(Error::new(io::ErrorKind::Other, format!("Unknown error splitting path at '/': {:?}", path)))?
             .1
             .to_string();
 
@@ -469,14 +475,8 @@ fn get_objects_tree_objects(
     for line in content.lines() {
         let split = line.split(' ').skip(1).take(2);
         let val: Vec<&str> = split.collect();
-        let t = val.get(0).ok_or(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "Invalid data in tree",
-        ))?;
-        let hash = val.get(1).ok_or(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "Invalid data in tree",
-        ))?;
+        let t = val.get(0).ok_or(invalid_tree_data_error())?;
+        let hash = val.get(1).ok_or(invalid_tree_data_error())?;
         let t = ObjectType::try_from(*t)?;
         objects.insert((t, hash.to_string()));
     }
