@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs,
     io::{self, Error, Read, Write},
     net::TcpStream,
@@ -291,6 +291,7 @@ impl Client {
         }
         Err(Error::new(io::ErrorKind::NotFound, "Packfile not found"))
     }
+
 }
 
 impl Drop for Client {
@@ -383,19 +384,22 @@ fn get_missing_objects_from(
     git_dir: &str,
 ) -> io::Result<Vec<(ObjectType, String)>> {
     let mut missing = vec![];
-    let mut hash = new_hash;
+    let hash = new_hash;
     while let Ok(commit) = Commit::new(hash, git_dir) {
         if hash == prev_hash {
             break
         }
         missing.push((ObjectType::Commit, commit.hash.to_string()));
         missing.push((ObjectType::Tree, commit.tree.to_string()));
-        
+        let tree_objects = get_objects_from_tree(&commit.tree, git_dir)?;
+        tree_objects.iter().for_each(|obj| missing.push((obj.0, obj.1.clone())));
+
         for parent in commit.parent {
             let _missing = get_missing_objects_from(&parent, prev_hash, git_dir)?;
             _missing.iter().for_each(|p| missing.push((p.0, p.1.clone())));
         }
     }
+
     Ok(missing)
 }
 
@@ -432,15 +436,19 @@ impl Commit {
     }
 }
 
-// struct Tree {
+fn get_objects_from_tree(hash: &str, git_dir: &str) -> io::Result<Vec<(ObjectType, String)>> {
 
-// }
+    let mut objects = vec![];
+    let content = cat_file::cat_file_return_content(hash, git_dir)?;
+    
+    for line in content.lines() {
+        let split = line.split(' ').skip(1).take(2);
+        let val: Vec<&str>= split.collect();
+        let t = val.get(0).ok_or(io::Error::new(io::ErrorKind::InvalidData, "Invalid data in tree"))?;
+        let hash = val.get(1).ok_or(io::Error::new(io::ErrorKind::InvalidData, "Invalid data in tree"))?;
+        let t = ObjectType::try_from(*t)?;
+        objects.push((t, hash.to_string()))
+    }
 
-// impl Tree {
-//     fn list_objects(hash: &str, git_dir: &str) -> io::Result<Vec<String>> {
-//         let objects = vec![];
-//         let tree_content = cat_file::cat_file_return_content(hash, git_dir)?;
-
-//         Ok(objects)
-//     }
-// }
+    Ok(objects)
+}
