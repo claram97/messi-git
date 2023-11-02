@@ -2,15 +2,18 @@ use std::{
     collections::{HashMap, HashSet},
     fs,
     io::{self, Error, Read, Write},
-    net::TcpStream,
+    net::{TcpStream, ToSocketAddrs},
     path::PathBuf,
     str::from_utf8,
     vec,
 };
 
-use crate::{hash_object, packfile_handler::{PackfileEntry, ObjectType}};
-use crate::packfile_handler::Packfile;
 use crate::cat_file;
+use crate::packfile_handler::Packfile;
+use crate::{
+    hash_object,
+    packfile_handler::{ObjectType, PackfileEntry},
+};
 
 // multi_ack_detailed side-band-64k thin-pack include-tag ofs-delta deepen-since deepen-not
 
@@ -18,12 +21,13 @@ const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
 const GIT_RECEIVE_PACK: &str = "git-receive-pack";
 const CAPABILITIES_UPLOAD: &str = "multi_ack side-band-64k ofs-delta";
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Client {
     git_dir: String,
     address: String,
     repository: String,
     host: String,
+    remote: String,
     socket: Option<TcpStream>,
     refs: HashMap<String, String>,
 }
@@ -37,19 +41,12 @@ impl Client {
     ///     - address: address to establish a tcp connection
     ///     - repository: name of the repository in the remote
     ///     - host: REVISAR (no se si es si o si el mismo que address)
-    pub fn new(address: &str, repository: &str, host: &str) -> io::Result<Self> {
-        let refs = HashMap::new();
-        let repository = repository.to_owned();
-        let host = host.to_owned();
-        let address = address.to_owned();
-        Ok(Self {
-            git_dir: String::new(),
-            address,
-            repository,
-            host,
-            socket: None,
-            refs,
-        })
+    pub fn new(address: &str, repository: &str, host: &str) -> Self {
+        let mut client = Self::default();
+        client.repository = repository.to_owned();
+        client.host = host.to_owned();
+        client.address = address.to_owned();
+        client
     }
 
     // Establish a connection with the server and asks for the refs in the remote.
@@ -66,19 +63,29 @@ impl Client {
     }
 
     // REVISAR: deberia ser como el upload-pack the git
-    pub fn upload_pack(&mut self, wanted_ref: Option<&str>, git_dir: &str) -> io::Result<()> {
+    pub fn upload_pack(&mut self, wanted_branch: &str, git_dir: &str, remote: &str) -> io::Result<()> {
         self.connect()?;
         self.initiate_connection(GIT_UPLOAD_PACK)?;
         self.git_dir = git_dir.to_string();
+        self.remote = remote.to_string();
         self.wait_refs()?;
 
-        if let Some(wanted_ref) = wanted_ref {
-            if let Some(hash) = self.want_ref(wanted_ref)? {
-                self.update_fetch_head(&hash)?;
-                self.update_remote(wanted_ref, &hash)?;
-                self.wait_packfile()?;
-            }
+        let mut branch = wanted_branch.to_string();
+
+        let wanted_ref = if wanted_branch == "HEAD" {
+            branch = get_head_branch(git_dir)?;
+            format!("refs/heads/{}", branch)
+        } else {
+            format!("refs/heads/{}", wanted_branch)
+        };
+
+
+        if let Some(hash) = self.want_ref(&wanted_ref)? {
+            self.update_fetch_head(&hash)?;
+            self.update_remote(&branch, &hash)?;
+            self.wait_packfile()?;
         }
+
         Ok(())
     }
 
@@ -215,7 +222,7 @@ impl Client {
     // REVISAR: ver que onda de donde saco el remote
     fn update_remote(&self, remote_ref: &str, hash: &str) -> io::Result<()> {
         let pathbuf = PathBuf::from(&self.git_dir);
-        let remote = pathbuf.join("refs").join("remotes").join("origin");
+        let remote = pathbuf.join("refs").join("remotes").join(&self.remote);
         fs::create_dir_all(&remote)?;
         let remote = remote.join(remote_ref);
         let mut file = fs::File::create(remote)?;
@@ -232,7 +239,7 @@ impl Client {
             None => {
                 return Err(Error::new(
                     io::ErrorKind::NotFound,
-                    "Ref not found in remote",
+                    format!("Ref not found in remote: {}", wanted_ref),
                 ))
             }
         };
@@ -252,7 +259,6 @@ impl Client {
         self.send(&want)?;
 
         self.flush()?;
-
         self.send_haves(local_refs)?;
         // std::thread::sleep(std::time::Duration::from_secs(5));
         // self.wait_packfile()?;
@@ -284,14 +290,17 @@ impl Client {
                 let packfile = Packfile::reader(&bytes[..])?;
                 for entry in packfile {
                     let entry = entry?;
-                    hash_object::store_string_to_file(&entry.content, &self.git_dir, &entry.obj_type.to_string())?;
+                    hash_object::store_string_to_file(
+                        &entry.content,
+                        &self.git_dir,
+                        &entry.obj_type.to_string(),
+                    )?;
                 }
                 return Ok(());
             }
         }
         Err(Error::new(io::ErrorKind::NotFound, "Packfile not found"))
     }
-
 }
 
 impl Drop for Client {
@@ -344,6 +353,13 @@ fn pkt_line(line: &str) -> String {
     len_hex + line
 }
 
+
+fn get_head_branch(git_dir: &str) -> io::Result<String> {
+    let head = PathBuf::from(git_dir).join("HEAD");
+    let content = fs::read_to_string(head)?;
+    let (_, branch) = content.rsplit_once("/").ok_or(io::Error::new(io::ErrorKind::InvalidData, "Invalid data HEAD. Must have ref for fetch"))?;
+    Ok(branch.to_string())
+}
 // Auxiliar function which get refs under refs/heads
 fn get_refs_heads(git_dir: &str) -> io::Result<HashMap<String, String>> {
     let mut refs = HashMap::new();
@@ -386,15 +402,15 @@ fn get_missing_objects_from(
     git_dir: &str,
 ) -> io::Result<HashSet<(ObjectType, String)>> {
     let mut missing: HashSet<(ObjectType, String)> = HashSet::new();
-    
+
     if new_hash == prev_hash {
-        return Ok(missing)
+        return Ok(missing);
     }
-    
+
     if let Ok(commit) = CommitHashes::new(new_hash, git_dir) {
         missing.insert((ObjectType::Commit, commit.hash.to_string()));
         missing.insert((ObjectType::Tree, commit.tree.to_string()));
-        
+
         let tree_objects = get_objects_tree_objects(&commit.tree, git_dir)?;
         missing.extend(tree_objects);
 
@@ -411,7 +427,7 @@ fn get_missing_objects_from(
 struct CommitHashes {
     hash: String,
     tree: String,
-    parent: Vec<String>
+    parent: Vec<String>,
 }
 
 impl CommitHashes {
@@ -427,7 +443,10 @@ impl CommitHashes {
                 commit.hash = hash.to_string();
                 Ok(commit)
             }
-            None => Err(Error::new(io::ErrorKind::InvalidData, format!("Commit: {}", hash))),
+            None => Err(Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Commit: {}", hash),
+            )),
         }
     }
 
@@ -440,16 +459,24 @@ impl CommitHashes {
     }
 }
 
-fn get_objects_tree_objects(hash: &str, git_dir: &str) -> io::Result<HashSet<(ObjectType, String)>> {
-
+fn get_objects_tree_objects(
+    hash: &str,
+    git_dir: &str,
+) -> io::Result<HashSet<(ObjectType, String)>> {
     let mut objects: HashSet<(ObjectType, String)> = HashSet::new();
     let content = cat_file::cat_file_return_content(hash, git_dir)?;
-    
+
     for line in content.lines() {
         let split = line.split(' ').skip(1).take(2);
-        let val: Vec<&str>= split.collect();
-        let t = val.get(0).ok_or(io::Error::new(io::ErrorKind::InvalidData, "Invalid data in tree"))?;
-        let hash = val.get(1).ok_or(io::Error::new(io::ErrorKind::InvalidData, "Invalid data in tree"))?;
+        let val: Vec<&str> = split.collect();
+        let t = val.get(0).ok_or(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Invalid data in tree",
+        ))?;
+        let hash = val.get(1).ok_or(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Invalid data in tree",
+        ))?;
         let t = ObjectType::try_from(*t)?;
         objects.insert((t, hash.to_string()));
     }
