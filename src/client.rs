@@ -281,7 +281,7 @@ impl Client {
                 break;
             }
             if bytes[0] == 1 {
-                let packfile = Packfile::new(&bytes[..])?;
+                let packfile = Packfile::reader(&bytes[..])?;
                 for entry in packfile {
                     let entry = entry?;
                     hash_object::store_string_to_file(&entry.content, &self.git_dir, &entry.obj_type.to_string())?;

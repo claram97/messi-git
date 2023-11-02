@@ -6,7 +6,7 @@ use std::{
 
 use flate2::bufread::ZlibDecoder;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObjectType {
     Commit,
     Tree,
@@ -84,7 +84,7 @@ impl<R> Packfile<R>
 where
     R: Read,
 {
-    pub fn new(packfile: R) -> io::Result<Self> {
+    pub fn reader(packfile: R) -> io::Result<Self> {
         let mut packfile = Self {
             bufreader: BufReader::new(packfile),
             position: 0,
