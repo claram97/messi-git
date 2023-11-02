@@ -4,7 +4,6 @@ use gtk::Builder;
 use gtk::CssProviderExt;
 use gtk::StyleContextExt;
 use gtk::WidgetExt;
-use std::thread::Builder as OtherBuilder;
 
 /// Retrieves a GTK button from a `gtk::Builder` by its ID and applies a specific style.
 ///
