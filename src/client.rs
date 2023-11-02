@@ -8,7 +8,7 @@ use std::{
     vec,
 };
 
-use crate::{hash_object, tree_handler::Tree, packfile_handler::{PackfileEntry, ObjectType}};
+use crate::{hash_object, packfile_handler::{PackfileEntry, ObjectType}};
 use crate::packfile_handler::Packfile;
 use crate::cat_file;
 
@@ -300,6 +300,8 @@ impl Drop for Client {
     }
 }
 
+// De aca abajo son funciones que sirven para el server tambien
+
 fn connection_not_established_error() -> Error {
     Error::new(
         io::ErrorKind::BrokenPipe,
@@ -382,21 +384,23 @@ fn get_missing_objects_from(
     new_hash: &str,
     prev_hash: &str,
     git_dir: &str,
-) -> io::Result<Vec<(ObjectType, String)>> {
-    let mut missing = vec![];
-    let hash = new_hash;
-    while let Ok(commit) = Commit::new(hash, git_dir) {
-        if hash == prev_hash {
-            break
-        }
-        missing.push((ObjectType::Commit, commit.hash.to_string()));
-        missing.push((ObjectType::Tree, commit.tree.to_string()));
-        let tree_objects = get_objects_from_tree(&commit.tree, git_dir)?;
-        tree_objects.iter().for_each(|obj| missing.push((obj.0, obj.1.clone())));
+) -> io::Result<HashSet<(ObjectType, String)>> {
+    let mut missing: HashSet<(ObjectType, String)> = HashSet::new();
+    
+    if new_hash == prev_hash {
+        return Ok(missing)
+    }
+    
+    if let Ok(commit) = CommitHashes::new(new_hash, git_dir) {
+        missing.insert((ObjectType::Commit, commit.hash.to_string()));
+        missing.insert((ObjectType::Tree, commit.tree.to_string()));
+        
+        let tree_objects = get_objects_tree_objects(&commit.tree, git_dir)?;
+        missing.extend(tree_objects);
 
         for parent in commit.parent {
             let _missing = get_missing_objects_from(&parent, prev_hash, git_dir)?;
-            _missing.iter().for_each(|p| missing.push((p.0, p.1.clone())));
+            missing.extend(_missing);
         }
     }
 
@@ -404,13 +408,13 @@ fn get_missing_objects_from(
 }
 
 #[derive(Debug, Default)]
-struct Commit {
+struct CommitHashes {
     hash: String,
     tree: String,
     parent: Vec<String>
 }
 
-impl Commit {
+impl CommitHashes {
     fn new(hash: &str, git_dir: &str) -> io::Result<Self> {
         let commit_content = cat_file::cat_file_return_content(hash, git_dir)?;
         let header_lines = commit_content.lines().position(|line| line.is_empty());
@@ -436,9 +440,9 @@ impl Commit {
     }
 }
 
-fn get_objects_from_tree(hash: &str, git_dir: &str) -> io::Result<Vec<(ObjectType, String)>> {
+fn get_objects_tree_objects(hash: &str, git_dir: &str) -> io::Result<HashSet<(ObjectType, String)>> {
 
-    let mut objects = vec![];
+    let mut objects: HashSet<(ObjectType, String)> = HashSet::new();
     let content = cat_file::cat_file_return_content(hash, git_dir)?;
     
     for line in content.lines() {
@@ -447,7 +451,7 @@ fn get_objects_from_tree(hash: &str, git_dir: &str) -> io::Result<Vec<(ObjectTyp
         let t = val.get(0).ok_or(io::Error::new(io::ErrorKind::InvalidData, "Invalid data in tree"))?;
         let hash = val.get(1).ok_or(io::Error::new(io::ErrorKind::InvalidData, "Invalid data in tree"))?;
         let t = ObjectType::try_from(*t)?;
-        objects.push((t, hash.to_string()))
+        objects.insert((t, hash.to_string()));
     }
 
     Ok(objects)
