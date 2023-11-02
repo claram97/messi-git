@@ -1,4 +1,4 @@
-use std::{path::PathBuf, io};
+use std::{io, path::PathBuf};
 
 use crate::commit;
 
@@ -31,7 +31,10 @@ pub fn find_git_directory(
     None
 }
 
-pub fn get_branch_commit_history_with_messages(commit_hash: &str, git_dir: &str) -> io::Result<Vec<(String, String)>> {
+pub fn get_branch_commit_history_with_messages(
+    commit_hash: &str,
+    git_dir: &str,
+) -> io::Result<Vec<(String, String)>> {
     let mut parents: Vec<(String, String)> = Vec::new();
     let commit_message: String = commit::get_commit_message(commit_hash, git_dir)?;
     parents.push((commit_hash.to_string(), commit_message.to_string()));
@@ -47,7 +50,6 @@ pub fn get_branch_commit_history_with_messages(commit_hash: &str, git_dir: &str)
     }
     Ok(parents)
 }
-
 
 #[cfg(test)]
 mod tests {

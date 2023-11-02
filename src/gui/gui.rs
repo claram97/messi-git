@@ -5,8 +5,8 @@ use crate::branch::git_branch_for_ui;
 use crate::branch::list_branches;
 use crate::commit;
 use crate::gui::style::{apply_button_style, apply_window_style, get_button, load_and_get_window};
-use crate::init::git_init;
 use crate::index;
+use crate::init::git_init;
 use crate::log::accumulate_logs;
 use crate::log::log;
 use crate::log::print_logs;
@@ -16,10 +16,10 @@ use crate::tree_handler;
 use crate::utils;
 use crate::utils::find_git_directory;
 use core::cell::RefCell;
-use gtk::Dialog;
 use gtk::prelude::*;
 use gtk::Builder;
 use gtk::CssProvider;
+use gtk::Dialog;
 use gtk::FileChooserAction;
 use gtk::FileChooserDialog;
 use gtk::Label;
@@ -146,7 +146,7 @@ fn obtener_texto_desde_log() -> Result<String, std::io::Error> {
     let log_text = get_logs_as_string(log_iter);
     let log_text_filtrado = filtrar_codigo_color(&log_text);
 
-     Ok(log_text_filtrado)
+    Ok(log_text_filtrado)
 }
 
 pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
@@ -172,7 +172,7 @@ fn show_repository_window() {
         let builder_clone1 = builder.clone();
         set_staging_area_texts(&builder_clone);
         set_commit_history_view(&builder_clone1);
-        
+
         add_to_open_windows(&new_window);
         configure_repository_window(new_window);
         let show_log_button = get_button(&builder, "show-log-button", "Log");
@@ -182,8 +182,8 @@ fn show_repository_window() {
         let show_branches_button = get_button(&builder, "show-branches-button", "Commit");
 
         let add_path_button = get_button(&builder, "add-path-button", "Add path");
-        let add_all_button= get_button(&builder, "add-all-button", "Add all");
-        
+        let add_all_button = get_button(&builder, "add-all-button", "Add all");
+
         let remove_path_button = get_button(&builder, "remove-path-button", "Remove path");
         let remove_all_button = get_button(&builder, "remove-all-button", "Push");
         let commit_changes_button = get_button(&builder, "commit-changes-button", "Commit changes");
@@ -192,7 +192,6 @@ fn show_repository_window() {
         let create_branch_button = get_button(&builder, "new-branch-button", "Push");
         let button11 = get_button(&builder, "button11", "Push");
         let close_repo_button = get_button(&builder, "close", "Push");
-
 
         apply_button_style(&show_log_button);
         apply_button_style(&show_branches_button);
@@ -208,8 +207,6 @@ fn show_repository_window() {
         apply_button_style(&show_pull_button);
         apply_button_style(&show_push_button);
         apply_button_style(&close_repo_button);
-
-
 
         close_repo_button.connect_clicked(move |_| {
             close_all_windows();
@@ -281,7 +278,6 @@ fn show_repository_window() {
                         eprintln!("Error al obtener el texto: {}", err);
                     }
                 }
-
             });
         });
 
@@ -335,7 +331,7 @@ fn show_repository_window() {
         //     new_window_clone.close();
         //     run_main_window();
         // });
-        
+
         // button11.connect_clicked(move |_| {
         //     let label: Label = builder_clone1.get_object("label").unwrap();
         //     create_text_entry_window("Enter the path of the file", move |text| {
@@ -366,12 +362,17 @@ fn set_staging_area_texts(builder: &gtk::Builder) {
     let index = index::Index::load(&index_file, &git_dir, &gitignore_path).unwrap();
     let not_staged_files = status::get_unstaged_changes(&index, &current_dir_str).unwrap();
     let mut untracked_files_output: Vec<u8> = Vec::new();
-    status::find_untracked_files(&current_dir, &current_dir, &index, &mut untracked_files_output);
+    status::find_untracked_files(
+        &current_dir,
+        &current_dir,
+        &index,
+        &mut untracked_files_output,
+    );
     let mut untracked_string = String::from_utf8(untracked_files_output).unwrap();
     untracked_string = untracked_string.replace("\x1b[31m\t\t", "");
     untracked_string = untracked_string.replace("x1b[0m\n", "\n");
     let not_staged_files = not_staged_files + &untracked_string;
-    
+
     buffer.set_text(&not_staged_files);
 
     let staged_area_text_view: gtk::TextView = builder.get_object("staged-view").unwrap();
@@ -388,13 +389,14 @@ fn format_branch_history(history_vec: Vec<(String, String)>) -> String {
     for commit in history_vec {
         let hash_abridged = &commit.0[..6];
         let commit_line = hash_abridged.to_string() + "\t" + &commit.1 + "\n";
-        string_result.push_str(&commit_line);      
+        string_result.push_str(&commit_line);
     }
     string_result.to_string()
 }
 
 fn set_commit_history_view(builder: &gtk::Builder) {
-    let label_current_branch: gtk::Label = builder.get_object("commit-current-branch-commit").unwrap();
+    let label_current_branch: gtk::Label =
+        builder.get_object("commit-current-branch-commit").unwrap();
     let mut current_dir = std::env::current_dir().unwrap();
     let binding = current_dir.clone();
     let current_dir_str = binding.to_str().unwrap();
@@ -404,9 +406,10 @@ fn set_commit_history_view(builder: &gtk::Builder) {
 
     label_current_branch.set_text(&current_branch_text);
     let branch_last_commit = branch::get_current_branch_commit(&git_dir_path).unwrap();
-    let branch_commits_history = utils::get_branch_commit_history_with_messages(&branch_last_commit, &git_dir_path).unwrap();
+    let branch_commits_history =
+        utils::get_branch_commit_history_with_messages(&branch_last_commit, &git_dir_path).unwrap();
     let branch_history_formatted = format_branch_history(branch_commits_history);
-    
+
     let text_view_history: gtk::TextView = builder.get_object("commit-history-view").unwrap();
     let history_buffer = text_view_history.get_buffer().unwrap();
     history_buffer.set_text(&branch_history_formatted);
@@ -427,7 +430,6 @@ fn make_commit(builder: &gtk::Builder) {
     println!("{:?}", result);
     set_commit_history_view(builder);
 }
-
 
 fn obtener_texto_desde_add(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
