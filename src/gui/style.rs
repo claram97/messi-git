@@ -35,7 +35,6 @@ pub fn get_button(builder: &Builder, button_id: &str, label_text: &str) -> gtk::
         return button;
     }
 
-    eprintln!("Failed to get the button {}", label_text);
     gtk::Button::new()
 }
 
@@ -71,6 +70,23 @@ pub fn apply_button_style(button: &gtk::Button) -> Result<(), String> {
     Ok(())
 }
 
+/// Get a GTK label with the specified ID and customize its font size.
+///
+/// This function searches for a GTK label with the given `label_id` within the GTK Builder.
+/// If the label is found, it customizes the font size using the provided `font_size` and returns
+/// the label wrapped in an `Option`. If the label is not found, it returns `None`.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK Builder instance.
+/// * `label_id` - The ID of the label to search for in the builder.
+/// * `font_size` - The desired font size for the label.
+///
+/// # Returns
+///
+/// - `Some(gtk::Label)` if the label is found and customized.
+/// - `None` if the label is not found.
+///
 pub fn get_label(builder: &gtk::Builder, label_id: &str, font_size: f64) -> Option<gtk::Label> {
     if let Some(label) = builder.get_object::<gtk::Label>(label_id) {
         let pango_desc = pango::FontDescription::from_string(&format!("Sans {:.1}", font_size));
