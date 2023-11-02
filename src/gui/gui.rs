@@ -1,31 +1,22 @@
 use crate::add::add;
 use crate::branch;
-use crate::branch::create_new_branch;
 use crate::branch::git_branch_for_ui;
-use crate::branch::list_branches;
 use crate::commit;
 use crate::gui::style::{apply_button_style, apply_window_style, get_button, load_and_get_window};
 use crate::index;
 use crate::init::git_init;
-use crate::log::accumulate_logs;
 use crate::log::log;
-use crate::log::print_logs;
 use crate::log::Log;
 use crate::status;
 use crate::tree_handler;
 use crate::utils;
 use crate::utils::find_git_directory;
-use core::cell::RefCell;
 use gtk::prelude::*;
 use gtk::Builder;
-use gtk::CssProvider;
-use gtk::Dialog;
 use gtk::FileChooserAction;
 use gtk::FileChooserDialog;
-use gtk::Label;
 use std::io;
 use std::path::Path;
-use std::rc::Rc;
 use std::sync::Mutex;
 
 use super::style::apply_clone_button_style;
@@ -40,7 +31,7 @@ pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 ///
 /// This function initializes and displays the main window of the application using a UI builder. It configures the window, adds buttons for actions such as "Clone" and "Init," and connects these buttons to their respective event handlers.
 ///
-pub fn run_main_window() {
+pub fn run_main_window() -> io::Result<()> {
     unsafe {
         OPEN_WINDOWS = Some(Mutex::new(Vec::new()));
     }
@@ -49,17 +40,26 @@ pub fn run_main_window() {
     if let Some(window) = load_and_get_window(&builder, "src/gui/part3.ui", "window") {
         window.set_default_size(800, 600);
         add_to_open_windows(&window);
-        apply_window_style(&window);
+        let _ = apply_window_style(&window)
+            .map_err(|_err| io::Error::new(io::ErrorKind::Other, "Error applying window stlye.\n"));
 
         let button_clone: gtk::Button = get_button(&builder, "buttonclone", "Clone");
         let button_init: gtk::Button = get_button(&builder, "buttoninit", "Init");
-        apply_button_style(&button_clone);
-        apply_button_style(&button_init);
+        let _ = apply_button_style(&button_clone)
+            .map_err(|_err| io::Error::new(io::ErrorKind::Other, "Error applying button stlye.\n"));
+        let _ = apply_button_style(&button_init)
+            .map_err(|_err| io::Error::new(io::ErrorKind::Other, "Error applying button stlye.\n"));
 
         connect_button_clicked_main_window(&button_clone, "Clone");
         connect_button_clicked_main_window(&button_init, "Init");
 
         window.show_all();
+        Ok(())
+    } else {
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Failed to run main window.",
+        ));
     }
 }
 
@@ -164,13 +164,13 @@ pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
 ///
 /// This function initializes and displays a GTK repository window using a UI builder. It configures the window, adds buttons with specific actions, and sets their styles and click event handlers. The repository window provides buttons for actions like "Add," "Commit," "Push," and more.
 ///
-fn show_repository_window() {
+fn show_repository_window() -> io::Result<()> {
     let builder = gtk::Builder::new();
     if let Some(new_window) = load_and_get_window(&builder, "src/gui/new_window2.ui", "window") {
-        let new_window_clone = new_window.clone();
+        let _new_window_clone = new_window.clone();
         let builder_clone = builder.clone();
         let builder_clone1 = builder.clone();
-        set_staging_area_texts(&builder_clone);
+        set_staging_area_texts(&builder_clone)?;
         set_commit_history_view(&builder_clone1);
 
         add_to_open_windows(&new_window);
@@ -193,24 +193,35 @@ fn show_repository_window() {
         let button11 = get_button(&builder, "button11", "Push");
         let close_repo_button = get_button(&builder, "close", "Push");
 
-        apply_button_style(&show_log_button);
-        apply_button_style(&show_branches_button);
-        apply_button_style(&add_path_button);
-        apply_button_style(&add_all_button);
-        apply_button_style(&remove_path_button);
-        apply_button_style(&remove_all_button);
-        apply_button_style(&commit_changes_button);
-        apply_button_style(&button8);
-        apply_button_style(&button9);
-        apply_button_style(&create_branch_button);
-        apply_button_style(&button11);
-        apply_button_style(&show_pull_button);
-        apply_button_style(&show_push_button);
-        apply_button_style(&close_repo_button);
+        apply_button_style(&show_log_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&show_branches_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&add_path_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&add_all_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&remove_path_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&remove_all_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&commit_changes_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&button8).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&button9).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&create_branch_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&button11).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&show_pull_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&show_push_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        apply_button_style(&close_repo_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
 
         close_repo_button.connect_clicked(move |_| {
             close_all_windows();
-            run_main_window();
+            let _ = run_main_window().map_err(|err| io::Error::new(io::ErrorKind::Other, err));
         });
         show_log_button.connect_clicked(move |_| {
             let log_text_view: gtk::TextView = builder_clone.get_object("log-text").unwrap();
@@ -237,10 +248,10 @@ fn show_repository_window() {
         });
 
         show_pull_button.connect_clicked(move |_| {
-            // aca se va a llamar a pull
+            println!("Pull");
         });
         show_push_button.connect_clicked(move |_| {
-            // aca se va a llamar a push
+            println!("Push");
         });
         show_branches_button.connect_clicked(move |_| {
             let builder_clone = builder.clone();
@@ -261,9 +272,11 @@ fn show_repository_window() {
 
         create_branch_button.connect_clicked(move |_| {
             create_text_entry_window("Enter the name of the branch", |text| {
-                git_branch_for_ui(Some(text));
+                let _ = git_branch_for_ui(Some(text))
+                    .map_err(|err| io::Error::new(io::ErrorKind::Other, err));
                 close_all_windows();
-                show_repository_window();
+                let _ = show_repository_window()
+                    .map_err(|err| io::Error::new(io::ErrorKind::Other, err));
             });
         });
 
@@ -292,7 +305,8 @@ fn show_repository_window() {
                     eprintln!("Error al obtener el texto: {}", err);
                 }
             }
-            set_staging_area_texts(&builder_clone1);
+            let _ = set_staging_area_texts(&builder_clone1)
+                .map_err(|err| io::Error::new(io::ErrorKind::Other, err));
         });
 
         remove_path_button.connect_clicked(move |_| {
@@ -307,7 +321,7 @@ fn show_repository_window() {
             make_commit(&builder_clone2);
             println!("Commit button clicked");
         });
-
+        Ok(())
         // button7.connect_clicked(move |_| {
         //     button9.set_visible(true);
         //     create_branch_button.set_visible(true);
@@ -347,6 +361,11 @@ fn show_repository_window() {
         //         }
         //     });
         // });
+    } else {
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Failed to show repository window.",
+        ));
     }
 }
 
