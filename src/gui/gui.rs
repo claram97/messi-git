@@ -111,7 +111,24 @@ fn obtener_texto_desde_funcion() -> Result<String, std::io::Error> {
         Err(err) => Err(err),
     }
 }
+fn filtrar_codigo_color(input: &str) -> String {
+    let mut result = String::new();
+    let mut in_escape_code = false;
 
+    for char in input.chars() {
+        if char == '\u{001b}' {
+            in_escape_code = true;
+        } else if in_escape_code {
+            if char == 'm' {
+                in_escape_code = false;
+            }
+        } else {
+            result.push(char);
+        }
+    }
+
+    result
+}
 fn obtener_texto_desde_log() -> Result<String, std::io::Error> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
@@ -127,8 +144,11 @@ fn obtener_texto_desde_log() -> Result<String, std::io::Error> {
     let log_iter = log(None, &git_dir, 10, 0, true);
     let log_iter = log_iter.unwrap();
     let log_text = get_logs_as_string(log_iter);
+    //print_logs(log_iter);
+     // Filtrar los códigos de escape de color amarillo.
+     let log_text_filtrado = filtrar_codigo_color(&log_text);
 
-    Ok(log_text)
+     Ok(log_text_filtrado)
 }
 
 pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
@@ -161,17 +181,17 @@ fn show_repository_window() {
         let show_branches_button = get_button(&builder, "show-branches-button", "Commit");
 
         let add_path_button = get_button(&builder, "add-path-button", "Add path");
-        let add_all_button: gtk::Button = get_button(&builder, "add-all-button", "Add all");
+        let add_all_button= get_button(&builder, "add-all-button", "Add all");
         let remove_path_button = get_button(&builder, "remove-path-button", "Remove path");
         let remove_all_button = get_button(&builder, "remove-all-button", "Push");
         let commit_changes_button = get_button(&builder, "commit-changes-button", "Commit changes");
         let button8 = get_button(&builder, "button8", "Push");
         let button9 = get_button(&builder, "button9", "Push");
-        let button10 = get_button(&builder, "new-branch-button", "Push");
+        let create_branch_button = get_button(&builder, "new-branch-button", "Push");
         let button11 = get_button(&builder, "button11", "Push");
 
         apply_button_style(&show_log_button);
-        //apply_button_style(&show_branches_button);
+        apply_button_style(&show_branches_button);
         apply_button_style(&add_path_button);
         apply_button_style(&add_all_button);
         apply_button_style(&remove_path_button);
@@ -179,11 +199,9 @@ fn show_repository_window() {
         apply_button_style(&commit_changes_button);
         apply_button_style(&button8);
         apply_button_style(&button9);
-        //apply_button_style(&button10);
+        apply_button_style(&create_branch_button);
         apply_button_style(&button11);
 
-        // button9.set_visible(false);
-        // button10.set_visible(false);
 
         show_log_button.connect_clicked(move |_| {
             let log_text_view: gtk::TextView = builder_clone.get_object("log-text").unwrap();
@@ -226,7 +244,7 @@ fn show_repository_window() {
             }
         });
 
-        button10.connect_clicked(move |_| {
+        create_branch_button.connect_clicked(move |_| {
             create_text_entry_window("Enter the name of the branch", |text| {
                 git_branch_for_ui(Some(text));
                 close_all_windows();
@@ -278,7 +296,7 @@ fn show_repository_window() {
 
         // button7.connect_clicked(move |_| {
         //     button9.set_visible(true);
-        //     button10.set_visible(true);
+        //     create_branch_button.set_visible(true);
         //     let builder_clone = builder.clone();
 
         //     button9.connect_clicked(move |_| {
