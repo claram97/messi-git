@@ -34,7 +34,6 @@ pub fn get_button(builder: &Builder, button_id: &str, label_text: &str) -> gtk::
         return button;
     }
 
-    eprintln!("Failed to get the button {}", label_text);
     gtk::Button::new()
 }
 
