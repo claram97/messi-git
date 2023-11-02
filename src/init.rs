@@ -73,12 +73,7 @@ pub fn git_init(
     create_file_if_not_exists(&head_file, &head_content)?;
 
     // Config file
-    let config_content = r#"[core]
-      repositoryformatversion = 0
-      filemode = true
-      bare = false
-      logallrefupdates = true
-    "#;
+    let config_content = "[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n";
     let config_file = format!("{}/config", &git_dir);
     create_file_if_not_exists(&config_file, config_content)?;
 
