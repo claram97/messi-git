@@ -144,9 +144,7 @@ fn obtener_texto_desde_log() -> Result<String, std::io::Error> {
     let log_iter = log(None, &git_dir, 10, 0, true);
     let log_iter = log_iter.unwrap();
     let log_text = get_logs_as_string(log_iter);
-    //print_logs(log_iter);
-     // Filtrar los códigos de escape de color amarillo.
-     let log_text_filtrado = filtrar_codigo_color(&log_text);
+    let log_text_filtrado = filtrar_codigo_color(&log_text);
 
      Ok(log_text_filtrado)
 }
@@ -178,10 +176,14 @@ fn show_repository_window() {
         add_to_open_windows(&new_window);
         configure_repository_window(new_window);
         let show_log_button = get_button(&builder, "show-log-button", "Log");
+        let show_pull_button = get_button(&builder, "pull", "pull");
+        let show_push_button = get_button(&builder, "push", "push");
+
         let show_branches_button = get_button(&builder, "show-branches-button", "Commit");
 
         let add_path_button = get_button(&builder, "add-path-button", "Add path");
         let add_all_button= get_button(&builder, "add-all-button", "Add all");
+        
         let remove_path_button = get_button(&builder, "remove-path-button", "Remove path");
         let remove_all_button = get_button(&builder, "remove-all-button", "Push");
         let commit_changes_button = get_button(&builder, "commit-changes-button", "Commit changes");
@@ -201,6 +203,10 @@ fn show_repository_window() {
         apply_button_style(&button9);
         apply_button_style(&create_branch_button);
         apply_button_style(&button11);
+        apply_button_style(&show_pull_button);
+        apply_button_style(&show_push_button);
+
+
 
 
         show_log_button.connect_clicked(move |_| {
@@ -227,6 +233,9 @@ fn show_repository_window() {
             }
         });
 
+        show_pull_button.connect_clicked(move |_| {
+            // aca se va a llamar a pull
+        });
         show_branches_button.connect_clicked(move |_| {
             let builder_clone = builder.clone();
             let branch_text_view: gtk::TextView =
