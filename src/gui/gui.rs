@@ -191,6 +191,8 @@ fn show_repository_window() {
         let button9 = get_button(&builder, "button9", "Push");
         let create_branch_button = get_button(&builder, "new-branch-button", "Push");
         let button11 = get_button(&builder, "button11", "Push");
+        let close_repo_button = get_button(&builder, "close", "Push");
+
 
         apply_button_style(&show_log_button);
         apply_button_style(&show_branches_button);
@@ -205,10 +207,14 @@ fn show_repository_window() {
         apply_button_style(&button11);
         apply_button_style(&show_pull_button);
         apply_button_style(&show_push_button);
+        apply_button_style(&close_repo_button);
 
 
 
-
+        close_repo_button.connect_clicked(move |_| {
+            close_all_windows();
+            run_main_window();
+        });
         show_log_button.connect_clicked(move |_| {
             let log_text_view: gtk::TextView = builder_clone.get_object("log-text").unwrap();
 
@@ -235,6 +241,9 @@ fn show_repository_window() {
 
         show_pull_button.connect_clicked(move |_| {
             // aca se va a llamar a pull
+        });
+        show_push_button.connect_clicked(move |_| {
+            // aca se va a llamar a push
         });
         show_branches_button.connect_clicked(move |_| {
             let builder_clone = builder.clone();

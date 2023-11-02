@@ -28,10 +28,36 @@
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <child>
-              <object class="GtkLabel" id="label-bienvenida">
+              <object class="GtkFixed">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Repositorio inicializado exitosamente!</property>
+                <child>
+                  <object class="GtkLabel" id="label-bienvenida">
+                    <property name="width-request">100</property>
+                    <property name="height-request">80</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label" translatable="yes">Repositorio inicializado exitosamente!</property>
+                  </object>
+                  <packing>
+                    <property name="x">200</property>
+                    <property name="y">40</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="close">
+                    <property name="label" translatable="yes">Close Repository</property>
+                    <property name="width-request">100</property>
+                    <property name="height-request">80</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                  </object>
+                  <packing>
+                    <property name="x">187</property>
+                    <property name="y">600</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="name">Inicio</property>
@@ -493,6 +519,40 @@
                 <property name="name">Commit</property>
                 <property name="title" translatable="yes">Commit</property>
                 <property name="position">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkPaned">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="name">page0</property>
+                <property name="title" translatable="yes">Checkout</property>
+                <property name="position">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkPaned">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="name">page1</property>
+                <property name="title" translatable="yes">Merge</property>
+                <property name="position">6</property>
               </packing>
             </child>
           </object>
