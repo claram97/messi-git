@@ -28,7 +28,6 @@ pub fn get_current_branch_path(git_dir_path: &str) -> io::Result<String> {
     Ok(path_final.to_string())
 }
 
-
 pub fn get_branch_commit_hash(branch_name: &str, git_dir: &str) -> io::Result<String> {
     let branch_path = git_dir.to_string() + "/refs/heads/" + branch_name;
     let mut branch_file = std::fs::File::open(branch_path)?;
@@ -47,6 +46,8 @@ pub fn update_branch_commit_hash(
     let branch_path = git_dir.to_string() + "/refs/heads/" + branch_name;
     let mut branch_file = std::fs::File::create(branch_path)?;
     branch_file.write_all(commit_hash.as_bytes())?;
+    Ok(())
+}
 
 pub fn get_current_branch_commit(git_dir_path: &str) -> io::Result<String> {
     let branch_path = get_current_branch_path(git_dir_path)?;

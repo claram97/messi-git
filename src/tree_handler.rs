@@ -112,7 +112,6 @@ impl Tree {
         None
     }
 
-
     /// Given a tree, recreates the directories and files stored in the tree in the working tree.
     pub fn create_directories(&self, parent_dir: &str, git_dir_path: &str) -> io::Result<()> {
         if parent_dir.is_empty() && self.name.is_empty() {
@@ -146,7 +145,6 @@ impl Tree {
         Ok(())
     }
 
-
     /// Given a tree, it deletes all the files and directories in the working tree that correspond to the tree.
     /// The tree itself is not modified.
     pub fn delete_directories(&self, parent_dir: &str) -> io::Result<()> {
@@ -167,7 +165,6 @@ impl Tree {
             if Path::new(&path).exists() {
                 fs::remove_file(path)?;
             }
-
         }
 
         if dir_path.is_empty() {
@@ -217,29 +214,6 @@ impl Tree {
             index.add_file(&entry.0, &entry.1)?;
         }
         Ok(index)
-
-    // Build a function similar to delete_directories but that works using absolute paths
-
-    pub fn delete_directories2(&self, parent_dir: &Path) -> io::Result<()> {
-        let dir_path = parent_dir.join(&self.name);
-        for subdirs in &self.directories {
-            subdirs.delete_directories2(&dir_path)?;
-        }
-        for file in &self.files {
-            let path = dir_path.join(&file.0);
-            //let path = dir_path.to_string() + "/" + &file.0;
-            fs::remove_file(path)?;
-        }
-
-        if dir_path == Path::new("") {
-            return Ok(());
-        }
-        let dir_path_buf = PathBuf::from(&dir_path);
-        let is_empty = dir_path_buf.read_dir()?.next().is_none();
-        if is_empty {
-            fs::remove_dir(dir_path)?;
-        }
-        Ok(())
     }
 }
 

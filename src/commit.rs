@@ -142,7 +142,6 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
 
     let parent_hash: &str = match commit_file.split('\n').nth(1) {
-
         Some(parent_hash) => match parent_hash.split(' ').nth(1) {
             Some(parent_hash) => parent_hash,
             None => {
