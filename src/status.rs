@@ -65,6 +65,7 @@ pub fn find_untracked_files(
     for entry in fs::read_dir(current_directory)? {
         let entry = entry?;
         let entry_path = entry.path();
+
         if let Ok(relative_entry_path) = entry_path.strip_prefix(base_directory) {
             let relative_entry_path_str = relative_entry_path.to_string_lossy().to_string();
             if !relative_entry_path_str.starts_with('.')
