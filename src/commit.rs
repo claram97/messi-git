@@ -2,9 +2,11 @@ use crate::cat_file;
 use crate::hash_object;
 use crate::tree_handler;
 use crate::tree_handler::has_tree_changed_since_last_commit;
+use std::fs;
 use std::io;
 use std::io::Read;
 use std::io::Write;
+use std::path::Path;
 
 const NO_PARENT: &str = "0000000000000000000000000000000000000000";
 const INDEX_FILE_NAME: &str = "index";
@@ -106,9 +108,7 @@ pub fn new_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> i
 /// * `git_dir_path` - The path to the git directory.
 ///
 pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
-    //Open the commit file
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
-    //Get the parent hash
     let parent_hash = match commit_file.split('\n').nth(1) {
         Some(parent_hash) => match parent_hash.split(' ').nth(1) {
             Some(parent_hash) => parent_hash,
@@ -128,6 +128,27 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
     };
 
     Ok(parent_hash.to_string())
+}
+
+pub fn read_head_commit_hash(git_dir: &str) -> io::Result<String> {
+    let head_path = format!("{}/HEAD", git_dir);
+    let head_content = fs::read_to_string(head_path)?;
+    let last_commit_ref = head_content.trim().split(": ").last();
+
+    match last_commit_ref {
+        Some(refs) => {
+            let heads_path = format!("{}/{}", git_dir, refs);
+            if Path::new(&heads_path).exists() {
+                fs::read_to_string(heads_path)
+            } else {
+                Ok(refs.to_string())
+            }
+        }
+        None => Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Error in head file",
+        )),
+    }
 }
 
 #[cfg(test)]
