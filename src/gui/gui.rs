@@ -319,7 +319,7 @@ fn show_repository_window() -> io::Result<()> {
         });
         checkout1_button.connect_clicked(move |_| {
             let result = create_text_entry_window("Enter the path of the file", move |text| {
-                let resultado = obtain_text_from_checkout1(&text);
+                let resultado = obtain_text_from_checkout_branch(&text);
                 match resultado {
                     Ok(texto) => {
                         println!("Texto: {}", texto);
@@ -503,7 +503,7 @@ fn show_repository_window() -> io::Result<()> {
     }
 }
 
-fn obtain_text_from_checkout1(text: &str) -> Result<String, io::Error> {
+fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir.into(),
