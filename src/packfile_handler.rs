@@ -11,6 +11,8 @@ use flate2::{
     write::ZlibEncoder,
     Compression,
 };
+use sha1::Sha1;
+use sha1::Digest;
 
 use crate::cat_file::cat_file_return_content;
 
@@ -248,7 +250,11 @@ fn append_objects(
         packfile.extend(compressed_content);
         // ver si hace falta meterle un EOF
     }
-    Ok(())
+    let mut hasher = Sha1::new();
+    hasher.update(&packfile);
+    let result = hasher.finalize();
+    write!(packfile, "{:02x}", result) // packfile.extend(result)
+    // Ok(())
 }
 
 // 
