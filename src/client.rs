@@ -145,8 +145,6 @@ impl Client {
         let missing_objects = get_missing_objects_from(new_hash, prev_hash, &self.git_dir)?;
         let packfile = packfile_handler::create_packfile_from_set(missing_objects, &self.git_dir)?;
         self.send_bytes(packfile.as_slice())?;
-        self.flush()?;
-        // supongo que send y ver si hay que meter un flush o done
         Ok(())
     }
 
@@ -335,10 +333,6 @@ fn connection_not_established_error() -> Error {
     )
 }
 
-fn invalid_tree_data_error() -> Error {
-    Error::new(io::ErrorKind::InvalidData, "Invalid data in tree")
-}
-
 // Read a line in PKT format in a TcpStream
 // Returns the size of the line and its content
 fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
@@ -427,14 +421,14 @@ fn get_missing_objects_from(
     git_dir: &str,
 ) -> io::Result<HashSet<(ObjectType, String)>> {
     let mut missing: HashSet<(ObjectType, String)> = HashSet::new();
-
+    
     if new_hash == prev_hash {
         return Ok(missing);
     }
-
+    
     if let Ok(commit) = CommitHashes::new(new_hash, git_dir) {
         missing.insert((ObjectType::Commit, commit.hash.to_string()));
-
+        
         let tree_objects = get_objects_tree_objects(&commit.tree, git_dir)?;
         missing.extend(tree_objects);
 
@@ -443,6 +437,7 @@ fn get_missing_objects_from(
             missing.extend(_missing);
         }
     }
+    
     Ok(missing)
 }
 
@@ -488,21 +483,16 @@ fn get_objects_tree_objects(
 ) -> io::Result<HashSet<(ObjectType, String)>> {
     let mut objects: HashSet<(ObjectType, String)> = HashSet::new();
     objects.insert((ObjectType::Tree, hash.to_string()));
-
-    let content = cat_file::cat_file_return_content(hash, git_dir)?;
-
-    for line in content.lines() {
-        let split = line.split(' ').skip(1).take(2);
-        let val: Vec<&str> = split.collect();
-        let t = val.get(0).ok_or(invalid_tree_data_error())?;
-        let hash = val.get(1).ok_or(invalid_tree_data_error())?;
-        let t = ObjectType::try_from(*t)?;
-        objects.insert((t, hash.to_string()));
-        if t == ObjectType::Tree {
-            let tree_objects = get_objects_tree_objects(hash, git_dir)?;
+    let content = cat_file::cat_tree(hash, git_dir)?;
+    
+    for (mode, _, hash) in content {
+        if mode == "040000" {
+            let tree_objects = get_objects_tree_objects(&hash, git_dir)?;
             objects.extend(tree_objects);
-        }
+        } else {
+            objects.insert((ObjectType::Blob, hash.to_string()));
+        };
     }
-
+    
     Ok(objects)
 }

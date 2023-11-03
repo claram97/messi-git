@@ -3,7 +3,7 @@ use std::{
     fmt::Display,
     io::{self, BufReader, Error, Read, Write},
     str::from_utf8,
-    vec,
+    vec, fs::File,
 };
 
 use flate2::{
@@ -13,8 +13,6 @@ use flate2::{
 };
 use sha1::Sha1;
 use sha1::Digest;
-
-use crate::cat_file::cat_file_return_content;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObjectType {
@@ -237,12 +235,11 @@ fn append_objects(
 ) -> io::Result<()> {
     for (obj_type, hash) in objects {
         
-        let content = cat_file_return_content(&hash, git_dir)?;
+        let content = decompress_object_into_bytes(&hash, git_dir)?;
         let size = content.len() as u64;
         let mut compressor = ZlibEncoder::new(Vec::<u8>::new(), Compression::default());
-        compressor.write_all(content.as_bytes())?;
+        compressor.write_all(&content)?;
         let compressed_content = compressor.finish()?;
-        
         
         let t = (obj_type.as_byte() << 4) & 0x70;
         packfile.push(t);
@@ -270,4 +267,13 @@ fn encode_varint(mut n: u64) -> Vec<u8> {
     bytes.push(n as u8);
 
     bytes
+}
+
+fn decompress_object_into_bytes(hash: &str, git_dir: &str) -> io::Result<Vec<u8>> {
+    let file_dir = format!("{}/objects/{}", git_dir, &hash[..2]);
+    let file = File::open(format!("{}/{}", file_dir, &hash[2..]))?;
+    let mut decompressor = ZlibDecoder::new(BufReader::new(file));
+    let mut decompressed_content = Vec::new();
+    decompressor.read_to_end(&mut decompressed_content)?;
+    Ok(decompressed_content)
 }
