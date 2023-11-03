@@ -1,23 +1,19 @@
-use gtk::GtkWindowExt;
-use crate::gui::gui::close_all_windows;
-use crate::init::git_init;
-use crate::gui::run_main_window;
-use crate::gui::style::apply_button_style;
-use gtk::ButtonExt;
-use std::io;
-use crate::gui::style::get_button;
-use crate::gui::style::apply_window_style;
 use crate::gui::gui::add_to_open_windows;
-use crate::gui::style::get_entry;
-use gtk::EntryExt;
-use gtk::DialogExt;
+use crate::gui::style::apply_clone_button_style;
+use crate::gui::style::apply_entry_style;
 use crate::gui::style::apply_label_style;
+use crate::gui::style::apply_window_style;
+use crate::gui::style::get_button;
+use crate::gui::style::get_entry;
 use crate::gui::style::get_label;
+use gtk::ButtonExt;
+use gtk::DialogExt;
+use gtk::EntryExt;
 use gtk::FileChooserAction;
 use gtk::FileChooserDialog;
 use gtk::FileChooserExt;
-use crate::gui::style::apply_clone_button_style;
-use crate::gui::style::apply_entry_style;
+use gtk::GtkWindowExt;
+use std::io;
 /// Configures the properties of a clone window in a GTK application.
 ///
 /// This function takes a reference to a GTK window (`new_window_clone`) and a GTK builder (`builder`) as input and configures the clone window's properties, including adding it to the list of open windows, applying a specific window style, and setting its default size.
@@ -161,4 +157,3 @@ pub fn configure_clone_window(
     new_window_clone.set_default_size(800, 600);
     Ok(())
 }
-

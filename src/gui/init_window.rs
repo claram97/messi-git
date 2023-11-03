@@ -1,14 +1,10 @@
-use gtk::GtkWindowExt;
-use crate::gui::gui::close_all_windows;
-use crate::init::git_init;
-use crate::gui::run_main_window;
-use crate::gui::style::apply_button_style;
-use gtk::ButtonExt;
-use crate::gui::gui::connect_button_clicked_init_window;
-use std::io;
-use crate::gui::style::get_button;
-use crate::gui::style::apply_window_style;
 use crate::gui::gui::add_to_open_windows;
+use crate::gui::gui::connect_button_clicked_init_window;
+use crate::gui::style::apply_button_style;
+use crate::gui::style::apply_window_style;
+use crate::gui::style::get_button;
+use gtk::GtkWindowExt;
+use std::io;
 
 /// Configures the properties of a clone window in a GTK application.
 ///
@@ -19,7 +15,10 @@ use crate::gui::gui::add_to_open_windows;
 /// - `new_window_clone`: A reference to the GTK window to be configured.
 /// - `builder`: A reference to the GTK builder used for UI construction.
 ///
-pub fn configure_init_window(new_window_init: &gtk::Window, builder: &gtk::Builder) -> io::Result<()> {
+pub fn configure_init_window(
+    new_window_init: &gtk::Window,
+    builder: &gtk::Builder,
+) -> io::Result<()> {
     add_to_open_windows(new_window_init);
     apply_window_style(new_window_init)
         .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to apply window style"))?;

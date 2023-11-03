@@ -1,40 +1,32 @@
 use crate::add::add;
 use crate::branch;
 use crate::branch::git_branch_for_ui;
+use crate::checkout::checkout_branch;
+use crate::checkout::checkout_commit_detached;
+use crate::checkout::create_and_checkout_branch;
+use crate::checkout::create_or_reset_branch;
+use crate::checkout::force_checkout;
 use crate::commit;
+use crate::gui::style::filter_color_code;
 use crate::gui::style::{apply_button_style, apply_window_style, get_button, load_and_get_window};
 use crate::index;
 use crate::init::git_init;
 use crate::log::log;
 use crate::log::Log;
+use crate::rm::git_rm;
 use crate::status;
 use crate::tree_handler;
 use crate::utils;
 use crate::utils::find_git_directory;
 use gtk::prelude::*;
 use gtk::Builder;
-use gtk::FileChooserAction;
-use gtk::FileChooserDialog;
 use std::io;
 use std::path::Path;
-use std::sync::Mutex;
-use crate::rm::git_rm;
-use crate::checkout::checkout_branch;
-use crate::checkout::create_and_checkout_branch;
-use crate::checkout::create_or_reset_branch;
-use crate::checkout::checkout_commit_detached;
-use crate::checkout::force_checkout;
 use std::path::PathBuf;
-use crate::gui::style::filter_color_code;
-use crate::gui::initWindow::configure_init_window;
-use crate::gui::cloneWindow::configure_clone_window;
+use std::sync::Mutex;
 
-
-use super::style::apply_clone_button_style;
-use super::style::apply_entry_style;
-use super::style::apply_label_style;
-use super::style::get_entry;
-use super::style::get_label;
+use super::clone_window::configure_clone_window;
+use super::init_window::configure_init_window;
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -66,7 +58,7 @@ pub fn run_main_window() -> io::Result<()> {
 
         connect_button_clicked_main_window(&button_clone, "Clone")?;
         connect_button_clicked_main_window(&button_init, "Init")?;
-        
+
         window.show_all();
         Ok(())
     } else {
@@ -273,7 +265,7 @@ fn show_repository_window() -> io::Result<()> {
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
         apply_button_style(&close_repo_button)
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-            apply_button_style(&checkout1_button)
+        apply_button_style(&checkout1_button)
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
         apply_button_style(&checkout2_button)
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
@@ -314,7 +306,7 @@ fn show_repository_window() -> io::Result<()> {
                     //let text_view: TextView = builder.get_object("text_view").unwrap();
                     let buffer_result = log_text_view.get_buffer();
                     if buffer_result.is_none() {
-                        eprintln!("Fail");
+                        eprintln!("Fatal error in show repository window.");
                         return;
                     }
                     let buffer = buffer_result.unwrap();
@@ -326,7 +318,7 @@ fn show_repository_window() -> io::Result<()> {
             }
         });
         checkout1_button.connect_clicked(move |_| {
-            create_text_entry_window("Enter the path of the file", move |text| {
+            let result = create_text_entry_window("Enter the path of the file", move |text| {
                 let resultado = obtain_text_from_checkout1(&text);
                 match resultado {
                     Ok(texto) => {
@@ -337,10 +329,13 @@ fn show_repository_window() -> io::Result<()> {
                     }
                 }
             });
+            if result.is_err() {
+                eprintln!("Error creating text entry window.");
+            }
         });
         checkout2_button.connect_clicked(move |_| {
-            create_text_entry_window("Enter the path of the file", move |text| {
-                let resultado = obtener_texto_desde_checkout2(&text);
+            let result = create_text_entry_window("Enter the path of the file", move |text| {
+                let resultado = obtain_text_from_create_and_checkout_branch(&text);
                 match resultado {
                     Ok(texto) => {
                         println!("Texto: {}", texto);
@@ -350,10 +345,13 @@ fn show_repository_window() -> io::Result<()> {
                     }
                 }
             });
+            if result.is_err() {
+                eprintln!("Error creating text entry window.");
+            }
         });
         checkout3_button.connect_clicked(move |_| {
-            create_text_entry_window("Enter the path of the file", move |text| {
-                let resultado = obtener_texto_desde_checkout3(&text);
+            let result = create_text_entry_window("Enter the path of the file", move |text| {
+                let resultado = obtain_text_from_create_or_reset_branch(&text);
                 match resultado {
                     Ok(texto) => {
                         println!("Texto: {}", texto);
@@ -363,10 +361,13 @@ fn show_repository_window() -> io::Result<()> {
                     }
                 }
             });
+            if result.is_err() {
+                eprintln!("Error creating text entry window.");
+            }
         });
         checkout4_button.connect_clicked(move |_| {
-            create_text_entry_window("Enter the path of the file", move |text| {
-                let resultado = obtener_texto_desde_checkout4(&text);
+            let result = create_text_entry_window("Enter the path of the file", move |text| {
+                let resultado = obtain_text_from_checkout_commit_detached(&text);
                 match resultado {
                     Ok(texto) => {
                         println!("Texto: {}", texto);
@@ -376,10 +377,13 @@ fn show_repository_window() -> io::Result<()> {
                     }
                 }
             });
+            if result.is_err() {
+                eprintln!("Error creating text entry window.");
+            }
         });
         checkout5_button.connect_clicked(move |_| {
-            create_text_entry_window("Enter the path of the file", move |text| {
-                let resultado = obtener_texto_desde_checkout5(&text);
+            let result = create_text_entry_window("Enter the path of the file", move |text| {
+                let resultado = obtain_text_from_force_checkout(&text);
                 match resultado {
                     Ok(texto) => {
                         println!("Texto: {}", texto);
@@ -389,6 +393,9 @@ fn show_repository_window() -> io::Result<()> {
                     }
                 }
             });
+            if result.is_err() {
+                eprintln!("Error creating text entry window.");
+            }
         });
         show_pull_button.connect_clicked(move |_| {
             println!("Pull");
@@ -464,8 +471,8 @@ fn show_repository_window() -> io::Result<()> {
         });
 
         remove_path_button.connect_clicked(move |_| {
-            create_text_entry_window("Enter the path of the file", move |text| {
-                let resultado = obtener_texto_desde_remove(&text);
+            let result = create_text_entry_window("Enter the path of the file", move |text| {
+                let resultado = obtain_text_from_remove(&text);
                 match resultado {
                     Ok(texto) => {
                         println!("Texto: {}", texto);
@@ -475,6 +482,9 @@ fn show_repository_window() -> io::Result<()> {
                     }
                 }
             });
+            if result.is_err() {
+                eprintln!("Error on crating text entry window");
+            }
         });
 
         remove_all_button.connect_clicked(move |_| {
@@ -488,7 +498,7 @@ fn show_repository_window() -> io::Result<()> {
     } else {
         Err(io::Error::new(
             io::ErrorKind::Other,
-            "Failed to show repository window.",
+            "Failed to show repository window.\n",
         ))
     }
 }
@@ -504,23 +514,27 @@ fn obtain_text_from_checkout1(text: &str) -> Result<String, io::Error> {
             ));
         }
     };
-    let git_dir_parent: &Path = git_dir.parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
-    })?;
-    
-    match checkout_branch(&git_dir, git_dir_parent.to_string_lossy().as_ref(), text) {
-        Ok(_) => {
-            println!("The 'checkout branch' function executed successfully.");
-        }
-        Err(err) => {
-            eprintln!("Error calling the 'checkout branch' function: {:?}", err);
-        }
+    let git_dir_parent: &Path = git_dir
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
+
+    let result = match checkout_branch(&git_dir, git_dir_parent.to_string_lossy().as_ref(), text) {
+        Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
+        Err(err) => Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Error calling the 'checkout branch' function: {:?}\n", err),
+        )),
     };
-    
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Error calling the 'checkout branch' function\n",
+        ));
+    }
     Ok("Ok".to_string())
 }
 
-fn obtener_texto_desde_checkout2(texto: &str) -> Result<String, io::Error> {
+fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir.into(),
@@ -532,23 +546,34 @@ fn obtener_texto_desde_checkout2(texto: &str) -> Result<String, io::Error> {
         }
     };
 
-    let git_dir_parent: &Path = git_dir.parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
-    })?;
+    let git_dir_parent: &Path = git_dir
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
 
-    match create_and_checkout_branch(&git_dir, git_dir_parent.to_string_lossy().as_ref(), texto) {
-        Ok(_) => {
-            println!("La función 'checkout branch' se ejecutó correctamente.");
-        }
-        Err(err) => {
-            eprintln!("Error al llamar a la función 'checkout branch': {:?}", err);
-        }
+    let result = match create_and_checkout_branch(
+        &git_dir,
+        git_dir_parent.to_string_lossy().as_ref(),
+        texto,
+    ) {
+        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Err(err) => Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!(
+                "Error al llamar a la función 'checkout branch': {:?}\n",
+                err
+            ),
+        )),
     };
-
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Error al llamar a la función 'checkout branch'\n",
+        ));
+    }
     Ok("Ok".to_string())
 }
 
-fn obtener_texto_desde_checkout3(texto: &str) -> Result<String, io::Error> {
+fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir.into(),
@@ -559,23 +584,31 @@ fn obtener_texto_desde_checkout3(texto: &str) -> Result<String, io::Error> {
             ));
         }
     };
-    let git_dir_parent: &Path = git_dir.parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
-    })?;
+    let git_dir_parent: &Path = git_dir
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
 
-    match create_or_reset_branch(&git_dir, git_dir_parent.to_string_lossy().as_ref(), texto) {
-        Ok(_) => {
-            println!("La función 'checkout branch' se ejecutó correctamente.");
-        }
-        Err(err) => {
-            eprintln!("Error al llamar a la función 'checkout branch': {:?}", err);
-        }
-    };
-
+    let result =
+        match create_or_reset_branch(&git_dir, git_dir_parent.to_string_lossy().as_ref(), texto) {
+            Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+            Err(err) => Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!(
+                    "Error al llamar a la función 'checkout branch': {:?}\n",
+                    err
+                ),
+            )),
+        };
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Error al llamar a la función 'checkout branch'\n",
+        ));
+    }
     Ok("Ok".to_string())
 }
 
-fn obtener_texto_desde_checkout4(texto: &str) -> Result<String, io::Error> {
+fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir.into(),
@@ -586,23 +619,36 @@ fn obtener_texto_desde_checkout4(texto: &str) -> Result<String, io::Error> {
             ));
         }
     };
-    let git_dir_parent: &Path = git_dir.parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
-    })?;
+    let git_dir_parent: &Path = git_dir
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
 
-    match checkout_commit_detached(&git_dir, git_dir_parent.to_string_lossy().as_ref(), texto) {
-        Ok(_) => {
-            println!("La función 'checkout branch' se ejecutó correctamente.");
-        }
-        Err(err) => {
-            eprintln!("Error al llamar a la función 'checkout branch': {:?}", err);
-        }
+    let result = match checkout_commit_detached(
+        &git_dir,
+        git_dir_parent.to_string_lossy().as_ref(),
+        texto,
+    ) {
+        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Err(err) => Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!(
+                "Error al llamar a la función 'checkout branch': {:?}\n",
+                err
+            ),
+        )),
     };
+
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Error al llamar a la función 'checkout branch'\n",
+        ));
+    }
 
     Ok("Ok".to_string())
 }
 
-fn obtener_texto_desde_checkout5(texto: &str) -> Result<String, io::Error> {
+fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir.into(),
@@ -613,16 +659,13 @@ fn obtener_texto_desde_checkout5(texto: &str) -> Result<String, io::Error> {
             ));
         }
     };
-    let git_dir_parent: &Path = git_dir.parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
-    })?;
 
-    force_checkout(&git_dir, texto) ;
+    force_checkout(&git_dir, texto);
 
     Ok("Ok".to_string())
 }
 
-fn obtener_texto_desde_remove(texto: &str) -> Result<String, io::Error> {
+fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir,
@@ -643,21 +686,22 @@ fn obtener_texto_desde_remove(texto: &str) -> Result<String, io::Error> {
             ))
         }
     };
-    let git_ignore_path = format!(
-        "{}/{}",
-        git_dir_parent.to_string_lossy().to_string(),
-        ".mgitignore"
-    );
+    let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), ".mgitignore");
     println!("INDEX PATH {}.", index_path);
 
-    match git_rm(&texto, &index_path, &git_dir, &git_ignore_path) {
-        Ok(_) => {
-            println!("La función 'rm' se ejecutó correctamente.");
-        }
-        Err(err) => {
-            eprintln!("Error al llamar a la función 'rm': {:?}", err);
-        }
+    let result = match git_rm(texto, &index_path, &git_dir, &git_ignore_path) {
+        Ok(_) => Ok("La función 'rm' se ejecutó correctamente.".to_string()),
+        Err(err) => Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Error al llamar a la función 'rm': {:?}\n", err),
+        )),
     };
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Error al llamar a la función 'rm'\n",
+        ));
+    }
     Ok("Ok".to_string())
 }
 
@@ -695,7 +739,7 @@ fn set_staging_area_texts(builder: &gtk::Builder) -> io::Result<()> {
     )?;
     let buffer = staging_area_text_view.get_buffer().ok_or(io::Error::new(
         io::ErrorKind::Other,
-        "Failed to get buffer for not-staged-view",
+        "Failed to get buffer for not-staged-view\n",
     ))?;
 
     let current_dir =
@@ -704,12 +748,12 @@ fn set_staging_area_texts(builder: &gtk::Builder) -> io::Result<()> {
     let _binding = current_dir.clone();
     let current_dir_str = current_dir.to_str().ok_or(io::Error::new(
         io::ErrorKind::Other,
-        "Failed to convert current directory to string",
+        "Failed to convert current directory to string\n",
     ))?;
 
     let git_dir = find_git_directory(&mut current_dir.clone(), ".mgit").ok_or(io::Error::new(
         io::ErrorKind::Other,
-        "Failed to find git directory",
+        "Failed to find git directory\n",
     ))?;
 
     let index_file = format!("{}{}", git_dir, "/index");
@@ -808,7 +852,7 @@ fn set_commit_history_view(builder: &gtk::Builder) -> io::Result<()> {
         None => {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Git directory not found",
+                "Git directory not found\n",
             ))
         }
     };
@@ -859,7 +903,7 @@ fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
         None => {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Failed to convert current directory to string",
+                "Failed to convert current directory to string\n",
             ))
         }
     };
@@ -869,7 +913,7 @@ fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
         None => {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Git directory not found",
+                "Git directory not found\n",
             ))
         }
     };
@@ -882,7 +926,7 @@ fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
             .ok_or_else(|| {
                 io::Error::new(
                     io::ErrorKind::Other,
-                    "Failed to get commit message text view",
+                    "Failed to get commit message text view\n",
                 )
             })?;
 
@@ -895,7 +939,7 @@ fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
             gtk::DialogFlags::MODAL,
             gtk::MessageType::Error,
             gtk::ButtonsType::Ok,
-            "Debe ingresar un mensaje de commit.",
+            "Debe ingresar un mensaje de commit.\n",
         );
 
         dialog.run();
@@ -956,7 +1000,7 @@ fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
             Err(err) => {
                 return Err(io::Error::new(
                     io::ErrorKind::NotFound,
-                    format!("Error al llamar a la función 'add': {:?}", err),
+                    format!("Error al llamar a la función 'add': {:?}\n", err),
                 ))
             }
         };
@@ -969,7 +1013,7 @@ fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
         Err(err) => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                format!("Error al llamar a la función 'add': {:?}", err),
+                format!("Error al llamar a la función 'add': {:?}\n", err),
             ))
         }
     };
@@ -1027,15 +1071,13 @@ fn create_text_entry_window(
     let entry_window_clone = entry_window.clone();
     ok_button.connect_clicked(move |_| {
         let text = entry.get_text().to_string();
-        entry_window.close(); // Cierra la ventana
+        entry_window.close();
         on_text_entered(text);
     });
 
     entry_window_clone.show_all();
     Ok(())
 }
-
-
 
 /// Connects a GTK button in an initialization window to specific actions based on its type.
 ///
@@ -1045,7 +1087,10 @@ fn create_text_entry_window(
 ///
 /// - `button`: A reference to the GTK button to which the event handler will be connected.
 /// - `button_type`: A string indicating the type of button, which determines the action to be taken when the button is clicked.
-pub fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) -> io::Result<()> {
+pub fn connect_button_clicked_init_window(
+    button: &gtk::Button,
+    button_type: &str,
+) -> io::Result<()> {
     let button_type = button_type.to_owned();
 
     button.connect_clicked(move |_| {
@@ -1053,7 +1098,7 @@ pub fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &st
 
         if let Ok(current_dir) = current_dir {
             let dir_str = match current_dir.to_str() {
-                Some(str) => str.to_owned(), // Asignar el valor
+                Some(str) => str.to_owned(),
                 None => {
                     eprintln!("Failed to convert current directory to string");
                     return;
@@ -1133,4 +1178,3 @@ pub fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &st
     });
     Ok(())
 }
-
