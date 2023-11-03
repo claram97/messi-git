@@ -340,6 +340,8 @@ fn set_merge_button_behavior(
 ///
 fn merge_window(builder: &Builder) -> io::Result<()> {
     let merge_button = get_button(builder, "merge-button");
+    apply_button_style(&merge_button)
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
     let merge_input_branch_entry = match get_entry(builder, "merge-input-branch") {
         Some(merge) => merge,
         None => {
