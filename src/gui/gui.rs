@@ -322,10 +322,13 @@ fn show_repository_window() -> io::Result<()> {
                 let resultado = obtain_text_from_checkout_branch(&text);
                 match resultado {
                     Ok(texto) => {
-                        println!("Texto: {}", texto);
+                        show_message_dialog(
+                            "Éxito",
+                            &format!("Changed correctly to branch '{}'", texto),
+                        );
                     }
-                    Err(err) => {
-                        eprintln!("Error al obtener el texto: {}", err);
+                    Err(_err) => {
+                        show_message_dialog("Error", "La rama indicada no existe.");
                     }
                 }
             });
@@ -338,10 +341,13 @@ fn show_repository_window() -> io::Result<()> {
                 let resultado = obtain_text_from_create_and_checkout_branch(&text);
                 match resultado {
                     Ok(texto) => {
-                        println!("Texto: {}", texto);
+                        show_message_dialog(
+                            "Éxito",
+                            &format!("Changed correctly to branch '{}'", texto),
+                        );
                     }
-                    Err(err) => {
-                        eprintln!("Error al obtener el texto: {}", err);
+                    Err(_err) => {
+                        show_message_dialog("Error", "La rama indicada no existe.");
                     }
                 }
             });
@@ -354,10 +360,13 @@ fn show_repository_window() -> io::Result<()> {
                 let resultado = obtain_text_from_create_or_reset_branch(&text);
                 match resultado {
                     Ok(texto) => {
-                        println!("Texto: {}", texto);
+                        show_message_dialog(
+                            "Éxito",
+                            &format!("Changed correctly to branch '{}'", texto),
+                        );
                     }
-                    Err(err) => {
-                        eprintln!("Error al obtener el texto: {}", err);
+                    Err(_err) => {
+                        show_message_dialog("Error", "La rama indicada no existe.");
                     }
                 }
             });
@@ -370,10 +379,13 @@ fn show_repository_window() -> io::Result<()> {
                 let resultado = obtain_text_from_checkout_commit_detached(&text);
                 match resultado {
                     Ok(texto) => {
-                        println!("Texto: {}", texto);
+                        show_message_dialog(
+                            "Éxito",
+                            &format!("Changed correctly to branch '{}'", texto),
+                        );
                     }
-                    Err(err) => {
-                        eprintln!("Error al obtener el texto: {}", err);
+                    Err(_err) => {
+                        show_message_dialog("Error", "La rama indicada no existe.");
                     }
                 }
             });
@@ -386,10 +398,13 @@ fn show_repository_window() -> io::Result<()> {
                 let resultado = obtain_text_from_force_checkout(&text);
                 match resultado {
                     Ok(texto) => {
-                        println!("Texto: {}", texto);
+                        show_message_dialog(
+                            "Éxito",
+                            &format!("Changed correctly to branch '{}'", texto),
+                        );
                     }
-                    Err(err) => {
-                        eprintln!("Error al obtener el texto: {}", err);
+                    Err(_err) => {
+                        show_message_dialog("Error", "La rama indicada no existe.");
                     }
                 }
             });
