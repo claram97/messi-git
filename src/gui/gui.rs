@@ -329,13 +329,12 @@ fn show_repository_window() -> io::Result<()> {
         add_path_button.connect_clicked(move |_| {
             let create_result =
                 create_text_entry_window("Enter the path of the file", move |text| {
-                    let resultado = obtain_text_from_add(&text);
-                    match resultado {
-                        Ok(texto) => {
-                            println!("Texto: {}", texto);
+                    match obtain_text_from_add(&text) {
+                        Ok(_texto) => {
+                            show_message_dialog("Operación exitosa", "Agregado correctamente");
                         }
-                        Err(err) => {
-                            eprintln!("Error al obtener el texto: {}", err);
+                        Err(_err) => {
+                            show_message_dialog("Error", "El path ingresado no es correcto.");
                         }
                     }
                 });
@@ -369,7 +368,6 @@ fn show_repository_window() -> io::Result<()> {
 
         commit_changes_button.connect_clicked(move |_| {
             let _ = make_commit(&builder_clone2);
-            println!("Commit button clicked");
         });
         Ok(())
         // button7.connect_clicked(move |_| {
@@ -417,6 +415,19 @@ fn show_repository_window() -> io::Result<()> {
             "Failed to show repository window.",
         ))
     }
+}
+
+fn show_message_dialog(title: &str, message: &str) {
+    let dialog = gtk::MessageDialog::new(
+        None::<&gtk::Window>,
+        gtk::DialogFlags::MODAL,
+        gtk::MessageType::Info,
+        gtk::ButtonsType::Ok,
+        message,
+    );
+    dialog.set_title(title);
+    dialog.run();
+    dialog.close();
 }
 
 /// Sets the text content of staging area views in a GTK+ application.
@@ -633,6 +644,21 @@ fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
 
     let message = message_view.get_text().to_string();
 
+    if message.is_empty() {
+        // El mensaje de commit está vacío, muestra un diálogo de error
+        let dialog = gtk::MessageDialog::new(
+            None::<&gtk::Window>,
+            gtk::DialogFlags::MODAL,
+            gtk::MessageType::Error,
+            gtk::ButtonsType::Ok,
+            "Debe ingresar un mensaje de commit.",
+        );
+
+        dialog.run();
+        dialog.close();
+        return Ok(());
+    }
+
     let result = commit::new_commit(&git_dir_path, &message, &git_ignore_path);
     println!("{:?}", result);
     set_commit_history_view(builder)?;
@@ -671,7 +697,7 @@ fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
         None => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                "Gitignore filey not found\n",
+                "Gitignore file not found\n",
             ))
         }
     };
@@ -684,7 +710,10 @@ fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
                 println!("La función 'add' se ejecutó correctamente.");
             }
             Err(err) => {
-                eprintln!("Error al llamar a la función 'add': {:?}", err);
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    format!("Error al llamar a la función 'add': {:?}", err),
+                ))
             }
         };
     }
@@ -694,7 +723,10 @@ fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
             println!("La función 'add' se ejecutó correctamente.");
         }
         Err(err) => {
-            eprintln!("Error al llamar a la función 'add': {:?}", err);
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("Error al llamar a la función 'add': {:?}", err),
+            ))
         }
     };
     Ok("Ok".to_string())
@@ -748,14 +780,14 @@ fn create_text_entry_window(
         .map_err(|_err| io::Error::new(io::ErrorKind::Other, "Error applying button stlye.\n"))?;
     main_box.add(&ok_button);
 
+    let entry_window_clone = entry_window.clone();
     ok_button.connect_clicked(move |_| {
         let text = entry.get_text().to_string();
-        // close_all_windows();
-        // show_repository_window();
+        entry_window.close(); // Cierra la ventana
         on_text_entered(text);
     });
 
-    entry_window.show_all();
+    entry_window_clone.show_all();
     Ok(())
 }
 
