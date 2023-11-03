@@ -472,7 +472,7 @@ pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> io::Res
             None => {
                 return Err(io::Error::new(
                     io::ErrorKind::NotFound,
-                    "Invalid path in index file.",
+                    "Invalid path in index file.\n",
                 ))
             }
         };
@@ -487,7 +487,6 @@ pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> io::Res
     Ok(new_tree)
 }
 
-//Tests
 #[cfg(test)]
 mod tests {
     use super::*;

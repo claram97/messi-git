@@ -37,6 +37,14 @@ pub fn get_button(builder: &Builder, button_id: &str) -> gtk::Button {
     gtk::Button::new()
 }
 
+pub fn get_text_view(builder: &Builder, text_view_id: &str) -> Option<gtk::TextView> {
+    if let Some(text_view) = builder.get_object::<gtk::TextView>(text_view_id) {
+        return Some(text_view);
+    }
+
+    None
+}
+
 /// Applies a custom button style using CSS to the provided `gtk::Button`.
 ///
 /// This function sets a custom CSS style for the provided `gtk::Button` widget to change its appearance.

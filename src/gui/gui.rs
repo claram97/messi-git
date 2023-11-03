@@ -13,6 +13,7 @@ use crate::index;
 use crate::init::git_init;
 use crate::log::log;
 use crate::log::Log;
+use crate::merge;
 use crate::rm::git_rm;
 use crate::status;
 use crate::tree_handler;
@@ -27,6 +28,8 @@ use std::sync::Mutex;
 
 use super::clone_window::configure_clone_window;
 use super::init_window::configure_init_window;
+use super::style::get_entry;
+use super::style::get_text_view;
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -201,6 +204,110 @@ pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
     log_text
 }
 
+fn call_git_merge(their_branch: &str) -> io::Result<()> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Not a git directory.\n",
+            ));
+        }
+    };
+    let root_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Parent of git dir not found.\n",
+            ));
+        }
+    };
+
+    let our_branch = branch::get_current_branch_path(&git_dir)?;
+    merge::git_merge(
+        &our_branch,
+        their_branch,
+        &git_dir,
+        &root_dir.to_string_lossy().to_string(),
+    )?;
+    Ok(())
+}
+
+fn set_merge_button_behavior(
+    button: &gtk::Button,
+    entry: &gtk::Entry,
+    text_view: &gtk::TextView,
+) -> io::Result<()> {
+    let entry_clone = entry.clone();
+    let text_view_clone = text_view.clone();
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found.\n",
+            ));
+        }
+    };
+    button.connect_clicked(move |_| {
+        let branch = entry_clone.get_text();
+        if branch.is_empty() {
+            show_message_dialog("Error", "Por favor, ingrese una rama.");
+        } else if !branch::is_an_existing_branch(&branch, &git_dir) {
+            show_message_dialog("Error", "Rama no encontrada.");
+        } else {
+            let merge_result = match call_git_merge(&branch) {
+                Ok(_) => {
+                    let buffer = match text_view_clone.get_buffer() {
+                        Some(buff) => {
+                            buff.set_text("Merged successfully!");
+                        }
+                        None => {
+                            eprintln!("Couldn't write the output on the text view.");
+                        }
+                    };
+                }
+                Err(_e) => {
+                    let buffer = match text_view_clone.get_buffer() {
+                        Some(buff) => {
+                            buff.set_text("Conflicts on merge!");
+                        }
+                        None => {
+                            eprintln!("Couldn't write the output on the text view.");
+                        }
+                    };
+                }
+            };
+        }
+    });
+    Ok(())
+}
+
+fn merge_window(builder: &Builder) -> io::Result<()> {
+    let merge_button = get_button(builder, "merge-button");
+    let merge_input_branch_entry = match get_entry(builder, "merge-input-branch") {
+        Some(merge) => merge,
+        None => {
+            return Err(io::Error::new(io::ErrorKind::Other, "Entry not found.\n"));
+        }
+    };
+    let merge_text_view = match get_text_view(builder, "merge-text-view") {
+        Some(text_view) => text_view,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Text view not found.\n",
+            ));
+        }
+    };
+
+    set_merge_button_behavior(&merge_button, &merge_input_branch_entry, &merge_text_view)?;
+    Ok(())
+}
+
 /// Displays a repository window with various buttons and actions in a GTK application.
 ///
 /// This function initializes and displays a GTK repository window using a UI builder. It configures the window, adds buttons with specific actions, and sets their styles and click event handlers. The repository window provides buttons for actions like "Add," "Commit," "Push," and more.
@@ -211,11 +318,16 @@ fn show_repository_window() -> io::Result<()> {
         let _new_window_clone = new_window.clone();
         let builder_clone = builder.clone();
         let builder_clone1 = builder.clone();
+
         set_staging_area_texts(&builder_clone)?;
         set_commit_history_view(&builder_clone1)?;
 
         add_to_open_windows(&new_window);
         configure_repository_window(new_window)?;
+
+        let builder_clone_for_merge = builder.clone();
+        merge_window(&builder_clone_for_merge)?;
+
         let show_log_button = get_button(&builder, "show-log-button");
         let show_pull_button = get_button(&builder, "pull");
         let show_push_button = get_button(&builder, "push");
