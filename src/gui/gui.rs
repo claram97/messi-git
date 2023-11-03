@@ -204,6 +204,16 @@ pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
     log_text
 }
 
+/// ## `call_git_merge`
+///
+/// The `call_git_merge` function initiates a Git merge operation with the specified branch name.
+///
+/// ### Parameters
+/// - `their_branch`: A string containing the name of the branch to merge.
+///
+/// ### Returns
+/// Returns an `io::Result<()>` indicating success or an error.
+///
 fn call_git_merge(their_branch: &str) -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
@@ -235,23 +245,26 @@ fn call_git_merge(their_branch: &str) -> io::Result<()> {
     Ok(())
 }
 
-fn set_merge_button_behavior(
+/// ## `merge_button_connect_clicked`
+///
+/// The `merge_button_connect_clicked` function connects a GTK button's click event to perform a Git merge operation.
+/// It also handles error messages and displays the merge result in a GTK text view.
+///
+/// ### Parameters
+/// - `button`: A reference to the GTK button that triggers the merge operation.
+/// - `entry`: A reference to the GTK entry where the user enters the branch name.
+/// - `text_view`: A reference to the GTK text view where the merge result is displayed.
+/// - `git_directory`: A string containing the path to the Git directory.
+///
+fn merge_button_connect_clicked(
     button: &gtk::Button,
     entry: &gtk::Entry,
     text_view: &gtk::TextView,
-) -> io::Result<()> {
+    git_directory: String,
+) {
     let entry_clone = entry.clone();
     let text_view_clone = text_view.clone();
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found.\n",
-            ));
-        }
-    };
+    let git_dir = git_directory.clone();
     button.connect_clicked(move |_| {
         let branch = entry_clone.get_text();
         if branch.is_empty() {
@@ -283,9 +296,48 @@ fn set_merge_button_behavior(
             };
         }
     });
+}
+
+/// ## `set_merge_button_behavior`
+///
+/// The `set_merge_button_behavior` function sets the behavior for a GTK button to perform a Git merge operation.
+/// It is responsible for connecting the button's click event and handling errors.
+///
+/// ### Parameters
+/// - `button`: A reference to the GTK button that triggers the merge operation.
+/// - `entry`: A reference to the GTK entry where the user enters the branch name.
+/// - `text_view`: A reference to the GTK text view where the merge result is displayed.
+///
+fn set_merge_button_behavior(
+    button: &gtk::Button,
+    entry: &gtk::Entry,
+    text_view: &gtk::TextView,
+) -> io::Result<()> {
+    //let entry_clone = entry.clone();
+    //let text_view_clone = text_view.clone();
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found.\n",
+            ));
+        }
+    };
+
+    merge_button_connect_clicked(button, entry, text_view, git_dir);
+
     Ok(())
 }
 
+/// ## `merge_window`
+///
+/// The `merge_window` function initializes the GTK merge window by connecting UI elements to Git merge functionality.
+///
+/// ### Parameters
+/// - `builder`: A reference to the GTK builder for constructing the UI.
+///
 fn merge_window(builder: &Builder) -> io::Result<()> {
     let merge_button = get_button(builder, "merge-button");
     let merge_input_branch_entry = match get_entry(builder, "merge-input-branch") {

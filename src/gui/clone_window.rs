@@ -80,19 +80,6 @@ pub fn configure_clone_window(
             error_dialog.close();
         } else {
             println!("Ok!");
-            // Si ambos campos tienen datos, llama a la función de clonación
-            // (asume que ya tienes una función llamada clone_repository)
-            // if let Err(err) = clone_repository(&url_text, &dir_text) {
-            //     // Si hubo un error al clonar, muestra un mensaje de error
-            //     let error_dialog = gtk::MessageDialog::new(
-            //         Some(new_window_clone_clone),
-            //         gtk::DialogFlags::MODAL,
-            //         gtk::MessageType::Error,
-            //         gtk::ButtonsType::Ok,
-            //         &format!("Error al clonar el repositorio: {}", err));
-            //     error_dialog.run();
-            //     error_dialog.close();
-            // }
         }
     });
 
