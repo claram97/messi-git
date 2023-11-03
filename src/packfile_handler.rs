@@ -78,6 +78,7 @@ impl TryFrom<u8> for ObjectType {
     }
 }
 
+#[derive(Debug)]
 pub struct PackfileEntry {
     pub obj_type: ObjectType,
     pub size: usize,
@@ -94,6 +95,7 @@ impl PackfileEntry {
     }
 }
 
+#[derive(Debug)]
 pub struct Packfile<R>
 where
     R: Read,
@@ -153,7 +155,6 @@ where
         let mut buf: [u8; 4] = [0, 0, 0, 0];
         self.bufreader.read_exact(&mut buf)?;
         self.total = u32::from_be_bytes(buf);
-        dbg!(self.total);
         Ok(())
     }
 
@@ -161,7 +162,6 @@ where
         let mut byte = self.read_byte()?;
         // let obj_type = get_object_type(byte)?;
         let obj_type = ObjectType::try_from((byte & 0x70) >> 4)?;
-
         let mut obj_size = (byte & 0x0f) as usize;
         let mut bshift: usize = 4;
         while (byte & 0x80) != 0 {
@@ -172,8 +172,8 @@ where
 
         let mut decompressor = ZlibDecoder::new(&mut self.bufreader);
         let mut obj = vec![];
+        dbg!(obj_size);
         let bytes_read = decompressor.read_to_end(&mut obj)?;
-
         if obj_size != bytes_read {
             println!("type {:?}. bytes:\n{:?}", obj_type, obj);
             return Err(Error::new(
@@ -219,12 +219,11 @@ pub fn create_packfile_from_set(
     packfile.push(b'A');
     packfile.push(b'C');
     packfile.push(b'K');
-    let version: [u8; 4] = (2 as u32).to_be_bytes();
+    let version: [u8; 4] = [0, 0, 0, 2];
     packfile.extend(version);
     let obj_count: [u8; 4] = (objects.len() as u32).to_be_bytes();
     packfile.extend(obj_count);
     append_objects(&mut packfile, objects, git_dir)?;
-    // ver lo del checksum aca al final
     Ok(packfile)
 }
 
@@ -236,37 +235,32 @@ fn append_objects(
     for (obj_type, hash) in objects {
         
         let content = decompress_object_into_bytes(&hash, git_dir)?;
-        let size = content.len() as u64;
+        let obj_size = content.len();
         let mut compressor = ZlibEncoder::new(Vec::<u8>::new(), Compression::default());
         compressor.write_all(&content)?;
         let compressed_content = compressor.finish()?;
         
-        let t = (obj_type.as_byte() << 4) & 0x70;
-        packfile.push(t);
-        packfile.extend(encode_varint(size));
+        let mut encoded_header: Vec<u8> = Vec::new();
+        // Combina el tipo de objeto y los 4 bits más bajos del tamaño
+        let mut c = (obj_type.as_byte() << 4) | ((obj_size & 0x0F) as u8);    
+        // Codifica el tamaño restante usando codificación de bytes variable
+        let mut size = obj_size >> 4;
+        while size > 0 {
+            encoded_header.push(c | 0x80);
+    
+            c = size as u8 & 0x7F;
+            size >>= 7;
+        }
+        encoded_header.push(c);
+        
+        packfile.extend(encoded_header);
         packfile.extend(compressed_content);
-        // ver si hace falta meterle un EOF
+
     }
     let mut hasher = Sha1::new();
     hasher.update(&packfile);
     let result = hasher.finalize();
-    write!(packfile, "{:02x}", result) // packfile.extend(result)
-    // Ok(())
-}
-
-// 
-fn encode_varint(mut n: u64) -> Vec<u8> {
-    let mut bytes = Vec::new();
-
-    while n >= 0x80 {
-        let byte = ((n & 0x7F) | 0x80) as u8;
-        bytes.push(byte);
-        n >>= 7;
-    }
-
-    bytes.push(n as u8);
-
-    bytes
+    write!(packfile, "{:02x}", result)
 }
 
 fn decompress_object_into_bytes(hash: &str, git_dir: &str) -> io::Result<Vec<u8>> {

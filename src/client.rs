@@ -1,12 +1,14 @@
 use std::{
     collections::{HashMap, HashSet},
     fs,
-    io::{self, Error, Read, Write},
+    io::{self, BufReader, Error, Read, Write},
     net::TcpStream,
     path::PathBuf,
     str::from_utf8,
     vec,
 };
+
+use chrono::format;
 
 use crate::cat_file;
 use crate::packfile_handler::Packfile;
@@ -96,7 +98,7 @@ impl Client {
     pub fn receive_pack(&mut self, pushing_ref: &str, git_dir: &str) -> io::Result<()> {
         self.connect()?;
         self.initiate_connection(GIT_RECEIVE_PACK)?;
-        self.flush()?;
+        // self.flush()?;
         self.git_dir = git_dir.to_string();
 
         // ya se que tiene el servidor
@@ -121,13 +123,17 @@ impl Client {
             println!("Already up to date.");
             return Ok(());
         }
-        
+
         if prev_hash.is_empty() {
             self.receive_pack_create(pushing_ref, new_hash)?;
         } else {
             self.receive_pack_update(pushing_ref, &prev_hash, new_hash)?;
         };
 
+        let mut reader = BufReader::new(self.socket()?);
+        let mut res = String::new();
+        reader.read_to_string(&mut res)?;
+        dbg!(res);
         // self.update_remote(pushing_ref, &new_hash)?;
         Ok(())
     }
@@ -138,10 +144,16 @@ impl Client {
 
     fn receive_pack_update(
         &mut self,
-        _pushing_ref: &str,
+        pushing_ref: &str,
         prev_hash: &str,
         new_hash: &str,
     ) -> io::Result<()> {
+        let update = format!("{} {} {}\0", prev_hash, new_hash, pushing_ref);
+        // dbg!("Sleeping...");
+        // std::thread::sleep(std::time::Duration::from_secs(5));
+        self.send(&pkt_line(&update))?;
+        self.flush()?;
+
         let missing_objects = get_missing_objects_from(new_hash, prev_hash, &self.git_dir)?;
         let packfile = packfile_handler::create_packfile_from_set(missing_objects, &self.git_dir)?;
         self.send_bytes(packfile.as_slice())?;
@@ -159,11 +171,7 @@ impl Client {
 
         let pkt_command = pkt_line(&command);
 
-        println!("Enviando al socket: {:?}", &pkt_command);
-
-        self.send(&pkt_command)?;
-        println!("Termino de enviar al socket");
-        Ok(())
+        self.send(&pkt_command)
     }
 
     // Auxiliar function. Waits for the refs and loads them in self
@@ -207,11 +215,13 @@ impl Client {
 
     // Sends a message throw the socket
     fn send(&mut self, message: &str) -> io::Result<()> {
+        dbg!(message);
         write!(self.socket()?, "{}", message)
     }
 
     // Sends a message throw the socket as bytes
     fn send_bytes(&mut self, content: &[u8]) -> io::Result<()> {
+        dbg!("Sending bytes...");
         self.socket()?.write_all(content)
     }
 
@@ -270,7 +280,6 @@ impl Client {
 
         let want = format!("want {} {}\n", hash, CAPABILITIES_UPLOAD);
         let want = pkt_line(&want);
-        dbg!(&want);
         self.send(&want)?;
 
         self.flush()?;
@@ -286,7 +295,6 @@ impl Client {
             for hash in local_refs.values() {
                 let have = format!("have {}\n", hash);
                 let have = pkt_line(&have);
-                // dbg!(&have);
                 self.send(&have)?;
             }
             self.flush()?;
@@ -421,14 +429,14 @@ fn get_missing_objects_from(
     git_dir: &str,
 ) -> io::Result<HashSet<(ObjectType, String)>> {
     let mut missing: HashSet<(ObjectType, String)> = HashSet::new();
-    
+
     if new_hash == prev_hash {
         return Ok(missing);
     }
-    
+
     if let Ok(commit) = CommitHashes::new(new_hash, git_dir) {
         missing.insert((ObjectType::Commit, commit.hash.to_string()));
-        
+
         let tree_objects = get_objects_tree_objects(&commit.tree, git_dir)?;
         missing.extend(tree_objects);
 
@@ -437,7 +445,7 @@ fn get_missing_objects_from(
             missing.extend(_missing);
         }
     }
-    
+
     Ok(missing)
 }
 
@@ -484,7 +492,7 @@ fn get_objects_tree_objects(
     let mut objects: HashSet<(ObjectType, String)> = HashSet::new();
     objects.insert((ObjectType::Tree, hash.to_string()));
     let content = cat_file::cat_tree(hash, git_dir)?;
-    
+
     for (mode, _, hash) in content {
         if mode == "040000" {
             let tree_objects = get_objects_tree_objects(&hash, git_dir)?;
@@ -493,6 +501,6 @@ fn get_objects_tree_objects(
             objects.insert((ObjectType::Blob, hash.to_string()));
         };
     }
-    
+
     Ok(objects)
 }
