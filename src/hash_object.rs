@@ -1,6 +1,6 @@
 use std::{
     fs::{self, File},
-    io::{self, Write},
+    io::{self, Write, Read},
     path::Path,
 };
 
@@ -189,26 +189,23 @@ pub fn store_tree_to_file(blobs: Vec<(String, String, Vec<u8>)>, trees: Vec<(Str
     let header = format!("tree {}\0", size);
 
     //Create the complete file with the hash of the complete file
-    let mut complete_file = File::create("complete_tree.tmp")?;
+    let complete_file = File::create("complete_tree.tmp")?;
     compress_tree("tree.tmp", &header, "complete_tree.tmp")?;
-
     //Get the hash of the complete file
     let complete_hash = hash_tree_file("complete_tree.tmp")?;
-
+    
     //Create the directory where the file will be stored
     let output_file_dir = git_dir_path.to_string() + "/objects/" + &complete_hash[..2] + "/";
     create_directory(&output_file_dir)?;
-
+    
     //Create the path where the file will be stored
     let output_file_str = output_file_dir + &complete_hash[2..];
-
+    
     //Move the file to the objects folder
     fs::rename("complete_tree.tmp", output_file_str)?;
-
+    
     //Remove the temporary files
     fs::remove_file("tree.tmp")?;
-    fs::remove_file("complete_tree.tmp")?;
-
     Ok(complete_hash)
 }
 
