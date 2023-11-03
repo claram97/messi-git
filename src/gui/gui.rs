@@ -230,7 +230,7 @@ fn call_git_merge(their_branch: &str) -> io::Result<()> {
         &our_branch,
         their_branch,
         &git_dir,
-        &root_dir.to_string_lossy().to_string(),
+        root_dir.to_string_lossy().as_ref(),
     )?;
     Ok(())
 }
@@ -259,9 +259,9 @@ fn set_merge_button_behavior(
         } else if !branch::is_an_existing_branch(&branch, &git_dir) {
             show_message_dialog("Error", "Rama no encontrada.");
         } else {
-            let merge_result = match call_git_merge(&branch) {
+            match call_git_merge(&branch) {
                 Ok(_) => {
-                    let buffer = match text_view_clone.get_buffer() {
+                    match text_view_clone.get_buffer() {
                         Some(buff) => {
                             buff.set_text("Merged successfully!");
                         }
@@ -271,7 +271,7 @@ fn set_merge_button_behavior(
                     };
                 }
                 Err(_e) => {
-                    let buffer = match text_view_clone.get_buffer() {
+                    match text_view_clone.get_buffer() {
                         Some(buff) => {
                             buff.set_text("Conflicts on merge!");
                         }

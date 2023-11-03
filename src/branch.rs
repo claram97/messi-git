@@ -234,7 +234,7 @@ pub fn git_branch_for_ui(name: Option<String>) -> io::Result<String> {
 pub fn is_an_existing_branch(branch: &str, git_dir: &str) -> bool {
     let path = format!("{}/refs/heads/{}", git_dir, branch);
 
-    if let Ok(metadata) = fs::metadata(&path) {
+    if let Ok(metadata) = fs::metadata(path) {
         metadata.is_file()
     } else {
         false
