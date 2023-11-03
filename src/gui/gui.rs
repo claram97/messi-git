@@ -25,6 +25,8 @@ use crate::checkout::create_or_reset_branch;
 use crate::checkout::checkout_commit_detached;
 use crate::checkout::force_checkout;
 use std::path::PathBuf;
+use crate::gui::style::filter_color_code;
+use crate::gui::initWindow::configure_init_window;
 
 use super::style::apply_clone_button_style;
 use super::style::apply_entry_style;
@@ -62,7 +64,7 @@ pub fn run_main_window() -> io::Result<()> {
 
         connect_button_clicked_main_window(&button_clone, "Clone")?;
         connect_button_clicked_main_window(&button_init, "Init")?;
-
+        
         window.show_all();
         Ok(())
     } else {
@@ -71,6 +73,52 @@ pub fn run_main_window() -> io::Result<()> {
             "Failed to run main window.",
         ))
     }
+}
+
+/// Connects a GTK button to a specific action.
+///
+/// This function takes a GTK button and a button type as input and sets an event handler for the "clicked" event of the button.
+/// When the button is clicked, it performs a specific action based on the provided button type.
+///
+/// # Arguments
+///
+/// - `button`: A reference to the GTK button to which the event handler will be connected.
+/// - `button_type`: A string indicating the button type, which determines the action to be taken when the button is clicked.
+///
+fn connect_button_clicked_main_window(button: &gtk::Button, button_type: &str) -> io::Result<()> {
+    let button_type = button_type.to_owned();
+
+    button.connect_clicked(move |_| {
+        let builder = gtk::Builder::new();
+        match button_type.as_str() {
+            "Init" => {
+                if let Some(new_window_init) =
+                    load_and_get_window(&builder, "src/gui/windowInit.ui", "window")
+                {
+                    let init_window_result = configure_init_window(&new_window_init, &builder);
+                    if init_window_result.is_err() {
+                        eprintln!("Error initializing init window.\n");
+                        return;
+                    }
+                    new_window_init.show_all();
+                }
+            }
+            "Clone" => {
+                if let Some(new_window_clone) =
+                    load_and_get_window(&builder, "src/gui/windowClone.ui", "window")
+                {
+                    let clone_window_result = configure_clone_window(&new_window_clone, &builder);
+                    if clone_window_result.is_err() {
+                        eprintln!("Error initializing clone window.\n");
+                        return;
+                    }
+                    new_window_clone.show_all();
+                }
+            }
+            _ => eprintln!("Unknown button type: {}", button_type),
+        }
+    });
+    Ok(())
 }
 
 /// Closes all open GTK windows in a GTK application.
@@ -97,45 +145,13 @@ pub fn close_all_windows() {
 ///
 /// - `window`: A reference to the GTK window to be added to the list of open windows.
 ///
-fn add_to_open_windows(window: &gtk::Window) {
+pub fn add_to_open_windows(window: &gtk::Window) {
     unsafe {
         if let Some(ref mutex) = OPEN_WINDOWS {
             let mut open_windows = mutex.lock().expect("Mutex lock failed");
             open_windows.push(window.clone());
         }
     }
-}
-
-/// Remove ANSI color codes from a given string.
-///
-/// This function takes a string containing ANSI color codes and removes them, resulting in a
-/// plain text string without color formatting.
-///
-/// # Arguments
-///
-/// * `input` - A reference to the input string containing ANSI color codes.
-///
-/// # Returns
-///
-/// A new string with ANSI color codes removed.
-///
-fn filter_color_code(input: &str) -> String {
-    let mut result = String::new();
-    let mut in_escape_code = false;
-
-    for char in input.chars() {
-        if char == '\u{001b}' {
-            in_escape_code = true;
-        } else if in_escape_code {
-            if char == 'm' {
-                in_escape_code = false;
-            }
-        } else {
-            result.push(char);
-        }
-    }
-
-    result
 }
 
 /// Obtain the Git log as a filtered and formatted string.
@@ -309,7 +325,7 @@ fn show_repository_window() -> io::Result<()> {
         });
         checkout1_button.connect_clicked(move |_| {
             create_text_entry_window("Enter the path of the file", move |text| {
-                let resultado = obtener_texto_desde_checkout1(&text);
+                let resultado = obtain_text_from_checkout1(&text);
                 match resultado {
                     Ok(texto) => {
                         println!("Texto: {}", texto);
@@ -467,45 +483,6 @@ fn show_repository_window() -> io::Result<()> {
             let _ = make_commit(&builder_clone2);
         });
         Ok(())
-        // button7.connect_clicked(move |_| {
-        //     button9.set_visible(true);
-        //     create_branch_button.set_visible(true);
-        //     let builder_clone = builder.clone();
-
-        //     button9.connect_clicked(move |_| {
-        //         let label: Label = builder_clone.get_object("label").unwrap();
-        //         let texto_desde_funcion = git_branch_for_ui(None);
-        //         match texto_desde_funcion {
-        //             Ok(texto) => {
-        //                 label.set_text(&texto);
-        //             }
-        //             Err(err) => {
-        //                 eprintln!("Error al obtener el texto: {}", err);
-        //             }
-        //         }
-        //     });
-        // });
-
-        // button8.connect_clicked(move |_| {
-        //     new_window_clone.close();
-        //     run_main_window();
-        // });
-
-        // button11.connect_clicked(move |_| {
-        //     let label: Label = builder_clone1.get_object("label").unwrap();
-        //     create_text_entry_window("Enter the path of the file", move |text| {
-        //         let resultado = obtain_text_from_add(&text);
-
-        //         match resultado {
-        //             Ok(texto) => {
-        //                 label.set_text(&texto);
-        //             }
-        //             Err(err) => {
-        //                 eprintln!("Error al obtener el texto: {}", err);
-        //             }
-        //         }
-        //     });
-        // });
     } else {
         Err(io::Error::new(
             io::ErrorKind::Other,
@@ -513,10 +490,9 @@ fn show_repository_window() -> io::Result<()> {
         ))
     }
 }
-fn obtener_texto_desde_checkout1(texto: &str) -> Result<String, io::Error> {
-    let mut current_dir = std::env::current_dir()?;
 
-    // Encuentra el directorio Git como un PathBuf
+fn obtain_text_from_checkout1(text: &str) -> Result<String, io::Error> {
+    let mut current_dir = std::env::current_dir()?;
     let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir.into(),
         None => {
@@ -526,28 +502,24 @@ fn obtener_texto_desde_checkout1(texto: &str) -> Result<String, io::Error> {
             ));
         }
     };
-
-    // Obtén el directorio padre como un Path
     let git_dir_parent: &Path = git_dir.parent().ok_or_else(|| {
         io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
     })?;
-
-    // Llama a checkout_branch con git_dir como un Path y git_dir_parent como un &Path
-    match checkout_branch(&git_dir, git_dir_parent.to_string_lossy().as_ref(), texto) {
+    
+    match checkout_branch(&git_dir, git_dir_parent.to_string_lossy().as_ref(), text) {
         Ok(_) => {
-            println!("La función 'checkout branch' se ejecutó correctamente.");
+            println!("The 'checkout branch' function executed successfully.");
         }
         Err(err) => {
-            eprintln!("Error al llamar a la función 'checkout branch': {:?}", err);
+            eprintln!("Error calling the 'checkout branch' function: {:?}", err);
         }
     };
-
+    
     Ok("Ok".to_string())
 }
+
 fn obtener_texto_desde_checkout2(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-
-    // Encuentra el directorio Git como un PathBuf
     let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir.into(),
         None => {
@@ -558,7 +530,6 @@ fn obtener_texto_desde_checkout2(texto: &str) -> Result<String, io::Error> {
         }
     };
 
-    // Obtén el directorio padre como un Path
     let git_dir_parent: &Path = git_dir.parent().ok_or_else(|| {
         io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
     })?;
@@ -574,10 +545,9 @@ fn obtener_texto_desde_checkout2(texto: &str) -> Result<String, io::Error> {
 
     Ok("Ok".to_string())
 }
+
 fn obtener_texto_desde_checkout3(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-
-    // Encuentra el directorio Git como un PathBuf
     let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir.into(),
         None => {
@@ -587,8 +557,6 @@ fn obtener_texto_desde_checkout3(texto: &str) -> Result<String, io::Error> {
             ));
         }
     };
-
-    // Obtén el directorio padre como un Path
     let git_dir_parent: &Path = git_dir.parent().ok_or_else(|| {
         io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
     })?;
@@ -604,10 +572,9 @@ fn obtener_texto_desde_checkout3(texto: &str) -> Result<String, io::Error> {
 
     Ok("Ok".to_string())
 }
+
 fn obtener_texto_desde_checkout4(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-
-    // Encuentra el directorio Git como un PathBuf
     let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir.into(),
         None => {
@@ -617,8 +584,6 @@ fn obtener_texto_desde_checkout4(texto: &str) -> Result<String, io::Error> {
             ));
         }
     };
-
-    // Obtén el directorio padre como un Path
     let git_dir_parent: &Path = git_dir.parent().ok_or_else(|| {
         io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
     })?;
@@ -634,10 +599,9 @@ fn obtener_texto_desde_checkout4(texto: &str) -> Result<String, io::Error> {
 
     Ok("Ok".to_string())
 }
+
 fn obtener_texto_desde_checkout5(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-
-    // Encuentra el directorio Git como un PathBuf
     let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir.into(),
         None => {
@@ -647,8 +611,6 @@ fn obtener_texto_desde_checkout5(texto: &str) -> Result<String, io::Error> {
             ));
         }
     };
-
-    // Obtén el directorio padre como un Path
     let git_dir_parent: &Path = git_dir.parent().ok_or_else(|| {
         io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
     })?;
@@ -657,6 +619,7 @@ fn obtener_texto_desde_checkout5(texto: &str) -> Result<String, io::Error> {
 
     Ok("Ok".to_string())
 }
+
 fn obtener_texto_desde_remove(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
@@ -695,6 +658,7 @@ fn obtener_texto_desde_remove(texto: &str) -> Result<String, io::Error> {
     };
     Ok("Ok".to_string())
 }
+
 fn show_message_dialog(title: &str, message: &str) {
     let dialog = gtk::MessageDialog::new(
         None::<&gtk::Window>,
@@ -1069,6 +1033,8 @@ fn create_text_entry_window(
     Ok(())
 }
 
+
+
 /// Connects a GTK button in an initialization window to specific actions based on its type.
 ///
 /// This function takes a reference to a GTK button (`button`) and a button type (`button_type`) as input and connects a click event handler. The handler performs different actions based on the button's type, such as opening text entry dialogs, closing all windows, or showing a repository window.
@@ -1077,7 +1043,7 @@ fn create_text_entry_window(
 ///
 /// - `button`: A reference to the GTK button to which the event handler will be connected.
 /// - `button_type`: A string indicating the type of button, which determines the action to be taken when the button is clicked.
-fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) -> io::Result<()> {
+pub fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) -> io::Result<()> {
     let button_type = button_type.to_owned();
 
     button.connect_clicked(move |_| {
@@ -1163,37 +1129,6 @@ fn connect_button_clicked_init_window(button: &gtk::Button, button_type: &str) -
             eprintln!("No se pudo obtener el directorio actual.");
         }
     });
-    Ok(())
-}
-
-/// Configures the properties of a clone window in a GTK application.
-///
-/// This function takes a reference to a GTK window (`new_window_clone`) and a GTK builder (`builder`) as input and configures the clone window's properties, including adding it to the list of open windows, applying a specific window style, and setting its default size.
-///
-/// # Arguments
-///
-/// - `new_window_clone`: A reference to the GTK window to be configured.
-/// - `builder`: A reference to the GTK builder used for UI construction.
-///
-fn configure_init_window(new_window_init: &gtk::Window, builder: &gtk::Builder) -> io::Result<()> {
-    add_to_open_windows(new_window_init);
-    apply_window_style(new_window_init)
-        .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to apply window style"))?;
-    new_window_init.set_default_size(800, 600);
-
-    let button1 = get_button(builder, "button1");
-    let button2 = get_button(builder, "button2");
-    let button3 = get_button(builder, "button3");
-
-    apply_button_style(&button1)
-        .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to apply button1 style"))?;
-    apply_button_style(&button2)
-        .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to apply button2 style"))?;
-    apply_button_style(&button3)
-        .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to apply button3 style"))?;
-    connect_button_clicked_init_window(&button1, "option1")?;
-    connect_button_clicked_init_window(&button2, "option2")?;
-    connect_button_clicked_init_window(&button3, "option3")?;
     Ok(())
 }
 
@@ -1341,48 +1276,3 @@ fn configure_clone_window(
     Ok(())
 }
 
-/// Connects a GTK button to a specific action.
-///
-/// This function takes a GTK button and a button type as input and sets an event handler for the "clicked" event of the button.
-/// When the button is clicked, it performs a specific action based on the provided button type.
-///
-/// # Arguments
-///
-/// - `button`: A reference to the GTK button to which the event handler will be connected.
-/// - `button_type`: A string indicating the button type, which determines the action to be taken when the button is clicked.
-///
-fn connect_button_clicked_main_window(button: &gtk::Button, button_type: &str) -> io::Result<()> {
-    let button_type = button_type.to_owned();
-
-    button.connect_clicked(move |_| {
-        let builder = gtk::Builder::new();
-        match button_type.as_str() {
-            "Init" => {
-                if let Some(new_window_init) =
-                    load_and_get_window(&builder, "src/gui/windowInit.ui", "window")
-                {
-                    let init_window_result = configure_init_window(&new_window_init, &builder);
-                    if init_window_result.is_err() {
-                        eprintln!("Error initializing init window.\n");
-                        return;
-                    }
-                    new_window_init.show_all();
-                }
-            }
-            "Clone" => {
-                if let Some(new_window_clone) =
-                    load_and_get_window(&builder, "src/gui/windowClone.ui", "window")
-                {
-                    let clone_window_result = configure_clone_window(&new_window_clone, &builder);
-                    if clone_window_result.is_err() {
-                        eprintln!("Error initializing clone window.\n");
-                        return;
-                    }
-                    new_window_clone.show_all();
-                }
-            }
-            _ => eprintln!("Unknown button type: {}", button_type),
-        }
-    });
-    Ok(())
-}

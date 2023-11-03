@@ -249,3 +249,35 @@ pub fn apply_entry_style(entry: &gtk::Entry) {
     let style_context = entry.get_style_context();
     style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
+
+/// Remove ANSI color codes from a given string.
+///
+/// This function takes a string containing ANSI color codes and removes them, resulting in a
+/// plain text string without color formatting.
+///
+/// # Arguments
+///
+/// * `input` - A reference to the input string containing ANSI color codes.
+///
+/// # Returns
+///
+/// A new string with ANSI color codes removed.
+///
+pub fn filter_color_code(input: &str) -> String {
+    let mut result = String::new();
+    let mut in_escape_code = false;
+
+    for char in input.chars() {
+        if char == '\u{001b}' {
+            in_escape_code = true;
+        } else if in_escape_code {
+            if char == 'm' {
+                in_escape_code = false;
+            }
+        } else {
+            result.push(char);
+        }
+    }
+
+    result
+}
