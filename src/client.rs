@@ -12,7 +12,7 @@ use crate::cat_file;
 use crate::packfile_handler::Packfile;
 use crate::{
     hash_object,
-    packfile_handler::{ObjectType, self},
+    packfile_handler::{self, ObjectType},
 };
 
 // multi_ack_detailed side-band-64k thin-pack include-tag ofs-delta deepen-since deepen-not
@@ -63,7 +63,12 @@ impl Client {
     }
 
     // REVISAR: deberia ser como el upload-pack the git
-    pub fn upload_pack(&mut self, wanted_branch: &str, git_dir: &str, remote: &str) -> io::Result<()> {
+    pub fn upload_pack(
+        &mut self,
+        wanted_branch: &str,
+        git_dir: &str,
+        remote: &str,
+    ) -> io::Result<()> {
         self.connect()?;
         self.initiate_connection(GIT_UPLOAD_PACK)?;
         self.git_dir = git_dir.to_string();
@@ -78,7 +83,6 @@ impl Client {
         } else {
             format!("refs/heads/{}", wanted_branch)
         };
-
 
         if let Some(hash) = self.want_ref(&wanted_ref)? {
             self.update_fetch_head(&hash)?;
@@ -97,11 +101,15 @@ impl Client {
 
         // ya se que tiene el servidor
         self.wait_refs()?;
-
         let local_refs = get_refs_heads(&self.git_dir)?;
         let new_hash = match local_refs.get(pushing_ref) {
             Some(hash) => hash,
-            None => return Err(Error::new(io::ErrorKind::NotFound, format!("Ref not found in local: {}", pushing_ref))),
+            None => {
+                return Err(Error::new(
+                    io::ErrorKind::NotFound,
+                    format!("Ref not found in local: {}", pushing_ref),
+                ))
+            }
         };
 
         let prev_hash = match self.refs.get(pushing_ref) {
@@ -113,7 +121,7 @@ impl Client {
             println!("Already up to date.");
             return Ok(());
         }
-
+        
         if prev_hash.is_empty() {
             self.receive_pack_create(pushing_ref, new_hash)?;
         } else {
@@ -136,6 +144,8 @@ impl Client {
     ) -> io::Result<()> {
         let missing_objects = get_missing_objects_from(new_hash, prev_hash, &self.git_dir)?;
         let packfile = packfile_handler::create_packfile_from_set(missing_objects, &self.git_dir)?;
+        self.send_bytes(packfile.as_slice())?;
+        self.flush()?;
         // supongo que send y ver si hay que meter un flush o done
         Ok(())
     }
@@ -200,6 +210,11 @@ impl Client {
     // Sends a message throw the socket
     fn send(&mut self, message: &str) -> io::Result<()> {
         write!(self.socket()?, "{}", message)
+    }
+
+    // Sends a message throw the socket as bytes
+    fn send_bytes(&mut self, content: &[u8]) -> io::Result<()> {
+        self.socket()?.write_all(content)
     }
 
     // Sends a 'flush' signal to the server
@@ -321,10 +336,7 @@ fn connection_not_established_error() -> Error {
 }
 
 fn invalid_tree_data_error() -> Error {
-    Error::new(
-        io::ErrorKind::InvalidData,
-        "Invalid data in tree",
-    )
+    Error::new(io::ErrorKind::InvalidData, "Invalid data in tree")
 }
 
 // Read a line in PKT format in a TcpStream
@@ -362,11 +374,13 @@ fn pkt_line(line: &str) -> String {
     len_hex + line
 }
 
-
 fn get_head_branch(git_dir: &str) -> io::Result<String> {
     let head = PathBuf::from(git_dir).join("HEAD");
     let content = fs::read_to_string(head)?;
-    let (_, branch) = content.rsplit_once("/").ok_or(io::Error::new(io::ErrorKind::InvalidData, "Invalid data HEAD. Must have ref for fetch"))?;
+    let (_, branch) = content.rsplit_once("/").ok_or(io::Error::new(
+        io::ErrorKind::InvalidData,
+        "Invalid data HEAD. Must have ref for fetch",
+    ))?;
     Ok(branch.trim().to_string())
 }
 // Auxiliar function which get refs under refs/heads
@@ -381,7 +395,10 @@ fn get_refs_heads(git_dir: &str) -> io::Result<HashMap<String, String>> {
         let ref_path = path
             .to_string_lossy()
             .split_once('/')
-            .ok_or(Error::new(io::ErrorKind::Other, format!("Unknown error splitting path at '/': {:?}", path)))?
+            .ok_or(Error::new(
+                io::ErrorKind::Other,
+                format!("Unknown error splitting path at '/': {:?}", path),
+            ))?
             .1
             .to_string();
 
@@ -417,7 +434,6 @@ fn get_missing_objects_from(
 
     if let Ok(commit) = CommitHashes::new(new_hash, git_dir) {
         missing.insert((ObjectType::Commit, commit.hash.to_string()));
-        missing.insert((ObjectType::Tree, commit.tree.to_string()));
 
         let tree_objects = get_objects_tree_objects(&commit.tree, git_dir)?;
         missing.extend(tree_objects);
@@ -427,7 +443,6 @@ fn get_missing_objects_from(
             missing.extend(_missing);
         }
     }
-
     Ok(missing)
 }
 
@@ -472,6 +487,8 @@ fn get_objects_tree_objects(
     git_dir: &str,
 ) -> io::Result<HashSet<(ObjectType, String)>> {
     let mut objects: HashSet<(ObjectType, String)> = HashSet::new();
+    objects.insert((ObjectType::Tree, hash.to_string()));
+
     let content = cat_file::cat_file_return_content(hash, git_dir)?;
 
     for line in content.lines() {
@@ -481,6 +498,10 @@ fn get_objects_tree_objects(
         let hash = val.get(1).ok_or(invalid_tree_data_error())?;
         let t = ObjectType::try_from(*t)?;
         objects.insert((t, hash.to_string()));
+        if t == ObjectType::Tree {
+            let tree_objects = get_objects_tree_objects(hash, git_dir)?;
+            objects.extend(tree_objects);
+        }
     }
 
     Ok(objects)
