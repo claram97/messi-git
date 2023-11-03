@@ -129,6 +129,36 @@ pub fn store_string_to_file(
     Ok(content_hash)
 }
 
+fn hash_byte_array(array: &Vec<u8>) -> String {
+    let mut hasher = Sha1::new();
+    hasher.update(&array);
+    let result = hasher.finalize();
+    format!("{:x}", result)
+}
+
+pub fn store_bytes_array_to_file(content: Vec<u8>, git_dir_path: &str, file_type: &str) -> io::Result<String> {
+    let header = format!("{file_type} {}\0", content.len());
+    let header = header.as_bytes();
+    let complete = [header, &content].concat();
+    let content_hash = hash_byte_array(&complete);
+
+    //Create the directory where the file will be stored
+    let output_file_dir = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
+    create_directory(&output_file_dir)?;
+
+    //Create the path where the file will be stored
+    let output_file_str = output_file_dir + &content_hash[2..];
+
+    let file = File::create(&output_file_str)?;
+    
+    let mut encoder = ZlibEncoder::new(file, Compression::default());
+    encoder.write_all(&complete)?;
+    encoder.finish()?;
+
+    Ok(content_hash)
+}
+
+
 /// Compresses the content of the file at the given input path and stores it in the file at the given output path.
 /// The content is compressed using zlib.
 /// The content is prepended with the header: blob <size>\0. The size is the size of the content.

@@ -292,8 +292,8 @@ impl Client {
                 let packfile = Packfile::reader(&bytes[..])?;
                 for entry in packfile {
                     let entry = entry?;
-                    hash_object::store_string_to_file(
-                        &entry.content,
+                    hash_object::store_bytes_array_to_file(
+                        entry.content,
                         &self.git_dir,
                         &entry.obj_type.to_string(),
                     )?;
@@ -367,7 +367,7 @@ fn get_head_branch(git_dir: &str) -> io::Result<String> {
     let head = PathBuf::from(git_dir).join("HEAD");
     let content = fs::read_to_string(head)?;
     let (_, branch) = content.rsplit_once("/").ok_or(io::Error::new(io::ErrorKind::InvalidData, "Invalid data HEAD. Must have ref for fetch"))?;
-    Ok(branch.to_string())
+    Ok(branch.trim().to_string())
 }
 // Auxiliar function which get refs under refs/heads
 fn get_refs_heads(git_dir: &str) -> io::Result<HashMap<String, String>> {

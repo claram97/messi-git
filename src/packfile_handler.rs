@@ -81,15 +81,15 @@ impl TryFrom<u8> for ObjectType {
 pub struct PackfileEntry {
     pub obj_type: ObjectType,
     pub size: usize,
-    pub content: String,
+    pub content: Vec<u8>,
 }
 
 impl PackfileEntry {
-    pub fn new(obj_type: ObjectType, size: usize, content: &str) -> Self {
+    pub fn new(obj_type: ObjectType, size: usize, content: Vec<u8>) -> Self {
         Self {
             obj_type,
             size,
-            content: content.to_string(),
+            content,
         }
     }
 }
@@ -182,8 +182,7 @@ where
             ));
         }
 
-        let content = String::from_utf8_lossy(&obj);
-        Ok(PackfileEntry::new(obj_type, obj_size, &content))
+        Ok(PackfileEntry::new(obj_type, obj_size, obj))
     }
 
     fn read_byte(&mut self) -> io::Result<u8> {
