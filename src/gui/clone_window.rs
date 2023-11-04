@@ -15,6 +15,7 @@ use gtk::FileChooserDialog;
 use gtk::FileChooserExt;
 use gtk::GtkWindowExt;
 use std::io;
+
 /// Configures the properties of a clone window in a GTK application.
 ///
 /// This function takes a reference to a GTK window (`new_window_clone`) and a GTK builder (`builder`) as input and configures the clone window's properties, including adding it to the list of open windows, applying a specific window style, and setting its default size.
@@ -86,9 +87,6 @@ pub fn configure_clone_window(
             println!("Ok!");
         }
     });
-
-   // apply_clone_button_style(&browse_button);
-    //apply_clone_button_style(&clone_button);
 
     let new_window_clone_clone = new_window_clone.clone();
     browse_button.connect_clicked(move |_| {
