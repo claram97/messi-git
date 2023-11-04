@@ -139,7 +139,7 @@ impl Client {
     }
 
     fn receive_pack_create(&mut self, pushing_ref: &str, hash: &str) -> io::Result<()> {
-        self.receive_pack_update(pushing_ref, "0", hash)
+        self.receive_pack_update(pushing_ref, "0000000000000000000000000000000000000000", hash)
     }
 
     fn receive_pack_update(

@@ -1,7 +1,7 @@
 use std::{
     collections::HashSet,
     fmt::Display,
-    io::{self, BufReader, Error, Read, Write},
+    io::{self, BufReader, Error, Read, Write, BufRead},
     str::from_utf8,
     vec, fs::File,
 };
@@ -253,21 +253,29 @@ fn append_objects(
         }
         encoded_header.push(c);
         
+        dbg!(hash);
+        dbg!(&compressed_content);
         packfile.extend(encoded_header);
         packfile.extend(compressed_content);
 
     }
     let mut hasher = Sha1::new();
     hasher.update(&packfile);
-    let result = hasher.finalize();
-    write!(packfile, "{:02x}", result)
+    let checksum = hasher.finalize();
+    packfile.extend(checksum);
+    Ok(())
 }
 
 fn decompress_object_into_bytes(hash: &str, git_dir: &str) -> io::Result<Vec<u8>> {
     let file_dir = format!("{}/objects/{}", git_dir, &hash[..2]);
-    let file = File::open(format!("{}/{}", file_dir, &hash[2..]))?;
+    let file = File::open(format!("{}/{}", file_dir, &hash[2..]))?;   
     let mut decompressor = ZlibDecoder::new(BufReader::new(file));
     let mut decompressed_content = Vec::new();
     decompressor.read_to_end(&mut decompressed_content)?;
+
+    let mut reader = BufReader::new(decompressed_content.as_slice());
+    reader.read_until(0, &mut Vec::new())?;
+    let mut decompressed_content = Vec::new();
+    reader.read_to_end(&mut decompressed_content)?;
     Ok(decompressed_content)
 }
