@@ -72,10 +72,11 @@ pub fn cat_tree(hash: &str, directory: &str) -> io::Result<Vec<(String, String, 
         let mut mode: [u8; 6] = [0,0,0,0,0,0]; // leo los 6 bytes del modo
         r.read_exact(&mut mode)?;
         bytes_read += 6;
-        r.read_exact(&mut [0])?; // salteo el espacio
-        bytes_read += 1;
-
         let mut name: Vec<u8> = vec![]; // lo prixmo es el nombre hasta el \0
+        if mode[0] != 52 {
+            r.read_exact(&mut [0])?; // salteo el espacio
+            bytes_read += 1;
+        }
         let mut buf: [u8; 1] = [0];
         loop {
             r.read_exact(&mut buf)?;
@@ -94,11 +95,8 @@ pub fn cat_tree(hash: &str, directory: &str) -> io::Result<Vec<(String, String, 
         let hash: Vec<String> = hash.iter().map(|byte| format!("{:02x}", byte)).collect(); // convierto los bytes del hash a string
         let hash = hash.concat().to_string();
         let name = String::from_utf8(name.to_vec()).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?;
-
         results.push((mode, name, hash)); // agrego el resultado y vuelvo a empezar
     }
-
-
     Ok(results)
 
 }

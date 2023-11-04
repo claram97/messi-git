@@ -7,7 +7,7 @@ use crate::{
 };
 
 const BLOB_NORMAL_MODE: &str = "100644";
-const TREE_MODE: &str = "040000";
+const TREE_MODE: &str = "40000";
 
 //Tree structure
 //files is a vector of tuples (file_name, hash)

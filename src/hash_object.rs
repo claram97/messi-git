@@ -1,6 +1,6 @@
 use std::{
     fs::{self, File},
-    io::{self, Write, Read},
+    io::{self, Write},
     path::Path,
 };
 
@@ -167,53 +167,37 @@ fn hash_tree_file(tree_file: &str) -> io::Result<String> {
 }
 
 pub fn store_tree_to_file(blobs: Vec<(String, String, Vec<u8>)>, trees: Vec<(String, String, Vec<u8>)>, git_dir_path: &str) -> io::Result<String> {
-    //Open a new file
+    let mut blobs = blobs;
+    blobs.append(&mut trees.clone());
+
+    blobs.sort_by(|a, b| a.1.cmp(&b.1));
+
+    let mut size = 0;
+    for (mode, name, hash) in blobs.clone() {
+        size += mode.len() + name.len() + hash.len() + 2;
+    }
+    let header = format!("tree {}\0", size);
     let mut file = File::create("tree.tmp")?;
-    //Write the contents of the blobs
+    file.write_all(header.as_bytes())?;
+
     for (mode, name, hash) in blobs {
         file.write_all(format!("{} {}\0", mode, name).as_bytes())?;
         file.write_all(&hash)?;
     }
-
-    //Write the contents of the trees
-    for (mode, name, hash) in trees {
-        file.write_all(format!("{} {}\0", mode, name).as_bytes())?;
-        file.write_all(&hash)?;
-    }
-    //Close the file
     drop(file);
-
-    //Create the header based on the size of the file
-    let file = File::open("tree.tmp")?;
-    let size = file.metadata()?.len();
-    let header = format!("tree {}\0", size);
-
-    //Create the complete file with the hash of the complete file
-    let complete_file = File::create("complete_tree.tmp")?;
-    compress_tree("tree.tmp", &header, "complete_tree.tmp")?;
-    //Get the hash of the complete file
-    let complete_hash = hash_tree_file("complete_tree.tmp")?;
-    
-    //Create the directory where the file will be stored
-    let output_file_dir = git_dir_path.to_string() + "/objects/" + &complete_hash[..2] + "/";
+    let tree_hash = hash_tree_file("tree.tmp")?;
+    let output_file_dir = git_dir_path.to_string() + "/objects/" + &tree_hash[..2] + "/";
     create_directory(&output_file_dir)?;
-    
-    //Create the path where the file will be stored
-    let output_file_str = output_file_dir + &complete_hash[2..];
-    
-    //Move the file to the objects folder
-    fs::rename("complete_tree.tmp", output_file_str)?;
-    
-    //Remove the temporary files
+    let output_file_str = output_file_dir + &tree_hash[2..];
+    compress_tree("tree.tmp", &output_file_str)?;
     fs::remove_file("tree.tmp")?;
-    Ok(complete_hash)
+    
+    Ok(tree_hash)
 }
 
-fn compress_tree(tree_file: &str, header: &str, output_file: &str) -> io::Result<()> {
+fn compress_tree(tree_file: &str, output_file: &str) -> io::Result<()> {
     let mut encoder = ZlibEncoder::new(File::create(output_file)?, Compression::default());
-    encoder.write_all(header.as_bytes())?;
-    //Read the contents of the tree file
-    let mut tree_file = std::fs::read(tree_file)?;
+    let tree_file = std::fs::read(tree_file)?;
 
     encoder.write_all(&tree_file)?;
     encoder.finish()?;
