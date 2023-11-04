@@ -1,10 +1,8 @@
 use crate::gui::gui::add_to_open_windows;
 use crate::gui::style::apply_button_style;
-use crate::gui::style::apply_window_style;
 use crate::gui::style::get_button;
 use crate::gui::run_main_window;
 use crate::gui::gui::close_all_windows;
-use crate::init::git_init;
 use crate::gui::style::create_text_entry_window;
 use gtk::GtkWindowExt;
 use gtk::ButtonExt;

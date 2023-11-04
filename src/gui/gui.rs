@@ -1,38 +1,10 @@
-use crate::add::add;
-use crate::branch;
-use crate::branch::git_branch_for_ui;
-use crate::checkout::checkout_branch;
-use crate::checkout::checkout_commit_detached;
-use crate::checkout::create_and_checkout_branch;
-use crate::checkout::create_or_reset_branch;
-use crate::checkout::force_checkout;
-use crate::commit;
-use crate::gui::style::filter_color_code;
 use crate::gui::style::{apply_button_style, apply_window_style, get_button, load_and_get_window};
-use crate::index;
-use crate::init::git_init;
-use crate::log::log;
-use crate::log::Log;
-use crate::merge;
-use crate::rm::git_rm;
-use crate::status;
-use crate::tree_handler;
-use crate::utils;
-use crate::utils::find_git_directory;
 use gtk::prelude::*;
 use gtk::Builder;
 use std::io;
-use std::path::Path;
-use std::path::PathBuf;
 use std::sync::Mutex;
-use crate::gui::style::create_text_entry_window;
-use crate::gui::style::show_message_dialog;
-use crate::gui::style::configure_repository_window;
-
 use super::clone_window::configure_clone_window;
 use super::init_window::configure_init_window;
-use super::style::get_entry;
-use super::style::get_text_view;
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
