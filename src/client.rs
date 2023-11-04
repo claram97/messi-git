@@ -99,7 +99,7 @@ impl Client {
 
         self.wait_server_refs()?;
 
-        let client_heads_refs = get_refs_heads(&self.git_dir)?;
+        let client_heads_refs = get_head_refs(&self.git_dir)?;
         let new_hash = match client_heads_refs.get(branch) {
             Some(hash) => hash,
             None => {
@@ -253,7 +253,6 @@ impl Client {
     // Tells the server which refs are required
     // If the provided ref name does not exist in remote, then an error is returned.
     fn want_branch(&mut self, branch: &str) -> io::Result<Option<String>> {
-
         let wanted_ref = if branch == "HEAD" {
             format!("refs/heads/{}", get_head_branch(&self.git_dir)?)
         } else {
@@ -270,7 +269,7 @@ impl Client {
             }
         };
 
-        let client_remotes_refs = get_remotes_refs(&self.git_dir, &self.remote)?;
+        let client_remotes_refs = get_remote_refs(&self.git_dir, &self.remote)?;
 
         if let Some(local_hash) = client_remotes_refs.get(branch) {
             if &hash == local_hash {
@@ -385,81 +384,29 @@ fn get_head_branch(git_dir: &str) -> io::Result<String> {
     Ok(branch.trim().to_string())
 }
 // Auxiliar function which get refs under refs/heads
-fn get_refs_heads(git_dir: &str) -> io::Result<HashMap<String, String>> {
-    let mut refs = HashMap::new();
+fn get_head_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
     let pathbuf = PathBuf::from(git_dir);
     let heads = pathbuf.join("refs").join("heads");
-    for entry in fs::read_dir(&heads)? {
-        let filename = entry?.file_name().to_string_lossy().to_string();
-        let path = heads.join(&filename);
-        let hash: String = fs::read_to_string(&path)?.trim().into();
-        // let ref_path = path
-        //     .to_string_lossy()
-        //     .split_once('/')
-        //     .ok_or(Error::new(
-        //         io::ErrorKind::Other,
-        //         format!("Unknown error splitting path at '/': {:?}", path),
-        //     ))?
-        //     .1
-        //     .to_string();
-
-        refs.insert(filename, hash);
-    }
-    // let head = pathbuf.join("HEAD");
-    // if head.exists() {
-    //     let head_content: String = fs::read_to_string(head)?.trim().into();
-    //     match head_content.split_once(": ") {
-    //         Some((_, branch)) => {
-    //             if let Some(hash) = refs.get(branch) {
-    //                 refs.insert("HEAD".to_string(), hash.trim().into());
-    //             }
-    //         }
-    //         None => {
-    //             refs.insert("HEAD".to_string(), head_content);
-    //         }
-    //     };
-    // }
-    Ok(refs)
+    get_refs(heads)
 }
 
 // Auxiliar function which get refs under refs/heads
-fn get_remotes_refs(git_dir: &str, remote: &str) -> io::Result<HashMap<String, String>> {
-    let mut refs = HashMap::new();
+fn get_remote_refs(git_dir: &str, remote: &str) -> io::Result<HashMap<String, String>> {
     let pathbuf = PathBuf::from(git_dir);
     let remotes = pathbuf.join("refs").join("remotes").join(remote);
-    
-    for entry in fs::read_dir(&remotes)? {
-        let filename = entry?.file_name().to_string_lossy().to_string();
-        let path = remotes.join(&filename);
-        let hash: String = fs::read_to_string(&path)?.trim().into();
-        // let ref_path = path
-        //     .to_string_lossy()
-        //     .split_once('/')
-        //     .ok_or(Error::new(
-        //         io::ErrorKind::Other,
-        //         format!("Unknown error splitting path at '/': {:?}", path),
-        //     ))?
-        //     .1
-        //     .to_string();
-        refs.insert(filename, hash);
-    }
-    // let head = pathbuf.join("HEAD");
-    // if head.exists() {
-    //     let head_content: String = fs::read_to_string(head)?.trim().into();
-    //     match head_content.split_once(": ") {
-    //         Some((_, branch)) => {
-    //             if let Some(hash) = refs.get(branch) {
-    //                 refs.insert("HEAD".to_string(), hash.trim().into());
-    //             }
-    //         }
-    //         None => {
-    //             refs.insert("HEAD".to_string(), head_content);
-    //         }
-    //     };
-    // }
-    Ok(refs)
+    get_refs(remotes)
 }
 
+fn get_refs(refs_path: PathBuf) -> io::Result<HashMap<String, String>> {
+    let mut refs = HashMap::new();
+    for entry in fs::read_dir(&refs_path)? {
+        let filename = entry?.file_name().to_string_lossy().to_string();
+        let path = refs_path.join(&filename);
+        let hash: String = fs::read_to_string(&path)?.trim().into();
+        refs.insert(filename, hash);
+    }
+    Ok(refs)
+}
 
 fn get_missing_objects_from(
     new_hash: &str,
