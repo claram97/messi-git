@@ -531,13 +531,19 @@ pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error>
 ///
 pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n")
-    })?;
-    let git_dir_parent = Path::new(&git_dir).parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
-    })?;
-    let git_dir_path = Path::new(&git_dir);
+    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(git_dir) => git_dir.into(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ));
+        }
+    };
+    let git_dir_parent: &Path = git_dir
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
+
     let result = match checkout_commit_detached(
         git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
