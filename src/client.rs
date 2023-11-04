@@ -212,13 +212,13 @@ impl Client {
         Ok(())
     }
 
-    // Sends a message throw the socket
+    // Sends a message through the socket
     fn send(&mut self, message: &str) -> io::Result<()> {
         dbg!(message);
         write!(self.socket()?, "{}", message)
     }
 
-    // Sends a message throw the socket as bytes
+    // Sends a message through the socket as bytes
     fn send_bytes(&mut self, content: &[u8]) -> io::Result<()> {
         dbg!("Sending bytes...");
         self.socket()?.write_all(content)

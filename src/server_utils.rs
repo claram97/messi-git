@@ -8,8 +8,8 @@ use std::{
 };
 
 use crate::{
-    cat_file, hash_object,
-    packfile_handler::{ObjectType, Packfile},
+    cat_file,
+    packfile_handler::ObjectType,
 };
 
 pub fn connection_not_established_error() -> Error {
@@ -80,6 +80,7 @@ pub fn get_head_from_branch(git_dir: &str, branch: &str) -> io::Result<String> {
     ))?;
     Ok(head.trim().to_string())
 }
+
 // Auxiliar function which get refs under refs/heads
 pub fn get_head_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
     let pathbuf = PathBuf::from(git_dir);

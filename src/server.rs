@@ -125,31 +125,21 @@ impl ServerInstace {
         Ok(())
     }
 
-    // fn end_connection(&mut self) -> io::Result<()> {
-    //     self.flush()?;
-    //     Ok(())
-    // }
-
-    // Sends a message throw the socket
+    // Sends a message through the socket
     fn send(&mut self, message: &str) -> io::Result<()> {
         dbg!(message);
         write!(self.socket, "{}", message)
     }
 
-    // Sends a message throw the socket as bytes
+    // Sends a message through the socket as bytes
     fn send_bytes(&mut self, content: &[u8]) -> io::Result<()> {
         dbg!("Sending bytes...");
         self.socket.write_all(content)
     }
 
-    // Sends a 'flush' signal to the server
+    // Sends a 'flush' signal to the client
     fn flush(&mut self) -> io::Result<()> {
         self.send("0000")
-    }
-
-    // Sends a 'done' signal to the server
-    fn done(&mut self) -> io::Result<()> {
-        self.send("0009done\n")
     }
 }
 
@@ -164,8 +154,7 @@ pub fn run(domain: &str, port: &str, path: &str, git_dir: &str) -> io::Result<()
         let dir = git_dir.to_string();
         let path_clone = path.clone();
         let handle = thread::spawn(move || {
-            let mut server = ServerInstace::new(client_stream, path_clone, &dir);
-            dbg!(server.handle_client())
+            ServerInstace::new(client_stream, path_clone, &dir).handle_client()
         });
         handles.push(handle);
     }
