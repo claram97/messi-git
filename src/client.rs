@@ -86,14 +86,21 @@ impl Client {
         Ok(())
     }
 
-    pub fn receive_pack(&mut self, pushing_ref: &str, git_dir: &str) -> io::Result<()> {
+    pub fn receive_pack(&mut self, branch: &str, git_dir: &str) -> io::Result<()> {
         self.connect()?;
         self.initiate_connection(GIT_RECEIVE_PACK)?;
         self.git_dir = git_dir.to_string();
 
+        let pushing_ref = if branch == "HEAD" {
+            format!("refs/heads/{}", get_head_branch(&self.git_dir)?)
+        } else {
+            format!("refs/heads/{}", branch)
+        };
+
         self.wait_server_refs()?;
-        let local_refs = get_refs_heads(&self.git_dir)?;
-        let new_hash = match local_refs.get(pushing_ref) {
+
+        let client_heads_refs = get_refs_heads(&self.git_dir)?;
+        let new_hash = match client_heads_refs.get(branch) {
             Some(hash) => hash,
             None => {
                 return Err(Error::new(
@@ -103,7 +110,7 @@ impl Client {
             }
         };
 
-        let prev_hash = match self.server_refs.get(pushing_ref) {
+        let prev_hash = match self.server_refs.get(&pushing_ref) {
             Some(hash) => hash.clone(),
             None => String::new(),
         };
@@ -114,9 +121,9 @@ impl Client {
         }
 
         if prev_hash.is_empty() {
-            self.receive_pack_create(pushing_ref, new_hash)?;
+            self.receive_pack_create(&pushing_ref, new_hash)?;
         } else {
-            self.receive_pack_update(pushing_ref, &prev_hash, new_hash)?;
+            self.receive_pack_update(&pushing_ref, &prev_hash, new_hash)?;
         };
 
         let mut reader = BufReader::new(self.socket()?);
@@ -384,34 +391,34 @@ fn get_refs_heads(git_dir: &str) -> io::Result<HashMap<String, String>> {
     let heads = pathbuf.join("refs").join("heads");
     for entry in fs::read_dir(&heads)? {
         let filename = entry?.file_name().to_string_lossy().to_string();
-        let path = heads.join(filename);
+        let path = heads.join(&filename);
         let hash: String = fs::read_to_string(&path)?.trim().into();
-        let ref_path = path
-            .to_string_lossy()
-            .split_once('/')
-            .ok_or(Error::new(
-                io::ErrorKind::Other,
-                format!("Unknown error splitting path at '/': {:?}", path),
-            ))?
-            .1
-            .to_string();
+        // let ref_path = path
+        //     .to_string_lossy()
+        //     .split_once('/')
+        //     .ok_or(Error::new(
+        //         io::ErrorKind::Other,
+        //         format!("Unknown error splitting path at '/': {:?}", path),
+        //     ))?
+        //     .1
+        //     .to_string();
 
-        refs.insert(ref_path, hash);
+        refs.insert(filename, hash);
     }
-    let head = pathbuf.join("HEAD");
-    if head.exists() {
-        let head_content: String = fs::read_to_string(head)?.trim().into();
-        match head_content.split_once(": ") {
-            Some((_, branch)) => {
-                if let Some(hash) = refs.get(branch) {
-                    refs.insert("HEAD".to_string(), hash.trim().into());
-                }
-            }
-            None => {
-                refs.insert("HEAD".to_string(), head_content);
-            }
-        };
-    }
+    // let head = pathbuf.join("HEAD");
+    // if head.exists() {
+    //     let head_content: String = fs::read_to_string(head)?.trim().into();
+    //     match head_content.split_once(": ") {
+    //         Some((_, branch)) => {
+    //             if let Some(hash) = refs.get(branch) {
+    //                 refs.insert("HEAD".to_string(), hash.trim().into());
+    //             }
+    //         }
+    //         None => {
+    //             refs.insert("HEAD".to_string(), head_content);
+    //         }
+    //     };
+    // }
     Ok(refs)
 }
 
