@@ -6,7 +6,7 @@ use crate::gui::run_main_window;
 use crate::gui::gui::close_all_windows;
 use crate::gui::gui::show_repository_window;
 use crate::init::git_init;
-use crate::gui::gui::create_text_entry_window;
+use crate::gui::style::create_text_entry_window;
 use gtk::GtkWindowExt;
 use gtk::ButtonExt;
 use std::io;

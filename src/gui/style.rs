@@ -4,6 +4,9 @@ use gtk::Builder;
 use gtk::CssProviderExt;
 use gtk::StyleContextExt;
 use gtk::WidgetExt;
+use std::io;
+use crate::gui::gui::add_to_open_windows;
+
 
 /// Retrieves a GTK button from a `gtk::Builder` by its ID and applies a specific style.
 ///
@@ -289,3 +292,46 @@ pub fn filter_color_code(input: &str) -> String {
 
     result
 }
+/// Creates a GTK text entry window for user input with a message and a callback function.
+///
+/// This function generates a new GTK window with a text entry field and an "OK" button. It allows users to input text and invokes a provided callback function when the "OK" button is clicked. The window can display a custom message as its title.
+///
+/// # Arguments
+///
+/// - `message`: A string message to be displayed as the window's title.
+/// - `on_text_entered`: A callback function that takes a string parameter and is called when the user confirms the text input.
+///
+pub fn create_text_entry_window(
+    message: &str,
+    on_text_entered: impl Fn(String) + 'static,
+) -> io::Result<()> {
+    let entry_window = gtk::Window::new(gtk::WindowType::Toplevel);
+    add_to_open_windows(&entry_window);
+    apply_window_style(&entry_window)
+        .map_err(|_err| io::Error::new(io::ErrorKind::Other, "Error applying window stlye.\n"))?;
+    entry_window.set_title(message);
+    entry_window.set_default_size(400, 150);
+
+    let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    entry_window.add(&main_box);
+
+    let entry = gtk::Entry::new();
+    entry.set_text("Default Text");
+    main_box.add(&entry);
+
+    let ok_button = gtk::Button::with_label("OK");
+    apply_button_style(&ok_button)
+        .map_err(|_err| io::Error::new(io::ErrorKind::Other, "Error applying button stlye.\n"))?;
+    main_box.add(&ok_button);
+
+    let entry_window_clone = entry_window.clone();
+    ok_button.connect_clicked(move |_| {
+        let text = entry.get_text().to_string();
+        entry_window.close();
+        on_text_entered(text);
+    });
+
+    entry_window_clone.show_all();
+    Ok(())
+}
+
