@@ -1,7 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
     fs,
-    io::{self, BufReader, Error, Read, Write},
+    io::{self, Error, Read, Write},
     net::TcpStream,
     path::PathBuf,
     str::from_utf8,
@@ -65,12 +65,6 @@ impl Client {
         Ok(self.server_refs.keys().map(String::from).collect())
     }
 
-    fn clear(&mut self) {
-        self.git_dir = String::new();
-        self.remote = String::new();
-        self.server_refs.clear();
-    }
-
     /// Establish a connection with the server and asks for the refs in the remote.
     /// If the local remote refs are up to date, then nothing is done.
     /// Else, the server is asked for the missing objects and a packfile unpacked.
@@ -90,7 +84,7 @@ impl Client {
 
         if let Some(hash) = self.want_branch(&wanted_branch)? {
             self.update_fetch_head(&hash)?;
-            self.wait_packfile()?;
+            self.wait_and_unpack_packfile()?;
             self.update_remote(&wanted_branch, &hash)?;
         }
 
@@ -103,11 +97,13 @@ impl Client {
         self.initiate_connection(GIT_RECEIVE_PACK)?;
         self.git_dir = git_dir.to_string();
 
-        let pushing_ref = if branch == "HEAD" {
-            format!("refs/heads/{}", get_head_branch(&self.git_dir)?)
-        } else {
-            format!("refs/heads/{}", branch)
-        };
+        // let pushing_ref = if branch == "HEAD" {
+        //     format!("refs/heads/{}", get_head_from_branch(&self.git_dir, branch)?)
+        // } else {
+        //     format!("refs/heads/{}", branch)
+        // };
+
+        let pushing_ref = get_head_from_branch(git_dir, branch)?;
 
         self.wait_server_refs()?;
 
@@ -173,6 +169,13 @@ impl Client {
         self.send(&pkt_command)
     }
 
+    // Clears the client state
+    fn clear(&mut self) {
+        self.git_dir = String::new();
+        self.remote = String::new();
+        self.server_refs.clear();
+    }
+
     // Auxiliar function. Waits for the refs and loads them in self
     // Should be called only aftes: initiate_connection
     fn wait_server_refs(&mut self) -> io::Result<()> {
@@ -192,6 +195,7 @@ impl Client {
         Ok(())
     }
 
+    // Returns a mutable reference to the socket if it has a established connection
     fn socket(&mut self) -> io::Result<&mut TcpStream> {
         match &mut self.socket {
             Some(ref mut socket) => Ok(socket),
@@ -241,8 +245,8 @@ impl Client {
         writeln!(fetch_head, "{}", hash)
     }
 
-    // Updates remote head with the fetched hash
-    // REVISAR: ver que onda de donde saco el remote
+    // Updates remote ref with the fetched hash
+    // If the ref does not exist, then it is created
     fn update_remote(&self, remote_ref: &str, hash: &str) -> io::Result<()> {
         let pathbuf = PathBuf::from(&self.git_dir);
         let remote = pathbuf.join("refs").join("remotes").join(&self.remote);
@@ -255,12 +259,7 @@ impl Client {
     // Tells the server which refs are required
     // If the provided ref name does not exist in remote, then an error is returned.
     fn want_branch(&mut self, branch: &str) -> io::Result<Option<String>> {
-        let wanted_ref = if branch == "HEAD" {
-            format!("refs/heads/{}", get_head_branch(&self.git_dir)?)
-        } else {
-            format!("refs/heads/{}", branch)
-        };
-
+        let wanted_ref = get_head_from_branch(&self.git_dir, branch)?;
         let hash = match self.server_refs.get(&wanted_ref) {
             Some(hash) => hash.clone(),
             None => {
@@ -272,14 +271,12 @@ impl Client {
         };
 
         let client_remotes_refs = get_remote_refs(&self.git_dir, &self.remote)?;
-
         if let Some(local_hash) = client_remotes_refs.get(branch) {
             if &hash == local_hash {
                 println!("Already up to date.");
                 return Ok(None);
             }
         }
-
         let want = format!("want {} {}\n", hash, CAPABILITIES_UPLOAD);
         let want = pkt_line(&want);
         self.send(&want)?;
@@ -302,24 +299,16 @@ impl Client {
         Ok(())
     }
 
-    // Auxiliar function. Reads the socket until a 'flush' signal is read
-    fn wait_packfile(&mut self) -> io::Result<()> {
+    // Waits for the server to send a packfile
+    // After receiving it, it is unpacked and stored in the git_dir
+    fn wait_and_unpack_packfile(&mut self) -> io::Result<()> {
         let socket = self.socket()?;
         while let Ok((size, bytes)) = read_pkt_line_bytes(socket) {
             if size < 4 {
                 break;
             }
             if bytes[0] == 1 {
-                let packfile = Packfile::reader(&bytes[..])?;
-                for entry in packfile {
-                    let entry = entry?;
-                    hash_object::store_bytes_array_to_file(
-                        entry.content,
-                        &self.git_dir,
-                        &entry.obj_type.to_string(),
-                    )?;
-                }
-                return Ok(());
+                return unpack_packfile(&bytes[..], &self.git_dir)
             }
         }
         Err(Error::new(io::ErrorKind::NotFound, "Packfile not found"))
@@ -339,6 +328,19 @@ fn connection_not_established_error() -> Error {
         io::ErrorKind::BrokenPipe,
         "The operation failed because the connection was not established.",
     )
+}
+
+fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
+    let packfile = Packfile::reader(packfile)?;
+    for entry in packfile {
+        let entry = entry?;
+        hash_object::store_bytes_array_to_file(
+            entry.content,
+            &git_dir,
+            &entry.obj_type.to_string(),
+        )?;
+    }
+    Ok(())
 }
 
 // Read a line in PKT format in a TcpStream
@@ -376,14 +378,18 @@ fn pkt_line(line: &str) -> String {
     len_hex + line
 }
 
-fn get_head_branch(git_dir: &str) -> io::Result<String> {
+fn get_head_from_branch(git_dir: &str, branch: &str) -> io::Result<String> {
+    if branch != "HEAD" {
+        return Ok(format!("refs/heads/{}", branch));
+    }
+
     let head = PathBuf::from(git_dir).join("HEAD");
     let content = fs::read_to_string(head)?;
-    let (_, branch) = content.rsplit_once("/").ok_or(io::Error::new(
+    let (_, head) = content.rsplit_once(": ").ok_or(io::Error::new(
         io::ErrorKind::InvalidData,
-        "Invalid data HEAD. Must have ref for fetch",
+        format!("Invalid data HEAD. Must have ref for fetch: {}", content),
     ))?;
-    Ok(branch.trim().to_string())
+    Ok(head.trim().to_string())
 }
 // Auxiliar function which get refs under refs/heads
 fn get_head_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
