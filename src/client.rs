@@ -8,8 +8,6 @@ use std::{
     vec,
 };
 
-use chrono::format;
-
 use crate::cat_file;
 use crate::packfile_handler::Packfile;
 use crate::{
@@ -23,6 +21,8 @@ const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
 const GIT_RECEIVE_PACK: &str = "git-receive-pack";
 const CAPABILITIES_UPLOAD: &str = "multi_ack side-band-64k ofs-delta";
+const ZERO_HASH: &str = "0000000000000000000000000000000000000000";
+
 #[derive(Debug, Default)]
 pub struct Client {
     git_dir: String,
@@ -31,7 +31,7 @@ pub struct Client {
     host: String,
     remote: String,
     socket: Option<TcpStream>,
-    refs: HashMap<String, String>,
+    server_refs: HashMap<String, String>,
 }
 
 /// This is a git client that is able to connect to a git server
@@ -59,9 +59,9 @@ impl Client {
     pub fn get_refs(&mut self) -> io::Result<Vec<String>> {
         self.connect()?;
         self.initiate_connection(GIT_UPLOAD_PACK)?;
-        self.wait_refs()?;
+        self.wait_server_refs()?;
         self.flush()?;
-        Ok(self.refs.keys().map(String::from).collect())
+        Ok(self.server_refs.keys().map(String::from).collect())
     }
 
     // REVISAR: deberia ser como el upload-pack the git
@@ -75,21 +75,12 @@ impl Client {
         self.initiate_connection(GIT_UPLOAD_PACK)?;
         self.git_dir = git_dir.to_string();
         self.remote = remote.to_string();
-        self.wait_refs()?;
+        self.wait_server_refs()?;
 
-        let mut branch = wanted_branch.to_string();
-
-        let wanted_ref = if wanted_branch == "HEAD" {
-            branch = get_head_branch(git_dir)?;
-            format!("refs/heads/{}", branch)
-        } else {
-            format!("refs/heads/{}", wanted_branch)
-        };
-
-        if let Some(hash) = self.want_ref(&wanted_ref)? {
+        if let Some(hash) = self.want_branch(&wanted_branch)? {
             self.update_fetch_head(&hash)?;
-            self.update_remote(&branch, &hash)?;
             self.wait_packfile()?;
+            self.update_remote(&wanted_branch, &hash)?;
         }
 
         Ok(())
@@ -98,11 +89,9 @@ impl Client {
     pub fn receive_pack(&mut self, pushing_ref: &str, git_dir: &str) -> io::Result<()> {
         self.connect()?;
         self.initiate_connection(GIT_RECEIVE_PACK)?;
-        // self.flush()?;
         self.git_dir = git_dir.to_string();
 
-        // ya se que tiene el servidor
-        self.wait_refs()?;
+        self.wait_server_refs()?;
         let local_refs = get_refs_heads(&self.git_dir)?;
         let new_hash = match local_refs.get(pushing_ref) {
             Some(hash) => hash,
@@ -114,7 +103,7 @@ impl Client {
             }
         };
 
-        let prev_hash = match self.refs.get(pushing_ref) {
+        let prev_hash = match self.server_refs.get(pushing_ref) {
             Some(hash) => hash.clone(),
             None => String::new(),
         };
@@ -139,7 +128,7 @@ impl Client {
     }
 
     fn receive_pack_create(&mut self, pushing_ref: &str, hash: &str) -> io::Result<()> {
-        self.receive_pack_update(pushing_ref, "0000000000000000000000000000000000000000", hash)
+        self.receive_pack_update(pushing_ref, ZERO_HASH, hash)
     }
 
     fn receive_pack_update(
@@ -176,8 +165,8 @@ impl Client {
 
     // Auxiliar function. Waits for the refs and loads them in self
     // Should be called only aftes: initiate_connection
-    fn wait_refs(&mut self) -> io::Result<()> {
-        self.refs.clear();
+    fn wait_server_refs(&mut self) -> io::Result<()> {
+        self.server_refs.clear();
         let (_, _) = read_pkt_line(self.socket()?)?;
         let (mut size, mut line) = read_pkt_line(self.socket()?)?;
 
@@ -186,7 +175,7 @@ impl Client {
                 if let Some((head, _capabilities)) = ref_path.split_once('\0') {
                     ref_path = head;
                 }
-                self.refs
+                self.server_refs
                     .insert(ref_path.trim().to_string(), hash.to_string());
             }
             (size, line) = read_pkt_line(self.socket()?)?;
@@ -256,10 +245,15 @@ impl Client {
 
     // Tells the server which refs are required
     // If the provided ref name does not exist in remote, then an error is returned.
-    fn want_ref(&mut self, wanted_ref: &str) -> io::Result<Option<String>> {
-        println!("Pido: {}", wanted_ref);
+    fn want_branch(&mut self, branch: &str) -> io::Result<Option<String>> {
 
-        let hash = match self.refs.get(wanted_ref) {
+        let wanted_ref = if branch == "HEAD" {
+            format!("refs/heads/{}", get_head_branch(&self.git_dir)?)
+        } else {
+            format!("refs/heads/{}", branch)
+        };
+
+        let hash = match self.server_refs.get(&wanted_ref) {
             Some(hash) => hash.clone(),
             None => {
                 return Err(Error::new(
@@ -269,9 +263,9 @@ impl Client {
             }
         };
 
-        let local_refs = get_refs_heads(&self.git_dir)?;
+        let client_remotes_refs = get_remotes_refs(&self.git_dir, &self.remote)?;
 
-        if let Some(local_hash) = local_refs.get(wanted_ref) {
+        if let Some(local_hash) = client_remotes_refs.get(branch) {
             if &hash == local_hash {
                 println!("Already up to date.");
                 return Ok(None);
@@ -283,9 +277,7 @@ impl Client {
         self.send(&want)?;
 
         self.flush()?;
-        self.send_haves(local_refs)?;
-        // std::thread::sleep(std::time::Duration::from_secs(5));
-        // self.wait_packfile()?;
+        self.send_haves(client_remotes_refs)?;
         self.done()?;
         Ok(Some(hash))
     }
@@ -422,6 +414,45 @@ fn get_refs_heads(git_dir: &str) -> io::Result<HashMap<String, String>> {
     }
     Ok(refs)
 }
+
+// Auxiliar function which get refs under refs/heads
+fn get_remotes_refs(git_dir: &str, remote: &str) -> io::Result<HashMap<String, String>> {
+    let mut refs = HashMap::new();
+    let pathbuf = PathBuf::from(git_dir);
+    let remotes = pathbuf.join("refs").join("remotes").join(remote);
+    
+    for entry in fs::read_dir(&remotes)? {
+        let filename = entry?.file_name().to_string_lossy().to_string();
+        let path = remotes.join(&filename);
+        let hash: String = fs::read_to_string(&path)?.trim().into();
+        // let ref_path = path
+        //     .to_string_lossy()
+        //     .split_once('/')
+        //     .ok_or(Error::new(
+        //         io::ErrorKind::Other,
+        //         format!("Unknown error splitting path at '/': {:?}", path),
+        //     ))?
+        //     .1
+        //     .to_string();
+        refs.insert(filename, hash);
+    }
+    // let head = pathbuf.join("HEAD");
+    // if head.exists() {
+    //     let head_content: String = fs::read_to_string(head)?.trim().into();
+    //     match head_content.split_once(": ") {
+    //         Some((_, branch)) => {
+    //             if let Some(hash) = refs.get(branch) {
+    //                 refs.insert("HEAD".to_string(), hash.trim().into());
+    //             }
+    //         }
+    //         None => {
+    //             refs.insert("HEAD".to_string(), head_content);
+    //         }
+    //     };
+    // }
+    Ok(refs)
+}
+
 
 fn get_missing_objects_from(
     new_hash: &str,
