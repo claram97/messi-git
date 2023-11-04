@@ -185,6 +185,7 @@ impl Client {
             }
             (size, line) = read_pkt_line(self.socket()?)?;
         }
+        dbg!(&self.server_refs);
         Ok(())
     }
 

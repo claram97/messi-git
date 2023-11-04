@@ -67,6 +67,19 @@ pub fn pkt_line(line: &str) -> String {
     len_hex + line
 }
 
+// Given some bytes to send a git client/server, this function transform it
+// in PKT format
+pub fn pkt_line_bytes(content: &[u8]) -> Vec<u8> {
+    let len = content.len() + 4; // len
+    let mut len_hex = format!("{len:x}");
+    while len_hex.len() < 4 {
+        len_hex = "0".to_owned() + &len_hex
+    }
+    let mut pkt_line = len_hex.as_bytes().to_vec();
+    pkt_line.extend(content);
+    pkt_line
+}
+
 pub fn get_head_from_branch(git_dir: &str, branch: &str) -> io::Result<String> {
     if branch != "HEAD" {
         return Ok(format!("refs/heads/{}", branch));
@@ -94,7 +107,7 @@ pub fn get_remote_refs(git_dir: &str, remote: &str) -> io::Result<HashMap<String
     get_refs(remotes)
 }
 
-pub fn get_refs(refs_path: PathBuf) -> io::Result<HashMap<String, String>> {
+fn get_refs(refs_path: PathBuf) -> io::Result<HashMap<String, String>> {
     let mut refs = HashMap::new();
     for entry in fs::read_dir(&refs_path)? {
         let filename = entry?.file_name().to_string_lossy().to_string();
@@ -103,6 +116,44 @@ pub fn get_refs(refs_path: PathBuf) -> io::Result<HashMap<String, String>> {
         refs.insert(filename, hash);
     }
     Ok(refs)
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum WantHave {
+    Want,
+    Have,
+}
+
+impl TryFrom<&str> for WantHave {
+    type Error = io::Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "want" => Ok(Self::Want),
+            "have" => Ok(Self::Have),
+            _ => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Invalid want/have: {}", value),
+            )),
+        }
+    }
+}
+
+pub fn parse_line_want_have(line: &str, want_have: WantHave) -> io::Result<String> {
+    let (want_or_have, hash) = line.split_once(" ").ok_or(io::Error::new(
+        io::ErrorKind::InvalidData,
+        format!("Invalid want line: {}", line),
+    ))?;
+
+    if WantHave::try_from(want_or_have)? != want_have {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("Expecting want line: {}", line),
+        ));
+    }
+
+    let (hash, _) = hash.split_once(" ").unwrap_or((hash, ""));
+    Ok(hash.trim().to_string())
 }
 
 pub fn get_missing_objects_from(
@@ -124,6 +175,32 @@ pub fn get_missing_objects_from(
 
         for parent in commit.parent {
             let _missing = get_missing_objects_from(&parent, prev_hash, git_dir)?;
+            missing.extend(_missing);
+        }
+    }
+
+    Ok(missing)
+}
+
+pub fn get_missing_objects_from2(
+    want: &str,
+    haves: &HashSet<String>,
+    git_dir: &str,
+) -> io::Result<HashSet<(ObjectType, String)>> {
+    let mut missing: HashSet<(ObjectType, String)> = HashSet::new();
+
+    if haves.contains(want) {
+        return Ok(missing)
+    }
+
+    if let Ok(commit) = CommitHashes::new(want, git_dir) {
+        missing.insert((ObjectType::Commit, commit.hash.to_string()));
+
+        let tree_objects = get_objects_tree_objects(&commit.tree, git_dir)?;
+        missing.extend(tree_objects);
+
+        for parent in commit.parent {
+            let _missing = get_missing_objects_from2(&parent, haves, git_dir)?;
             missing.extend(_missing);
         }
     }
@@ -167,7 +244,7 @@ impl CommitHashes {
     }
 }
 
-pub fn get_objects_tree_objects(
+fn get_objects_tree_objects(
     hash: &str,
     git_dir: &str,
 ) -> io::Result<HashSet<(ObjectType, String)>> {
