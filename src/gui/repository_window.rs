@@ -379,17 +379,16 @@ pub fn show_repository_window() -> io::Result<()> {
 /// - `Ok("Ok".to_string())`: If the changes are successfully staged.
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error.
 pub fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
-    let current_dir = std::env::current_dir()?;
-    let (git_dir, git_ignore_path) = find_git_directory_and_ignore(&current_dir)?;
+    let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
 
-    stage_changes(&current_dir, &git_dir, &git_ignore_path, texto)
+    stage_changes(&git_dir, &git_ignore_path, texto)
 }
 
 /// Find the Git directory and Git ignore file path.
 ///
 /// Searches for the Git directory and Git ignore file in the given current directory.
 /// Returns a tuple containing the Git directory path and Git ignore file path if found.
-fn find_git_directory_and_ignore(current_dir: &Path) -> Result<(String, String), io::Error> {
+fn find_git_directory_and_ignore() -> Result<(String, String), io::Error> {
     let current_dir = std::env::current_dir()?;
     let mut current_dir_buf = current_dir.to_path_buf();
     let git_dir = find_git_directory(&mut current_dir_buf, ".mgit")
@@ -420,7 +419,7 @@ fn find_git_directory_and_ignore(current_dir: &Path) -> Result<(String, String),
 ///
 /// - `Ok("Ok".to_string())`: If the changes are successfully staged.
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
-fn stage_changes(current_dir: &Path, git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<String, io::Error> {
+fn stage_changes(git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<String, io::Error> {
     let index_path = format!("{}/index", git_dir);
 
     if texto == "." {
@@ -480,7 +479,7 @@ pub fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
     
     git_rm(texto, &index_path, &git_dir, &git_ignore_path)?;
     
-    Ok(format!("La función 'rm' se ejecutó correctamente."))
+    Ok("La función 'rm' se ejecutó correctamente.".to_string())
 }
 
 /// Force checkout a file from a custom Git-like version control system.
@@ -532,21 +531,15 @@ pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error>
 ///
 pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(git_dir) => git_dir.into(),
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found\n",
-            ));
-        }
-    };
-    let git_dir_parent: &Path = git_dir
-        .parent()
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
-
+    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n")
+    })?;
+    let git_dir_parent = Path::new(&git_dir).parent().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
+    })?;
+    let git_dir_path = Path::new(&git_dir);
     let result = match checkout_commit_detached(
-        &git_dir,
+        git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
@@ -587,21 +580,15 @@ pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, 
 ///
 pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(git_dir) => git_dir.into(),
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found\n",
-            ));
-        }
-    };
-    let git_dir_parent: &Path = git_dir
-        .parent()
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
-
+    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n")
+    })?;
+    let git_dir_parent = Path::new(&git_dir).parent().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
+    })?;
+    let git_dir_path = Path::new(&git_dir);
     let result =
-        match create_or_reset_branch(&git_dir, git_dir_parent.to_string_lossy().as_ref(), texto) {
+        match create_or_reset_branch(git_dir_path, git_dir_parent.to_string_lossy().as_ref(), texto) {
             Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
             Err(err) => Err(io::Error::new(
                 io::ErrorKind::NotFound,
@@ -637,22 +624,16 @@ pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io
 ///
 pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(git_dir) => git_dir.into(),
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found\n",
-            ));
-        }
-    };
-
-    let git_dir_parent: &Path = git_dir
-        .parent()
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
+    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n")
+    })?;
+    let git_dir_parent = Path::new(&git_dir).parent().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
+    })?;
+    let git_dir_path = Path::new(&git_dir);
 
     let result = match create_and_checkout_branch(
-        &git_dir,
+        git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
@@ -691,20 +672,15 @@ pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String
 ///
 pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(git_dir) => git_dir.into(),
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found\n",
-            ));
-        }
-    };
-    let git_dir_parent: &Path = git_dir
-        .parent()
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
+    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n")
+    })?;
+    let git_dir_parent = Path::new(&git_dir).parent().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
+    })?;
+    let git_dir_path = Path::new(&git_dir);
 
-    let result = match checkout_branch(&git_dir, git_dir_parent.to_string_lossy().as_ref(), text) {
+    let result = match checkout_branch(git_dir_path, git_dir_parent.to_string_lossy().as_ref(), text) {
         Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
         Err(err) => Err(io::Error::new(
             io::ErrorKind::NotFound,
@@ -947,66 +923,99 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
 ///
 pub fn set_staging_area_texts(builder: &gtk::Builder) -> io::Result<()> {
-    let staging_area_text_view: gtk::TextView = builder.get_object("not-staged-view").ok_or(
-        io::Error::new(io::ErrorKind::Other, "Failed to get not-staged-view object"),
-    )?;
-    let buffer = staging_area_text_view.get_buffer().ok_or(io::Error::new(
-        io::ErrorKind::Other,
-        "Failed to get buffer for not-staged-view\n",
-    ))?;
+    let not_staged_text = get_not_staged_text()?;
+    let staged_text = get_staged_text()?;
 
-    let current_dir =
-        std::env::current_dir().map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    update_text_view(builder, "not-staged-view", &not_staged_text)?;
+    update_text_view(builder, "staged-view", &staged_text)?;
 
-    let _binding = current_dir.clone();
-    let current_dir_str = current_dir.to_str().ok_or(io::Error::new(
-        io::ErrorKind::Other,
-        "Failed to convert current directory to string\n",
-    ))?;
+    Ok(())
+}
 
-    let git_dir = find_git_directory(&mut current_dir.clone(), ".mgit").ok_or(io::Error::new(
-        io::ErrorKind::Other,
-        "Failed to find git directory\n",
-    ))?;
+/// Get the text for not staged changes in a Git-like repository.
+///
+/// This function retrieves the text for changes that are not staged in a Git-like repository.
+/// It finds the Git directory, index, and Gitignore file, and then fetches the not staged changes.
+///
+/// # Returns
+///
+/// - `Ok(String)`: If the operation is successful, it returns the text for not staged changes.
+/// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
+fn get_not_staged_text() -> io::Result<String> {
+    let current_dir = std::env::current_dir().map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    let current_dir_str = current_dir.to_str().ok_or(io::Error::new(io::ErrorKind::Other, "Failed to convert current directory to string"))?;
+
+    let git_dir = find_git_directory(&mut current_dir.clone(), ".mgit").ok_or(io::Error::new(io::ErrorKind::Other, "Failed to find git directory"))?;
 
     let index_file = format!("{}{}", git_dir, "/index");
     let gitignore_path = format!("{}{}", current_dir.to_str().unwrap(), "/.gitignore");
     let index = index::Index::load(&index_file, &git_dir, &gitignore_path)?;
+
     let not_staged_files = status::get_unstaged_changes(&index, current_dir_str)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+
     let mut untracked_files_output: Vec<u8> = Vec::new();
-    status::find_untracked_files(
-        &current_dir,
-        &current_dir,
-        &index,
-        &mut untracked_files_output,
-    )?;
+    status::find_untracked_files(&current_dir, &current_dir, &index, &mut untracked_files_output)?;
+
     let mut untracked_string = String::from_utf8(untracked_files_output)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
     untracked_string = untracked_string.replace("\x1b[31m\t\t", "");
     untracked_string = untracked_string.replace("x1b[0m\n", "\n");
-    let not_staged_files = not_staged_files + &untracked_string;
 
-    buffer.set_text(&not_staged_files);
+    Ok(not_staged_files + &untracked_string)
+}
 
-    let staged_area_text_view: gtk::TextView = builder.get_object("staged-view").ok_or(
-        io::Error::new(io::ErrorKind::Other, "Failed to get staged-view object"),
-    )?;
-
-    let staged_buffer = staged_area_text_view.get_buffer().ok_or(io::Error::new(
-        io::ErrorKind::Other,
-        "Failed to get buffer for staged-view",
-    ))?;
-    //Get the repos last commit
+/// Get the text for staged changes in a Git-like repository.
+///
+/// This function retrieves the text for changes that are staged in a Git-like repository.
+/// It finds the Git directory, index, and Gitignore file, and then fetches the staged changes.
+///
+/// # Returns
+///
+/// - `Ok(String)`: If the operation is successful, it returns the text for staged changes.
+/// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
+fn get_staged_text() -> io::Result<String> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or(io::Error::new(io::ErrorKind::Other, "Failed to find git directory"))?;
     let last_commit = branch::get_current_branch_commit(&git_dir)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-
     let last_commit_tree = tree_handler::load_tree_from_commit(&last_commit, &git_dir)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-
+    let index_file = format!("{}{}", git_dir, "/index");
+    let gitignore_path = format!("{}{}", current_dir.to_str().unwrap(), "/.gitignore");
+    let index = index::Index::load(&index_file, &git_dir, &gitignore_path)?;
     let staged_files = status::get_staged_changes(&index, &last_commit_tree)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-    staged_buffer.set_text(&staged_files);
+
+    Ok(staged_files)
+}
+
+/// Update a GTK text view with the specified text.
+///
+/// This function takes a GTK Builder, the name of a text view, and the text to be displayed in the view.
+/// It retrieves the text view and its buffer, then sets the provided text in the view.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK Builder.
+/// * `view_name` - The name of the text view in the builder.
+/// * `text` - The text to set in the view.
+///
+/// # Returns
+///
+/// - `Ok(())`: If the text view is successfully updated.
+/// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
+fn update_text_view(builder: &gtk::Builder, view_name: &str, text: &str) -> io::Result<()> {
+    let text_view: gtk::TextView = builder.get_object(view_name).ok_or(
+        io::Error::new(io::ErrorKind::Other, format!("Failed to get {} object", view_name))
+    )?;
+
+    let buffer = text_view.get_buffer().ok_or(io::Error::new(
+        io::ErrorKind::Other,
+        format!("Failed to get buffer for {}", view_name),
+    ))?;
+
+    buffer.set_text(text);
     Ok(())
 }
 
@@ -1054,12 +1063,10 @@ pub fn set_commit_history_view(builder: &gtk::Builder) -> io::Result<()> {
     let label_current_branch: gtk::Label = builder
         .get_object("commit-current-branch-commit")
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get label"))?;
-
     let mut current_dir = std::env::current_dir()?;
     let binding = current_dir.clone();
     let _current_dir_str = binding.to_str().unwrap();
     let git_dir_path_result = utils::find_git_directory(&mut current_dir, ".mgit");
-
     let git_dir_path = match git_dir_path_result {
         Some(path) => path,
         None => {
@@ -1069,100 +1076,86 @@ pub fn set_commit_history_view(builder: &gtk::Builder) -> io::Result<()> {
             ))
         }
     };
-
     let current_branch_name = commit::get_branch_name(&git_dir_path)?;
-
     let current_branch_text: String = "Current branch: ".to_owned() + &current_branch_name;
-
     label_current_branch.set_text(&current_branch_text);
     let branch_last_commit = branch::get_current_branch_commit(&git_dir_path)?;
     let branch_commits_history =
         utils::get_branch_commit_history_with_messages(&branch_last_commit, &git_dir_path)?;
     let branch_history_formatted = format_branch_history(branch_commits_history);
-
     let text_view_history: gtk::TextView = builder
         .get_object("commit-history-view")
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get history view"))?;
-
     let history_buffer = text_view_history
         .get_buffer()
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get history buffer"))?;
-
     history_buffer.set_text(&branch_history_formatted);
     Ok(())
 }
 
-/// Create a new Git commit in a GTK+ application.
-///
-/// This function allows the user to create a new Git commit by providing a commit message
-/// through a GTK+ entry widget. It retrieves the current working directory, Git directory,
-/// and commit message, then creates the commit. After the commit is created, it updates
-/// the commit history view in the application.
-///
-/// # Arguments
-///
-/// * `builder` - A reference to a GTK+ builder containing the UI elements.
-///
-/// # Returns
-///
-/// - `Ok(())`: If the commit is successfully created, and the commit history view is updated.
-/// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
-///
-pub fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
-    let mut current_dir = std::env::current_dir()?;
-    let binding = current_dir.clone();
-    let current_dir_str = match binding.to_str() {
-        Some(str) => str.to_owned(), // Asignar el valor
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Failed to convert current directory to string\n",
-            ))
-        }
-    };
+/// Get the current working directory as a string.
+fn get_current_dir_string() -> io::Result<String> {
+    let current_dir = std::env::current_dir()?;
+    current_dir
+        .to_str()
+        .map(String::from) // Convert the &str to String
+        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to convert current directory to string"))
+}
 
-    let git_dir_path = match utils::find_git_directory(&mut current_dir, ".mgit") {
-        Some(path) => path,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Git directory not found\n",
-            ))
-        }
-    };
 
-    let git_ignore_path = format!("{}/{}", current_dir_str, ".mgitignore");
+/// Get the Git directory path or return an error if not found.
+fn get_git_directory_path(current_dir: &Path) -> io::Result<String> {
+    match utils::find_git_directory(&mut current_dir.to_path_buf(), ".mgit") {
+        Some(path) => Ok(path),
+        None => Err(io::Error::new(io::ErrorKind::Other, "Git directory not found")),
+    }
+}
 
-    let message_view: gtk::Entry =
-        builder
-            .get_object("commit-message-text-view")
-            .ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::Other,
-                    "Failed to get commit message text view\n",
-                )
-            })?;
-
-    let message = message_view.get_text().to_string();
-
+/// Check if the commit message is empty and show an error dialog if it is.
+fn check_commit_message(message: &str) -> io::Result<()> {
     if message.is_empty() {
-        // El mensaje de commit está vacío, muestra un diálogo de error
         let dialog = gtk::MessageDialog::new(
             None::<&gtk::Window>,
             gtk::DialogFlags::MODAL,
             gtk::MessageType::Error,
             gtk::ButtonsType::Ok,
-            "Debe ingresar un mensaje de commit.\n",
+            "Debe ingresar un mensaje de commit.",
         );
 
         dialog.run();
         dialog.close();
         return Ok(());
     }
+    Ok(())
+}
 
-    let result = commit::new_commit(&git_dir_path, &message, &git_ignore_path);
+/// Make a new commit with the provided message.
+fn create_new_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> io::Result<()> {
+    let result = commit::new_commit(git_dir_path, message, git_ignore_path);
     println!("{:?}", result);
+    Ok(())
+}
+
+/// Perform the commit operation.
+fn perform_commit(builder: &gtk::Builder, message: String) -> io::Result<()> {
+    let current_dir_str = get_current_dir_string()?;
+    let git_dir_path = get_git_directory_path(&PathBuf::from(&current_dir_str))?;
+    let git_ignore_path = format!("{}/{}", current_dir_str, ".mgitignore");
+
+    check_commit_message(&message)?;
+    create_new_commit(&git_dir_path, &message, &git_ignore_path)?;
+
     set_commit_history_view(builder)?;
     Ok(())
 }
 
+/// Commit changes to a custom Git-like version control system.
+fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
+    let message_view: gtk::Entry = builder
+        .get_object("commit-message-text-view")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get commit message text view"))?;
+
+    let message = message_view.get_text().to_string();
+
+    perform_commit(builder, message)
+}

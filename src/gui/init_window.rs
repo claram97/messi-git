@@ -73,17 +73,40 @@ pub fn connect_button_clicked_init_window(
             if button_type == "option2" {
                 let result = create_text_entry_window("Enter the branch", move |text| {
                     let result = git_init(&dir_str, &text, None);
-                    handle_git_init_result(&dir_str, result);
+                    if result.is_err() {
+                        eprintln!("Error initiating git.");
+                        return;
+                    }
+                    let result = handle_git_init_result(result);
+                    if result.is_err() {
+                        eprintln!("Error handling git init result.");
+                    }
                 });
+                if result.is_err() {
+                    eprintln!("Error creating text entry window.");
+                }
             } else if button_type == "option3" {
-                let result_create = create_text_entry_window("Enter the template path", move |text| {
+                let result = create_text_entry_window("Enter the template path", move |text| {
                     let result = git_init(&dir_str, "main", Some(&text));
-                    handle_git_init_with_template_result(&dir_str, result);
-
+                    if result.is_err() {
+                        eprintln!("Error initiating git.");
+                        return;
+                    }
+                    let result = handle_git_init_with_template_result(result);
+                    if result.is_err() {
+                        eprintln!("Error handling git init with template");
+                    }
                 });
+                if result.is_err() {
+                    eprintln!("Error creating text entry window.");
+                }
             } else if button_type == "option1" {
                 let result = git_init(&dir_str, "main", None);
-                handle_git_init_main_result(&dir_str, result);
+                if result.is_err() {
+                    eprintln!("Error initiating git.");
+                    return;
+                }
+                handle_git_init_main_result(result);
             }
         } else {
             eprintln!("No se pudo obtener el directorio actual.");
@@ -108,7 +131,7 @@ pub fn connect_button_clicked_init_window(
 /// # Returns
 ///
 /// A `Result` with an empty `Ok(())` value to indicate success.
-pub fn handle_git_init_result(dir_str: &str, result: Result<(), io::Error>) -> Result<(), io::Error> {
+pub fn handle_git_init_result(result: Result<(), io::Error>) -> Result<(), io::Error> {
     match result {
         Ok(_) => {
             close_all_windows();
@@ -146,7 +169,6 @@ pub fn handle_git_init_result(dir_str: &str, result: Result<(), io::Error>) -> R
 ///
 /// A `Result` with an empty `Ok(())` value to indicate success.
 pub fn handle_git_init_with_template_result(
-    dir_str: &str,
     result: Result<(), io::Error>,
 ) -> Result<(), io::Error> {
     match result {
@@ -181,7 +203,7 @@ pub fn handle_git_init_with_template_result(
 ///
 /// - `dir_str`: A string representing the directory path.
 /// - `result`: A `Result` containing the outcome of the Git initialization operation.
-pub fn handle_git_init_main_result(dir_str: &str, result: Result<(), io::Error>) {
+pub fn handle_git_init_main_result(result: Result<(), io::Error>) {
     match result {
         Ok(_) => {
             close_all_windows();

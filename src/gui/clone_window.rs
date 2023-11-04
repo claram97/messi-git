@@ -1,5 +1,4 @@
 use crate::gui::gui::add_to_open_windows;
-use crate::gui::style::apply_clone_button_style;
 use crate::gui::style::apply_entry_style;
 use crate::gui::style::apply_label_style;
 use crate::gui::style::apply_window_style;
@@ -15,6 +14,7 @@ use gtk::FileChooserDialog;
 use gtk::FileChooserExt;
 use gtk::GtkWindowExt;
 use std::io;
+
 /// Configures the properties of a clone window in a GTK application.
 ///
 /// This function takes a reference to a GTK window (`new_window_clone`) and a GTK builder (`builder`) as input and configures the clone window's properties, including adding it to the list of open windows, applying a specific window style, and setting its default size.
@@ -60,6 +60,7 @@ pub fn configure_clone_window(
     let dir_to_clone_entry_clone = dir_to_clone_entry.clone();
 
     apply_entry_style(&dir_to_clone_entry);
+    apply_entry_style(&dir_to_clone_entry_clone);
 
     let browse_button = get_button(builder, "browse-button");
     let clone_button = get_button(builder, "clone-button");
@@ -67,6 +68,7 @@ pub fn configure_clone_window(
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
     apply_button_style(&clone_button)
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+
     let new_window_clone_clone = new_window_clone.clone();
     clone_button.connect_clicked(move |_| {
         let url_text = url_entry.get_text().to_string();

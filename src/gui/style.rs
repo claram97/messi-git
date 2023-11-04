@@ -82,8 +82,7 @@ pub fn apply_button_style(button: &gtk::Button) -> Result<(), String> {
         "button {
         background-color: #87CEEB; /* Sky Blue */
         color: #1e3799; /* Dark Blue Text Color */
-        border: 10px solid #1e3799; /* Dark Blue Border */
-        padding: 10px; /* Padding around content */
+        border: 5px solid #1e3799; /* Dark Blue Border */
     }"
         .as_bytes(),
     ) {
@@ -202,31 +201,6 @@ pub fn load_and_get_window(
     }
 }
 
-/// Applies a custom CSS style to a GTK button.
-///
-/// This function sets the background color to white, text color to blue, and a blue border for the button.
-/// It uses a CSS provider to load the styles and applies them to the button's style context.
-///
-/// # Arguments
-///
-/// * `button` - A reference to the `gtk::Button` widget to style.
-pub fn apply_clone_button_style(button: &gtk::Button) {
-    let css_provider = gtk::CssProvider::new();
-    if let Err(err) = css_provider.load_from_data(
-        "button {
-            background-color: #FFFFFF; /* Fondo blanco */
-            color: #1e3799; /* Texto azul */
-            border: 2px solid #1e3799; /* Borde azul */
-        }"
-        .as_bytes(),
-    ) {
-        eprintln!("Failed to load CSS for button: {}", err);
-    }
-
-    let style_context = button.get_style_context();
-    style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-}
-
 /// Applies a custom CSS style to a GTK label.
 ///
 /// This function sets the text color to blue for the label.
@@ -265,8 +239,8 @@ pub fn apply_entry_style(entry: &gtk::Entry) {
         "entry {
             background-color: #FFFFFF; /* Fondo blanco */
             color: #000000; /* Texto negro */
-            border: 1px solid #1e3799; /* Borde azul */
-            padding: 5px; /* Espacio interno */
+            border: 2px solid #1e3799; /* Borde azul */
+            padding: 7px; /* Espacio interno */
     }"
         .as_bytes(),
     ) {
