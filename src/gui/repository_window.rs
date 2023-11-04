@@ -367,9 +367,8 @@ pub fn show_repository_window() -> io::Result<()> {
 
 /// Stage changes for Git commit in a GTK+ application.
 ///
-/// This function stages changes for a Git commit by adding specified files or all changes in the
-/// working directory. It retrieves the current working directory, Git directory, and Git ignore file
-/// path. Depending on the provided `texto`, it stages specific files or all changes for the commit.
+/// This is the public interface for staging changes for a Git commit. It takes a `texto` parameter
+/// to specify the files to stage.
 ///
 /// # Arguments
 ///
@@ -378,61 +377,82 @@ pub fn show_repository_window() -> io::Result<()> {
 /// # Returns
 ///
 /// - `Ok("Ok".to_string())`: If the changes are successfully staged.
-/// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
-///
+/// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error.
 pub fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(git_dir) => git_dir,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found\n",
-            ))
-        }
-    };
-    let index_path = format!("{}/{}", git_dir, "index");
-    let git_dir_parent = match Path::new(&git_dir).parent() {
-        Some(git_dir_parent) => git_dir_parent,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Gitignore file not found\n",
-            ))
-        }
-    };
-    let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), ".mgitignore");
+    let current_dir = std::env::current_dir()?;
+    let (git_dir, git_ignore_path) = find_git_directory_and_ignore(&current_dir)?;
+
+    stage_changes(&current_dir, &git_dir, &git_ignore_path, texto)
+}
+
+/// Find the Git directory and Git ignore file path.
+///
+/// Searches for the Git directory and Git ignore file in the given current directory.
+/// Returns a tuple containing the Git directory path and Git ignore file path if found.
+fn find_git_directory_and_ignore(current_dir: &Path) -> Result<(String, String), io::Error> {
+    let current_dir = std::env::current_dir()?;
+    let mut current_dir_buf = current_dir.to_path_buf();
+    let git_dir = find_git_directory(&mut current_dir_buf, ".mgit")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found"))?;
+
+    let git_dir_parent = current_dir.parent().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found")
+    })?;
+
+    let git_ignore_path = format!("{}/.mgitignore", git_dir_parent.to_string_lossy());
+
+    Ok((git_dir, git_ignore_path))
+}
+
+/// Stage changes for Git commit in a GTK+ application.
+///
+/// This function stages changes for a Git commit by adding specified files or all changes in the
+/// working directory. Depending on the provided `texto`, it stages specific files or all changes for the commit.
+///
+/// # Arguments
+///
+/// * `current_dir` - The current working directory.
+/// * `git_dir` - The Git directory path.
+/// * `git_ignore_path` - The Git ignore file path.
+/// * `texto` - A string representing the files to be staged. Use `"."` to stage all changes.
+///
+/// # Returns
+///
+/// - `Ok("Ok".to_string())`: If the changes are successfully staged.
+/// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
+fn stage_changes(current_dir: &Path, git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<String, io::Error> {
+    let index_path = format!("{}/index", git_dir);
 
     if texto == "." {
         let options = Some(vec!["-u".to_string()]);
-        match add("", &index_path, &git_dir, &git_ignore_path, options) {
+        match add("", &index_path, git_dir, git_ignore_path, options) {
             Ok(_) => {
                 println!("La función 'add' se ejecutó correctamente.");
             }
             Err(err) => {
                 return Err(io::Error::new(
                     io::ErrorKind::NotFound,
-                    format!("Error al llamar a la función 'add': {:?}\n", err),
+                    format!("Error al llamar a la función 'add': {:?}", err),
                 ))
             }
-        };
+        }
     }
 
-    match add(texto, &index_path, &git_dir, &git_ignore_path, None) {
+    match add(texto, &index_path, git_dir, git_ignore_path, None) {
         Ok(_) => {
             println!("La función 'add' se ejecutó correctamente.");
         }
         Err(err) => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                format!("Error al llamar a la función 'add': {:?}\n", err),
+                format!("Error al llamar a la función 'add': {:?}", err),
             ))
         }
-    };
+    }
+
     Ok("Ok".to_string())
 }
 
-/// Remove a file from a custom Git-like version control system.
 ///
 /// This function attempts to remove a file specified by `texto` from a custom version control system similar to Git.
 /// It first identifies the Git-like directory (".mgit") in the current directory, and then it calls a function `git_rm`
@@ -449,42 +469,18 @@ pub fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
 ///
 pub fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(git_dir) => git_dir,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found\n",
-            ))
-        }
-    };
+    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n")
+    })?;
     let index_path = format!("{}/{}", git_dir, "index");
-    let git_dir_parent = match Path::new(&git_dir).parent() {
-        Some(git_dir_parent) => git_dir_parent,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Gitignore filey not found\n",
-            ))
-        }
-    };
+    let git_dir_parent = Path::new(&git_dir).parent().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
+    })?;
     let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), ".mgitignore");
-    println!("INDEX PATH {}.", index_path);
-
-    let result = match git_rm(texto, &index_path, &git_dir, &git_ignore_path) {
-        Ok(_) => Ok("La función 'rm' se ejecutó correctamente.".to_string()),
-        Err(err) => Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("Error al llamar a la función 'rm': {:?}\n", err),
-        )),
-    };
-    if result.is_err() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Error al llamar a la función 'rm'\n",
-        ));
-    }
-    Ok("Ok".to_string())
+    
+    git_rm(texto, &index_path, &git_dir, &git_ignore_path)?;
+    
+    Ok(format!("La función 'rm' se ejecutó correctamente."))
 }
 
 /// Force checkout a file from a custom Git-like version control system.
