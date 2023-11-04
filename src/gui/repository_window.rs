@@ -1064,12 +1064,10 @@ pub fn set_commit_history_view(builder: &gtk::Builder) -> io::Result<()> {
     let label_current_branch: gtk::Label = builder
         .get_object("commit-current-branch-commit")
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get label"))?;
-
     let mut current_dir = std::env::current_dir()?;
     let binding = current_dir.clone();
     let _current_dir_str = binding.to_str().unwrap();
     let git_dir_path_result = utils::find_git_directory(&mut current_dir, ".mgit");
-
     let git_dir_path = match git_dir_path_result {
         Some(path) => path,
         None => {
@@ -1079,100 +1077,86 @@ pub fn set_commit_history_view(builder: &gtk::Builder) -> io::Result<()> {
             ))
         }
     };
-
     let current_branch_name = commit::get_branch_name(&git_dir_path)?;
-
     let current_branch_text: String = "Current branch: ".to_owned() + &current_branch_name;
-
     label_current_branch.set_text(&current_branch_text);
     let branch_last_commit = branch::get_current_branch_commit(&git_dir_path)?;
     let branch_commits_history =
         utils::get_branch_commit_history_with_messages(&branch_last_commit, &git_dir_path)?;
     let branch_history_formatted = format_branch_history(branch_commits_history);
-
     let text_view_history: gtk::TextView = builder
         .get_object("commit-history-view")
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get history view"))?;
-
     let history_buffer = text_view_history
         .get_buffer()
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get history buffer"))?;
-
     history_buffer.set_text(&branch_history_formatted);
     Ok(())
 }
 
-/// Create a new Git commit in a GTK+ application.
-///
-/// This function allows the user to create a new Git commit by providing a commit message
-/// through a GTK+ entry widget. It retrieves the current working directory, Git directory,
-/// and commit message, then creates the commit. After the commit is created, it updates
-/// the commit history view in the application.
-///
-/// # Arguments
-///
-/// * `builder` - A reference to a GTK+ builder containing the UI elements.
-///
-/// # Returns
-///
-/// - `Ok(())`: If the commit is successfully created, and the commit history view is updated.
-/// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
-///
-pub fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
-    let mut current_dir = std::env::current_dir()?;
-    let binding = current_dir.clone();
-    let current_dir_str = match binding.to_str() {
-        Some(str) => str.to_owned(), // Asignar el valor
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Failed to convert current directory to string\n",
-            ))
-        }
-    };
+/// Get the current working directory as a string.
+fn get_current_dir_string() -> io::Result<String> {
+    let current_dir = std::env::current_dir()?;
+    current_dir
+        .to_str()
+        .map(String::from) // Convert the &str to String
+        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to convert current directory to string"))
+}
 
-    let git_dir_path = match utils::find_git_directory(&mut current_dir, ".mgit") {
-        Some(path) => path,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Git directory not found\n",
-            ))
-        }
-    };
 
-    let git_ignore_path = format!("{}/{}", current_dir_str, ".mgitignore");
+/// Get the Git directory path or return an error if not found.
+fn get_git_directory_path(current_dir: &PathBuf) -> io::Result<String> {
+    match utils::find_git_directory(&mut current_dir.clone(), ".mgit") {
+        Some(path) => Ok(path),
+        None => Err(io::Error::new(io::ErrorKind::Other, "Git directory not found")),
+    }
+}
 
-    let message_view: gtk::Entry =
-        builder
-            .get_object("commit-message-text-view")
-            .ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::Other,
-                    "Failed to get commit message text view\n",
-                )
-            })?;
-
-    let message = message_view.get_text().to_string();
-
+/// Check if the commit message is empty and show an error dialog if it is.
+fn check_commit_message(message: &str, builder: &gtk::Builder) -> io::Result<()> {
     if message.is_empty() {
-        // El mensaje de commit está vacío, muestra un diálogo de error
         let dialog = gtk::MessageDialog::new(
             None::<&gtk::Window>,
             gtk::DialogFlags::MODAL,
             gtk::MessageType::Error,
             gtk::ButtonsType::Ok,
-            "Debe ingresar un mensaje de commit.\n",
+            "Debe ingresar un mensaje de commit.",
         );
 
         dialog.run();
         dialog.close();
         return Ok(());
     }
+    Ok(())
+}
 
-    let result = commit::new_commit(&git_dir_path, &message, &git_ignore_path);
+/// Make a new commit with the provided message.
+fn create_new_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> io::Result<()> {
+    let result = commit::new_commit(git_dir_path, message, git_ignore_path);
     println!("{:?}", result);
+    Ok(())
+}
+
+/// Perform the commit operation.
+fn perform_commit(builder: &gtk::Builder, message: String) -> io::Result<()> {
+    let current_dir_str = get_current_dir_string()?;
+    let git_dir_path = get_git_directory_path(&PathBuf::from(&current_dir_str))?;
+    let git_ignore_path = format!("{}/{}", current_dir_str, ".mgitignore");
+
+    check_commit_message(&message, builder)?;
+    create_new_commit(&git_dir_path, &message, &git_ignore_path)?;
+
     set_commit_history_view(builder)?;
     Ok(())
 }
 
+/// Commit changes to a custom Git-like version control system.
+fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
+    let message_view: gtk::Entry = builder
+        .get_object("commit-message-text-view")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get commit message text view"))?;
+
+    let message = message_view.get_text().to_string();
+
+    perform_commit(builder, message)
+}
