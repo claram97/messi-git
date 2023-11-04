@@ -26,6 +26,8 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use crate::gui::style::create_text_entry_window;
+use crate::gui::style::show_message_dialog;
+use crate::gui::style::configure_repository_window;
 
 use super::clone_window::configure_clone_window;
 use super::init_window::configure_init_window;
@@ -887,18 +889,6 @@ fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
     Ok("Ok".to_string())
 }
 
-fn show_message_dialog(title: &str, message: &str) {
-    let dialog = gtk::MessageDialog::new(
-        None::<&gtk::Window>,
-        gtk::DialogFlags::MODAL,
-        gtk::MessageType::Info,
-        gtk::ButtonsType::Ok,
-        message,
-    );
-    dialog.set_title(title);
-    dialog.run();
-    dialog.close();
-}
 
 /// Sets the text content of staging area views in a GTK+ application.
 ///
@@ -1202,19 +1192,4 @@ fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
     Ok("Ok".to_string())
 }
 
-/// Configures the properties of a repository window in a GTK application.
-///
-/// This function takes a GTK window (`new_window`) as input and configures the repository window's properties, such as setting its default size and applying a specific window style, before displaying it.
-///
-/// # Arguments
-///
-/// - `new_window`: The GTK window to be configured as a repository window.
-///
-fn configure_repository_window(new_window: gtk::Window) -> io::Result<()> {
-    new_window.set_default_size(800, 600);
-    apply_window_style(&new_window)
-        .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to apply window style"))?;
-    new_window.show_all();
-    Ok(())
-}
 

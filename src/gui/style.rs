@@ -40,6 +40,22 @@ pub fn get_button(builder: &Builder, button_id: &str) -> gtk::Button {
     gtk::Button::new()
 }
 
+/// Retrieve a GTK TextView widget from a GTK Builder.
+///
+/// This function takes a reference to a GTK Builder and an ID string, and attempts to find a GTK TextView widget
+/// in the builder's objects. If the TextView widget is found, it is returned as an `Option<gtk::TextView>`. If it is
+/// not found, `None` is returned.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK Builder containing the widgets.
+/// * `text_view_id` - A string representing the ID of the TextView widget to retrieve.
+///
+/// # Returns
+///
+/// * `Some(gtk::TextView)` if the TextView is found in the builder.
+/// * `None` if the TextView is not found.
+///
 pub fn get_text_view(builder: &Builder, text_view_id: &str) -> Option<gtk::TextView> {
     if let Some(text_view) = builder.get_object::<gtk::TextView>(text_view_id) {
         return Some(text_view);
@@ -292,6 +308,7 @@ pub fn filter_color_code(input: &str) -> String {
 
     result
 }
+
 /// Creates a GTK text entry window for user input with a message and a callback function.
 ///
 /// This function generates a new GTK window with a text entry field and an "OK" button. It allows users to input text and invokes a provided callback function when the "OK" button is clicked. The window can display a custom message as its title.
@@ -335,3 +352,47 @@ pub fn create_text_entry_window(
     Ok(())
 }
 
+/// Retrieve a GTK TextView widget from a GTK Builder.
+///
+/// This function takes a reference to a GTK Builder and an ID string, and attempts to find a GTK TextView widget
+/// in the builder's objects. If the TextView widget is found, it is returned as an `Option<gtk::TextView>`. If it is
+/// not found, `None` is returned.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK Builder containing the widgets.
+/// * `text_view_id` - A string representing the ID of the TextView widget to retrieve.
+///
+/// # Returns
+///
+/// * `Some(gtk::TextView)` if the TextView is found in the builder.
+/// * `None` if the TextView is not found.
+///
+pub fn show_message_dialog(title: &str, message: &str) {
+    let dialog = gtk::MessageDialog::new(
+        None::<&gtk::Window>,
+        gtk::DialogFlags::MODAL,
+        gtk::MessageType::Info,
+        gtk::ButtonsType::Ok,
+        message,
+    );
+    dialog.set_title(title);
+    dialog.run();
+    dialog.close();
+}
+
+/// Configures the properties of a repository window in a GTK application.
+///
+/// This function takes a GTK window (`new_window`) as input and configures the repository window's properties, such as setting its default size and applying a specific window style, before displaying it.
+///
+/// # Arguments
+///
+/// - `new_window`: The GTK window to be configured as a repository window.
+///
+pub fn configure_repository_window(new_window: gtk::Window) -> io::Result<()> {
+    new_window.set_default_size(800, 600);
+    apply_window_style(&new_window)
+        .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to apply window style"))?;
+    new_window.show_all();
+    Ok(())
+}
