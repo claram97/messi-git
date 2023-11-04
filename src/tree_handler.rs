@@ -220,7 +220,7 @@ fn _load_tree_from_file(tree_hash: &str, directory: &str, name: &str) -> io::Res
     for (mode, name, hash) in tree_content {
         let object_type = match mode.as_str() {
             "100644" => "blob",
-            "40000" => "tree",
+            "40000 " => "tree", //The space is intentional, fix later.
             _ => "blob"
         };
         match object_type {
