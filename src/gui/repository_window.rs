@@ -14,21 +14,27 @@ use gtk::TextBufferExt;
 use gtk::prelude::BuilderExtManual;
 use gtk::WidgetExt;
 use crate::gui::gui::make_commit;
-use crate::gui::gui::obtain_text_from_remove;
 use crate::gui::gui::set_staging_area_texts;
-use crate::gui::gui::obtain_text_from_add;
 use crate::gui::style::show_message_dialog;
 use crate::branch::git_branch_for_ui;
-use crate::gui::gui::obtain_text_from_force_checkout;
-use crate::gui::gui::obtain_text_from_checkout_commit_detached;
-use crate::gui::gui::obtain_text_from_create_or_reset_branch;
-use crate::gui::gui::obtain_text_from_create_and_checkout_branch;
-use crate::gui::gui::obtain_text_from_checkout_branch;
-use crate::gui::gui::obtain_text_from_log;
 use crate::gui::gui::merge_window;
 use crate::gui::style::configure_repository_window;
 use crate::gui::gui::set_commit_history_view;
 use crate::gui::style::load_and_get_window;
+use crate::add::add;
+use std::path::Path;
+use crate::utils::find_git_directory;
+use crate::rm::git_rm;
+use crate::checkout::force_checkout;
+use crate::checkout::checkout_commit_detached;
+use crate::checkout::create_or_reset_branch;
+use crate::checkout::create_and_checkout_branch;
+use crate::checkout::checkout_branch;
+use crate::log::Log;
+use crate::log::log;
+use crate::gui::style::filter_color_code;
+use std::path::PathBuf;
+
 /// Displays a repository window with various buttons and actions in a GTK application.
 ///
 /// This function initializes and displays a GTK repository window using a UI builder. It configures the window, adds buttons with specific actions, and sets their styles and click event handlers. The repository window provides buttons for actions like "Add," "Commit," "Push," and more.
@@ -349,4 +355,416 @@ pub fn show_repository_window() -> io::Result<()> {
             "Failed to show repository window.\n",
         ))
     }
+}
+
+/// Stage changes for Git commit in a GTK+ application.
+///
+/// This function stages changes for a Git commit by adding specified files or all changes in the
+/// working directory. It retrieves the current working directory, Git directory, and Git ignore file
+/// path. Depending on the provided `texto`, it stages specific files or all changes for the commit.
+///
+/// # Arguments
+///
+/// * `texto` - A string representing the files to be staged. Use `"."` to stage all changes.
+///
+/// # Returns
+///
+/// - `Ok("Ok".to_string())`: If the changes are successfully staged.
+/// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
+///
+pub fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(git_dir) => git_dir,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ))
+        }
+    };
+    let index_path = format!("{}/{}", git_dir, "index");
+    let git_dir_parent = match Path::new(&git_dir).parent() {
+        Some(git_dir_parent) => git_dir_parent,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Gitignore file not found\n",
+            ))
+        }
+    };
+    let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), ".mgitignore");
+
+    if texto == "." {
+        let options = Some(vec!["-u".to_string()]);
+        match add("", &index_path, &git_dir, &git_ignore_path, options) {
+            Ok(_) => {
+                println!("La función 'add' se ejecutó correctamente.");
+            }
+            Err(err) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    format!("Error al llamar a la función 'add': {:?}\n", err),
+                ))
+            }
+        };
+    }
+
+    match add(texto, &index_path, &git_dir, &git_ignore_path, None) {
+        Ok(_) => {
+            println!("La función 'add' se ejecutó correctamente.");
+        }
+        Err(err) => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("Error al llamar a la función 'add': {:?}\n", err),
+            ))
+        }
+    };
+    Ok("Ok".to_string())
+}
+
+/// Remove a file from a custom Git-like version control system.
+///
+/// This function attempts to remove a file specified by `texto` from a custom version control system similar to Git.
+/// It first identifies the Git-like directory (".mgit") in the current directory, and then it calls a function `git_rm`
+/// to remove the file. If the removal is successful, it returns a message indicating success. If any errors occur
+/// during the process, it returns an `io::Error`.
+///
+/// # Arguments
+///
+/// * `texto` - A string representing the file to be removed.
+///
+/// # Returns
+///
+/// * `Result<String, io::Error>` - A `Result` containing a success message or an `io::Error` if any issues occur.
+///
+pub fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(git_dir) => git_dir,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ))
+        }
+    };
+    let index_path = format!("{}/{}", git_dir, "index");
+    let git_dir_parent = match Path::new(&git_dir).parent() {
+        Some(git_dir_parent) => git_dir_parent,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Gitignore filey not found\n",
+            ))
+        }
+    };
+    let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), ".mgitignore");
+    println!("INDEX PATH {}.", index_path);
+
+    let result = match git_rm(texto, &index_path, &git_dir, &git_ignore_path) {
+        Ok(_) => Ok("La función 'rm' se ejecutó correctamente.".to_string()),
+        Err(err) => Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Error al llamar a la función 'rm': {:?}\n", err),
+        )),
+    };
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Error al llamar a la función 'rm'\n",
+        ));
+    }
+    Ok("Ok".to_string())
+}
+
+/// Force checkout a file from a custom Git-like version control system.
+///
+/// This function attempts to force checkout a file specified by `texto` from a custom version control system similar to Git.
+/// It first identifies the Git-like directory (".mgit") in the current directory, and then it calls a function `force_checkout`
+/// to force the checkout of the file. If the checkout is successful, it returns a "Ok" message. If any errors occur
+/// during the process, it returns an `io::Error`.
+///
+/// # Arguments
+///
+/// * `texto` - A string representing the file to be forcefully checked out.
+///
+/// # Returns
+///
+/// * `Result<String, io::Error>` - A `Result` containing a success message "Ok" or an `io::Error` if any issues occur.
+///
+pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(git_dir) => git_dir.into(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ));
+        }
+    };
+
+    force_checkout(&git_dir, texto);
+
+    Ok("Ok".to_string())
+}
+
+/// Checkout a commit in detached HEAD state from a custom Git-like version control system.
+///
+/// This function attempts to checkout a commit specified by `texto` in a detached HEAD state from a custom version control
+/// system similar to Git. It first identifies the Git-like directory (".mgit") in the current directory and its parent
+/// directory, and then it calls a function `checkout_commit_detached` to perform the checkout. If the checkout is successful,
+/// it returns a message indicating success. If any errors occur during the process, it returns an `io::Error`.
+///
+/// # Arguments
+///
+/// * `texto` - A string representing the commit to be checked out in a detached HEAD state.
+///
+/// # Returns
+///
+/// * `Result<String, io::Error>` - A `Result` containing a success message or an `io::Error` if any issues occur.
+///
+pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, io::Error> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(git_dir) => git_dir.into(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ));
+        }
+    };
+    let git_dir_parent: &Path = git_dir
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
+
+    let result = match checkout_commit_detached(
+        &git_dir,
+        git_dir_parent.to_string_lossy().as_ref(),
+        texto,
+    ) {
+        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Err(err) => Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!(
+                "Error al llamar a la función 'checkout branch': {:?}\n",
+                err
+            ),
+        )),
+    };
+
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Error al llamar a la función 'checkout branch'\n",
+        ));
+    }
+
+    Ok("Ok".to_string())
+}
+
+/// Create or reset a branch in a custom Git-like version control system.
+///
+/// This function attempts to create a new branch or reset an existing branch specified by `texto` in a custom version control
+/// system similar to Git. It first identifies the Git-like directory (".mgit") in the current directory and its parent
+/// directory, and then it calls a function `create_or_reset_branch` to perform the operation. If the operation is successful,
+/// it returns a message indicating success. If any errors occur during the process, it returns an `io::Error`.
+///
+/// # Arguments
+///
+/// * `texto` - A string representing the branch name to be created or reset.
+///
+/// # Returns
+///
+/// * `Result<String, io::Error>` - A `Result` containing a success message or an `io::Error` if any issues occur.
+///
+pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io::Error> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(git_dir) => git_dir.into(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ));
+        }
+    };
+    let git_dir_parent: &Path = git_dir
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
+
+    let result =
+        match create_or_reset_branch(&git_dir, git_dir_parent.to_string_lossy().as_ref(), texto) {
+            Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+            Err(err) => Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!(
+                    "Error al llamar a la función 'checkout branch': {:?}\n",
+                    err
+                ),
+            )),
+        };
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Error al llamar a la función 'checkout branch'\n",
+        ));
+    }
+    Ok("Ok".to_string())
+}
+
+/// Create and checkout a branch in a custom Git-like version control system.
+///
+/// This function attempts to create a new branch specified by `texto` and checks it out in a custom version control system
+/// similar to Git. It first identifies the Git-like directory (".mgit") in the current directory and its parent directory,
+/// and then it calls a function `create_and_checkout_branch` to perform the operation. If the operation is successful, it
+/// returns a message indicating success. If any errors occur during the process, it returns an `io::Error`.
+///
+/// # Arguments
+///
+/// * `texto` - A string representing the branch name to be created and checked out.
+///
+/// # Returns
+///
+/// * `Result<String, io::Error>` - A `Result` containing a success message or an `io::Error` if any issues occur.
+///
+pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String, io::Error> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(git_dir) => git_dir.into(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ));
+        }
+    };
+
+    let git_dir_parent: &Path = git_dir
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
+
+    let result = match create_and_checkout_branch(
+        &git_dir,
+        git_dir_parent.to_string_lossy().as_ref(),
+        texto,
+    ) {
+        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Err(err) => Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!(
+                "Error al llamar a la función 'checkout branch': {:?}\n",
+                err
+            ),
+        )),
+    };
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Error al llamar a la función 'checkout branch'\n",
+        ));
+    }
+    Ok("Ok".to_string())
+}
+
+/// Checkout a branch in a custom Git-like version control system.
+///
+/// This function attempts to checkout an existing branch specified by `text` in a custom version control system similar to Git.
+/// It first identifies the Git-like directory (".mgit") in the current directory and its parent directory, and then it calls a
+/// function `checkout_branch` to perform the checkout operation. If the operation is successful, it returns a message indicating
+/// success. If any errors occur during the process, it returns an `io::Error`.
+///
+/// # Arguments
+///
+/// * `text` - A string representing the name of the branch to be checked out.
+///
+/// # Returns
+///
+/// * `Result<String, io::Error>` - A `Result` containing a success message or an `io::Error` if any issues occur.
+///
+pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(git_dir) => git_dir.into(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ));
+        }
+    };
+    let git_dir_parent: &Path = git_dir
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
+
+    let result = match checkout_branch(&git_dir, git_dir_parent.to_string_lossy().as_ref(), text) {
+        Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
+        Err(err) => Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Error calling the 'checkout branch' function: {:?}\n", err),
+        )),
+    };
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Error calling the 'checkout branch' function\n",
+        ));
+    }
+    Ok("Ok".to_string())
+}
+
+/// Obtain the Git log as a filtered and formatted string.
+///
+/// This function obtains the Git log from the Git directory, filters out color codes, and returns
+/// it as a formatted string.
+///
+/// # Returns
+///
+/// - `Ok(log_text_filtered)`: If the Git log is obtained and processed successfully, it returns
+///   the filtered and formatted log as a `String`.
+/// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
+///
+pub fn obtain_text_from_log() -> Result<String, std::io::Error> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(git_dir) => git_dir,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found\n",
+            ))
+        }
+    };
+
+    let log_iter = log(None, &git_dir, 10, 0, true);
+    let log_iter = log_iter?;
+    let log_text = get_logs_as_string(log_iter);
+    let log_text_filtered = filter_color_code(&log_text);
+
+    Ok(log_text_filtered)
+}
+
+/// Convert a log iterator into a formatted log string.
+///
+/// This function takes an iterator of log entries and converts it into a formatted log string.
+///
+/// # Arguments
+///
+/// * `log_iter` - An iterator that yields `Log` entries.
+///
+/// # Returns
+///
+/// A formatted log string containing log entries separated by newline characters.
+pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
+    let mut log_text = String::new();
+
+    for log in log_iter {
+        log_text.push_str(&log.to_string());
+        log_text.push('\n');
+    }
+
+    log_text
 }
