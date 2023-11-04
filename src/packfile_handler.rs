@@ -172,7 +172,6 @@ where
 
         let mut decompressor = ZlibDecoder::new(&mut self.bufreader);
         let mut obj = vec![];
-        dbg!(obj_size);
         let bytes_read = decompressor.read_to_end(&mut obj)?;
         if obj_size != bytes_read {
             println!("type {:?}. bytes:\n{:?}", obj_type, obj);
@@ -253,8 +252,6 @@ fn append_objects(
         }
         encoded_header.push(c);
         
-        dbg!(hash);
-        dbg!(&compressed_content);
         packfile.extend(encoded_header);
         packfile.extend(compressed_content);
 

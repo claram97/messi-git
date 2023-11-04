@@ -25,12 +25,12 @@ const ZERO_HASH: &str = "0000000000000000000000000000000000000000";
 
 #[derive(Debug, Default)]
 pub struct Client {
-    git_dir: String,
     address: String,
     repository: String,
     host: String,
-    remote: String,
     socket: Option<TcpStream>,
+    git_dir: String,
+    remote: String,
     server_refs: HashMap<String, String>,
 }
 
@@ -56,7 +56,8 @@ impl Client {
     //
     // Leaves the connection opened
     // May fail due to I/O errors
-    pub fn get_refs(&mut self) -> io::Result<Vec<String>> {
+    pub fn get_server_refs(&mut self) -> io::Result<Vec<String>> {
+        self.clear();
         self.connect()?;
         self.initiate_connection(GIT_UPLOAD_PACK)?;
         self.wait_server_refs()?;
@@ -64,13 +65,23 @@ impl Client {
         Ok(self.server_refs.keys().map(String::from).collect())
     }
 
-    // REVISAR: deberia ser como el upload-pack the git
+    fn clear(&mut self) {
+        self.git_dir = String::new();
+        self.remote = String::new();
+        self.server_refs.clear();
+    }
+
+    /// Establish a connection with the server and asks for the refs in the remote.
+    /// If the local remote refs are up to date, then nothing is done.
+    /// Else, the server is asked for the missing objects and a packfile unpacked.
+    /// Then the remote refs are updated.
     pub fn upload_pack(
         &mut self,
         wanted_branch: &str,
         git_dir: &str,
         remote: &str,
     ) -> io::Result<()> {
+        self.clear();
         self.connect()?;
         self.initiate_connection(GIT_UPLOAD_PACK)?;
         self.git_dir = git_dir.to_string();
@@ -87,6 +98,7 @@ impl Client {
     }
 
     pub fn receive_pack(&mut self, branch: &str, git_dir: &str) -> io::Result<()> {
+        self.clear();
         self.connect()?;
         self.initiate_connection(GIT_RECEIVE_PACK)?;
         self.git_dir = git_dir.to_string();
@@ -121,17 +133,10 @@ impl Client {
         }
 
         if prev_hash.is_empty() {
-            self.receive_pack_create(&pushing_ref, new_hash)?;
+            self.receive_pack_create(&pushing_ref, new_hash)
         } else {
-            self.receive_pack_update(&pushing_ref, &prev_hash, new_hash)?;
-        };
-
-        let mut reader = BufReader::new(self.socket()?);
-        let mut res = String::new();
-        reader.read_to_string(&mut res)?;
-        dbg!(res);
-        // self.update_remote(pushing_ref, &new_hash)?;
-        Ok(())
+            self.receive_pack_update(&pushing_ref, &prev_hash, new_hash)
+        }
     }
 
     fn receive_pack_create(&mut self, pushing_ref: &str, hash: &str) -> io::Result<()> {
@@ -145,8 +150,6 @@ impl Client {
         new_hash: &str,
     ) -> io::Result<()> {
         let update = format!("{} {} {}\0", prev_hash, new_hash, pushing_ref);
-        // dbg!("Sleeping...");
-        // std::thread::sleep(std::time::Duration::from_secs(5));
         self.send(&pkt_line(&update))?;
         self.flush()?;
 
@@ -173,7 +176,6 @@ impl Client {
     // Auxiliar function. Waits for the refs and loads them in self
     // Should be called only aftes: initiate_connection
     fn wait_server_refs(&mut self) -> io::Result<()> {
-        self.server_refs.clear();
         let (_, _) = read_pkt_line(self.socket()?)?;
         let (mut size, mut line) = read_pkt_line(self.socket()?)?;
 
