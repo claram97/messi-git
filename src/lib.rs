@@ -20,3 +20,5 @@ pub mod rm;
 pub mod status;
 pub mod tree_handler;
 pub mod utils;
+pub mod client;
+pub mod packfile_handler;

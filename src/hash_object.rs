@@ -114,7 +114,7 @@ pub fn store_string_to_file(
     git_dir_path: &str,
     file_type: &str,
 ) -> io::Result<String> {
-    let content_hash = hash_string(content);
+    let content_hash = hash_string(&format!("{} {}\0{}", file_type, content.len(), content));
 
     let output_file_dir = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
     create_directory(&output_file_dir)?;
@@ -128,6 +128,83 @@ pub fn store_string_to_file(
     fs::remove_file(tmp_file_path)?;
     Ok(content_hash)
 }
+
+fn hash_byte_array(array: &Vec<u8>) -> String {
+    let mut hasher = Sha1::new();
+    hasher.update(&array);
+    let result = hasher.finalize();
+    format!("{:x}", result)
+}
+
+pub fn store_bytes_array_to_file(content: Vec<u8>, git_dir_path: &str, file_type: &str) -> io::Result<String> {
+    let header = format!("{file_type} {}\0", content.len());
+    let header = header.as_bytes();
+    let complete = [header, &content].concat();
+    let content_hash = hash_byte_array(&complete);
+
+    //Create the directory where the file will be stored
+    let output_file_dir = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
+    create_directory(&output_file_dir)?;
+
+    //Create the path where the file will be stored
+    let output_file_str = output_file_dir + &content_hash[2..];
+
+    let file = File::create(&output_file_str)?;
+    
+    let mut encoder = ZlibEncoder::new(file, Compression::default());
+    encoder.write_all(&complete)?;
+    encoder.finish()?;
+
+    Ok(content_hash)
+}
+
+fn hash_tree_file(tree_file: &str) -> io::Result<String> {
+    let content = fs::read(tree_file)?;
+    let mut hasher = Sha1::new();
+    hasher.update(content);
+    let result = hasher.finalize();
+    Ok(format!("{:x}", result))
+}
+
+pub fn store_tree_to_file(blobs: Vec<(String, String, Vec<u8>)>, trees: Vec<(String, String, Vec<u8>)>, git_dir_path: &str) -> io::Result<String> {
+    let mut blobs = blobs;
+    blobs.append(&mut trees.clone());
+
+    blobs.sort_by(|a, b| a.1.cmp(&b.1));
+
+    let mut size = 0;
+    for (mode, name, hash) in blobs.clone() {
+        size += mode.len() + name.len() + hash.len() + 2;
+    }
+    let header = format!("tree {}\0", size);
+    let mut file = File::create("tree.tmp")?;
+    file.write_all(header.as_bytes())?;
+
+    for (mode, name, hash) in blobs {
+        file.write_all(format!("{} {}\0", mode, name).as_bytes())?;
+        file.write_all(&hash)?;
+    }
+    drop(file);
+    let tree_hash = hash_tree_file("tree.tmp")?;
+    let output_file_dir = git_dir_path.to_string() + "/objects/" + &tree_hash[..2] + "/";
+    create_directory(&output_file_dir)?;
+    let output_file_str = output_file_dir + &tree_hash[2..];
+    compress_tree("tree.tmp", &output_file_str)?;
+    fs::remove_file("tree.tmp")?;
+    
+    Ok(tree_hash)
+}
+
+fn compress_tree(tree_file: &str, output_file: &str) -> io::Result<()> {
+    let mut encoder = ZlibEncoder::new(File::create(output_file)?, Compression::default());
+    let tree_file = std::fs::read(tree_file)?;
+
+    encoder.write_all(&tree_file)?;
+    encoder.finish()?;
+    Ok(())
+}
+
+
 
 /// Compresses the content of the file at the given input path and stores it in the file at the given output path.
 /// The content is compressed using zlib.
