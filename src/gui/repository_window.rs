@@ -1,3 +1,7 @@
+
+
+
+
 use crate::gui::gui::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::get_button;
@@ -50,121 +54,79 @@ use gtk::Builder;
 pub fn show_repository_window() -> io::Result<()> {
     let builder = gtk::Builder::new();
     if let Some(new_window) = load_and_get_window(&builder, "src/gui/new_window2.ui", "window") {
-        let _new_window_clone = new_window.clone();
-        let builder_clone = builder.clone();
-        let builder_clone1 = builder.clone();
+        setup_repository_window(&builder, &new_window)?;
+        Ok(())
+    } else {
+        Err(io::Error::new(io::ErrorKind::Other, "Failed to show repository window.\n"))
+    }
 
-        set_staging_area_texts(&builder_clone)?;
-        set_commit_history_view(&builder_clone1)?;
+ }
+ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> io::Result<()> {
+    let new_window_clone = new_window.clone();
+    let builder_clone = builder.clone();
+    let builder_clone1 = builder.clone();
 
-        add_to_open_windows(&new_window);
-        configure_repository_window(new_window)?;
+    set_staging_area_texts(&builder_clone)?;
+    set_commit_history_view(&builder_clone1)?;
 
-        let builder_clone_for_merge = builder.clone();
-        merge_window(&builder_clone_for_merge)?;
+    add_to_open_windows(&new_window_clone);
+    configure_repository_window(new_window_clone)?;
 
-        let show_log_button = get_button(&builder, "show-log-button");
-        let show_pull_button = get_button(&builder, "pull");
-        let show_push_button = get_button(&builder, "push");
+    let builder_clone_for_merge = builder.clone();
+    merge_window(&builder_clone_for_merge)?;
 
-        let show_branches_button = get_button(&builder, "show-branches-button");
+    setup_buttons(builder)?;
 
-        let add_path_button = get_button(&builder, "add-path-button");
-        let add_all_button = get_button(&builder, "add-all-button");
+    Ok(())
+}
+fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
+    let button_ids = [
+        "show-log-button", "pull", "push", "show-branches-button",
+        "add-path-button", "add-all-button", "remove-path-button", "remove-all-button",
+        "commit-changes-button", "button8", "button9", "new-branch-button", "button11",
+        "close", "checkout1", "checkout2", "checkout3", "checkout4", "checkout5",
+    ];
 
-        let remove_path_button = get_button(&builder, "remove-path-button");
-        let remove_all_button = get_button(&builder, "remove-all-button");
-        let commit_changes_button = get_button(&builder, "commit-changes-button");
-        let button8 = get_button(&builder, "button8");
-        let button9 = get_button(&builder, "button9");
-        let create_branch_button = get_button(&builder, "new-branch-button");
-        let button11 = get_button(&builder, "button11");
-        let close_repo_button = get_button(&builder, "close");
+    for button_id in button_ids.iter() {
+        setup_button(builder, button_id)?;
+    }
 
-        let checkout1_button = get_button(&builder, "checkout1");
-        let checkout2_button = get_button(&builder, "checkout2");
-        let checkout3_button = get_button(&builder, "checkout3");
-        let checkout4_button = get_button(&builder, "checkout4");
-        let checkout5_button = get_button(&builder, "checkout5");
+    Ok(())
+}
 
-        apply_button_style(&show_log_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&show_branches_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&add_path_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&add_all_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&remove_path_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&remove_all_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&commit_changes_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&button8).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&button9).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&create_branch_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&button11).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&show_pull_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&show_push_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&close_repo_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&checkout1_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&checkout2_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&checkout3_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&checkout4_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        apply_button_style(&checkout5_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-
-        close_repo_button.connect_clicked(move |_| {
-            close_all_windows();
-            let result = run_main_window().map_err(|err| io::Error::new(io::ErrorKind::Other, err));
-            if result.is_err() {
-                eprintln!("Error trying to run main window");
-            }
-        });
-
-        show_log_button.connect_clicked(move |_| {
-            let log_text_view_result = builder_clone.get_object("log-text");
-            if log_text_view_result.is_none() {
-                eprintln!("We couldn't find log text view 'log-text'");
-                return;
-            }
-            let log_text_view: gtk::TextView = log_text_view_result.unwrap();
-
-            //let label: Label = builder_clone.get_object("show-log-label").unwrap();
-            let text_from_function = obtain_text_from_log();
-            match text_from_function {
-                Ok(texto) => {
-                    //let font_description = pango::FontDescription::from_string("Sans 2"); // Cambia "Serif 12" al tamaño y estilo de fuente deseado
-                    //log_text_view.override_font(&font_description);
-                    log_text_view.set_hexpand(true);
-                    log_text_view.set_halign(gtk::Align::Start);
-
-                    // label.set_ellipsize(pango::EllipsizeMode::End);
-                    // label.set_text(&texto);
-                    //let text_view: TextView = builder.get_object("text_view").unwrap();
-                    let buffer_result = log_text_view.get_buffer();
-                    if buffer_result.is_none() {
-                        eprintln!("Fatal error in show repository window.");
-                        return;
-                    }
-                    let buffer = buffer_result.unwrap();
-                    buffer.set_text(texto.as_str());
+fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
+    let button = get_button(builder, button_id);
+    apply_button_style(&button)
+        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    match button_id {
+        "show-log-button" => {
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {
+                handle_show_log_button_click(&builder_clone);
+            });
+        }
+        "close"=> {
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {
+                close_all_windows();
+                let result = run_main_window().map_err(|err| io::Error::new(io::ErrorKind::Other, err));
+                if result.is_err() {
+                    eprintln!("Error trying to run main window");
                 }
-                Err(err) => {
-                    eprintln!("Error al obtener el texto: {}", err);
-                }
-            }
-        });
-        checkout1_button.connect_clicked(move |_| {
+            });
+        }
+        "checkout1"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {
             let result = create_text_entry_window("Enter the path of the file", move |text| {
                 let resultado = obtain_text_from_checkout_branch(&text);
                 match resultado {
@@ -182,8 +144,14 @@ pub fn show_repository_window() -> io::Result<()> {
             if result.is_err() {
                 eprintln!("Error creating text entry window.");
             }
-        });
-        checkout2_button.connect_clicked(move |_| {
+            });
+        }
+        "checkout2"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {
             let result = create_text_entry_window("Enter the path of the file", move |text| {
                 let resultado = obtain_text_from_create_and_checkout_branch(&text);
                 match resultado {
@@ -202,168 +170,299 @@ pub fn show_repository_window() -> io::Result<()> {
                 eprintln!("Error creating text entry window.");
             }
         });
-        checkout3_button.connect_clicked(move |_| {
-            let result = create_text_entry_window("Enter the path of the file", move |text| {
-                let resultado = obtain_text_from_create_or_reset_branch(&text);
-                match resultado {
-                    Ok(texto) => {
-                        show_message_dialog(
-                            "Éxito",
-                            &format!("Changed correctly to branch '{}'", texto),
-                        );
-                    }
-                    Err(_err) => {
-                        show_message_dialog("Error", "La rama indicada no existe.");
-                    }
-                }
+        }
+        "checkout3"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {
+                            let result = create_text_entry_window("Enter the path of the file", move |text| {
+                                let resultado = obtain_text_from_create_or_reset_branch(&text);
+                                match resultado {
+                                    Ok(texto) => {
+                                        show_message_dialog(
+                                            "Éxito",
+                                            &format!("Changed correctly to branch '{}'", texto),
+                                        );
+                                    }
+                                    Err(_err) => {
+                                        show_message_dialog("Error", "La rama indicada no existe.");
+                                    }
+                                }
+                            });
+                            if result.is_err() {
+                                eprintln!("Error creating text entry window.");
+                            }
+                        });
+        }
+        "checkout4"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {
+                            let result = create_text_entry_window("Enter the path of the file", move |text| {
+                                let resultado = obtain_text_from_checkout_commit_detached(&text);
+                                match resultado {
+                                    Ok(texto) => {
+                                        show_message_dialog(
+                                            "Éxito",
+                                            &format!("Changed correctly to branch '{}'", texto),
+                                        );
+                                    }
+                                    Err(_err) => {
+                                        show_message_dialog("Error", "La rama indicada no existe.");
+                                    }
+                                }
+                            });
+                            if result.is_err() {
+                                eprintln!("Error creating text entry window.");
+                            }
+                        });
+        }
+        "checkout5"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {
+                            let result = create_text_entry_window("Enter the path of the file", move |text| {
+                                let resultado = obtain_text_from_force_checkout(&text);
+                                match resultado {
+                                    Ok(texto) => {
+                                        show_message_dialog(
+                                            "Éxito",
+                                            &format!("Changed correctly to branch '{}'", texto),
+                                        );
+                                    }
+                                    Err(_err) => {
+                                        show_message_dialog("Error", "La rama indicada no existe.");
+                                    }
+                                }
+                            });
+                            if result.is_err() {
+                                eprintln!("Error creating text entry window.");
+                            }
+                        });
+        }
+        "pull"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {
+                println!("Pull");
             });
-            if result.is_err() {
-                eprintln!("Error creating text entry window.");
-            }
-        });
-        checkout4_button.connect_clicked(move |_| {
-            let result = create_text_entry_window("Enter the path of the file", move |text| {
-                let resultado = obtain_text_from_checkout_commit_detached(&text);
-                match resultado {
-                    Ok(texto) => {
-                        show_message_dialog(
-                            "Éxito",
-                            &format!("Changed correctly to branch '{}'", texto),
-                        );
-                    }
-                    Err(_err) => {
-                        show_message_dialog("Error", "La rama indicada no existe.");
-                    }
-                }
+        }
+        "push"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {
+                println!("push");
             });
-            if result.is_err() {
-                eprintln!("Error creating text entry window.");
-            }
-        });
-        checkout5_button.connect_clicked(move |_| {
-            let result = create_text_entry_window("Enter the path of the file", move |text| {
-                let resultado = obtain_text_from_force_checkout(&text);
-                match resultado {
-                    Ok(texto) => {
-                        show_message_dialog(
-                            "Éxito",
-                            &format!("Changed correctly to branch '{}'", texto),
-                        );
-                    }
-                    Err(_err) => {
-                        show_message_dialog("Error", "La rama indicada no existe.");
-                    }
-                }
+        }
+        "show-branches-button"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {
+                                //let builder_clone = builder.clone();
+                                let branch_text_view: gtk::TextView =
+                                    builder_clone.get_object("show-branches-text").unwrap();
+                    
+                                let text_from_function = git_branch_for_ui(None);
+                                match text_from_function {
+                                    Ok(texto) => {
+                                        let buffer = branch_text_view.get_buffer().unwrap();
+                                        buffer.set_text(texto.as_str());
+                                    }
+                                    Err(err) => {
+                                        eprintln!("Error al obtener el texto: {}", err);
+                                    }
+                                }
             });
-            if result.is_err() {
-                eprintln!("Error creating text entry window.");
-            }
-        });
-        show_pull_button.connect_clicked(move |_| {
-            println!("Pull");
-        });
-        show_push_button.connect_clicked(move |_| {
-            println!("Push");
-        });
-        show_branches_button.connect_clicked(move |_| {
-            let builder_clone = builder.clone();
-            let branch_text_view: gtk::TextView =
-                builder_clone.get_object("show-branches-text").unwrap();
-
-            let text_from_function = git_branch_for_ui(None);
-            match text_from_function {
-                Ok(texto) => {
-                    let buffer = branch_text_view.get_buffer().unwrap();
-                    buffer.set_text(texto.as_str());
-                }
-                Err(err) => {
-                    eprintln!("Error al obtener el texto: {}", err);
-                }
-            }
-        });
-
-        create_branch_button.connect_clicked(move |_| {
-            let create_result = create_text_entry_window("Enter the name of the branch", |text| {
-                let result = git_branch_for_ui(Some(text));
-                if result.is_err() {
-                    eprintln!("Error creating text entry window.");
-                    return;
-                }
-                close_all_windows();
-                let result = show_repository_window();
-                if result.is_err() {
-                    eprintln!("Error creating text entry window.");
-                }
+        }
+        "new-branch-button"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {
+                                let create_result = create_text_entry_window("Enter the name of the branch", |text| {
+                                    let result = git_branch_for_ui(Some(text));
+                                    if result.is_err() {
+                                        eprintln!("Error creating text entry window.");
+                                        return;
+                                    }
+                                    close_all_windows();
+                                    let result = show_repository_window();
+                                    if result.is_err() {
+                                        eprintln!("Error creating text entry window.");
+                                    }
+                                });
+                                if create_result.is_err() {
+                                    eprintln!("Error creating text entry window.");
+                                }
+                    
             });
-            if create_result.is_err() {
-                eprintln!("Error creating text entry window.");
-            }
-        });
-
-        add_path_button.connect_clicked(move |_| {
-            let create_result =
-                create_text_entry_window("Enter the path of the file", move |text| {
-                    match obtain_text_from_add(&text) {
-                        Ok(_texto) => {
-                            show_message_dialog("Operación exitosa", "Agregado correctamente");
+        }
+        "add-path-button"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {               
+                let create_result = create_text_entry_window("Enter the path of the file", move |text| {
+                                    match obtain_text_from_add(&text) {
+                                        Ok(_texto) => {
+                                            show_message_dialog("Operación exitosa", "Agregado correctamente");
+                                        }
+                                        Err(_err) => {
+                                            show_message_dialog("Error", "El path ingresado no es correcto.");
+                                        }
+                                    }
+                                });
+                            if create_result.is_err() {
+                                eprintln!("Error creating text entry window.");
+                            }
+                        });
+        }
+        "add-all-button"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {               
+                            let result = obtain_text_from_add(".");
+                            match result {
+                                Ok(texto) => {
+                                    println!("Texto: {}", texto);
+                                }
+                                Err(err) => {
+                                    eprintln!("Error al obtener el texto: {}", err);
+                                }
+                            }
+                            let _ = set_staging_area_texts(&builder_clone)
+                                .map_err(|err| io::Error::new(io::ErrorKind::Other, err));
+                        });
+        }
+        "remove-path-button"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {               
+                         
+                let result = create_text_entry_window("Enter the path of the file", move |text| {
+                    let resultado = obtain_text_from_remove(&text);
+                    match resultado {
+                        Ok(texto) => {
+                            println!("Texto: {}", texto);
                         }
-                        Err(_err) => {
-                            show_message_dialog("Error", "El path ingresado no es correcto.");
+                        Err(err) => {
+                            eprintln!("Error al obtener el texto: {}", err);
                         }
                     }
                 });
-            if create_result.is_err() {
-                eprintln!("Error creating text entry window.");
-            }
-        });
-
-        let builder_clone2 = builder_clone1.clone();
-        add_all_button.connect_clicked(move |_| {
-            let result = obtain_text_from_add(".");
-            match result {
-                Ok(texto) => {
-                    println!("Texto: {}", texto);
-                }
-                Err(err) => {
-                    eprintln!("Error al obtener el texto: {}", err);
-                }
-            }
-            let _ = set_staging_area_texts(&builder_clone1)
-                .map_err(|err| io::Error::new(io::ErrorKind::Other, err));
-        });
-
-        remove_path_button.connect_clicked(move |_| {
-            let result = create_text_entry_window("Enter the path of the file", move |text| {
-                let resultado = obtain_text_from_remove(&text);
-                match resultado {
-                    Ok(texto) => {
-                        println!("Texto: {}", texto);
-                    }
-                    Err(err) => {
-                        eprintln!("Error al obtener el texto: {}", err);
-                    }
+                if result.is_err() {
+                    eprintln!("Error on crating text entry window");
                 }
             });
-            if result.is_err() {
-                eprintln!("Error on crating text entry window");
+        }
+        "remove-all-button"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {               
+                   println!("Button 6 clicked.");
+            });
+        }
+        "commit-changes-button"=>{
+            let builder_clone = builder.clone(); // Clonar el builder
+            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+            })?;
+            button.connect_clicked(move |_| {               
+                let _ = make_commit(&builder_clone);
+            });
+
+        }
+        _ => {
+            // Manejo para otros botones
+        }
+    }
+
+
+    Ok(())
+}
+fn handle_show_log_button_click(builder: &gtk::Builder) {
+    let log_text_view_result: Option<gtk::TextView> = builder.get_object("log-text");
+
+    if let Some(log_text_view) = log_text_view_result {
+        let text_from_function = obtain_text_from_log();
+
+        match text_from_function {
+            Ok(texto) => {
+                log_text_view.set_hexpand(true);
+                log_text_view.set_halign(gtk::Align::Start);
+
+                if let Some(buffer) = log_text_view.get_buffer() {
+                    buffer.set_text(texto.as_str());
+                } else {
+                    eprintln!("Fatal error in show repository window.");
+                }
             }
-        });
-
-        remove_all_button.connect_clicked(move |_| {
-            println!("Button 6 clicked.");
-        });
-
-        commit_changes_button.connect_clicked(move |_| {
-            let _ = make_commit(&builder_clone2);
-        });
-        Ok(())
+            Err(err) => {
+                eprintln!("Error al obtener el texto: {}", err);
+            }
+        }
     } else {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Failed to show repository window.\n",
-        ))
+        eprintln!("We couldn't find log text view 'log-text'");
     }
 }
+
+
+
+
+fn show_log_button_handler(builder: gtk::Builder) -> io::Result<()> {
+    let log_text_view_result = builder.get_object("log-text");
+    if log_text_view_result.is_none() {
+        eprintln!("We couldn't find log text view 'log-text'");
+        return Ok(());
+    }
+    
+    let log_text_view: gtk::TextView = log_text_view_result.unwrap();
+
+    let text_from_function = obtain_text_from_log();
+    match text_from_function {
+        Ok(texto) => {
+            log_text_view.set_hexpand(true);
+            log_text_view.set_halign(gtk::Align::Start);
+
+            let buffer_result = log_text_view.get_buffer();
+            if buffer_result.is_none() {
+                eprintln!("Fatal error in show repository window.");
+                return Ok(());
+            }
+            
+            let buffer = buffer_result.unwrap();
+            buffer.set_text(texto.as_str());
+        }
+        Err(err) => {
+            eprintln!("Error al obtener el texto: {}", err);
+        }
+    }
+
+    Ok(())
+}
+
+
+
 
 /// Stage changes for Git commit in a GTK+ application.
 ///
@@ -379,16 +478,17 @@ pub fn show_repository_window() -> io::Result<()> {
 /// - `Ok("Ok".to_string())`: If the changes are successfully staged.
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error.
 pub fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
-    let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
+    let current_dir = std::env::current_dir()?;
+    let (git_dir, git_ignore_path) = find_git_directory_and_ignore(&current_dir)?;
 
-    stage_changes(&git_dir, &git_ignore_path, texto)
+    stage_changes(&current_dir, &git_dir, &git_ignore_path, texto)
 }
 
 /// Find the Git directory and Git ignore file path.
 ///
 /// Searches for the Git directory and Git ignore file in the given current directory.
 /// Returns a tuple containing the Git directory path and Git ignore file path if found.
-fn find_git_directory_and_ignore() -> Result<(String, String), io::Error> {
+fn find_git_directory_and_ignore(current_dir: &Path) -> Result<(String, String), io::Error> {
     let current_dir = std::env::current_dir()?;
     let mut current_dir_buf = current_dir.to_path_buf();
     let git_dir = find_git_directory(&mut current_dir_buf, ".mgit")
@@ -419,7 +519,7 @@ fn find_git_directory_and_ignore() -> Result<(String, String), io::Error> {
 ///
 /// - `Ok("Ok".to_string())`: If the changes are successfully staged.
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
-fn stage_changes(git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<String, io::Error> {
+fn stage_changes(current_dir: &Path, git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<String, io::Error> {
     let index_path = format!("{}/index", git_dir);
 
     if texto == "." {
@@ -479,7 +579,7 @@ pub fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
     
     git_rm(texto, &index_path, &git_dir, &git_ignore_path)?;
     
-    Ok("La función 'rm' se ejecutó correctamente.".to_string())
+    Ok(format!("La función 'rm' se ejecutó correctamente."))
 }
 
 /// Force checkout a file from a custom Git-like version control system.
@@ -531,21 +631,15 @@ pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error>
 ///
 pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(git_dir) => git_dir.into(),
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found\n",
-            ));
-        }
-    };
-    let git_dir_parent: &Path = git_dir
-        .parent()
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
-
+    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n")
+    })?;
+    let git_dir_parent = Path::new(&git_dir).parent().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
+    })?;
+    let git_dir_path = Path::new(&git_dir);
     let result = match checkout_commit_detached(
-        git_dir_path,
+        &git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
@@ -594,7 +688,7 @@ pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io
     })?;
     let git_dir_path = Path::new(&git_dir);
     let result =
-        match create_or_reset_branch(git_dir_path, git_dir_parent.to_string_lossy().as_ref(), texto) {
+        match create_or_reset_branch(&git_dir_path, git_dir_parent.to_string_lossy().as_ref(), texto) {
             Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
             Err(err) => Err(io::Error::new(
                 io::ErrorKind::NotFound,
@@ -639,7 +733,7 @@ pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String
     let git_dir_path = Path::new(&git_dir);
 
     let result = match create_and_checkout_branch(
-        git_dir_path,
+        &git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
@@ -686,7 +780,7 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
     })?;
     let git_dir_path = Path::new(&git_dir);
 
-    let result = match checkout_branch(git_dir_path, git_dir_parent.to_string_lossy().as_ref(), text) {
+    let result = match checkout_branch(&git_dir_path, git_dir_parent.to_string_lossy().as_ref(), text) {
         Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
         Err(err) => Err(io::Error::new(
             io::ErrorKind::NotFound,
@@ -1110,15 +1204,15 @@ fn get_current_dir_string() -> io::Result<String> {
 
 
 /// Get the Git directory path or return an error if not found.
-fn get_git_directory_path(current_dir: &Path) -> io::Result<String> {
-    match utils::find_git_directory(&mut current_dir.to_path_buf(), ".mgit") {
+fn get_git_directory_path(current_dir: &PathBuf) -> io::Result<String> {
+    match utils::find_git_directory(&mut current_dir.clone(), ".mgit") {
         Some(path) => Ok(path),
         None => Err(io::Error::new(io::ErrorKind::Other, "Git directory not found")),
     }
 }
 
 /// Check if the commit message is empty and show an error dialog if it is.
-fn check_commit_message(message: &str) -> io::Result<()> {
+fn check_commit_message(message: &str, builder: &gtk::Builder) -> io::Result<()> {
     if message.is_empty() {
         let dialog = gtk::MessageDialog::new(
             None::<&gtk::Window>,
@@ -1148,7 +1242,7 @@ fn perform_commit(builder: &gtk::Builder, message: String) -> io::Result<()> {
     let git_dir_path = get_git_directory_path(&PathBuf::from(&current_dir_str))?;
     let git_ignore_path = format!("{}/{}", current_dir_str, ".mgitignore");
 
-    check_commit_message(&message)?;
+    check_commit_message(&message, builder)?;
     create_new_commit(&git_dir_path, &message, &git_ignore_path)?;
 
     set_commit_history_view(builder)?;
@@ -1165,3 +1259,4 @@ fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
 
     perform_commit(builder, message)
 }
+
