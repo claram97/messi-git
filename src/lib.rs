@@ -15,3 +15,4 @@ pub mod utils;
 pub mod client;
 pub mod packfile_handler;
 pub mod server_utils;
+pub mod server;
