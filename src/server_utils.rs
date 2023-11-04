@@ -19,19 +19,6 @@ pub fn connection_not_established_error() -> Error {
     )
 }
 
-pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
-    let packfile = Packfile::reader(packfile)?;
-    for entry in packfile {
-        let entry = entry?;
-        hash_object::store_bytes_array_to_file(
-            entry.content,
-            &git_dir,
-            &entry.obj_type.to_string(),
-        )?;
-    }
-    Ok(())
-}
-
 // Read a line in PKT format in a TcpStream
 // Returns the size of the line and its content
 pub fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
@@ -157,32 +144,6 @@ pub fn parse_line_want_have(line: &str, want_have: WantHave) -> io::Result<Strin
 }
 
 pub fn get_missing_objects_from(
-    new_hash: &str,
-    prev_hash: &str,
-    git_dir: &str,
-) -> io::Result<HashSet<(ObjectType, String)>> {
-    let mut missing: HashSet<(ObjectType, String)> = HashSet::new();
-
-    if new_hash == prev_hash {
-        return Ok(missing);
-    }
-
-    if let Ok(commit) = CommitHashes::new(new_hash, git_dir) {
-        missing.insert((ObjectType::Commit, commit.hash.to_string()));
-
-        let tree_objects = get_objects_tree_objects(&commit.tree, git_dir)?;
-        missing.extend(tree_objects);
-
-        for parent in commit.parent {
-            let _missing = get_missing_objects_from(&parent, prev_hash, git_dir)?;
-            missing.extend(_missing);
-        }
-    }
-
-    Ok(missing)
-}
-
-pub fn get_missing_objects_from2(
     want: &str,
     haves: &HashSet<String>,
     git_dir: &str,
@@ -200,7 +161,7 @@ pub fn get_missing_objects_from2(
         missing.extend(tree_objects);
 
         for parent in commit.parent {
-            let _missing = get_missing_objects_from2(&parent, haves, git_dir)?;
+            let _missing = get_missing_objects_from(&parent, haves, git_dir)?;
             missing.extend(_missing);
         }
     }

@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs,
     io::{self, Error, Write},
     net::TcpStream,
@@ -142,7 +142,10 @@ impl Client {
         self.send(&pkt_line(&update))?;
         self.flush()?;
 
-        let missing_objects = get_missing_objects_from(new_hash, prev_hash, &self.git_dir)?;
+        let mut haves = HashSet::new();
+        haves.insert(prev_hash.to_string());
+
+        let missing_objects = get_missing_objects_from(new_hash, &haves, &self.git_dir)?;
         let packfile = packfile_handler::create_packfile_from_set(missing_objects, &self.git_dir)?;
         self.send_bytes(packfile.as_slice())?;
         Ok(())
@@ -302,7 +305,7 @@ impl Client {
                 break;
             }
             if bytes[0] == 1 {
-                return unpack_packfile(&bytes[..], &self.git_dir);
+                return packfile_handler::unpack_packfile(&bytes[..], &self.git_dir);
             }
         }
         Err(Error::new(io::ErrorKind::NotFound, "Packfile not found"))

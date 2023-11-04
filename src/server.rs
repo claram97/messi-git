@@ -1,8 +1,8 @@
 use crate::packfile_handler::create_packfile_from_set;
 use crate::server_utils::*;
 
-use std::collections::{HashSet, HashMap};
-use std::io::{self, BufRead, BufReader, BufWriter, Write};
+use std::collections::HashSet;
+use std::io::{self, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -30,15 +30,13 @@ impl TryFrom<&str> for Command {
 struct ServerInstace {
     socket: TcpStream,
     path: Arc<String>,
-    commands: Vec<Command>,
     git_dir: String,
     git_dir_path: String,
 }
 
 impl ServerInstace {
     fn new(stream: TcpStream, path: Arc<String>, git_dir: &str) -> Self {
-        let commands = vec![Command::UploadPack, Command::ReceivePack];
-        Self { socket: stream, path: path.clone(), commands, git_dir: git_dir.to_string(), git_dir_path: String::default() }
+        Self { socket: stream, path: path.clone(), git_dir: git_dir.to_string(), git_dir_path: String::default() }
     }
 
     fn handle_client(&mut self) -> io::Result<()> {
@@ -73,13 +71,11 @@ impl ServerInstace {
         
         let mut missing = HashSet::new();
         for want in wants {
-            let m = get_missing_objects_from2(&want, &haves, &self.git_dir_path)?;
+            let m = get_missing_objects_from(&want, &haves, &self.git_dir_path)?;
             missing.extend(m);
         }
 
         let packfile = create_packfile_from_set(missing, &self.git_dir_path)?;
-        // self.send_bytes(&[1])?;
-        // self.send_bytes(&packfile)?;
         let packfile: Vec<u8> = [vec![1], packfile].concat();
         self.send_bytes(&pkt_line_bytes(&packfile))?;
 
