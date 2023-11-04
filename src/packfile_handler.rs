@@ -214,7 +214,7 @@ pub fn create_packfile_from_set(
 ) -> io::Result<Vec<u8>> {
     let mut packfile = vec![];
     // header start (ver si va aca o no)
-    packfile.push(1);
+    // packfile.push(1);
     packfile.push(b'P');
     packfile.push(b'A');
     packfile.push(b'C');
