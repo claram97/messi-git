@@ -366,7 +366,7 @@ fn merge_window(builder: &Builder) -> io::Result<()> {
 ///
 /// This function initializes and displays a GTK repository window using a UI builder. It configures the window, adds buttons with specific actions, and sets their styles and click event handlers. The repository window provides buttons for actions like "Add," "Commit," "Push," and more.
 ///
-fn show_repository_window() -> io::Result<()> {
+pub fn show_repository_window() -> io::Result<()> {
     let builder = gtk::Builder::new();
     if let Some(new_window) = load_and_get_window(&builder, "src/gui/new_window2.ui", "window") {
         let _new_window_clone = new_window.clone();
@@ -1226,7 +1226,7 @@ fn configure_repository_window(new_window: gtk::Window) -> io::Result<()> {
 /// - `message`: A string message to be displayed as the window's title.
 /// - `on_text_entered`: A callback function that takes a string parameter and is called when the user confirms the text input.
 ///
-fn create_text_entry_window(
+pub fn create_text_entry_window(
     message: &str,
     on_text_entered: impl Fn(String) + 'static,
 ) -> io::Result<()> {
@@ -1260,102 +1260,3 @@ fn create_text_entry_window(
     Ok(())
 }
 
-/// Connects a GTK button in an initialization window to specific actions based on its type.
-///
-/// This function takes a reference to a GTK button (`button`) and a button type (`button_type`) as input and connects a click event handler. The handler performs different actions based on the button's type, such as opening text entry dialogs, closing all windows, or showing a repository window.
-///
-/// # Arguments
-///
-/// - `button`: A reference to the GTK button to which the event handler will be connected.
-/// - `button_type`: A string indicating the type of button, which determines the action to be taken when the button is clicked.
-pub fn connect_button_clicked_init_window(
-    button: &gtk::Button,
-    button_type: &str,
-) -> io::Result<()> {
-    let button_type = button_type.to_owned();
-
-    button.connect_clicked(move |_| {
-        let current_dir = std::env::current_dir();
-
-        if let Ok(current_dir) = current_dir {
-            let dir_str = match current_dir.to_str() {
-                Some(str) => str.to_owned(),
-                None => {
-                    eprintln!("Failed to convert current directory to string");
-                    return;
-                }
-            };
-
-            if button_type == "option2" {
-                let result = create_text_entry_window("Enter the branch", move |text| {
-                    let result = git_init(&dir_str, &text, None);
-                    match result {
-                        Ok(_) => {
-                            close_all_windows();
-                            let result = show_repository_window();
-                            if result.is_err() {
-                                eprintln!("Couldn't show repository window");
-                            }
-                        }
-                        Err(_err) => {
-                            close_all_windows();
-                            let result = run_main_window();
-                            if result.is_err() {
-                                eprintln!("Couldn't show repository window");
-                            }
-                        }
-                    }
-                });
-                if result.is_err() {}
-            } else if button_type == "option3" {
-                let result_create =
-                    create_text_entry_window("Enter the template path", move |text| {
-                        let result = git_init(&dir_str, "main", Some(&text));
-                        match result {
-                            Ok(_) => {
-                                close_all_windows();
-                                let result = show_repository_window();
-                                if result.is_err() {
-                                    eprintln!("Couldn't show repository window");
-                                }
-                            }
-                            Err(_err) => {
-                                close_all_windows();
-                                let result = run_main_window();
-                                if result.is_err() {
-                                    eprintln!("Couldn't show repository window");
-                                }
-                            }
-                        }
-                    });
-                if result_create.is_err() {
-                    eprintln!("Error trying to create text entry window.\n");
-                    return;
-                }
-            } else if button_type == "option1" {
-                let result = git_init(&dir_str, "main", None);
-                match result {
-                    Ok(_) => {
-                        close_all_windows();
-                        let result = show_repository_window();
-                        if result.is_err() {
-                            eprintln!("Couldn't show repository window");
-                            return;
-                        }
-                    }
-                    Err(_err) => {
-                        close_all_windows();
-                        let result = run_main_window();
-                        if result.is_err() {
-                            eprintln!("Couldn't show repository window");
-                            return;
-                        }
-                    }
-                }
-            }
-        } else {
-            eprintln!("No se pudo obtener el directorio actual.");
-        }
-    });
-    Ok(())
-}
