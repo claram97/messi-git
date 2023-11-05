@@ -1,3 +1,4 @@
+use crate::gui::gui::add_to_open_windows;
 use gtk::prelude::*;
 use gtk::BinExt;
 use gtk::Builder;
@@ -5,8 +6,6 @@ use gtk::CssProviderExt;
 use gtk::StyleContextExt;
 use gtk::WidgetExt;
 use std::io;
-use crate::gui::gui::add_to_open_windows;
-
 
 /// Retrieves a GTK button from a `gtk::Builder` by its ID and applies a specific style.
 ///

@@ -1,14 +1,14 @@
 use crate::gui::gui::add_to_open_windows;
+use crate::gui::gui::close_all_windows;
+use crate::gui::repository_window::show_repository_window;
+use crate::gui::run_main_window;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::apply_window_style;
-use crate::gui::style::get_button;
-use crate::gui::run_main_window;
-use crate::gui::gui::close_all_windows;
-use crate::init::git_init;
 use crate::gui::style::create_text_entry_window;
-use crate::gui::repository_window::show_repository_window;
-use gtk::GtkWindowExt;
+use crate::gui::style::get_button;
+use crate::init::git_init;
 use gtk::ButtonExt;
+use gtk::GtkWindowExt;
 use std::io;
 
 /// Configures the properties of a clone window in a GTK application.

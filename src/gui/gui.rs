@@ -1,10 +1,10 @@
+use super::clone_window::configure_clone_window;
+use super::init_window::configure_init_window;
 use crate::gui::style::{apply_button_style, apply_window_style, get_button, load_and_get_window};
 use gtk::prelude::*;
 use gtk::Builder;
 use std::io;
 use std::sync::Mutex;
-use super::clone_window::configure_clone_window;
-use super::init_window::configure_init_window;
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -125,4 +125,3 @@ pub fn add_to_open_windows(window: &gtk::Window) {
         }
     }
 }
-

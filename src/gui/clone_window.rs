@@ -1,11 +1,11 @@
 use crate::gui::gui::add_to_open_windows;
+use crate::gui::style::apply_button_style;
 use crate::gui::style::apply_entry_style;
 use crate::gui::style::apply_label_style;
 use crate::gui::style::apply_window_style;
 use crate::gui::style::get_button;
 use crate::gui::style::get_entry;
 use crate::gui::style::get_label;
-use crate::gui::style::apply_button_style;
 use gtk::ButtonExt;
 use gtk::DialogExt;
 use gtk::EntryExt;
@@ -64,10 +64,8 @@ pub fn configure_clone_window(
 
     let browse_button = get_button(builder, "browse-button");
     let clone_button = get_button(builder, "clone-button");
-    apply_button_style(&browse_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-    apply_button_style(&clone_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    apply_button_style(&browse_button).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    apply_button_style(&clone_button).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
 
     let new_window_clone_clone = new_window_clone.clone();
     clone_button.connect_clicked(move |_| {
@@ -88,7 +86,6 @@ pub fn configure_clone_window(
             println!("Ok!");
         }
     });
-
 
     let new_window_clone_clone = new_window_clone.clone();
     browse_button.connect_clicked(move |_| {

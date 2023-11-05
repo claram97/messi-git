@@ -1,48 +1,46 @@
-use crate::gui::gui::add_to_open_windows;
-use crate::gui::style::apply_button_style;
-use crate::gui::style::get_button;
-use crate::gui::run_main_window;
-use crate::gui::gui::close_all_windows;
-use crate::gui::style::create_text_entry_window;
-use gtk::GtkWindowExt;
-use gtk::ButtonExt;
-use std::io;
-use gtk::TextViewExt;
-use gtk::TextBufferExt;
-use gtk::prelude::BuilderExtManual;
-use gtk::WidgetExt;
-use crate::gui::style::show_message_dialog;
-use crate::branch::git_branch_for_ui;
-use crate::gui::style::configure_repository_window;
-use crate::gui::style::load_and_get_window;
 use crate::add::add;
-use std::path::Path;
-use crate::utils::find_git_directory;
-use crate::rm::git_rm;
-use crate::checkout::force_checkout;
-use crate::checkout::checkout_commit_detached;
-use crate::checkout::create_or_reset_branch;
-use crate::checkout::create_and_checkout_branch;
+use crate::branch;
+use crate::branch::git_branch_for_ui;
 use crate::checkout::checkout_branch;
-use crate::log::Log;
-use crate::log::log;
+use crate::checkout::checkout_commit_detached;
+use crate::checkout::create_and_checkout_branch;
+use crate::checkout::create_or_reset_branch;
+use crate::checkout::force_checkout;
+use crate::commit;
+use crate::gui::gui::add_to_open_windows;
+use crate::gui::gui::close_all_windows;
+use crate::gui::run_main_window;
+use crate::gui::style::apply_button_style;
+use crate::gui::style::configure_repository_window;
+use crate::gui::style::create_text_entry_window;
 use crate::gui::style::filter_color_code;
-use std::path::PathBuf;
+use crate::gui::style::get_button;
+use crate::gui::style::get_entry;
+use crate::gui::style::get_text_view;
+use crate::gui::style::load_and_get_window;
+use crate::gui::style::show_message_dialog;
+use crate::index;
+use crate::log::log;
+use crate::log::Log;
+use crate::merge;
+use crate::rm::git_rm;
+use crate::status;
+use crate::tree_handler;
+use crate::utils;
+use crate::utils::find_git_directory;
+use gtk::prelude::BuilderExtManual;
+use gtk::Builder;
+use gtk::ButtonExt;
 use gtk::DialogExt;
 use gtk::EntryExt;
+use gtk::GtkWindowExt;
 use gtk::LabelExt;
-use crate::index;
-use crate::gui::style::get_text_view;
-use crate::gui::style::get_entry;
-use crate::branch;
-use crate::commit;
-use crate::merge;
-use crate::status;
-use crate::utils;
-use crate::tree_handler;
-use gtk::Builder;
-
-
+use gtk::TextBufferExt;
+use gtk::TextViewExt;
+use gtk::WidgetExt;
+use std::io;
+use std::path::Path;
+use std::path::PathBuf;
 
 /// Displays a repository window with various buttons and actions in a GTK application.
 ///
@@ -54,11 +52,13 @@ pub fn show_repository_window() -> io::Result<()> {
         setup_repository_window(&builder, &new_window)?;
         Ok(())
     } else {
-        Err(io::Error::new(io::ErrorKind::Other, "Failed to show repository window.\n"))
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Failed to show repository window.\n",
+        ))
     }
+}
 
- }
- 
 /// Setup the repository window with the given GTK builder and window.
 /// This function performs various setup tasks, such as configuring buttons and text views.
 ///
@@ -71,7 +71,7 @@ pub fn show_repository_window() -> io::Result<()> {
 ///
 /// Returns an `io::Result` indicating whether the setup was successful or resulted in an error.
 ///
- fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> io::Result<()> {
+fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> io::Result<()> {
     let new_window_clone = new_window.clone();
     let builder_clone = builder.clone();
     let builder_clone1 = builder.clone();
@@ -103,10 +103,22 @@ pub fn show_repository_window() -> io::Result<()> {
 ///
 fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
     let button_ids = [
-        "show-log-button", "pull", "push", "show-branches-button",
-        "add-path-button", "add-all-button", "remove-path-button", "remove-all-button",
-        "commit-changes-button",  "new-branch-button", 
-        "close", "checkout1", "checkout2", "checkout3", "checkout4", "checkout5",
+        "show-log-button",
+        "pull",
+        "push",
+        "show-branches-button",
+        "add-path-button",
+        "add-all-button",
+        "remove-path-button",
+        "remove-all-button",
+        "commit-changes-button",
+        "new-branch-button",
+        "close",
+        "checkout1",
+        "checkout2",
+        "checkout3",
+        "checkout4",
+        "checkout5",
     ];
 
     for button_id in button_ids.iter() {
@@ -131,95 +143,114 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
 ///
 fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     let button = get_button(builder, button_id);
-    apply_button_style(&button)
-        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    apply_button_style(&button).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
     let builder_clone = builder.clone(); // Clonar el builder
-    let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-        io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-    })?;
+    let button: gtk::Button = builder_clone
+        .get_object(button_id)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get the button object"))?;
     match button_id {
         "show-log-button" => {
             button.connect_clicked(move |_| {
                 handle_show_log_button_click(&builder_clone);
             });
         }
-        "close"=> {
+        "close" => {
             button.connect_clicked(move |_| {
-                handle_close_window();
+                let result = handle_close_window();
+                if result.is_err() {
+                    eprintln!("Error handling close window.")
+                }
             });
         }
-        "checkout1"=>{
+        "checkout1" => {
             button.connect_clicked(move |_| {
-                handle_checkout_branch_window(&builder_clone);
+                let result = handle_checkout_branch_window();
+                if result.is_err() {
+                    eprintln!("Error handling checkout branch window.")
+                }
             });
         }
-        "checkout2"=>{
+        "checkout2" => {
             button.connect_clicked(move |_| {
-                handle_create_and_checkout_branch_button(&builder_clone);
+                handle_create_and_checkout_branch_button();
             });
         }
-        "checkout3"=>{
+        "checkout3" => {
             button.connect_clicked(move |_| {
-                handle_create_or_reset_branch_button(&builder_clone);
+                handle_create_or_reset_branch_button();
             });
         }
-        "checkout4"=>{
+        "checkout4" => {
             button.connect_clicked(move |_| {
-                handle_checkout_commit_detached_button(&builder_clone);
+                handle_checkout_commit_detached_button();
             });
         }
-        "checkout5"=>{
+        "checkout5" => {
             button.connect_clicked(move |_| {
-                handle_force_checkout_button(&builder_clone);
+                handle_force_checkout_button();
             });
         }
-        "pull"=>{
+        "pull" => {
             button.connect_clicked(move |_| {
                 println!("Pull");
             });
         }
-        "push"=>{
+        "push" => {
             button.connect_clicked(move |_| {
                 println!("push");
             });
         }
-        "show-branches-button"=>{
+        "show-branches-button" => {
             button.connect_clicked(move |_| {
                 handle_show_branches_button(&builder_clone);
             });
         }
-        "new-branch-button"=>{
+        "new-branch-button" => {
             button.connect_clicked(move |_| {
-                handle_create_branch_button(&builder_clone);
+                let result = handle_create_branch_button();
+                if result.is_err() {
+                    eprintln!("Error handling create branch button.")
+                }
             });
         }
-        "add-path-button"=>{
-            button.connect_clicked(move |_| {               
-                handle_add_path_button(&builder_clone);
+        "add-path-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_add_path_button();
+                if result.is_err() {
+                    eprintln!("Error handling add path button.")
+                }
             });
         }
-        "add-all-button"=>{
-            button.connect_clicked(move |_| {               
-                handle_add_all_button(&builder_clone);
+        "add-all-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_add_all_button(&builder_clone);
+                if result.is_err() {
+                    eprintln!("Error handling add all button.")
+                }
             });
         }
-        "remove-path-button"=>{
-            button.connect_clicked(move |_| {               
-                handle_remove_path_window(&builder_clone);
+        "remove-path-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_remove_path_window();
+                if result.is_err() {
+                    eprintln!("Error handling remove path button.")
+                }
             });
         }
-        "remove-all-button"=>{
-            button.connect_clicked(move |_| {               
-                   println!("Button 6 clicked.");
+        "remove-all-button" => {
+            button.connect_clicked(move |_| {
+                println!("Remove all button clicked.");
             });
         }
-        "commit-changes-button"=>{
-            button.connect_clicked(move |_| {               
-                let _ = make_commit(&builder_clone);
+        "commit-changes-button" => {
+            button.connect_clicked(move |_| {
+                let result = make_commit(&builder_clone);
+                if result.is_err() {
+                    eprintln!("Error in commit.");
+                }
             });
         }
-        _ => {
-        }
+        _ => {}
     }
     Ok(())
 }
@@ -232,15 +263,12 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_create_and_checkout_branch_button(builder: &gtk::Builder) {
+fn handle_create_and_checkout_branch_button() {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_create_and_checkout_branch(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog(
-                    "Éxito",
-                    &format!("Changed correctly to branch '{}'", texto),
-                );
+                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => {
                 show_message_dialog("Error", "La rama indicada no existe.");
@@ -260,15 +288,12 @@ fn handle_create_and_checkout_branch_button(builder: &gtk::Builder) {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_create_or_reset_branch_button(builder: &gtk::Builder) {
+fn handle_create_or_reset_branch_button() {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_create_or_reset_branch(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog(
-                    "Éxito",
-                    &format!("Changed correctly to branch '{}'", texto),
-                );
+                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => {
                 show_message_dialog("Error", "La rama indicada no existe.");
@@ -288,15 +313,12 @@ fn handle_create_or_reset_branch_button(builder: &gtk::Builder) {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_checkout_commit_detached_button(builder: &gtk::Builder) {
+fn handle_checkout_commit_detached_button() {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_checkout_commit_detached(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog(
-                    "Éxito",
-                    &format!("Changed correctly to branch '{}'", texto),
-                );
+                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => {
                 show_message_dialog("Error", "La rama indicada no existe.");
@@ -316,15 +338,12 @@ fn handle_checkout_commit_detached_button(builder: &gtk::Builder) {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_force_checkout_button(builder: &gtk::Builder) {
+fn handle_force_checkout_button() {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_force_checkout(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog(
-                    "Éxito",
-                    &format!("Changed correctly to branch '{}'", texto),
-                );
+                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => {
                 show_message_dialog("Error", "La rama indicada no existe.");
@@ -372,7 +391,7 @@ fn handle_show_branches_button(builder: &gtk::Builder) {
 ///
 /// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
 ///
-fn handle_create_branch_button(builder: &gtk::Builder) -> io::Result<()> {
+fn handle_create_branch_button() -> io::Result<()> {
     let create_result = create_text_entry_window("Enter the name of the branch", |text| {
         let result = git_branch_for_ui(Some(text));
         if result.is_err() {
@@ -405,7 +424,7 @@ fn handle_create_branch_button(builder: &gtk::Builder) -> io::Result<()> {
 ///
 /// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
 ///
-fn handle_add_path_button(builder: &gtk::Builder) -> io::Result<()> {
+fn handle_add_path_button() -> io::Result<()> {
     let create_result = create_text_entry_window("Enter the path of the file", move |text| {
         match obtain_text_from_add(&text) {
             Ok(_texto) => {
@@ -447,7 +466,9 @@ fn handle_add_all_button(builder: &gtk::Builder) -> io::Result<()> {
         }
     }
 
-    if let Err(err) = set_staging_area_texts(builder).map_err(|err| io::Error::new(io::ErrorKind::Other, err)) {
+    if let Err(err) =
+        set_staging_area_texts(builder).map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+    {
         eprintln!("Error handling add all button: {}", err);
     }
 
@@ -467,7 +488,7 @@ fn handle_add_all_button(builder: &gtk::Builder) -> io::Result<()> {
 ///
 /// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
 ///
-fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
+fn handle_remove_path_window() -> io::Result<()> {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_remove(&text);
         match resultado {
@@ -498,15 +519,12 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
 ///
 /// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
 ///
-fn handle_checkout_branch_window(builder: &gtk::Builder) -> io::Result<()> {
+fn handle_checkout_branch_window() -> io::Result<()> {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_checkout_branch(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog(
-                    "Éxito",
-                    &format!("Changed correctly to branch '{}'", texto),
-                );
+                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => {
                 show_message_dialog("Error", "La rama indicada no existe.");
@@ -587,7 +605,7 @@ fn show_log_button_handler(builder: gtk::Builder) -> io::Result<()> {
         eprintln!("We couldn't find log text view 'log-text'");
         return Ok(());
     }
-    
+
     let log_text_view: gtk::TextView = log_text_view_result.unwrap();
 
     let text_from_function = obtain_text_from_log();
@@ -601,7 +619,7 @@ fn show_log_button_handler(builder: gtk::Builder) -> io::Result<()> {
                 eprintln!("Fatal error in show repository window.");
                 return Ok(());
             }
-            
+
             let buffer = buffer_result.unwrap();
             buffer.set_text(texto.as_str());
         }
@@ -627,25 +645,24 @@ fn show_log_button_handler(builder: gtk::Builder) -> io::Result<()> {
 /// - `Ok("Ok".to_string())`: If the changes are successfully staged.
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error.
 pub fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
-    let current_dir = std::env::current_dir()?;
-    let (git_dir, git_ignore_path) = find_git_directory_and_ignore(&current_dir)?;
+    let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
 
-    stage_changes(&current_dir, &git_dir, &git_ignore_path, texto)
+    stage_changes(&git_dir, &git_ignore_path, texto)
 }
 
 /// Find the Git directory and Git ignore file path.
 ///
 /// Searches for the Git directory and Git ignore file in the given current directory.
 /// Returns a tuple containing the Git directory path and Git ignore file path if found.
-fn find_git_directory_and_ignore(current_dir: &Path) -> Result<(String, String), io::Error> {
+fn find_git_directory_and_ignore() -> Result<(String, String), io::Error> {
     let current_dir = std::env::current_dir()?;
     let mut current_dir_buf = current_dir.to_path_buf();
     let git_dir = find_git_directory(&mut current_dir_buf, ".mgit")
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found"))?;
 
-    let git_dir_parent = current_dir.parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found")
-    })?;
+    let git_dir_parent = current_dir
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found"))?;
 
     let git_ignore_path = format!("{}/.mgitignore", git_dir_parent.to_string_lossy());
 
@@ -668,7 +685,7 @@ fn find_git_directory_and_ignore(current_dir: &Path) -> Result<(String, String),
 ///
 /// - `Ok("Ok".to_string())`: If the changes are successfully staged.
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
-fn stage_changes(current_dir: &Path, git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<String, io::Error> {
+fn stage_changes(git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<String, io::Error> {
     let index_path = format!("{}/index", git_dir);
 
     if texto == "." {
@@ -717,18 +734,17 @@ fn stage_changes(current_dir: &Path, git_dir: &str, git_ignore_path: &str, texto
 ///
 pub fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n")
-    })?;
+    let git_dir = find_git_directory(&mut current_dir, ".mgit")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
     let index_path = format!("{}/{}", git_dir, "index");
-    let git_dir_parent = Path::new(&git_dir).parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
-    })?;
+    let git_dir_parent = Path::new(&git_dir)
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
     let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), ".mgitignore");
-    
+
     git_rm(texto, &index_path, &git_dir, &git_ignore_path)?;
-    
-    Ok(format!("La función 'rm' se ejecutó correctamente."))
+
+    Ok("La función 'rm' se ejecutó correctamente.".to_string())
 }
 
 /// Force checkout a file from a custom Git-like version control system.
@@ -780,15 +796,14 @@ pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error>
 ///
 pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n")
-    })?;
-    let git_dir_parent = Path::new(&git_dir).parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
-    })?;
+    let git_dir = find_git_directory(&mut current_dir, ".mgit")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
+    let git_dir_parent = Path::new(&git_dir)
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
     let git_dir_path = Path::new(&git_dir);
     let result = match checkout_commit_detached(
-        &git_dir_path,
+        git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
@@ -829,24 +844,26 @@ pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, 
 ///
 pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n")
-    })?;
-    let git_dir_parent = Path::new(&git_dir).parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
-    })?;
+    let git_dir = find_git_directory(&mut current_dir, ".mgit")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
+    let git_dir_parent = Path::new(&git_dir)
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
     let git_dir_path = Path::new(&git_dir);
-    let result =
-        match create_or_reset_branch(&git_dir_path, git_dir_parent.to_string_lossy().as_ref(), texto) {
-            Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
-            Err(err) => Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                format!(
-                    "Error al llamar a la función 'checkout branch': {:?}\n",
-                    err
-                ),
-            )),
-        };
+    let result = match create_or_reset_branch(
+        git_dir_path,
+        git_dir_parent.to_string_lossy().as_ref(),
+        texto,
+    ) {
+        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Err(err) => Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!(
+                "Error al llamar a la función 'checkout branch': {:?}\n",
+                err
+            ),
+        )),
+    };
     if result.is_err() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
@@ -873,16 +890,15 @@ pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io
 ///
 pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n")
-    })?;
-    let git_dir_parent = Path::new(&git_dir).parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
-    })?;
+    let git_dir = find_git_directory(&mut current_dir, ".mgit")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
+    let git_dir_parent = Path::new(&git_dir)
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
     let git_dir_path = Path::new(&git_dir);
 
     let result = match create_and_checkout_branch(
-        &git_dir_path,
+        git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
@@ -921,15 +937,18 @@ pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String
 ///
 pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n")
-    })?;
-    let git_dir_parent = Path::new(&git_dir).parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n")
-    })?;
+    let git_dir = find_git_directory(&mut current_dir, ".mgit")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
+    let git_dir_parent = Path::new(&git_dir)
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
     let git_dir_path = Path::new(&git_dir);
 
-    let result = match checkout_branch(&git_dir_path, git_dir_parent.to_string_lossy().as_ref(), text) {
+    let result = match checkout_branch(
+        git_dir_path,
+        git_dir_parent.to_string_lossy().as_ref(),
+        text,
+    ) {
         Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
         Err(err) => Err(io::Error::new(
             io::ErrorKind::NotFound,
@@ -1134,8 +1153,7 @@ pub fn set_merge_button_behavior(
 ///
 pub fn merge_window(builder: &Builder) -> io::Result<()> {
     let merge_button = get_button(builder, "merge-button");
-    apply_button_style(&merge_button)
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    apply_button_style(&merge_button).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
     let merge_input_branch_entry = match get_entry(builder, "merge-input-branch") {
         Some(merge) => merge,
         None => {
@@ -1191,10 +1209,17 @@ pub fn set_staging_area_texts(builder: &gtk::Builder) -> io::Result<()> {
 /// - `Ok(String)`: If the operation is successful, it returns the text for not staged changes.
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
 fn get_not_staged_text() -> io::Result<String> {
-    let current_dir = std::env::current_dir().map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-    let current_dir_str = current_dir.to_str().ok_or(io::Error::new(io::ErrorKind::Other, "Failed to convert current directory to string"))?;
+    let current_dir =
+        std::env::current_dir().map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    let current_dir_str = current_dir.to_str().ok_or(io::Error::new(
+        io::ErrorKind::Other,
+        "Failed to convert current directory to string",
+    ))?;
 
-    let git_dir = find_git_directory(&mut current_dir.clone(), ".mgit").ok_or(io::Error::new(io::ErrorKind::Other, "Failed to find git directory"))?;
+    let git_dir = find_git_directory(&mut current_dir.clone(), ".mgit").ok_or(io::Error::new(
+        io::ErrorKind::Other,
+        "Failed to find git directory",
+    ))?;
 
     let index_file = format!("{}{}", git_dir, "/index");
     let gitignore_path = format!("{}{}", current_dir.to_str().unwrap(), "/.gitignore");
@@ -1204,7 +1229,12 @@ fn get_not_staged_text() -> io::Result<String> {
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
     let mut untracked_files_output: Vec<u8> = Vec::new();
-    status::find_untracked_files(&current_dir, &current_dir, &index, &mut untracked_files_output)?;
+    status::find_untracked_files(
+        &current_dir,
+        &current_dir,
+        &index,
+        &mut untracked_files_output,
+    )?;
 
     let mut untracked_string = String::from_utf8(untracked_files_output)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
@@ -1225,7 +1255,10 @@ fn get_not_staged_text() -> io::Result<String> {
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
 fn get_staged_text() -> io::Result<String> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or(io::Error::new(io::ErrorKind::Other, "Failed to find git directory"))?;
+    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or(io::Error::new(
+        io::ErrorKind::Other,
+        "Failed to find git directory",
+    ))?;
     let last_commit = branch::get_current_branch_commit(&git_dir)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
     let last_commit_tree = tree_handler::load_tree_from_commit(&last_commit, &git_dir)
@@ -1255,9 +1288,10 @@ fn get_staged_text() -> io::Result<String> {
 /// - `Ok(())`: If the text view is successfully updated.
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
 fn update_text_view(builder: &gtk::Builder, view_name: &str, text: &str) -> io::Result<()> {
-    let text_view: gtk::TextView = builder.get_object(view_name).ok_or(
-        io::Error::new(io::ErrorKind::Other, format!("Failed to get {} object", view_name))
-    )?;
+    let text_view: gtk::TextView = builder.get_object(view_name).ok_or(io::Error::new(
+        io::ErrorKind::Other,
+        format!("Failed to get {} object", view_name),
+    ))?;
 
     let buffer = text_view.get_buffer().ok_or(io::Error::new(
         io::ErrorKind::Other,
@@ -1348,20 +1382,27 @@ fn get_current_dir_string() -> io::Result<String> {
     current_dir
         .to_str()
         .map(String::from) // Convert the &str to String
-        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to convert current directory to string"))
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::Other,
+                "Failed to convert current directory to string",
+            )
+        })
 }
 
-
 /// Get the Git directory path or return an error if not found.
-fn get_git_directory_path(current_dir: &PathBuf) -> io::Result<String> {
-    match utils::find_git_directory(&mut current_dir.clone(), ".mgit") {
+fn get_git_directory_path(current_dir: &Path) -> io::Result<String> {
+    match utils::find_git_directory(&mut current_dir.to_path_buf(), ".mgit") {
         Some(path) => Ok(path),
-        None => Err(io::Error::new(io::ErrorKind::Other, "Git directory not found")),
+        None => Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Git directory not found",
+        )),
     }
 }
 
 /// Check if the commit message is empty and show an error dialog if it is.
-fn check_commit_message(message: &str, builder: &gtk::Builder) -> io::Result<()> {
+fn check_commit_message(message: &str) -> io::Result<()> {
     if message.is_empty() {
         let dialog = gtk::MessageDialog::new(
             None::<&gtk::Window>,
@@ -1391,7 +1432,7 @@ fn perform_commit(builder: &gtk::Builder, message: String) -> io::Result<()> {
     let git_dir_path = get_git_directory_path(&PathBuf::from(&current_dir_str))?;
     let git_ignore_path = format!("{}/{}", current_dir_str, ".mgitignore");
 
-    check_commit_message(&message, builder)?;
+    check_commit_message(&message)?;
     create_new_commit(&git_dir_path, &message, &git_ignore_path)?;
 
     set_commit_history_view(builder)?;
@@ -1400,12 +1441,17 @@ fn perform_commit(builder: &gtk::Builder, message: String) -> io::Result<()> {
 
 /// Commit changes to a custom Git-like version control system.
 fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
-    let message_view: gtk::Entry = builder
-        .get_object("commit-message-text-view")
-        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get commit message text view"))?;
+    let message_view: gtk::Entry =
+        builder
+            .get_object("commit-message-text-view")
+            .ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::Other,
+                    "Failed to get commit message text view",
+                )
+            })?;
 
     let message = message_view.get_text().to_string();
 
     perform_commit(builder, message)
 }
-
