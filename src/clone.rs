@@ -1,6 +1,20 @@
 use crate::{client::Client, config, init, tree_handler};
 use std::io::{self, Read, Write};
 
+/// Retrieves the commit hash of the default branch from the local Git repository.
+///
+/// This function takes the path to the local Git repository directory and looks for the "origin/master"
+/// reference to obtain the commit hash of the "master" branch.
+///
+/// # Arguments
+///
+/// * `local_git_dir`: The path to the local Git repository directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the commit hash of the "master" branch in case of success,
+/// or an error in case an issue occurs during the operation.
+///
 fn get_default_branch_commit(local_git_dir: &str) -> io::Result<String> {
     let path_to_file = local_git_dir.to_string() + "/refs/remotes/origin/master";
     println!("{}", path_to_file);
@@ -12,6 +26,20 @@ fn get_default_branch_commit(local_git_dir: &str) -> io::Result<String> {
     Ok(path_final.to_string())
 }
 
+/// Extracts the last component of each reference from a list of references.
+///
+/// This function takes a vector of reference strings and extracts the last component of each reference
+/// by splitting the string at '/' and taking the last part. It returns a new vector containing only
+/// the last components of the references.
+///
+/// # Arguments
+///
+/// * `refs`: A vector of reference strings to process.
+///
+/// # Returns
+///
+/// Returns a new vector containing only the last components of the input references.
+///
 fn get_clean_refs(refs: Vec<String>) -> Vec<String> {
     let clean_refs = refs
         .iter()
@@ -23,6 +51,25 @@ fn get_clean_refs(refs: Vec<String>) -> Vec<String> {
     clean_refs
 }
 
+/// Clone a remote Git repository into a local directory using a custom Git client.
+///
+/// This function clones a remote Git repository located at `remote_repo_url` into the local directory
+/// specified by `local_dir`. It initializes a new Git repository in the local directory, fetches the
+/// references (branches and tags) from the remote repository, and creates a local copy of the default
+/// branch. The remote repository is identified by `remote_repo_name` and `host`. The function utilizes
+/// a custom Git client to perform the cloning operation.
+///
+/// # Arguments
+///
+/// * `remote_repo_url`: The URL of the remote Git repository to clone.
+/// * `remote_repo_name`: The name of the remote Git repository.
+/// * `host`: The host associated with the remote Git repository.
+/// * `local_dir`: The path to the local directory where the repository will be cloned.
+///
+/// # Returns
+///
+/// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
+///
 pub fn git_clone(
     remote_repo_url: &str,
     remote_repo_name: &str,

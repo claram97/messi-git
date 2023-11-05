@@ -2,12 +2,45 @@ use std::io::{self, Write};
 
 use crate::{fetch, merge};
 
+/// Checks if a branch exists in the local Git repository's references.
+///
+/// This function determines whether a specific branch, identified by its name, exists in the local Git repository's references.
+/// It checks if a corresponding file for the branch is present in the ".mgit/refs/heads/" directory.
+///
+/// # Arguments
+///
+/// * `branch`: The name of the branch to check for existence.
+/// * `local_dir`: The path to the local directory containing the Git repository.
+///
+/// # Returns
+///
+/// Returns `true` if the branch exists in the references, and `false` otherwise.
+///
 fn branch_is_in_refs(branch: &str, local_dir: &str) -> bool {
     let path = local_dir.to_string() + "/.mgit/refs/heads/" + branch;
     let result = std::fs::File::open(path);
     result.is_ok()
 }
 
+/// Perform a Git pull operation to update a local branch from a remote repository.
+///
+/// This function executes a Git pull operation, which involves fetching the most recent commits and objects
+/// from the remote repository and merging the changes into a local branch. It updates the specified `branch` in
+/// the local Git repository located in `local_dir` by synchronizing it with the remote repository. The `remote_repo_name`
+/// can be optionally provided to specify the name of the remote repository to pull from, and the `host` identifies
+/// the host of the remote repository.
+///
+/// # Arguments
+///
+/// * `branch`: The name of the local branch to be updated.
+/// * `local_dir`: The path to the local directory containing the Git repository.
+/// * `remote_repo_name`: An optional name for the remote repository to pull from. If not provided, "origin" is used.
+/// * `host`: The host associated with the remote repository.
+///
+/// # Returns
+///
+/// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
+///
 pub fn git_pull(
     branch: &str,
     local_dir: &str,
