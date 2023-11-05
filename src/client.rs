@@ -94,6 +94,23 @@ impl Client {
         Ok(String::new())
     }
 
+    /// Initiates the "receive-pack" process for pushing updates to the remote Git repository.
+    ///
+    /// This function establishes a connection to the remote Git repository, negotiates the "receive-pack" process,
+    /// and sends updates for the specified reference. It checks if the reference exists locally, calculates the
+    /// difference in commits, and sends the updates to the remote repository. If the local reference is already up
+    /// to date, no updates are sent.
+    ///
+    /// # Arguments
+    ///
+    /// * `self`: A mutable reference to a `Client` instance, used to send updates to the remote repository.
+    /// * `pushing_ref`: The reference (branch) to be pushed to the remote repository.
+    /// * `git_dir`: The path to the local directory containing the Git repository.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
+    ///
     pub fn receive_pack(&mut self, pushing_ref: &str, git_dir: &str) -> io::Result<()> {
         self.connect()?;
         self.initiate_connection(GIT_RECEIVE_PACK)?;
@@ -137,10 +154,42 @@ impl Client {
         Ok(())
     }
 
+    /// Initiates the "receive-pack" process for creating or updating a reference in the remote Git repository.
+    ///
+    /// This function initiates the "receive-pack" process for creating or updating a reference (branch) in the
+    /// remote Git repository. It prepares and sends the necessary data, including the previous and new commit
+    /// hashes and the reference to be updated. For creating a reference, pass "0" as the previous hash.
+    ///
+    /// # Arguments
+    ///
+    /// * `self`: A mutable reference to a `Client` instance, used to send updates to the remote repository.
+    /// * `pushing_ref`: The reference (branch) to be created or updated in the remote repository.
+    /// * `hash`: The new commit hash associated with the reference.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
+    ///
     fn receive_pack_create(&mut self, pushing_ref: &str, hash: &str) -> io::Result<()> {
         self.receive_pack_update(pushing_ref, "0", hash)
     }
 
+    /// Initiates the "receive-pack" process for updating a reference in the remote Git repository.
+    ///
+    /// This function initiates the "receive-pack" process for updating a reference (branch) in the remote Git repository.
+    /// It prepares and sends the necessary data, including the previous and new commit hashes and the reference to be updated.
+    ///
+    /// # Arguments
+    ///
+    /// * `self`: A mutable reference to a `Client` instance, used to send updates to the remote repository.
+    /// * `pushing_ref`: The reference (branch) to be updated in the remote repository.
+    /// * `prev_hash`: The previous commit hash associated with the reference.
+    /// * `new_hash`: The new commit hash to update the reference.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
+    ///
     fn receive_pack_update(
         &mut self,
         pushing_ref: &str,
@@ -193,6 +242,17 @@ impl Client {
         Ok(())
     }
 
+    /// Returns a mutable reference to the underlying `TcpStream` used for communication.
+    ///
+    /// This method retrieves a mutable reference to the underlying `TcpStream` associated with the current
+    /// `Client` instance, which is used for communication with the remote Git repository. The method ensures
+    /// that a connection to the remote server has been established before returning the reference to the stream.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the mutable reference to the `TcpStream` in case of a successful connection,
+    /// or an error in case the connection has not been established. The result is wrapped in an `io::Result<&mut TcpStream>`.
+    ///
     fn socket(&mut self) -> io::Result<&mut TcpStream> {
         match &mut self.socket {
             Some(ref mut socket) => Ok(socket),
@@ -206,6 +266,16 @@ impl Client {
         Ok(())
     }
 
+    /// Ends the connection to the remote Git repository and closes the underlying socket.
+    ///
+    /// This method is responsible for finalizing the connection to the remote Git repository by ensuring that
+    /// any pending data is flushed and the underlying socket is closed. It effectively ends the communication
+    /// session with the remote repository.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
+    ///
     fn end_connection(&mut self) -> io::Result<()> {
         self.flush()?;
         self.socket = None;
@@ -289,6 +359,22 @@ impl Client {
         Ok(Some(hash))
     }
 
+    /// Sends "have" lines to the remote Git repository, indicating the commits present locally.
+    ///
+    /// This method sends "have" lines to the remote Git repository, each specifying a commit hash that is present
+    /// in the local Git repository. These lines help the remote repository identify commits it already has,
+    /// reducing the data transfer during operations like "git fetch."
+    ///
+    /// # Arguments
+    ///
+    /// * `self`: A mutable reference to a `Client` instance, used to send "have" lines to the remote repository.
+    /// * `local_refs`: A `HashMap` containing references (branch names) and their corresponding commit hashes
+    ///   present in the local Git repository.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
+    ///
     fn send_haves(&mut self, local_refs: HashMap<String, String>) -> io::Result<()> {
         if !local_refs.is_empty() {
             for hash in local_refs.values() {
@@ -348,6 +434,17 @@ fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
     Ok((size, line))
 }
 
+/// Reads a Git "packet line" from the provided TCP socket and returns its size and content as bytes.
+///
+/// This function reads a Git "packet line" from the specified TCP socket. A Git "packet line" typically
+/// consists of a 4-byte header indicating the line's total size, followed by the content. The function reads
+/// and parses the header to determine the line's size and then reads the content as bytes. It returns both
+/// the size and content as a tuple.
+///
+/// # Arguments
+///
+/// * `socket`: A mutable reference to the TCP socket from which to read the Git "packet line."
+///
 fn read_pkt_line_bytes(socket: &mut TcpStream) -> io::Result<(usize, Vec<u8>)> {
     let mut buf = vec![0u8; 4];
     socket.read_exact(&mut buf)?;
@@ -375,6 +472,21 @@ fn pkt_line(line: &str) -> String {
     len_hex + line
 }
 
+/// Retrieves the name of the currently checked-out branch from the Git repository's HEAD file.
+///
+/// This function reads the contents of the Git repository's "HEAD" file to determine the currently
+/// checked-out branch and returns its name as a string. The "HEAD" file typically contains a reference
+/// to the branch that is currently active.
+///
+/// # Arguments
+///
+/// * `git_dir`: A string representing the path to the Git repository's root directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the name of the currently checked-out branch as a string. In case of success,
+/// an `io::Result<String>` is returned.
+///
 fn get_head_branch(git_dir: &str) -> io::Result<String> {
     let head = PathBuf::from(git_dir).join("HEAD");
     let content = fs::read_to_string(head)?;
@@ -384,6 +496,7 @@ fn get_head_branch(git_dir: &str) -> io::Result<String> {
     ))?;
     Ok(branch.trim().to_string())
 }
+
 // Auxiliar function which get refs under refs/heads
 fn get_refs_heads(git_dir: &str) -> io::Result<HashMap<String, String>> {
     let mut refs = HashMap::new();
@@ -422,6 +535,25 @@ fn get_refs_heads(git_dir: &str) -> io::Result<HashMap<String, String>> {
     Ok(refs)
 }
 
+/// Retrieves the set of missing Git objects between two commit hashes in a Git repository.
+///
+/// This function calculates and returns the set of missing Git objects (commits, trees, blobs, etc.)
+/// between two commit hashes in a Git repository. It recursively traverses the commit history from
+/// the new hash to the previous hash, identifying missing objects that need to be transferred during
+/// operations like "git push."
+///
+/// # Arguments
+///
+/// * `new_hash`: A string representing the hash of the newer commit in the Git repository.
+/// * `prev_hash`: A string representing the hash of the previous commit in the Git repository.
+/// * `git_dir`: A string representing the path to the Git repository's root directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a set of missing Git objects as tuples of `ObjectType` and string identifiers.
+/// The `ObjectType` indicates the type of Git object, and the string identifier is its hash. In case of success,
+/// an `io::Result<HashSet<(ObjectType, String)>>` is returned.
+///
 fn get_missing_objects_from(
     new_hash: &str,
     prev_hash: &str,
@@ -484,6 +616,22 @@ impl CommitHashes {
     }
 }
 
+/// Retrieves Git objects (trees and blobs) referenced by a specific tree object in a Git repository.
+///
+/// This function reads a tree object's content and identifies the Git objects (trees and blobs) it references.
+/// It recursively traverses nested trees, populating a set with tuples representing the object type and its hash.
+///
+/// # Arguments
+///
+/// * `hash`: A string representing the hash of the tree object in the Git repository.
+/// * `git_dir`: A string representing the path to the Git repository's root directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a set of Git objects as tuples of `ObjectType` and string identifiers.
+/// The `ObjectType` indicates the type of Git object (Tree or Blob), and the string identifier is its hash.
+/// In case of success, an `io::Result<HashSet<(ObjectType, String)>>` is returned.
+///
 fn get_objects_tree_objects(
     hash: &str,
     git_dir: &str,
