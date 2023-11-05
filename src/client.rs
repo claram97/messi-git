@@ -8,8 +8,6 @@ use std::{
 
 use crate::{packfile_handler, server_utils::*};
 
-// multi_ack_detailed side-band-64k thin-pack include-tag ofs-delta deepen-since deepen-not
-
 const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
 const GIT_RECEIVE_PACK: &str = "git-receive-pack";
@@ -64,7 +62,7 @@ impl Client {
     /// Then the remote refs are updated.
     pub fn upload_pack(
         &mut self,
-        wanted_branch: &str,
+        wanted_branchs: Vec<&str>, // recibir vector con varias branchs
         git_dir: &str,
         remote: &str,
     ) -> io::Result<()> {
@@ -75,12 +73,15 @@ impl Client {
         self.remote = remote.to_string();
         self.wait_server_refs()?;
 
-        if let Some(hash) = self.want_branch(&wanted_branch)? {
-            self.update_fetch_head(&hash)?;
-            self.wait_and_unpack_packfile()?;
-            self.update_remote(&wanted_branch, &hash)?;
+        let fetched_remotes_refs = self.want_branchs(wanted_branchs)?;
+        if fetched_remotes_refs.is_empty() {
+            println!("Already up to date.");
+            return Ok(());
         }
-
+        self.wait_and_unpack_packfile()?;
+        for (branch, hash) in fetched_remotes_refs {
+            self.update_remote(&branch, &hash)?;
+        }
         Ok(())
     }
 
@@ -89,17 +90,8 @@ impl Client {
         self.connect()?;
         self.initiate_connection(GIT_RECEIVE_PACK)?;
         self.git_dir = git_dir.to_string();
-
-        // let pushing_ref = if branch == "HEAD" {
-        //     format!("refs/heads/{}", get_head_from_branch(&self.git_dir, branch)?)
-        // } else {
-        //     format!("refs/heads/{}", branch)
-        // };
-
         let pushing_ref = get_head_from_branch(git_dir, branch)?;
-
         self.wait_server_refs()?;
-
         let client_heads_refs = get_head_refs(&self.git_dir)?;
         let new_hash = match client_heads_refs.get(branch) {
             Some(hash) => hash,
@@ -110,22 +102,26 @@ impl Client {
                 ))
             }
         };
-
         let prev_hash = match self.server_refs.get(&pushing_ref) {
             Some(hash) => hash.clone(),
             None => String::new(),
         };
-
         if &prev_hash == new_hash {
             println!("Already up to date.");
             return Ok(());
         }
-
         if prev_hash.is_empty() {
             self.receive_pack_create(&pushing_ref, new_hash)
         } else {
             self.receive_pack_update(&pushing_ref, &prev_hash, new_hash)
         }
+    }
+
+    // Clears the client state
+    fn clear(&mut self) {
+        self.git_dir = String::new();
+        self.remote = String::new();
+        self.server_refs.clear();
     }
 
     fn receive_pack_create(&mut self, pushing_ref: &str, hash: &str) -> io::Result<()> {
@@ -164,13 +160,6 @@ impl Client {
         let pkt_command = pkt_line(&command);
 
         self.send(&pkt_command)
-    }
-
-    // Clears the client state
-    fn clear(&mut self) {
-        self.git_dir = String::new();
-        self.remote = String::new();
-        self.server_refs.clear();
     }
 
     // Auxiliar function. Waits for the refs and loads them in self
@@ -235,14 +224,6 @@ impl Client {
         self.send("0009done\n")
     }
 
-    // Updates FETCH_HEAD file overwritting it
-    fn update_fetch_head(&self, hash: &str) -> io::Result<()> {
-        let pathbuf = PathBuf::from(&self.git_dir);
-        let fetch_head = pathbuf.join("FETCH_HEAD");
-        let mut fetch_head = fs::File::create(fetch_head)?;
-        writeln!(fetch_head, "{}", hash)
-    }
-
     // Updates remote ref with the fetched hash
     // If the ref does not exist, then it is created
     fn update_remote(&self, remote_ref: &str, hash: &str) -> io::Result<()> {
@@ -254,47 +235,59 @@ impl Client {
         writeln!(file, "{}", hash)
     }
 
-    // Tells the server which refs are required
-    // If the provided ref name does not exist in remote, then an error is returned.
-    fn want_branch(&mut self, branch: &str) -> io::Result<Option<String>> {
-        let wanted_ref = get_head_from_branch(&self.git_dir, branch)?;
-        let hash = match self.server_refs.get(&wanted_ref) {
-            Some(hash) => hash.clone(),
-            None => {
-                return Err(Error::new(
-                    io::ErrorKind::NotFound,
-                    format!("Ref not found in remote: {}", wanted_ref),
-                ))
-            }
-        };
+    fn want_branchs(&mut self, branchs: Vec<&str>) -> io::Result<HashMap<String, String>> {
+        let mut fetched_remotes_refs = HashMap::new();
 
         let client_remotes_refs = get_remote_refs(&self.git_dir, &self.remote)?;
-        if let Some(local_hash) = client_remotes_refs.get(branch) {
-            if &hash == local_hash {
-                println!("Already up to date.");
-                return Ok(None);
+        for branch in branchs {
+            let wanted_ref = get_head_from_branch(&self.git_dir, branch)?;
+            let hash = match self.server_refs.get(&wanted_ref) {
+                Some(hash) => hash.clone(),
+                None => {
+                    return Err(Error::new(
+                        io::ErrorKind::NotFound,
+                        format!("Ref not found in remote: {}", wanted_ref),
+                    ))
+                }
+            };
+            if let Some(local_hash) = client_remotes_refs.get(branch) {
+                if &hash == local_hash {
+                    continue;
+                }
             }
+            fetched_remotes_refs.insert(branch.to_string(), hash);
         }
-        let want = format!("want {} {}\n", hash, CAPABILITIES_UPLOAD);
-        let want = pkt_line(&want);
-        self.send(&want)?;
+        if !fetched_remotes_refs.is_empty() {
+            self.send_wants(fetched_remotes_refs.values().collect())?;
+            self.send_haves(client_remotes_refs)?;
+            self.done()?;
+        }
+        Ok(fetched_remotes_refs)
+    }
 
-        self.flush()?;
-        self.send_haves(client_remotes_refs)?;
-        self.done()?;
-        Ok(Some(hash))
+    fn send_wants(&mut self, hashes: Vec<&String>) -> io::Result<()> {
+        let first_want = format!("want {} {}\n", hashes[0], CAPABILITIES_UPLOAD);
+        let first_want = pkt_line(&first_want);
+        self.send(&first_want)?;
+        
+        for hash in hashes.get(1..).unwrap_or(&vec![]) {
+            let want = format!("want {}\n", hash);
+            let want = pkt_line(&want);
+            self.send(&want)?;
+        }
+        self.flush()
     }
 
     fn send_haves(&mut self, local_refs: HashMap<String, String>) -> io::Result<()> {
-        if !local_refs.is_empty() {
-            for hash in local_refs.values() {
-                let have = format!("have {}\n", hash);
-                let have = pkt_line(&have);
-                self.send(&have)?;
-            }
-            self.flush()?;
+        if local_refs.is_empty() {
+            return Ok(());
         }
-        Ok(())
+        for hash in local_refs.values() {
+            let have = format!("have {}\n", hash);
+            let have = pkt_line(&have);
+            self.send(&have)?;
+        }
+        self.flush()
     }
 
     // Waits for the server to send a packfile

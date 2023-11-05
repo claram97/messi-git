@@ -141,6 +141,10 @@ impl ServerInstace {
 
         refs[0] = format!("{}\0{}", refs[0], CAPABILITIES_UPLOAD);
 
+        let version = "version 1";
+        let version = pkt_line(version);
+        self.send(&version)?;
+        
         for r in refs {
             self.send(&pkt_line(&r))?;
         }
