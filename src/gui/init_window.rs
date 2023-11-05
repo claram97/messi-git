@@ -32,6 +32,7 @@ pub fn configure_init_window(
     let button1 = get_button(builder, "button1");
     let button2 = get_button(builder, "button2");
     let button3 = get_button(builder, "button3");
+    let button4 = get_button(builder, "button4");
 
     apply_button_style(&button1)
         .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to apply button1 style"))?;
@@ -39,9 +40,13 @@ pub fn configure_init_window(
         .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to apply button2 style"))?;
     apply_button_style(&button3)
         .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to apply button3 style"))?;
+    apply_button_style(&button4)
+        .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to apply button4 style"))?;
+
     connect_button_clicked_init_window(&button1, "option1")?;
     connect_button_clicked_init_window(&button2, "option2")?;
     connect_button_clicked_init_window(&button3, "option3")?;
+    connect_button_clicked_init_window(&button4, "option4")?;
     Ok(())
 }
 
@@ -107,6 +112,21 @@ pub fn connect_button_clicked_init_window(
                     return;
                 }
                 handle_git_init_main_result(result);
+            } else if button_type == "option4" {
+                let result = create_text_entry_window("Enter the directory path", move |text| {
+                    let result = git_init(&text, "main", None);
+                    if result.is_err() {
+                        eprintln!("Error initiating git.");
+                        return;
+                    }
+                    let result = handle_git_init_with_template_result(result);
+                    if result.is_err() {
+                        eprintln!("Error handling git init with template");
+                    }
+                });
+                if result.is_err() {
+                    eprintln!("Error creating text entry window.");
+                }
             }
         } else {
             eprintln!("No se pudo obtener el directorio actual.");

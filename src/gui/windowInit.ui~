@@ -21,7 +21,7 @@
             </attributes>
           </object>
           <packing>
-            <property name="x">280</property>
+            <property name="x">290</property>
             <property name="y">15</property>
           </packing>
         </child>
