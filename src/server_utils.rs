@@ -7,10 +7,9 @@ use std::{
     str::from_utf8,
 };
 
-use crate::{
-    cat_file, hash_object,
-    packfile_handler::{ObjectType, Packfile},
-};
+use crate::{cat_file, packfile_handler::ObjectType};
+
+// HELPER MODULE
 
 pub fn connection_not_established_error() -> Error {
     Error::new(
@@ -19,27 +18,16 @@ pub fn connection_not_established_error() -> Error {
     )
 }
 
-pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
-    let packfile = Packfile::reader(packfile)?;
-    for entry in packfile {
-        let entry = entry?;
-        hash_object::store_bytes_array_to_file(
-            entry.content,
-            &git_dir,
-            &entry.obj_type.to_string(),
-        )?;
-    }
-    Ok(())
-}
-
-// Read a line in PKT format in a TcpStream
-// Returns the size of the line and its content
+/// Read a line in PKT format in a TcpStream
+/// Returns the size of the line and its content as string
 pub fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
     let (size, bytes) = read_pkt_line_bytes(socket)?;
     let line = from_utf8(&bytes).unwrap_or_default().to_string();
     Ok((size, line))
 }
 
+/// Read a line in PKT format in a TcpStream
+/// Returns the size of the line and its content as bytes
 pub fn read_pkt_line_bytes(socket: &mut TcpStream) -> io::Result<(usize, Vec<u8>)> {
     let mut buf = vec![0u8; 4];
     socket.read_exact(&mut buf)?;
@@ -56,8 +44,8 @@ pub fn read_pkt_line_bytes(socket: &mut TcpStream) -> io::Result<(usize, Vec<u8>
     Ok((size, buf))
 }
 
-// Given a text to send a git client/server, this function transform it to a
-// string in PKT format
+/// Given a text to send a git client/server, this function transform it to a
+/// string in PKT format
 pub fn pkt_line(line: &str) -> String {
     let len = line.len() + 4; // len
     let mut len_hex = format!("{len:x}");
@@ -67,6 +55,21 @@ pub fn pkt_line(line: &str) -> String {
     len_hex + line
 }
 
+/// Given some bytes to send a git client/server, this function transform it
+/// in PKT format
+pub fn pkt_line_bytes(content: &[u8]) -> Vec<u8> {
+    let len = content.len() + 4; // len
+    let mut len_hex = format!("{len:x}");
+    while len_hex.len() < 4 {
+        len_hex = "0".to_owned() + &len_hex
+    }
+    let mut pkt_line = len_hex.as_bytes().to_vec();
+    pkt_line.extend(content);
+    pkt_line
+}
+
+/// Gets the ref name of a branch
+/// If branch is HEAD, then it gets the ref name of the branch pointed by HEAD
 pub fn get_head_from_branch(git_dir: &str, branch: &str) -> io::Result<String> {
     if branch != "HEAD" {
         return Ok(format!("refs/heads/{}", branch));
@@ -80,21 +83,23 @@ pub fn get_head_from_branch(git_dir: &str, branch: &str) -> io::Result<String> {
     ))?;
     Ok(head.trim().to_string())
 }
-// Auxiliar function which get refs under refs/heads
+
+/// Auxiliar function which get refs under refs/heads
 pub fn get_head_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
     let pathbuf = PathBuf::from(git_dir);
     let heads = pathbuf.join("refs").join("heads");
     get_refs(heads)
 }
 
-// Auxiliar function which get refs under refs/heads
+/// Auxiliar function which get refs under refs/heads
 pub fn get_remote_refs(git_dir: &str, remote: &str) -> io::Result<HashMap<String, String>> {
     let pathbuf = PathBuf::from(git_dir);
     let remotes = pathbuf.join("refs").join("remotes").join(remote);
     get_refs(remotes)
 }
 
-pub fn get_refs(refs_path: PathBuf) -> io::Result<HashMap<String, String>> {
+// Auxiliar function which get refs under refs_path
+fn get_refs(refs_path: PathBuf) -> io::Result<HashMap<String, String>> {
     let mut refs = HashMap::new();
     for entry in fs::read_dir(&refs_path)? {
         let filename = entry?.file_name().to_string_lossy().to_string();
@@ -105,25 +110,71 @@ pub fn get_refs(refs_path: PathBuf) -> io::Result<HashMap<String, String>> {
     Ok(refs)
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum WantHave {
+    Want,
+    Have,
+}
+
+impl TryFrom<&str> for WantHave {
+    type Error = io::Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "want" => Ok(Self::Want),
+            "have" => Ok(Self::Have),
+            _ => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Invalid want/have: {}", value),
+            )),
+        }
+    }
+}
+
+/// Parse a line in PKT format with the format: want|have hash
+pub fn parse_line_want_have(line: &str, want_have: WantHave) -> io::Result<String> {
+    let (want_or_have, hash) = line.split_once(' ').ok_or(io::Error::new(
+        io::ErrorKind::InvalidData,
+        format!("Invalid want line: {}", line),
+    ))?;
+
+    if WantHave::try_from(want_or_have)? != want_have {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("Expecting want line: {}", line),
+        ));
+    }
+
+    let (hash, _) = hash.split_once(' ').unwrap_or((hash, ""));
+    Ok(hash.trim().to_string())
+}
+
+/// Get missing objects of a repository
+/// It returns a set of tuples with the object type and the hash
+///
+/// Parameters:
+///     - want: hash of the object to get
+///     - haves: set of hashes of the objects that the caller has
+///     - git_dir: path to the git directory
 pub fn get_missing_objects_from(
-    new_hash: &str,
-    prev_hash: &str,
+    want: &str,
+    haves: &HashSet<String>,
     git_dir: &str,
 ) -> io::Result<HashSet<(ObjectType, String)>> {
     let mut missing: HashSet<(ObjectType, String)> = HashSet::new();
 
-    if new_hash == prev_hash {
+    if haves.contains(want) {
         return Ok(missing);
     }
 
-    if let Ok(commit) = CommitHashes::new(new_hash, git_dir) {
+    if let Ok(commit) = CommitHashes::new(want, git_dir) {
         missing.insert((ObjectType::Commit, commit.hash.to_string()));
 
         let tree_objects = get_objects_tree_objects(&commit.tree, git_dir)?;
         missing.extend(tree_objects);
 
         for parent in commit.parent {
-            let _missing = get_missing_objects_from(&parent, prev_hash, git_dir)?;
+            let _missing = get_missing_objects_from(&parent, haves, git_dir)?;
             missing.extend(_missing);
         }
     }
@@ -167,7 +218,7 @@ impl CommitHashes {
     }
 }
 
-pub fn get_objects_tree_objects(
+fn get_objects_tree_objects(
     hash: &str,
     git_dir: &str,
 ) -> io::Result<HashSet<(ObjectType, String)>> {
@@ -176,7 +227,7 @@ pub fn get_objects_tree_objects(
     let content = cat_file::cat_tree(hash, git_dir)?;
 
     for (mode, _, hash) in content {
-        if mode == "040000" {
+        if mode == "40000" {
             let tree_objects = get_objects_tree_objects(&hash, git_dir)?;
             objects.extend(tree_objects);
         } else {
