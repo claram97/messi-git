@@ -136,13 +136,13 @@ impl ServerInstace {
         let mut refs = vec![];
         let server_refs_heads = get_head_refs(&self.git_dir_path)?;
 
-        let head_path = PathBuf::from(&self.git_dir).join("HEAD");
+        let head_path = PathBuf::from(&self.git_dir_path).join("HEAD");
         if head_path.exists() {
             let head_content = fs::read_to_string(head_path)?;
-            if let Some((_, head)) = head_content.rsplit_once(": ") {
+            if let Some((_, head)) = head_content.rsplit_once("/") {
                 let head = head.trim();
                 if let Some(hash) = server_refs_heads.get(head) {
-                    refs.push(format!("{} {}", hash, head));
+                    refs.push(format!("{} {}", hash, "HEAD"));
                 }
             }
         }

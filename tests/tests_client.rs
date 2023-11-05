@@ -39,9 +39,9 @@ fn test_get_server_refs2() -> io::Result<()> {
 #[ignore]
 fn test_refs_has_head() -> io::Result<()> {
     let address = "localhost:".to_owned() + PORT;
-    let mut client = Client::new(&address, "repo", "localhost");
+    let mut client = Client::new(&address, "repo3", "localhost");
     let refs = client.get_server_refs()?;
-    assert!(refs.contains(&"HEAD".to_string()));
+    assert!(refs.contains_key(&"HEAD".to_string()));
     Ok(())
 }
 
