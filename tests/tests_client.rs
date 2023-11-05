@@ -1,10 +1,8 @@
 use std::io;
-use std::str::from_utf8;
-
 use messi::client::Client;
-const PORT: &str = "9418";
 use messi::cat_file::cat_file_return_content;
 use messi::packfile_handler::Packfile;
+const PORT: &str = "9418";
 
 #[test]
 #[ignore]
