@@ -1,7 +1,3 @@
-
-
-
-
 use crate::gui::gui::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::get_button;
@@ -109,7 +105,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
     let button_ids = [
         "show-log-button", "pull", "push", "show-branches-button",
         "add-path-button", "add-all-button", "remove-path-button", "remove-all-button",
-        "commit-changes-button", "button8", "button9", "new-branch-button", "button11",
+        "commit-changes-button",  "new-branch-button", 
         "close", "checkout1", "checkout2", "checkout3", "checkout4", "checkout5",
     ];
 
