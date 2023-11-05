@@ -14,7 +14,7 @@ fn main() {
 
     let address = "localhost:".to_owned() + PORT;
     let result = clone::git_clone(
-        "localhost:9418",
+        &address,
         "repo_prueba",
         "localhost",
         "/home/fran/Desktop/prueba_para_clonar/repo_prueba",
