@@ -21,7 +21,7 @@
           </object>
           <packing>
             <property name="x">200</property>
-            <property name="y">200</property>
+            <property name="y">150</property>
           </packing>
         </child>
         <child>
@@ -53,7 +53,7 @@
           </object>
           <packing>
             <property name="x">200</property>
-            <property name="y">400</property>
+            <property name="y">300</property>
           </packing>
         </child>
         <child>
@@ -68,6 +68,20 @@
           <packing>
             <property name="x">56</property>
             <property name="y">7</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="button-open-repo">
+            <property name="label" translatable="yes">Open</property>
+            <property name="width-request">400</property>
+            <property name="height-request">90</property>
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">True</property>
+          </object>
+          <packing>
+            <property name="x">200</property>
+            <property name="y">450</property>
           </packing>
         </child>
       </object>

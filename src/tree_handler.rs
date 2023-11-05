@@ -464,7 +464,11 @@ fn merge_file(
 /// ## Errors
 /// This function can return I/O (`io::Result`) errors if there are issues when reading
 /// the content of the commit or loading the tree from the filesystem.
-pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> io::Result<(Tree, Vec<String>)> {
+pub fn merge_trees(
+    our_tree: &Tree,
+    their_tree: &Tree,
+    git_dir: &str,
+) -> io::Result<(Tree, Vec<String>)> {
     let our_tree_vec = our_tree.squash_tree_into_vec("");
     let mut new_tree = Tree::new("");
     let mut conflicting_paths: Vec<String> = Vec::new();

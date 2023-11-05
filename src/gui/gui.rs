@@ -1,5 +1,6 @@
 use super::clone_window::configure_clone_window;
 use super::init_window::configure_init_window;
+use super::style::show_message_dialog;
 use crate::gui::style::{apply_button_style, apply_window_style, get_button, load_and_get_window};
 use gtk::prelude::*;
 use gtk::Builder;
@@ -27,16 +28,20 @@ pub fn run_main_window() -> io::Result<()> {
 
         let button_clone: gtk::Button = get_button(&builder, "buttonclone");
         let button_init: gtk::Button = get_button(&builder, "buttoninit");
+        let button_open_repo: gtk::Button = get_button(&builder, "button-open-repo");
         apply_button_style(&button_clone).map_err(|_err| {
             io::Error::new(io::ErrorKind::Other, "Error applying button stlye.\n")
         })?;
         apply_button_style(&button_init).map_err(|_err| {
             io::Error::new(io::ErrorKind::Other, "Error applying button stlye.\n")
         })?;
+        apply_button_style(&button_open_repo).map_err(|_err| {
+            io::Error::new(io::ErrorKind::Other, "Error applying button stlye.\n")
+        })?;
 
         connect_button_clicked_main_window(&button_clone, "Clone")?;
         connect_button_clicked_main_window(&button_init, "Init")?;
-
+        connect_button_clicked_open_new_repository(&button_open_repo)?;
         window.show_all();
         Ok(())
     } else {
@@ -45,6 +50,11 @@ pub fn run_main_window() -> io::Result<()> {
             "Failed to run main window.",
         ))
     }
+}
+
+fn connect_button_clicked_open_new_repository(button: &gtk::Button) -> io::Result<()> {
+    button.connect_clicked(move |_| show_message_dialog("Warning!", "Not yet implemented."));
+    Ok(())
 }
 
 /// Connects a GTK button to a specific action.

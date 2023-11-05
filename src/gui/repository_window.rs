@@ -152,7 +152,10 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     let merge_text_view = match get_text_view(&builder_clone, "merge-text-view") {
         Some(text_view) => text_view,
         None => {
-            return Err(io::Error::new(io::ErrorKind::Other, "Couldn't find merge text view."));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Couldn't find merge text view.",
+            ));
         }
     };
     match button_id {
@@ -177,8 +180,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                     if result.is_err() {
                         eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
                     }
-                }
-                else {
+                } else {
                     eprintln!("Error handling checkout branch window.")
                 }
             });
@@ -191,8 +193,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                     if result.is_err() {
                         eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
                     }
-                }
-                else {
+                } else {
                     eprintln!("Error handling create and checkout branch button.");
                 }
             });
@@ -205,8 +206,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                     if result.is_err() {
                         eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
                     }
-                }
-                else {
+                } else {
                     eprintln!("Error handling create or reset branch button.");
                 }
             });
@@ -219,8 +219,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                     if result.is_err() {
                         eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
                     }
-                }
-                else {
+                } else {
                     eprintln!("Error handling checkout commit detached button.");
                 }
             });
@@ -233,8 +232,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                     if result.is_err() {
                         eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
                     }
-                }
-                else {
+                } else {
                     eprintln!("Error handling force checkout button.");
                 }
             });
@@ -326,7 +324,6 @@ fn handle_create_and_checkout_branch_button() -> io::Result<()> {
     });
     if result.is_err() {
         eprintln!("Error creating text entry window.");
- 
     }
 
     result
@@ -392,7 +389,7 @@ fn handle_checkout_commit_detached_button() -> io::Result<()> {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_force_checkout_button()  -> io::Result<()> {
+fn handle_force_checkout_button() -> io::Result<()> {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_force_checkout(&text);
         match resultado {
@@ -640,50 +637,6 @@ fn handle_show_log_button_click(builder: &gtk::Builder) {
     } else {
         eprintln!("We couldn't find log text view 'log-text'");
     }
-}
-
-/// Handle the "Show Log" button's click event using a different approach. This function retrieves a text view widget
-/// from the GTK builder and populates it with the Git log data. If the operation is successful, it displays the log data
-/// in the text view. If there is an error, it prints an error message to the standard error.
-///
-/// # Arguments
-///
-/// * `builder` - A GTK builder used to create UI elements.
-///
-/// # Errors
-///
-/// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
-///
-fn show_log_button_handler(builder: gtk::Builder) -> io::Result<()> {
-    let log_text_view_result = builder.get_object("log-text");
-    if log_text_view_result.is_none() {
-        eprintln!("We couldn't find log text view 'log-text'");
-        return Ok(());
-    }
-
-    let log_text_view: gtk::TextView = log_text_view_result.unwrap();
-
-    let text_from_function = obtain_text_from_log();
-    match text_from_function {
-        Ok(texto) => {
-            log_text_view.set_hexpand(true);
-            log_text_view.set_halign(gtk::Align::Start);
-
-            let buffer_result = log_text_view.get_buffer();
-            if buffer_result.is_none() {
-                eprintln!("Fatal error in show repository window.");
-                return Ok(());
-            }
-
-            let buffer = buffer_result.unwrap();
-            buffer.set_text(texto.as_str());
-        }
-        Err(err) => {
-            eprintln!("Error al obtener el texto: {}", err);
-        }
-    }
-
-    Ok(())
 }
 
 /// Stage changes for Git commit in a GTK+ application.
