@@ -47,6 +47,7 @@ use crate::tree_handler;
 use gtk::Builder;
 
 
+
 /// Displays a repository window with various buttons and actions in a GTK application.
 ///
 /// This function initializes and displays a GTK repository window using a UI builder. It configures the window, adds buttons with specific actions, and sets their styles and click event handlers. The repository window provides buttons for actions like "Add," "Commit," "Push," and more.
@@ -61,6 +62,7 @@ pub fn show_repository_window() -> io::Result<()> {
     }
 
  }
+ 
  fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> io::Result<()> {
     let new_window_clone = new_window.clone();
     let builder_clone = builder.clone();
@@ -79,6 +81,7 @@ pub fn show_repository_window() -> io::Result<()> {
 
     Ok(())
 }
+
 fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
     let button_ids = [
         "show-log-button", "pull", "push", "show-branches-button",
@@ -98,153 +101,92 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     let button = get_button(builder, button_id);
     apply_button_style(&button)
         .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    let builder_clone = builder.clone(); // Clonar el builder
+    let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
+        io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
+    })?;
     match button_id {
         "show-log-button" => {
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {
                 handle_show_log_button_click(&builder_clone);
             });
         }
         "close"=> {
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {
                 handle_close_window();
             });
         }
         "checkout1"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {
                 handle_checkout_branch_window(&builder_clone);
             });
         }
         "checkout2"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {
                 handle_create_and_checkout_branch_button(&builder_clone);
             });
         }
         "checkout3"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {
                 handle_create_or_reset_branch_button(&builder_clone);
             });
         }
         "checkout4"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {
                 handle_checkout_commit_detached_button(&builder_clone);
             });
         }
         "checkout5"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {
                 handle_force_checkout_button(&builder_clone);
             });
         }
         "pull"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {
                 println!("Pull");
             });
         }
         "push"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {
                 println!("push");
             });
         }
         "show-branches-button"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {
                 handle_show_branches_button(&builder_clone);
             });
         }
         "new-branch-button"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {
                 handle_create_branch_button(&builder_clone);
             });
         }
         "add-path-button"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {               
                 handle_add_path_button(&builder_clone);
             });
         }
         "add-all-button"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {               
                 handle_add_all_button(&builder_clone);
             });
         }
         "remove-path-button"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {               
                 handle_remove_path_window(&builder_clone);
             });
         }
         "remove-all-button"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {               
                    println!("Button 6 clicked.");
             });
         }
         "commit-changes-button"=>{
-            let builder_clone = builder.clone(); // Clonar el builder
-            let button: gtk::Button = builder_clone.get_object(button_id).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::Other, "Failed to get the button object")
-            })?;
             button.connect_clicked(move |_| {               
                 let _ = make_commit(&builder_clone);
             });
         }
         _ => {
-            // Manejo para otros botones
         }
     }
     Ok(())
