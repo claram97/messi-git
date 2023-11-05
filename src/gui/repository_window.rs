@@ -77,8 +77,17 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
     let builder_clone = builder.clone();
     let builder_clone1 = builder.clone();
 
-    set_staging_area_texts(&builder_clone)?;
-    set_commit_history_view(&builder_clone1)?;
+    match set_staging_area_texts(&builder_clone) {
+        Ok(_) => println!("La función 'set_staging_area_texts' se ejecutó correctamente."),
+        Err(err) => println!(
+            "Error al llamar a la función 'set_staging_area_texts': {:?}",
+            err
+        ),
+    };
+    match set_commit_history_view(&builder_clone1) {
+        Ok(_) => println!("La función 'set_commit_history_view' se ejecutó correctamente."),
+        Err(err) => println!("Error al llamar a la función 'set_commit_history_view': {:?}", err),
+    };
 
     add_to_open_windows(&new_window_clone);
     configure_repository_window(new_window_clone)?;
@@ -1240,12 +1249,24 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
 ///
 pub fn set_staging_area_texts(builder: &gtk::Builder) -> io::Result<()> {
-    let not_staged_text = get_not_staged_text()?;
-    let staged_text = get_staged_text()?;
-
-    update_text_view(builder, "not-staged-view", &not_staged_text)?;
-    update_text_view(builder, "staged-view", &staged_text)?;
-
+    match get_not_staged_text() {
+        Ok(text) => update_text_view(builder, "not-staged-view", &text)?,
+        Err(err) => {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("Error getting not staged text: {}", err),
+            ))?;
+        }
+    }
+    match get_staged_text() {
+        Ok(text) => update_text_view(builder, "staged-view", &text)?,
+        Err(err) => {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("Error getting staged text: {}", err),
+            ))?;
+        }
+    }
     Ok(())
 }
 
