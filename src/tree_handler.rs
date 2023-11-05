@@ -6,8 +6,8 @@ use std::{
 
 use crate::{
     cat_file::{self, cat_tree},
-    hash_object,
-    index::{self}, diff,
+    diff, hash_object,
+    index::{self},
 };
 
 const BLOB_NORMAL_MODE: &str = "100644";
