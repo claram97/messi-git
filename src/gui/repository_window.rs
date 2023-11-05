@@ -121,9 +121,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "push",
         "show-branches-button",
         "add-path-button",
-        "add-all-button",
         "remove-path-button",
-        "remove-all-button",
         "commit-changes-button",
         "new-branch-button",
         "close",
@@ -281,25 +279,12 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                 }
             });
         }
-        "add-all-button" => {
-            button.connect_clicked(move |_| {
-                let result = handle_add_all_button(&builder_clone);
-                if result.is_err() {
-                    eprintln!("Error handling add all button.")
-                }
-            });
-        }
         "remove-path-button" => {
             button.connect_clicked(move |_| {
                 let result = handle_remove_path_window(&builder_clone);
                 if result.is_err() {
                     eprintln!("Error handling remove path button.")
                 }
-            });
-        }
-        "remove-all-button" => {
-            button.connect_clicked(move |_| {
-                println!("Remove all button clicked.");
             });
         }
         "commit-changes-button" => {
@@ -508,38 +493,6 @@ fn handle_add_path_button(builder: &Builder) -> io::Result<()> {
 
     if create_result.is_err() {
         eprintln!("Error creating text entry window.");
-    }
-
-    Ok(())
-}
-
-/// Handle the "Add All" button's click event. This function attempts to add all files to the staging area and
-/// then prints the result. If the operation is successful, it prints the added files. If there is an error, it
-/// prints an error message to the standard error.
-///
-/// # Arguments
-///
-/// * `builder` - A reference to a GTK builder used to create UI elements.
-///
-/// # Errors
-///
-/// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
-///
-fn handle_add_all_button(builder: &gtk::Builder) -> io::Result<()> {
-    let result = obtain_text_from_add(".");
-    match result {
-        Ok(texto) => {
-            println!("Texto: {}", texto);
-        }
-        Err(err) => {
-            eprintln!("Error al obtener el texto: {}", err);
-        }
-    }
-
-    if let Err(err) =
-        set_staging_area_texts(builder).map_err(|err| io::Error::new(io::ErrorKind::Other, err))
-    {
-        eprintln!("Error handling add all button: {}", err);
     }
 
     Ok(())

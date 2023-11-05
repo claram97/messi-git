@@ -270,17 +270,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="add-all-button">
-                            <property name="label" translatable="yes">Add all</property>
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="receives-default">True</property>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                       </object>
                       <packing>
@@ -344,17 +334,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="remove-all-button">
-                            <property name="label" translatable="yes">Remove all</property>
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="receives-default">True</property>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                       </object>
                       <packing>
