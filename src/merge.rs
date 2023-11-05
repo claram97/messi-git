@@ -124,6 +124,23 @@ pub fn git_merge(
     }
 }
 
+/// Merge a remote branch into the current local branch in a Git repository.
+///
+/// This function performs a merge operation by combining the changes from a remote branch into the
+/// current local branch of a Git repository. The merge process involves updating the index and working
+/// tree to reflect the new merged state.
+///
+/// # Arguments
+///
+/// * `branch`: A string representing the name of the local branch to be merged.
+/// * `remote_hash`: A string representing the commit hash of the remote branch to be merged.
+/// * `git_dir`: A string representing the path to the Git repository directory.
+///
+/// # Returns
+///
+/// Returns an `io::Result` indicating whether the merge operation was successful. If successful,
+/// `Ok(())` is returned; otherwise, an error is returned.
+///
 pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io::Result<()> {
     let our_commit = branch::get_branch_commit_hash(branch, git_dir)?;
     let our_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
