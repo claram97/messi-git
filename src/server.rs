@@ -40,6 +40,7 @@ struct ServerInstace {
 }
 
 impl ServerInstace {
+    // Creates a new instance of the server changing the current dir where the repositories are stored
     fn new(stream: TcpStream, path: Arc<String>, git_dir: &str) -> io::Result<Self> {
         env::set_current_dir(path.clone().as_ref())?;
         Ok(Self {
@@ -50,6 +51,7 @@ impl ServerInstace {
         })
     }
 
+    // Handles the client requests
     fn handle_client(&mut self) -> io::Result<()> {
         let command = self.read_command()?;
         match command {
@@ -59,6 +61,7 @@ impl ServerInstace {
         Ok(())
     }
 
+    // Reads the command sent by the client
     fn read_command(&mut self) -> io::Result<Command> {
         let (_, command) = read_pkt_line(&mut self.socket)?;
         let (git_command, line) = command.split_once(" ").ok_or(io::Error::new(
@@ -73,6 +76,9 @@ impl ServerInstace {
         Command::try_from(git_command)
     }
 
+    // Sends the refs to the client
+    // Receiving the wants and haves from the client used to calculate the missing objects
+    // Then, the packfile is created and sent to the client
     fn upload_pack(&mut self) -> io::Result<()> {
         self.send_refs()?;
         let wants = self.read_wants_haves(WantHave::Want)?;
@@ -101,6 +107,8 @@ impl ServerInstace {
         Ok(())
     }
 
+    // Reads the wants or haves sent by the client
+    // Returns a set of hashes of wants or haves, depending on the parameter
     fn read_wants_haves(&mut self, want_have: WantHave) -> io::Result<HashSet<String>> {
         let mut wants = HashSet::new();
         loop {
@@ -114,6 +122,7 @@ impl ServerInstace {
         Ok(wants)
     }
 
+    // Sends the server refs to the client
     fn send_refs(&mut self) -> io::Result<()> {
         let mut refs = vec![];
         let server_refs_heads = get_head_refs(&self.git_dir_path)?;
@@ -144,7 +153,7 @@ impl ServerInstace {
         let version = "version 1";
         let version = pkt_line(version);
         self.send(&version)?;
-        
+
         for r in refs {
             self.send(&pkt_line(&r))?;
         }
@@ -152,6 +161,9 @@ impl ServerInstace {
         self.flush()
     }
 
+    // Receives the packfile from the client
+    // After receiving it, it is unpacked and stored in the git_dir
+    // Then, the refs are updated
     fn receive_pack(&mut self) -> io::Result<()> {
         self.send_refs()?;
         let new_refs = self.wait_changes()?;
@@ -163,6 +175,7 @@ impl ServerInstace {
         self.make_refs_changes(new_refs)
     }
 
+    // Updates the refs with the new ones received from the client
     fn make_refs_changes(&mut self, new_refs: HashMap<String, (String, String)>) -> io::Result<()> {
         for (ref_name, (old, new)) in new_refs {
             match (old, new) {
@@ -174,6 +187,8 @@ impl ServerInstace {
         Ok(())
     }
 
+    // Creates a new ref with the given name and hash
+    // The ref must not exist
     fn create_ref(&mut self, ref_name: &str, new: &str) -> io::Result<()> {
         let ref_path = PathBuf::from(&self.git_dir).join(ref_name);
         if ref_path.exists() {
@@ -186,6 +201,9 @@ impl ServerInstace {
         fs::write(ref_path, content)
     }
 
+    // Updates a ref with the given name and hash
+    // The old hash must be the same as the one stored in the ref
+    // The ref must exist
     fn update_ref(&mut self, ref_name: &str, old: &str, new: &str) -> io::Result<()> {
         let ref_path = PathBuf::from(&self.git_dir_path).join(ref_name);
         if !ref_path.exists() {
@@ -205,6 +223,7 @@ impl ServerInstace {
         fs::write(ref_path, content)
     }
 
+    // Deletes a ref with the given name
     fn delete_ref(&mut self, ref_name: &str) -> io::Result<()> {
         let ref_path = PathBuf::from(&self.git_dir).join(ref_name);
         fs::remove_file(ref_path)
@@ -213,7 +232,6 @@ impl ServerInstace {
     // Waits for the client to send a packfile
     // After receiving it, it is unpacked and stored in the git_dir
     fn wait_and_unpack_packfile(&mut self) -> io::Result<()> {
-        dbg!("Waiting for packfile...");
         loop {
             let (size, bytes) = read_pkt_line_bytes(&mut self.socket)?;
             if size < 4 {
@@ -229,6 +247,9 @@ impl ServerInstace {
         ))
     }
 
+    // Waits for the client to send the new refs
+    // Returns a hashmap with the new refs and the old and new hashes
+    // Will fail if the client tries to update the actual branch (same as git daemon)
     fn wait_changes(&mut self) -> io::Result<HashMap<String, (String, String)>> {
         let head_ref = match get_head_from_branch(&self.git_dir_path, "HEAD") {
             Ok(head) => head,
@@ -290,7 +311,12 @@ impl ServerInstace {
     }
 }
 
-// git_dir: .mgit, .git ... git dir name
+/// Runs a git server
+/// 
+/// # Arguments
+///     - domain and port: domain and port where the server will be listening
+///     - path: path where the repositories are stored
+///     - git_dir: name of the directory where the git files are stored
 pub fn run(domain: &str, port: &str, path: &str, git_dir: &str) -> io::Result<()> {
     let address = domain.to_owned() + ":" + port;
     let listener = TcpListener::bind(address)?;

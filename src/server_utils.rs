@@ -12,6 +12,8 @@ use crate::{
     packfile_handler::ObjectType,
 };
 
+// HELPER MODULE
+
 pub fn connection_not_established_error() -> Error {
     Error::new(
         io::ErrorKind::BrokenPipe,
@@ -19,14 +21,16 @@ pub fn connection_not_established_error() -> Error {
     )
 }
 
-// Read a line in PKT format in a TcpStream
-// Returns the size of the line and its content
+/// Read a line in PKT format in a TcpStream
+/// Returns the size of the line and its content as string
 pub fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
     let (size, bytes) = read_pkt_line_bytes(socket)?;
     let line = from_utf8(&bytes).unwrap_or_default().to_string();
     Ok((size, line))
 }
 
+/// Read a line in PKT format in a TcpStream
+/// Returns the size of the line and its content as bytes
 pub fn read_pkt_line_bytes(socket: &mut TcpStream) -> io::Result<(usize, Vec<u8>)> {
     let mut buf = vec![0u8; 4];
     socket.read_exact(&mut buf)?;
@@ -43,8 +47,8 @@ pub fn read_pkt_line_bytes(socket: &mut TcpStream) -> io::Result<(usize, Vec<u8>
     Ok((size, buf))
 }
 
-// Given a text to send a git client/server, this function transform it to a
-// string in PKT format
+/// Given a text to send a git client/server, this function transform it to a
+/// string in PKT format
 pub fn pkt_line(line: &str) -> String {
     let len = line.len() + 4; // len
     let mut len_hex = format!("{len:x}");
@@ -54,8 +58,8 @@ pub fn pkt_line(line: &str) -> String {
     len_hex + line
 }
 
-// Given some bytes to send a git client/server, this function transform it
-// in PKT format
+/// Given some bytes to send a git client/server, this function transform it
+/// in PKT format
 pub fn pkt_line_bytes(content: &[u8]) -> Vec<u8> {
     let len = content.len() + 4; // len
     let mut len_hex = format!("{len:x}");
@@ -67,6 +71,8 @@ pub fn pkt_line_bytes(content: &[u8]) -> Vec<u8> {
     pkt_line
 }
 
+/// Gets the ref name of a branch
+/// If branch is HEAD, then it gets the ref name of the branch pointed by HEAD
 pub fn get_head_from_branch(git_dir: &str, branch: &str) -> io::Result<String> {
     if branch != "HEAD" {
         return Ok(format!("refs/heads/{}", branch));
@@ -81,20 +87,21 @@ pub fn get_head_from_branch(git_dir: &str, branch: &str) -> io::Result<String> {
     Ok(head.trim().to_string())
 }
 
-// Auxiliar function which get refs under refs/heads
+/// Auxiliar function which get refs under refs/heads
 pub fn get_head_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
     let pathbuf = PathBuf::from(git_dir);
     let heads = pathbuf.join("refs").join("heads");
     get_refs(heads)
 }
 
-// Auxiliar function which get refs under refs/heads
+/// Auxiliar function which get refs under refs/heads
 pub fn get_remote_refs(git_dir: &str, remote: &str) -> io::Result<HashMap<String, String>> {
     let pathbuf = PathBuf::from(git_dir);
     let remotes = pathbuf.join("refs").join("remotes").join(remote);
     get_refs(remotes)
 }
 
+// Auxiliar function which get refs under refs_path
 fn get_refs(refs_path: PathBuf) -> io::Result<HashMap<String, String>> {
     let mut refs = HashMap::new();
     for entry in fs::read_dir(&refs_path)? {
@@ -127,6 +134,7 @@ impl TryFrom<&str> for WantHave {
     }
 }
 
+/// Parse a line in PKT format with the format: want|have hash
 pub fn parse_line_want_have(line: &str, want_have: WantHave) -> io::Result<String> {
     let (want_or_have, hash) = line.split_once(" ").ok_or(io::Error::new(
         io::ErrorKind::InvalidData,
@@ -144,6 +152,13 @@ pub fn parse_line_want_have(line: &str, want_have: WantHave) -> io::Result<Strin
     Ok(hash.trim().to_string())
 }
 
+/// Get missing objects of a repository
+/// It returns a set of tuples with the object type and the hash
+/// 
+/// Parameters:
+///     - want: hash of the object to get
+///     - haves: set of hashes of the objects that the caller has
+///     - git_dir: path to the git directory
 pub fn get_missing_objects_from(
     want: &str,
     haves: &HashSet<String>,
@@ -215,7 +230,7 @@ fn get_objects_tree_objects(
     let content = cat_file::cat_tree(hash, git_dir)?;
 
     for (mode, _, hash) in content {
-        if mode == "040000" {
+        if mode == "40000" {
             let tree_objects = get_objects_tree_objects(&hash, git_dir)?;
             objects.extend(tree_objects);
         } else {
