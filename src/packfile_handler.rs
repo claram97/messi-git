@@ -286,7 +286,7 @@ pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
         let entry = entry?;
         hash_object::store_bytes_array_to_file(
             entry.content,
-            &git_dir,
+            git_dir,
             &entry.obj_type.to_string(),
         )?;
     }

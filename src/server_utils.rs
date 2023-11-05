@@ -136,7 +136,7 @@ impl TryFrom<&str> for WantHave {
 
 /// Parse a line in PKT format with the format: want|have hash
 pub fn parse_line_want_have(line: &str, want_have: WantHave) -> io::Result<String> {
-    let (want_or_have, hash) = line.split_once(" ").ok_or(io::Error::new(
+    let (want_or_have, hash) = line.split_once(' ').ok_or(io::Error::new(
         io::ErrorKind::InvalidData,
         format!("Invalid want line: {}", line),
     ))?;
@@ -148,7 +148,7 @@ pub fn parse_line_want_have(line: &str, want_have: WantHave) -> io::Result<Strin
         ));
     }
 
-    let (hash, _) = hash.split_once(" ").unwrap_or((hash, ""));
+    let (hash, _) = hash.split_once(' ').unwrap_or((hash, ""));
     Ok(hash.trim().to_string())
 }
 

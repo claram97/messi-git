@@ -131,7 +131,7 @@ pub fn store_string_to_file(
 
 fn hash_byte_array(array: &Vec<u8>) -> String {
     let mut hasher = Sha1::new();
-    hasher.update(&array);
+    hasher.update(array);
     let result = hasher.finalize();
     format!("{:x}", result)
 }
@@ -149,7 +149,7 @@ pub fn store_bytes_array_to_file(content: Vec<u8>, git_dir_path: &str, file_type
     //Create the path where the file will be stored
     let output_file_str = output_file_dir + &content_hash[2..];
 
-    let file = File::create(&output_file_str)?;
+    let file = File::create(output_file_str)?;
     
     let mut encoder = ZlibEncoder::new(file, Compression::default());
     encoder.write_all(&complete)?;

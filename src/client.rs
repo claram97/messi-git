@@ -217,7 +217,7 @@ impl Client {
         let first_want = pkt_line(&first_want);
         self.send(&first_want)?;
 
-        for hash in hashes.get(1..).unwrap_or(&vec![]) {
+        for hash in hashes.get(1..).unwrap_or(&[]) {
             let want = format!("want {}\n", hash);
             let want = pkt_line(&want);
             self.send(&want)?;

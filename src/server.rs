@@ -73,11 +73,11 @@ impl ServerInstace {
     // Reads the command sent by the client
     fn read_command(&mut self) -> io::Result<Command> {
         let (_, command) = read_pkt_line(&mut self.socket)?;
-        let (git_command, line) = command.split_once(" ").ok_or(io::Error::new(
+        let (git_command, line) = command.split_once(' ').ok_or(io::Error::new(
             io::ErrorKind::InvalidData,
             format!("Invalid command line: {}", command),
         ))?;
-        let (repo, _) = line.split_once("\0").ok_or(io::Error::new(
+        let (repo, _) = line.split_once('\0').ok_or(io::Error::new(
             io::ErrorKind::InvalidData,
             format!("Invalid command line: {}", command),
         ))?;
@@ -142,7 +142,7 @@ impl ServerInstace {
         let head_path = PathBuf::from(&self.git_dir_path).join("HEAD");
         if head_path.exists() {
             let head_content = fs::read_to_string(head_path)?;
-            if let Some((_, head)) = head_content.rsplit_once("/") {
+            if let Some((_, head)) = head_content.rsplit_once('/') {
                 let head = head.trim();
                 if let Some(hash) = server_refs_heads.get(head) {
                     refs.push(format!("{} {}", hash, "HEAD"));
@@ -277,15 +277,15 @@ impl ServerInstace {
                 break;
             }
             let (old, new, ref_name) = {
-                let (old, line) = line.split_once(" ").ok_or(io::Error::new(
+                let (old, line) = line.split_once(' ').ok_or(io::Error::new(
                     io::ErrorKind::InvalidData,
                     format!("Invalid line: {}", line),
                 ))?;
-                let (new, line) = line.split_once(" ").ok_or(io::Error::new(
+                let (new, line) = line.split_once(' ').ok_or(io::Error::new(
                     io::ErrorKind::InvalidData,
                     format!("Invalid line: {}", line),
                 ))?;
-                let (ref_name, _) = line.split_once("\0").ok_or(io::Error::new(
+                let (ref_name, _) = line.split_once('\0').ok_or(io::Error::new(
                     io::ErrorKind::InvalidData,
                     format!("Invalid line: {}", line),
                 ))?;
