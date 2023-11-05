@@ -13,7 +13,6 @@ fn test_111() -> io::Result<()> {
     Ok(())
 }
 
-
 #[test]
 #[ignore]
 fn test_get_refs() -> io::Result<()> {

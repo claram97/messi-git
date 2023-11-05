@@ -165,7 +165,8 @@ fn handle_get_url_command(
     if line.len() != 2 {
         return report_error(output, "Invalid arguments.");
     }
-    config.get_url(line[1], output)
+    config.get_url(line[1], output)?;
+    Ok(())
 }
 
 /// Handles the "rename" subcommand for Git remotes.

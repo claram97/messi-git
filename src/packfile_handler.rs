@@ -1,18 +1,15 @@
 use std::{
     collections::HashSet,
     fmt::Display,
+    fs::File,
     io::{self, BufReader, Error, Read, Write},
     str::from_utf8,
-    vec, fs::File,
+    vec,
 };
 
-use flate2::{
-    bufread::ZlibDecoder,
-    write::ZlibEncoder,
-    Compression,
-};
-use sha1::Sha1;
+use flate2::{bufread::ZlibDecoder, write::ZlibEncoder, Compression};
 use sha1::Digest;
+use sha1::Sha1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObjectType {
@@ -190,7 +187,6 @@ where
         self.bufreader.read_exact(&mut buf)?;
         Ok(buf[0])
     }
-
 }
 
 impl<R> Iterator for Packfile<R>
@@ -233,29 +229,27 @@ fn append_objects(
     git_dir: &str,
 ) -> io::Result<()> {
     for (obj_type, hash) in objects {
-        
         let content = decompress_object_into_bytes(&hash, git_dir)?;
         let obj_size = content.len();
         let mut compressor = ZlibEncoder::new(Vec::<u8>::new(), Compression::default());
         compressor.write_all(&content)?;
         let compressed_content = compressor.finish()?;
-        
+
         let mut encoded_header: Vec<u8> = Vec::new();
         // Combina el tipo de objeto y los 4 bits más bajos del tamaño
-        let mut c = (obj_type.as_byte() << 4) | ((obj_size & 0x0F) as u8);    
+        let mut c = (obj_type.as_byte() << 4) | ((obj_size & 0x0F) as u8);
         // Codifica el tamaño restante usando codificación de bytes variable
         let mut size = obj_size >> 4;
         while size > 0 {
             encoded_header.push(c | 0x80);
-    
+
             c = size as u8 & 0x7F;
             size >>= 7;
         }
         encoded_header.push(c);
-        
+
         packfile.extend(encoded_header);
         packfile.extend(compressed_content);
-
     }
     let mut hasher = Sha1::new();
     hasher.update(&packfile);

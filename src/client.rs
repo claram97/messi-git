@@ -8,8 +8,6 @@ use std::{
     vec,
 };
 
-use chrono::format;
-
 use crate::cat_file;
 use crate::packfile_handler::Packfile;
 use crate::{
@@ -70,7 +68,7 @@ impl Client {
         wanted_branch: &str,
         git_dir: &str,
         remote: &str,
-    ) -> io::Result<()> {
+    ) -> io::Result<String> {
         self.connect()?;
         self.initiate_connection(GIT_UPLOAD_PACK)?;
         self.git_dir = git_dir.to_string();
@@ -90,9 +88,10 @@ impl Client {
             self.update_fetch_head(&hash)?;
             self.update_remote(&branch, &hash)?;
             self.wait_packfile()?;
+            return Ok(hash);
         }
 
-        Ok(())
+        Ok(String::new())
     }
 
     pub fn receive_pack(&mut self, pushing_ref: &str, git_dir: &str) -> io::Result<()> {

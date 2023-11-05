@@ -124,6 +124,18 @@ pub fn git_merge(
     }
 }
 
+pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io::Result<()> {
+    let our_commit = branch::get_branch_commit_hash(branch, git_dir)?;
+    let our_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
+    let remote_tree = tree_handler::load_tree_from_commit(&remote_hash, git_dir)?;
+    let new_tree = tree_handler::merge_trees(&our_tree, &remote_tree, git_dir)?;
+    let index_path = utils::get_index_file_path(git_dir);
+    let new_index_file_contents =
+        new_tree.build_index_file_from_tree(&index_path, git_dir, &get_git_ignore_path(git_dir))?;
+    new_index_file_contents.write_file()?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
 

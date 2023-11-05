@@ -136,7 +136,11 @@ fn hash_byte_array(array: &Vec<u8>) -> String {
     format!("{:x}", result)
 }
 
-pub fn store_bytes_array_to_file(content: Vec<u8>, git_dir_path: &str, file_type: &str) -> io::Result<String> {
+pub fn store_bytes_array_to_file(
+    content: Vec<u8>,
+    git_dir_path: &str,
+    file_type: &str,
+) -> io::Result<String> {
     let header = format!("{file_type} {}\0", content.len());
     let header = header.as_bytes();
     let complete = [header, &content].concat();
@@ -150,7 +154,7 @@ pub fn store_bytes_array_to_file(content: Vec<u8>, git_dir_path: &str, file_type
     let output_file_str = output_file_dir + &content_hash[2..];
 
     let file = File::create(&output_file_str)?;
-    
+
     let mut encoder = ZlibEncoder::new(file, Compression::default());
     encoder.write_all(&complete)?;
     encoder.finish()?;
@@ -166,7 +170,11 @@ fn hash_tree_file(tree_file: &str) -> io::Result<String> {
     Ok(format!("{:x}", result))
 }
 
-pub fn store_tree_to_file(blobs: Vec<(String, String, Vec<u8>)>, trees: Vec<(String, String, Vec<u8>)>, git_dir_path: &str) -> io::Result<String> {
+pub fn store_tree_to_file(
+    blobs: Vec<(String, String, Vec<u8>)>,
+    trees: Vec<(String, String, Vec<u8>)>,
+    git_dir_path: &str,
+) -> io::Result<String> {
     let mut blobs = blobs;
     blobs.append(&mut trees.clone());
 
@@ -191,7 +199,7 @@ pub fn store_tree_to_file(blobs: Vec<(String, String, Vec<u8>)>, trees: Vec<(Str
     let output_file_str = output_file_dir + &tree_hash[2..];
     compress_tree("tree.tmp", &output_file_str)?;
     fs::remove_file("tree.tmp")?;
-    
+
     Ok(tree_hash)
 }
 
@@ -203,8 +211,6 @@ fn compress_tree(tree_file: &str, output_file: &str) -> io::Result<()> {
     encoder.finish()?;
     Ok(())
 }
-
-
 
 /// Compresses the content of the file at the given input path and stores it in the file at the given output path.
 /// The content is compressed using zlib.
