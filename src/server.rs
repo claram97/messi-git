@@ -2,12 +2,12 @@ use crate::packfile_handler::{self, create_packfile_from_set};
 use crate::server_utils::*;
 
 use std::collections::{HashMap, HashSet};
+use std::env;
 use std::io::{self, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::{fs, thread};
-use std::env;
 
 const CAPABILITIES_UPLOAD: &str = "multi_ack side-band-64k ofs-delta";
 const ZERO_HASH: &str = "0000000000000000000000000000000000000000";
@@ -136,10 +136,7 @@ impl ServerInstace {
         );
 
         if refs.is_empty() {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "No refs found",
-            ));
+            return Err(io::Error::new(io::ErrorKind::NotFound, "No refs found"));
         }
 
         refs[0] = format!("{}\0{}", refs[0], CAPABILITIES_UPLOAD);
@@ -163,19 +160,6 @@ impl ServerInstace {
     }
 
     fn make_refs_changes(&mut self, new_refs: HashMap<String, (String, String)>) -> io::Result<()> {
-        let head_ref = fs::read_to_string(PathBuf::from(&self.git_dir_path).join("HEAD"))?;
-        let head_ref = match head_ref.split_once(": ") {
-            Some((_, head_ref)) => String::from(head_ref.trim()),
-            None => String::new(),
-        };
-
-        if new_refs.contains_key(&head_ref) {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "Can not update actual branch. Please do a checkout and try again",
-            ));
-        }
-
         for (ref_name, (old, new)) in new_refs {
             match (old, new) {
                 (old, new) if old == ZERO_HASH => self.create_ref(&ref_name, &new)?,
@@ -242,6 +226,12 @@ impl ServerInstace {
     }
 
     fn wait_changes(&mut self) -> io::Result<HashMap<String, (String, String)>> {
+        let head_ref = match get_head_from_branch(&self.git_dir_path, "HEAD") {
+            Ok(head) => head,
+            Err(e) if e.kind() == io::ErrorKind::InvalidData => String::new(),
+            Err(e) => return Err(e),
+        };
+        
         let mut new_refs = HashMap::new();
         loop {
             let (size, line) = read_pkt_line(&mut self.socket)?;
@@ -267,6 +257,12 @@ impl ServerInstace {
                     ref_name.trim().to_string(),
                 )
             };
+            if ref_name == head_ref {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Can not update actual branch. Please do a checkout and try again",
+                ));
+            }
             new_refs.insert(ref_name, (old, new));
         }
         Ok(new_refs)
