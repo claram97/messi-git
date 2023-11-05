@@ -36,6 +36,7 @@ use gtk::EntryExt;
 use gtk::GtkWindowExt;
 use gtk::LabelExt;
 use gtk::TextBufferExt;
+use gtk::TextView;
 use gtk::TextViewExt;
 use gtk::WidgetExt;
 use std::io;
@@ -148,6 +149,12 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     let button: gtk::Button = builder_clone
         .get_object(button_id)
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get the button object"))?;
+    let merge_text_view = match get_text_view(&builder_clone, "merge-text-view") {
+        Some(text_view) => text_view,
+        None => {
+            return Err(io::Error::new(io::ErrorKind::Other, "Couldn't find merge text view."));
+        }
+    };
     match button_id {
         "show-log-button" => {
             button.connect_clicked(move |_| {
@@ -165,29 +172,71 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         "checkout1" => {
             button.connect_clicked(move |_| {
                 let result = handle_checkout_branch_window();
-                if result.is_err() {
+                if result.is_ok() {
+                    let result = show_current_branch_on_merge_window(&merge_text_view);
+                    if result.is_err() {
+                        eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
+                    }
+                }
+                else {
                     eprintln!("Error handling checkout branch window.")
                 }
             });
         }
         "checkout2" => {
             button.connect_clicked(move |_| {
-                handle_create_and_checkout_branch_button();
+                let result = handle_create_and_checkout_branch_button();
+                if result.is_ok() {
+                    let result = show_current_branch_on_merge_window(&merge_text_view);
+                    if result.is_err() {
+                        eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
+                    }
+                }
+                else {
+                    eprintln!("Error handling create and checkout branch button.");
+                }
             });
         }
         "checkout3" => {
             button.connect_clicked(move |_| {
-                handle_create_or_reset_branch_button();
+                let result = handle_create_or_reset_branch_button();
+                if result.is_ok() {
+                    let result = show_current_branch_on_merge_window(&merge_text_view);
+                    if result.is_err() {
+                        eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
+                    }
+                }
+                else {
+                    eprintln!("Error handling create or reset branch button.");
+                }
             });
         }
         "checkout4" => {
             button.connect_clicked(move |_| {
-                handle_checkout_commit_detached_button();
+                let result = handle_checkout_commit_detached_button();
+                if result.is_ok() {
+                    let result = show_current_branch_on_merge_window(&merge_text_view);
+                    if result.is_err() {
+                        eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
+                    }
+                }
+                else {
+                    eprintln!("Error handling checkout commit detached button.");
+                }
             });
         }
         "checkout5" => {
             button.connect_clicked(move |_| {
-                handle_force_checkout_button();
+                let result = handle_force_checkout_button();
+                if result.is_ok() {
+                    let result = show_current_branch_on_merge_window(&merge_text_view);
+                    if result.is_err() {
+                        eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
+                    }
+                }
+                else {
+                    eprintln!("Error handling force checkout button.");
+                }
             });
         }
         "pull" => {
@@ -263,7 +312,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_create_and_checkout_branch_button() {
+fn handle_create_and_checkout_branch_button() -> io::Result<()> {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_create_and_checkout_branch(&text);
         match resultado {
@@ -277,7 +326,10 @@ fn handle_create_and_checkout_branch_button() {
     });
     if result.is_err() {
         eprintln!("Error creating text entry window.");
+ 
     }
+
+    result
 }
 
 /// Handle the create or reset branch button's click event. This function prompts the user to enter a path
@@ -288,7 +340,7 @@ fn handle_create_and_checkout_branch_button() {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_create_or_reset_branch_button() {
+fn handle_create_or_reset_branch_button() -> io::Result<()> {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_create_or_reset_branch(&text);
         match resultado {
@@ -303,6 +355,7 @@ fn handle_create_or_reset_branch_button() {
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
+    result
 }
 
 /// Handle the checkout commit detached button's click event. This function prompts the user to enter a path
@@ -313,7 +366,7 @@ fn handle_create_or_reset_branch_button() {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_checkout_commit_detached_button() {
+fn handle_checkout_commit_detached_button() -> io::Result<()> {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_checkout_commit_detached(&text);
         match resultado {
@@ -328,6 +381,7 @@ fn handle_checkout_commit_detached_button() {
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
+    result
 }
 
 /// Handle the force checkout button's click event. This function prompts the user to enter a path
@@ -338,7 +392,7 @@ fn handle_checkout_commit_detached_button() {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_force_checkout_button() {
+fn handle_force_checkout_button()  -> io::Result<()> {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_force_checkout(&text);
         match resultado {
@@ -353,6 +407,7 @@ fn handle_force_checkout_button() {
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
+    result
 }
 
 /// Handle the "Show Branches" button's click event. This function retrieves information about Git branches
@@ -1144,6 +1199,38 @@ pub fn set_merge_button_behavior(
     Ok(())
 }
 
+fn show_current_branch_on_merge_window(merge_text_view: &TextView) -> io::Result<()> {
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Git directory not found.\n",
+            ));
+        }
+    };
+
+    let buffer = match merge_text_view.get_buffer() {
+        Some(buff) => buff,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "Text view buffer can't be accessed.\n",
+            ));
+        }
+    };
+
+    let current_branch = commit::get_branch_name(&git_dir)?;
+    buffer.set_text(
+        &("La rama actual es: ".to_string()
+            + &current_branch
+            + ".\nIngrese la rama que quiere mergear con la rama actual.\n"),
+    );
+
+    Ok(())
+}
+
 /// ## `merge_window`
 ///
 /// The `merge_window` function initializes the GTK merge window by connecting UI elements to Git merge functionality.
@@ -1169,6 +1256,8 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
             ));
         }
     };
+
+    show_current_branch_on_merge_window(&merge_text_view)?;
 
     set_merge_button_behavior(&merge_button, &merge_input_branch_entry, &merge_text_view)?;
     Ok(())
