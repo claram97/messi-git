@@ -1064,8 +1064,7 @@ pub fn call_git_merge(their_branch: &str) -> io::Result<Vec<String>> {
             ));
         }
     };
-
-    let our_branch = branch::get_current_branch_path(&git_dir)?;
+    let our_branch = commit::get_branch_name(&git_dir)?;
     let (_, conflicts) = merge::git_merge(
         &our_branch,
         their_branch,

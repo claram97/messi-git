@@ -111,7 +111,6 @@ pub fn git_merge(
     let their_commit = branch::get_branch_commit_hash(their_branch, git_dir)?;
 
     let common_ancestor = find_common_ancestor(&our_commit, &their_commit, git_dir)?;
-
     if is_fast_forward(&our_commit, &common_ancestor) {
         fast_forward_merge(our_branch, their_branch, git_dir, root_dir)?;
         let tuple = (our_commit, vec![]);

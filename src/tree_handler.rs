@@ -489,7 +489,7 @@ pub fn merge_trees(
             current_tree = current_tree.get_or_create_dir(dir);
         }
         let result = merge_file(&path, &hash, their_tree, current_tree, filename, git_dir)?;
-        if result.is_empty() {
+        if !result.is_empty() {
             conflicting_paths.push(result);
         }
     }
