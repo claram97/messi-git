@@ -1159,14 +1159,15 @@ pub fn merge_button_connect_clicked(
                     };
                 }
                 Err(_e) => {
-                    match text_view_clone.get_buffer() {
-                        Some(buff) => {
-                            buff.set_text("Conflicts on merge!");
-                        }
-                        None => {
-                            eprintln!("Couldn't write the output on the text view.");
-                        }
-                    };
+                    show_message_dialog("Error", "Merge interrupted due to an error.");
+                    // match text_view_clone.get_buffer() {
+                    //     Some(buff) => {
+                    //         buff.set_text("Conflicts on merge!");
+                    //     }
+                    //     None => {
+                    //         eprintln!("Couldn't write the output on the text view.");
+                    //     }
+                    // };
                 }
             };
         }
