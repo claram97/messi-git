@@ -131,7 +131,7 @@ pub fn store_string_to_file(
 
 fn hash_byte_array(array: &Vec<u8>) -> String {
     let mut hasher = Sha1::new();
-    hasher.update(&array);
+    hasher.update(array);
     let result = hasher.finalize();
     format!("{:x}", result)
 }

@@ -15,6 +15,8 @@ use std::io::{self, Read, Write};
 /// Returns a `Result` containing the commit hash of the "master" branch in case of success,
 /// or an error in case an issue occurs during the operation.
 ///
+
+//Ver de dónde sale la default branch
 fn get_default_branch_commit(local_git_dir: &str) -> io::Result<String> {
     let path_to_file = local_git_dir.to_string() + "/refs/remotes/origin/master";
     println!("{}", path_to_file);
@@ -74,10 +76,10 @@ pub fn git_clone(
     remote_repo_url: &str,
     remote_repo_name: &str,
     host: &str,
-    local_dir: &str,
+    working_dir: &str,
 ) -> io::Result<()> {
-    init::git_init(local_dir, "master", None)?;
-    let local_git_dir = local_dir.to_string() + "/.mgit";
+    init::git_init(working_dir, "master", None)?;
+    let local_git_dir = working_dir.to_string() + "/.mgit";
     let mut client = Client::new(remote_repo_url, remote_repo_name, host);
     let refs = client.get_refs()?;
     let clean_refs = get_clean_refs(refs);
@@ -90,13 +92,12 @@ pub fn git_clone(
     }
     let default_branch_commit = get_default_branch_commit(&local_git_dir)?;
     let commit_tree = tree_handler::load_tree_from_commit(&default_branch_commit, &local_git_dir)?;
-    let parent_dir = &local_dir;
     let branch_file_path = local_git_dir.to_string() + "/refs/heads/master";
     let mut branch_file = std::fs::File::create(branch_file_path)?;
     branch_file.write_all(default_branch_commit.as_bytes())?;
-    commit_tree.create_directories(parent_dir, &local_git_dir)?;
+    commit_tree.create_directories(working_dir, &local_git_dir)?;
     let index_path = local_git_dir.to_string() + "/index";
-    let gitignore_path = parent_dir.to_string() + "/.gitignore";
+    let gitignore_path = working_dir.to_string() + "/.gitignore";
     commit_tree.build_index_file_from_tree(&index_path, &local_git_dir, &gitignore_path)?;
     let mut config_file = config::Config::load(&local_git_dir)?;
     config_file.add_remote(
