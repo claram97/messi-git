@@ -6,7 +6,6 @@ pub struct Branch {
 }
 
 impl Branch {
-    
     /// The `Branch` struct holds information about a Git branch, including its name, the remote reference it tracks,
     /// and the configuration for merging changes. This constructor is used to create new instances of the `Branch`
     /// struct with the specified attributes.

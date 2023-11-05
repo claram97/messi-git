@@ -39,7 +39,6 @@ impl Default for FetchHead {
 }
 
 impl FetchHead {
-
     /// Creates a new, empty FetchHead instance.
     ///
     /// This method returns a new, empty `FetchHead` struct with no fetched entries.
@@ -80,7 +79,9 @@ impl FetchHead {
     /// * `branch_name`: The branch name to search for.
     ///
     pub fn get_branch_entry(&self, branch_name: &str) -> Option<&FetchEntry> {
-        self.entries.iter().find(|&entry| entry.branch_name == branch_name)
+        self.entries
+            .iter()
+            .find(|&entry| entry.branch_name == branch_name)
     }
 
     /// Writes the contents of the FetchHead to a file.
