@@ -1,7 +1,7 @@
-use std::io;
-use messi::client::Client;
 use messi::cat_file::cat_file_return_content;
+use messi::client::Client;
 use messi::packfile_handler::Packfile;
+use std::io;
 const PORT: &str = "9418";
 
 #[test]
