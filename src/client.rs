@@ -92,9 +92,9 @@ impl Client {
 
     /// Establish a connection with the server and sends the local refs to the server.
     /// If the remote refs are up to date, then nothing is done.
-    /// 
+    ///
     /// Refs can be updated, created or deleted. However, deletion is not implemented yet.
-    /// 
+    ///
     /// Parameters:
     ///   - branch: name of the branch to push
     ///   - git_dir: path to the git directory
@@ -177,9 +177,9 @@ impl Client {
     }
 
     // Auxiliar function. Given a vector of branchs, will ask the server for the missing objects
-    // 
+    //
     // Will fail if the server does not have the wanted branchs
-    // 
+    //
     // If the server has the wanted branchs, then it will send the 'want' and 'have' messages
     fn want_branchs(&mut self, branchs: Vec<&str>) -> io::Result<HashMap<String, String>> {
         let mut fetched_remotes_refs = HashMap::new();

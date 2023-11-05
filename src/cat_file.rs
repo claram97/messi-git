@@ -1,8 +1,8 @@
+use flate2::bufread::ZlibDecoder;
 use std::{
     fs::File,
-    io::{self, BufReader, ErrorKind, Read, Write}
+    io::{self, BufReader, ErrorKind, Read, Write},
 };
-use flate2::bufread::ZlibDecoder;
 
 /// It recieves the complete hash of a file and writes the content of the file to output.
 /// output can be anything that implementes Write
@@ -61,15 +61,16 @@ pub fn cat_tree(hash: &str, directory: &str) -> io::Result<Vec<(String, String, 
     };
     let header = content.split_at(header_len);
     let content = header.1[1..].to_vec();
-    
+
     //Entry del tree: <modo> <nombre>\0<hash>
 
     let mut results = vec![];
     let mut r = BufReader::new(content.as_slice());
 
     let mut bytes_read = 0;
-    while bytes_read < content.len() { // mientras no haya leido todo el contenido
-        let mut mode: [u8; 6] = [0,0,0,0,0,0]; // leo los 6 bytes del modo
+    while bytes_read < content.len() {
+        // mientras no haya leido todo el contenido
+        let mut mode: [u8; 6] = [0, 0, 0, 0, 0, 0]; // leo los 6 bytes del modo
         r.read_exact(&mut mode)?;
         bytes_read += 6;
         let mut name: Vec<u8> = vec![]; // lo prixmo es el nombre hasta el \0
@@ -81,24 +82,26 @@ pub fn cat_tree(hash: &str, directory: &str) -> io::Result<Vec<(String, String, 
         loop {
             r.read_exact(&mut buf)?;
             bytes_read += 1;
-            if buf[0] == 0 { // si es el \0 termino
+            if buf[0] == 0 {
+                // si es el \0 termino
                 break;
             }
             name.push(buf[0]);
         }
-        
+
         let mut hash = [0; 20]; // leo los 20 bytes del hash
         r.read_exact(&mut hash)?;
         bytes_read += 20;
 
-        let mode = String::from_utf8(mode.to_vec()).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?; // lo paso a string
+        let mode = String::from_utf8(mode.to_vec())
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?; // lo paso a string
         let hash: Vec<String> = hash.iter().map(|byte| format!("{:02x}", byte)).collect(); // convierto los bytes del hash a string
         let hash = hash.concat().to_string();
-        let name = String::from_utf8(name.to_vec()).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?;
+        let name = String::from_utf8(name.to_vec())
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?;
         results.push((mode, name, hash)); // agrego el resultado y vuelvo a empezar
     }
     Ok(results)
-
 }
 
 fn decompress_into_bytes(file: File) -> io::Result<Vec<u8>> {
@@ -107,7 +110,6 @@ fn decompress_into_bytes(file: File) -> io::Result<Vec<u8>> {
     decompressor.read_to_end(&mut decompressed_content)?;
     Ok(decompressed_content)
 }
-
 
 /// Decompresses a given file.
 /// Using the flate2 library, it decompresses the file and returns its content as a String.

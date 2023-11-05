@@ -7,10 +7,7 @@ use std::{
     str::from_utf8,
 };
 
-use crate::{
-    cat_file,
-    packfile_handler::ObjectType,
-};
+use crate::{cat_file, packfile_handler::ObjectType};
 
 // HELPER MODULE
 
@@ -154,7 +151,7 @@ pub fn parse_line_want_have(line: &str, want_have: WantHave) -> io::Result<Strin
 
 /// Get missing objects of a repository
 /// It returns a set of tuples with the object type and the hash
-/// 
+///
 /// Parameters:
 ///     - want: hash of the object to get
 ///     - haves: set of hashes of the objects that the caller has
@@ -167,7 +164,7 @@ pub fn get_missing_objects_from(
     let mut missing: HashSet<(ObjectType, String)> = HashSet::new();
 
     if haves.contains(want) {
-        return Ok(missing)
+        return Ok(missing);
     }
 
     if let Ok(commit) = CommitHashes::new(want, git_dir) {

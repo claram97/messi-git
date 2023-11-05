@@ -207,7 +207,6 @@ pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)> 
     Ok((tree_hash, tree.name.clone()))
 }
 
-
 /// Wrapper to abstract ourselves from tree naming.
 /// Creates a tree looking at the objects folder.
 /// When a tree is found in the object file, it loads it and appends it to the current tree.
@@ -221,7 +220,7 @@ fn _load_tree_from_file(tree_hash: &str, directory: &str, name: &str) -> io::Res
         let object_type = match mode.as_str() {
             "100644" => "blob",
             "40000 " => "tree", //The space is intentional, fix later.
-            _ => "blob"
+            _ => "blob",
         };
         match object_type {
             "blob" => tree.add_file(&name, &hash),

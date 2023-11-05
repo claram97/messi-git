@@ -269,7 +269,7 @@ impl ServerInstace {
             Err(e) if e.kind() == io::ErrorKind::InvalidData => String::new(),
             Err(e) => return Err(e),
         };
-        
+
         let mut new_refs = HashMap::new();
         loop {
             let (size, line) = read_pkt_line(&mut self.socket)?;
@@ -325,7 +325,7 @@ impl ServerInstace {
 }
 
 /// Runs a git server
-/// 
+///
 /// # Arguments
 ///     - domain and port: domain and port where the server will be listening
 ///     - path: path where the repositories are stored
