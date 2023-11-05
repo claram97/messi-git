@@ -310,4 +310,13 @@ mod tests {
         );
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_hash_file_content_absolute_path() {
+        let curr_env_dir = std::env::current_dir().unwrap();
+        let binding = curr_env_dir.join("tests/hash_object/hash_object_hello.txt");
+        let absolute_path = binding.to_str().unwrap();
+        let hash = hash_file_content(absolute_path, "blob").unwrap();
+        assert_eq!(hash, "c57eff55ebc0c54973903af5f72bac72762cf4f4");
+    }
 }

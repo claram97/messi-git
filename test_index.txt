@@ -1,0 +1,2 @@
+hash1 file1
+hash2 file2
