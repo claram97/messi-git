@@ -8,12 +8,111 @@ use crate::gui::style::get_entry;
 use crate::gui::style::get_label;
 use gtk::ButtonExt;
 use gtk::DialogExt;
+use gtk::Entry;
 use gtk::EntryExt;
 use gtk::FileChooserAction;
 use gtk::FileChooserDialog;
 use gtk::FileChooserExt;
 use gtk::GtkWindowExt;
 use std::io;
+
+use super::style::show_message_dialog;
+
+/// Handles the "Browse" button click event in a GTK application.
+/// When the "Browse" button is clicked, a file dialog is displayed
+/// to allow the user to select a directory, and the selected directory
+/// path is then displayed in a text entry field.
+///
+/// # Parameters
+///
+/// - `button`: A reference to the GTK button widget that triggers the action.
+/// - `new_window`: A reference to the GTK window where the file dialog will be displayed.
+/// - `dir_to_clone_entry`: A reference to the GTK entry widget where the selected
+///   directory path will be displayed.
+///
+/// # Usage
+///
+/// You can use this function to connect the "clicked" signal of a GTK button to handle
+/// directory selection. When the button is clicked, a file dialog will be displayed,
+/// and the selected directory path will be shown in the specified entry field.
+fn connect_button_clicked_browse(
+    button: &gtk::Button,
+    new_window: &gtk::Window,
+    dir_to_clone_entry: &Entry,
+) {
+    let dir_to_clone_entry_clone = dir_to_clone_entry.clone();
+    let new_window_clone = new_window.clone();
+    button.connect_clicked(move |_| {
+        let dialog: FileChooserDialog = FileChooserDialog::new(
+            Some("Seleccionar Carpeta"),
+            Some(&new_window_clone),
+            FileChooserAction::SelectFolder,
+        );
+
+        dialog.set_position(gtk::WindowPosition::CenterOnParent);
+
+        dialog.add_button("Cancelar", gtk::ResponseType::Cancel);
+        dialog.add_button("Seleccionar", gtk::ResponseType::Ok);
+
+        if dialog.run() == gtk::ResponseType::Ok {
+            if let Some(folder) = dialog.get_filename() {
+                dir_to_clone_entry_clone.set_text(&folder.to_string_lossy());
+            }
+        }
+
+        dialog.close();
+    });
+}
+
+/// Handles the "Clone Repository" button click event in a GTK application.
+/// It retrieves the URL and directory paths from the specified entry fields
+/// and performs some error checking. If both fields are filled, it prints "Ok!"
+/// to the console.
+///
+/// # Parameters
+///
+/// - `button`: A reference to the GTK button widget that triggers the action.
+/// - `url_entry`: A reference to the GTK entry widget containing the URL.
+/// - `dir_to_clone_entry`: A reference to the GTK entry widget containing the
+///   directory path for cloning.
+///
+/// # Returns
+///
+/// Returns a Result indicating the success or failure of the operation.
+///
+/// # Usage
+///
+/// You can use this function to connect the "clicked" signal of a GTK button to handle
+/// the cloning of a repository. It checks if both the URL and directory fields are
+/// filled. If they are, it prints "Ok!" to the console.
+fn connect_button_clicked_clone_repository(
+    button: &gtk::Button,
+    url_entry: &Entry,
+    dir_to_clone_entry: &Entry,
+) -> io::Result<()> {
+    let url_entry_clone = url_entry.clone();
+    let dir_to_clone_entry_clone = dir_to_clone_entry.clone();
+    button.connect_clicked(move |_| {
+        let url_text = url_entry_clone.get_text().to_string();
+        let dir_text = dir_to_clone_entry_clone.get_text().to_string();
+
+        if url_text.is_empty() || dir_text.is_empty() {
+            // let error_dialog = gtk::MessageDialog::new(
+            //     Some(&new_window_clone_clone),
+            //     gtk::DialogFlags::MODAL,
+            //     gtk::MessageType::Error,
+            //     gtk::ButtonsType::Ok,
+            //     "Faltan datos: URL o directorio de clonación.",
+            // );
+            // error_dialog.run();
+            // error_dialog.close();
+            show_message_dialog("Error", "Faltan datos: URL o directorio de clonación.");
+        } else {
+            println!("Ok!");
+        }
+    });
+    Ok(())
+}
 
 /// Configures the properties of a clone window in a GTK application.
 ///
@@ -67,47 +166,9 @@ pub fn configure_clone_window(
     apply_button_style(&browse_button).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
     apply_button_style(&clone_button).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
 
-    let new_window_clone_clone = new_window_clone.clone();
-    clone_button.connect_clicked(move |_| {
-        let url_text = url_entry.get_text().to_string();
-        let dir_text = dir_to_clone_entry.get_text().to_string();
+    connect_button_clicked_clone_repository(&clone_button, &url_entry, &dir_to_clone_entry)?;
+    connect_button_clicked_browse(&browse_button, new_window_clone, &dir_to_clone_entry);
 
-        if url_text.is_empty() || dir_text.is_empty() {
-            let error_dialog = gtk::MessageDialog::new(
-                Some(&new_window_clone_clone),
-                gtk::DialogFlags::MODAL,
-                gtk::MessageType::Error,
-                gtk::ButtonsType::Ok,
-                "Faltan datos: URL o directorio de clonación.",
-            );
-            error_dialog.run();
-            error_dialog.close();
-        } else {
-            println!("Ok!");
-        }
-    });
-
-    let new_window_clone_clone = new_window_clone.clone();
-    browse_button.connect_clicked(move |_| {
-        let dialog: FileChooserDialog = FileChooserDialog::new(
-            Some("Seleccionar Carpeta"),
-            Some(&new_window_clone_clone),
-            FileChooserAction::SelectFolder,
-        );
-
-        dialog.set_position(gtk::WindowPosition::CenterOnParent);
-
-        dialog.add_button("Cancelar", gtk::ResponseType::Cancel);
-        dialog.add_button("Seleccionar", gtk::ResponseType::Ok);
-
-        if dialog.run() == gtk::ResponseType::Ok {
-            if let Some(folder) = dialog.get_filename() {
-                dir_to_clone_entry_clone.set_text(&folder.to_string_lossy());
-            }
-        }
-
-        dialog.close();
-    });
     let url_label = match get_label(builder, "url-label", 14.0) {
         Some(label) => label,
         None => {
