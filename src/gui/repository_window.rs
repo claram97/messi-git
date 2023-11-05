@@ -86,7 +86,10 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
     };
     match set_commit_history_view(&builder_clone1) {
         Ok(_) => println!("La función 'set_commit_history_view' se ejecutó correctamente."),
-        Err(err) => println!("Error al llamar a la función 'set_commit_history_view': {:?}", err),
+        Err(err) => println!(
+            "Error al llamar a la función 'set_commit_history_view': {:?}",
+            err
+        ),
     };
 
     add_to_open_windows(&new_window_clone);
@@ -269,9 +272,10 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                 }
             });
         }
+
         "add-path-button" => {
             button.connect_clicked(move |_| {
-                let result = handle_add_path_button();
+                let result = handle_add_path_button(&builder_clone);
                 if result.is_err() {
                     eprintln!("Error handling add path button.")
                 }
@@ -287,7 +291,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "remove-path-button" => {
             button.connect_clicked(move |_| {
-                let result = handle_remove_path_window();
+                let result = handle_remove_path_window(&builder_clone);
                 if result.is_err() {
                     eprintln!("Error handling remove path button.")
                 }
@@ -485,11 +489,16 @@ fn handle_create_branch_button() -> io::Result<()> {
 ///
 /// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
 ///
-fn handle_add_path_button() -> io::Result<()> {
+fn handle_add_path_button(builder: &Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
     let create_result = create_text_entry_window("Enter the path of the file", move |text| {
         match obtain_text_from_add(&text) {
             Ok(_texto) => {
-                show_message_dialog("Operación exitosa", "Agregado correctamente");
+                //show_message_dialog("Operación exitosa", "Agregado correctamente");
+                let result = set_staging_area_texts(&builder_clone);
+                if result.is_err() {
+                    eprintln!("No se pudo actualizar la vista de staging.");
+                }
             }
             Err(_err) => {
                 show_message_dialog("Error", "El path ingresado no es correcto.");
@@ -549,15 +558,20 @@ fn handle_add_all_button(builder: &gtk::Builder) -> io::Result<()> {
 ///
 /// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
 ///
-fn handle_remove_path_window() -> io::Result<()> {
+fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_remove(&text);
         match resultado {
-            Ok(texto) => {
-                println!("Texto: {}", texto);
+            Ok(_texto) => {
+                let result = set_staging_area_texts(&builder_clone);
+                if result.is_err() {
+                    eprintln!("No se pudo actualizar la vista de staging.");
+                }
+                //                println!("Texto: {}", texto);
             }
-            Err(err) => {
-                eprintln!("Error al obtener el texto: {}", err);
+            Err(_err) => {
+                show_message_dialog("Error", "El path ingresado no es correcto.");
             }
         }
     });
