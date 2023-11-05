@@ -53,12 +53,21 @@ impl ServerInstace {
 
     // Handles the client requests
     fn handle_client(&mut self) -> io::Result<()> {
-        let command = self.read_command()?;
-        match command {
-            Command::UploadPack => self.upload_pack()?,
-            Command::ReceivePack => self.receive_pack()?,
+        let command = match self.read_command() {
+            Ok(command) => command,
+            Err(e) => {
+                self.send(&pkt_line(&format!("ERR {}\n", e)))?;
+                return Err(e);
+            }
+        };
+        let result = match command {
+            Command::UploadPack => self.upload_pack(),
+            Command::ReceivePack => self.receive_pack(),
+        };
+        match result {
+            Ok(_) => Ok(()),
+            Err(e) => self.send(&pkt_line(&format!("ERR {}\n", e))),
         }
-        Ok(())
     }
 
     // Reads the command sent by the client
@@ -82,10 +91,10 @@ impl ServerInstace {
     fn upload_pack(&mut self) -> io::Result<()> {
         self.send_refs()?;
         let wants = self.read_wants_haves(WantHave::Want)?;
+        if wants.is_empty() {
+            return Ok(());
+        }
         let haves = self.read_wants_haves(WantHave::Have)?;
-        dbg!(&wants);
-        dbg!(&haves);
-
         let (_, line) = read_pkt_line(&mut self.socket)?;
         if line != "done\n" {
             return Err(io::Error::new(
@@ -167,6 +176,10 @@ impl ServerInstace {
     fn receive_pack(&mut self) -> io::Result<()> {
         self.send_refs()?;
         let new_refs = self.wait_changes()?;
+
+        if new_refs.is_empty() {
+            return Ok(());
+        }
 
         let wait_for_packfile = new_refs.iter().any(|(_, (_, new))| new != ZERO_HASH);
         if wait_for_packfile {
@@ -327,8 +340,7 @@ pub fn run(domain: &str, port: &str, path: &str, git_dir: &str) -> io::Result<()
         let dir = git_dir.to_string();
         let path_clone = path.clone();
         let handle = thread::spawn(move || {
-            let res = ServerInstace::new(client_stream, path_clone, &dir)?.handle_client();
-            dbg!(res)
+            ServerInstace::new(client_stream, path_clone, &dir)?.handle_client()
         });
         handles.push(handle);
     }
