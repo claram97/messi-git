@@ -63,6 +63,18 @@ pub fn show_repository_window() -> io::Result<()> {
 
  }
  
+/// Setup the repository window with the given GTK builder and window.
+/// This function performs various setup tasks, such as configuring buttons and text views.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder.
+/// * `new_window` - A reference to a GTK window for the repository.
+///
+/// # Returns
+///
+/// Returns an `io::Result` indicating whether the setup was successful or resulted in an error.
+///
  fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> io::Result<()> {
     let new_window_clone = new_window.clone();
     let builder_clone = builder.clone();
@@ -82,6 +94,17 @@ pub fn show_repository_window() -> io::Result<()> {
     Ok(())
 }
 
+/// Setup buttons in the repository window using the given GTK builder.
+/// This function sets up various buttons based on their IDs and connects click events to corresponding actions.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder.
+///
+/// # Returns
+///
+/// Returns an `io::Result` indicating whether the button setup was successful or resulted in an error.
+///
 fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
     let button_ids = [
         "show-log-button", "pull", "push", "show-branches-button",
@@ -97,6 +120,19 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Setup a button with the specified `button_id` using the given GTK builder. This function applies the
+/// button's style, connects the click event to the corresponding action, and sets up various buttons based
+/// on their IDs.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder.
+/// * `button_id` - A string representing the button's ID.
+///
+/// # Returns
+///
+/// Returns an `io::Result` indicating whether the button setup was successful or resulted in an error.
+///
 fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     let button = get_button(builder, button_id);
     apply_button_style(&button)
@@ -191,6 +227,15 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     }
     Ok(())
 }
+
+/// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
+/// and attempts to create and checkout a new branch based on the provided path. It shows a success message
+/// dialog if the operation is successful, and an error message dialog if the branch doesn't exist.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder used to create UI elements.
+///
 fn handle_create_and_checkout_branch_button(builder: &gtk::Builder) {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_create_and_checkout_branch(&text);
@@ -211,6 +256,14 @@ fn handle_create_and_checkout_branch_button(builder: &gtk::Builder) {
     }
 }
 
+/// Handle the create or reset branch button's click event. This function prompts the user to enter a path
+/// and attempts to create or reset a branch based on the provided path. It shows a success message
+/// dialog if the operation is successful, and an error message dialog if the branch doesn't exist.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder used to create UI elements.
+///
 fn handle_create_or_reset_branch_button(builder: &gtk::Builder) {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_create_or_reset_branch(&text);
@@ -231,6 +284,14 @@ fn handle_create_or_reset_branch_button(builder: &gtk::Builder) {
     }
 }
 
+/// Handle the checkout commit detached button's click event. This function prompts the user to enter a path
+/// and attempts to check out a commit detached from the provided path. It shows a success message
+/// dialog if the operation is successful, and an error message dialog if the branch doesn't exist.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder used to create UI elements.
+///
 fn handle_checkout_commit_detached_button(builder: &gtk::Builder) {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_checkout_commit_detached(&text);
@@ -251,6 +312,14 @@ fn handle_checkout_commit_detached_button(builder: &gtk::Builder) {
     }
 }
 
+/// Handle the force checkout button's click event. This function prompts the user to enter a path
+/// and attempts to perform a force checkout operation on the provided path. It shows a success message
+/// dialog if the operation is successful, and an error message dialog if the branch doesn't exist.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder used to create UI elements.
+///
 fn handle_force_checkout_button(builder: &gtk::Builder) {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_force_checkout(&text);
@@ -271,6 +340,14 @@ fn handle_force_checkout_button(builder: &gtk::Builder) {
     }
 }
 
+/// Handle the "Show Branches" button's click event. This function retrieves information about Git branches
+/// and displays them in a text view within the GUI. If the operation is successful, it updates the text view
+/// with the branch information. If there is an error, it prints an error message to the standard error.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder used to create UI elements.
+///
 fn handle_show_branches_button(builder: &gtk::Builder) {
     let branch_text_view: gtk::TextView = builder.get_object("show-branches-text").unwrap();
 
@@ -286,6 +363,19 @@ fn handle_show_branches_button(builder: &gtk::Builder) {
     }
 }
 
+/// Handle the "Create Branch" button's click event. This function opens a text entry window for users to enter
+/// the name of the branch they want to create. Once the branch name is entered and confirmed, it attempts to create
+/// the new branch and updates the repository window. If the operation is successful, it closes all windows.
+/// If there is an error, it prints an error message to the standard error.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder used to create UI elements.
+///
+/// # Errors
+///
+/// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
+///
 fn handle_create_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     let create_result = create_text_entry_window("Enter the name of the branch", |text| {
         let result = git_branch_for_ui(Some(text));
@@ -307,6 +397,18 @@ fn handle_create_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Handle the "Add Path" button's click event. This function opens a text entry window for users to enter the path of
+/// the file they want to add to the staging area. Once the path is entered and confirmed, it attempts to add the file
+/// and displays a success message or an error message if there was an issue.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder used to create UI elements.
+///
+/// # Errors
+///
+/// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
+///
 fn handle_add_path_button(builder: &gtk::Builder) -> io::Result<()> {
     let create_result = create_text_entry_window("Enter the path of the file", move |text| {
         match obtain_text_from_add(&text) {
@@ -326,6 +428,18 @@ fn handle_add_path_button(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Handle the "Add All" button's click event. This function attempts to add all files to the staging area and
+/// then prints the result. If the operation is successful, it prints the added files. If there is an error, it
+/// prints an error message to the standard error.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder used to create UI elements.
+///
+/// # Errors
+///
+/// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
+///
 fn handle_add_all_button(builder: &gtk::Builder) -> io::Result<()> {
     let result = obtain_text_from_add(".");
     match result {
@@ -344,7 +458,19 @@ fn handle_add_all_button(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
-
+/// Handle the "Remove Path" button's click event. This function opens a text entry window for users to enter
+/// the path of the file they want to remove. Once the path is entered and confirmed, it attempts to remove the file
+/// and prints the result. If the operation is successful, it prints the removed file's path. If there is an error,
+/// it prints an error message to the standard error.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder used to create UI elements.
+///
+/// # Errors
+///
+/// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
+///
 fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_remove(&text);
@@ -363,6 +489,19 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Handle the "Checkout Branch" button's click event. This function opens a text entry window for users to enter
+/// the name of the branch they want to check out. Once the branch name is entered and confirmed, it attempts to check
+/// out the branch and updates the repository window. If the operation is successful, it displays a success message.
+/// If there is an error, it displays an error message.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder used to create UI elements.
+///
+/// # Errors
+///
+/// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
+///
 fn handle_checkout_branch_window(builder: &gtk::Builder) -> io::Result<()> {
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         let resultado = obtain_text_from_checkout_branch(&text);
@@ -384,6 +523,13 @@ fn handle_checkout_branch_window(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Handle the "Close" button's click event. This function closes all windows and runs the main window.
+/// It returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description if there's an issue.
+///
+/// # Errors
+///
+/// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
+///
 fn handle_close_window() -> io::Result<()> {
     close_all_windows();
     let result = run_main_window().map_err(|err| io::Error::new(io::ErrorKind::Other, err));
@@ -392,6 +538,15 @@ fn handle_close_window() -> io::Result<()> {
     }
     Ok(())
 }
+
+/// Handle the "Show Log" button's click event. This function retrieves a text view widget from the GTK builder
+/// and populates it with the Git log data. If the operation is successful, it displays the log data in the text view.
+/// If there is an error, it prints an error message to the standard error.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder used to create UI elements.
+///
 fn handle_show_log_button_click(builder: &gtk::Builder) {
     let log_text_view_result: Option<gtk::TextView> = builder.get_object("log-text");
 
@@ -418,9 +573,18 @@ fn handle_show_log_button_click(builder: &gtk::Builder) {
     }
 }
 
-
-
-
+/// Handle the "Show Log" button's click event using a different approach. This function retrieves a text view widget
+/// from the GTK builder and populates it with the Git log data. If the operation is successful, it displays the log data
+/// in the text view. If there is an error, it prints an error message to the standard error.
+///
+/// # Arguments
+///
+/// * `builder` - A GTK builder used to create UI elements.
+///
+/// # Errors
+///
+/// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
+///
 fn show_log_button_handler(builder: gtk::Builder) -> io::Result<()> {
     let log_text_view_result = builder.get_object("log-text");
     if log_text_view_result.is_none() {
@@ -452,9 +616,6 @@ fn show_log_button_handler(builder: gtk::Builder) -> io::Result<()> {
 
     Ok(())
 }
-
-
-
 
 /// Stage changes for Git commit in a GTK+ application.
 ///
