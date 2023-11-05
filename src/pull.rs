@@ -53,7 +53,7 @@ pub fn git_pull(
     if result.is_err() {
         return Err(io::Error::new(
             io::ErrorKind::Other,
-            "Error: Could not fetch remote repository",
+            "Error: Could not fetch remote repository\n",
         ));
     }
     let fetch_head_path = git_dir.to_string() + "/FETCH_HEAD";
@@ -64,7 +64,7 @@ pub fn git_pull(
         None => {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error: Could not find branch in FETCH_HEAD",
+                "Error: Could not find branch in FETCH_HEAD\n",
             ));
         }
     };
