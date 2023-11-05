@@ -1,5 +1,3 @@
-// use crate::hash_object::store_file;
-
 const MGIT: &str = ".mgit";
 const OPTIONS_ALL: &str = "-u";
 

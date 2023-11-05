@@ -44,6 +44,27 @@ pub fn cat_file_return_content(hash: &str, directory: &str) -> io::Result<String
     }
 }
 
+/// Extracts and parses the content of a Git tree object.
+///
+/// This function reads and parses the content of a Git tree object identified by its `hash` from the local
+/// Git repository located in the directory specified by `directory`. It returns a list of tuples, each containing
+/// the mode, name, and hash associated with entries in the tree object.
+///
+/// The function performs the following steps:
+/// 1. Opens and decompresses the Git object file.
+/// 2. Extracts the tree object's header.
+/// 3. Parses the entries within the tree, including their mode, name, and hash.
+///
+/// # Arguments
+///
+/// * `hash`: The hash identifier of the Git tree object to extract and parse.
+/// * `directory`: The path to the local directory containing the Git repository.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a vector of tuples, each with three elements: mode, name, and hash of entries
+/// in the tree object. In case of success, the result is wrapped in an `io::Result<Vec<(String, String, String)>>`.
+///
 pub fn cat_tree(hash: &str, directory: &str) -> io::Result<Vec<(String, String, String)>> {
     let file_dir = format!("{}/objects/{}", directory, &hash[..2]);
     let file = File::open(format!("{}/{}", file_dir, &hash[2..]))?;
@@ -104,6 +125,20 @@ pub fn cat_tree(hash: &str, directory: &str) -> io::Result<Vec<(String, String, 
     Ok(results)
 }
 
+/// Decompresses the content of a Zlib-compressed file into a byte vector.
+///
+/// This function decompresses the content of a Zlib-compressed file provided as an input `File` into a byte
+/// vector. It returns the decompressed content as a vector of unsigned 8-bit integers (`u8`).
+///
+/// # Arguments
+///
+/// * `file`: A `File` representing the Zlib-compressed file to decompress.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the decompressed content as a vector of `u8`. In case of success, the result
+/// is wrapped in an `io::Result<Vec<u8>>`.
+///
 fn decompress_into_bytes(file: File) -> io::Result<Vec<u8>> {
     let mut decompressor = ZlibDecoder::new(BufReader::new(file));
     let mut decompressed_content = Vec::new();
