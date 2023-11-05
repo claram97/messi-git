@@ -280,6 +280,7 @@ fn decompress_object_into_bytes(hash: &str, git_dir: &str) -> io::Result<Vec<u8>
 }
 
 pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
+    dbg!(git_dir);
     let packfile = Packfile::reader(packfile)?;
     for entry in packfile {
         let entry = entry?;
