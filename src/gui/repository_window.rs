@@ -1082,7 +1082,7 @@ pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
 /// ### Returns
 /// Returns an `io::Result<()>` indicating success or an error.
 ///
-pub fn call_git_merge(their_branch: &str) -> io::Result<()> {
+pub fn call_git_merge(their_branch: &str) -> io::Result<Vec<String>> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
         Some(dir) => dir,
@@ -1104,13 +1104,13 @@ pub fn call_git_merge(their_branch: &str) -> io::Result<()> {
     };
 
     let our_branch = branch::get_current_branch_path(&git_dir)?;
-    merge::git_merge(
+    let (_, conflicts) = merge::git_merge(
         &our_branch,
         their_branch,
         &git_dir,
         root_dir.to_string_lossy().as_ref(),
     )?;
-    Ok(())
+    Ok(conflicts)
 }
 
 /// ## `merge_button_connect_clicked`
@@ -1141,10 +1141,17 @@ pub fn merge_button_connect_clicked(
             show_message_dialog("Error", "Rama no encontrada.");
         } else {
             match call_git_merge(&branch) {
-                Ok(_) => {
+                Ok(conflicts) => {
                     match text_view_clone.get_buffer() {
                         Some(buff) => {
-                            buff.set_text("Merged successfully!");
+                            if conflicts.is_empty() {
+                                buff.set_text("Merged successfully!");
+                            } else {
+                                let text = "Conflicts on merge!\n".to_string()
+                                    + &conflicts.join("\n")
+                                    + "\nPlease resolve the conflicts and commit the changes.";
+                                buff.set_text(&text);
+                            }
                         }
                         None => {
                             eprintln!("Couldn't write the output on the text view.");

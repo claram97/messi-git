@@ -485,7 +485,7 @@ pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> io::Res
             current_tree = current_tree.get_or_create_dir(dir);
         }
         let result = merge_file(&path, &hash, their_tree, current_tree, filename, git_dir)?;
-        if result != "" {
+        if result.is_empty() {
             conflicting_paths.push(result);
         }
     }
