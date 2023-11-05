@@ -1,4 +1,4 @@
-use messi::{clone, init, parse_commands::get_user_input};
+use messi::{init, parse_commands::get_user_input, server_interaction::clone};
 
 const PORT: &str = "9418";
 

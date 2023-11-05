@@ -1,9 +1,5 @@
-use std::{
-    io::{self, Read, Write},
-    path::{Path, PathBuf},
-};
-
-use crate::{client::Client, init, tree_handler, branch, config};
+use std::io::{self, Read, Write};
+use crate::{client::Client, init, tree_handler, config};
 
 fn get_default_branch_commit(local_git_dir: &str) -> io::Result<String> {
     let path_to_file = local_git_dir.to_string() + "/refs/remotes/origin/master";
@@ -25,19 +21,6 @@ fn get_clean_refs(refs: Vec<String>) -> Vec<String> {
         })
         .collect::<Vec<String>>();
     clean_refs
-}
-
-fn get_parent_dir(path: &str) -> String {
-    let path_buf = PathBuf::from(path);
-    let parent = match path_buf.parent() {
-        Some(parent) => parent,
-        None => Path::new(""),
-    };
-    let parent_dir = match parent.to_str() {
-        Some(parent_dir) => parent_dir,
-        None => "",
-    };
-    parent_dir.to_string()
 }
 
 pub fn git_clone(
@@ -73,19 +56,3 @@ pub fn git_clone(
     config_file.add_branch("master".to_string(), "origin".to_string(), "/refs/heads/master".to_string(), &mut io::stdout())?;
     Ok(())
 }
-
-pub fn git_fetch(remote_repo_url: &str, remote_repo_name: &str, host: &str, local_dir: &str) -> io::Result<()> {
-    let local_git_dir = local_dir.to_string() + "/.mgit";
-    let mut client = Client::new(&remote_repo_url, remote_repo_name, host);
-    let refs = client.get_refs()?;
-    let clean_refs = get_clean_refs(refs);
-
-    for server_ref in clean_refs {
-        let result = client.upload_pack(&server_ref, &local_git_dir, "origin");
-        if result.is_err() {
-            println!("Error: {:?}", result);
-        }
-    }
-    Ok(())
-}
-
