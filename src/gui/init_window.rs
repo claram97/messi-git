@@ -9,6 +9,7 @@ use crate::gui::style::get_button;
 use crate::init::git_init;
 use gtk::ButtonExt;
 use gtk::GtkWindowExt;
+use std::env;
 use std::io;
 
 /// Configures the properties of a clone window in a GTK application.
@@ -86,6 +87,7 @@ pub fn connect_button_clicked_init_window(
                     if result.is_err() {
                         eprintln!("Error handling git init result.");
                     }
+                    env::set_current_dir(&dir_str).unwrap();
                 });
                 if result.is_err() {
                     eprintln!("Error creating text entry window.");
@@ -119,9 +121,17 @@ pub fn connect_button_clicked_init_window(
                         eprintln!("Error initiating git.");
                         return;
                     }
+                    if result.is_err() {
+                        eprintln!("Error setting current directory.");
+                        return;
+                    }
                     let result = handle_git_init_with_template_result(result);
                     if result.is_err() {
                         eprintln!("Error handling git init with template");
+                    }
+                    let result = env::set_current_dir(text);
+                    if result.is_err() {
+                        eprintln!("Error setting current directory.");
                     }
                 });
                 if result.is_err() {
