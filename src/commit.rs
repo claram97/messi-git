@@ -39,6 +39,21 @@ fn create_new_commit_file(
     Ok(commit_hash)
 }
 
+/// Retrieves the name of the currently checked-out branch in a Git repository.
+///
+/// This function reads the contents of the Git repository's "HEAD" file to determine the currently
+/// checked-out branch and returns its name as a string. The "HEAD" file typically contains a reference
+/// to the branch that is currently active.
+///
+/// # Arguments
+///
+/// * `git_dir_path`: A string representing the path to the Git repository's root directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the name of the currently checked-out branch as a string. In case of success,
+/// an `io::Result<String>` is returned.
+///
 pub fn get_branch_name(git_dir_path: &str) -> io::Result<String> {
     let head_path = git_dir_path.to_string() + "/HEAD";
     let mut head_file = std::fs::File::open(head_path)?;
@@ -57,6 +72,7 @@ pub fn get_branch_name(git_dir_path: &str) -> io::Result<String> {
     let name: Vec<&str> = branch_name.split('\n').collect();
     Ok(name[0].to_string())
 }
+
 /// Creates a new commit file and updates the branch file.
 /// the refs/heads/branch_name file will be updated with the new commit hash.
 /// If the branch file doesn't exist, it will be created.
@@ -162,6 +178,20 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
     Ok(parent_hash.to_string())
 }
 
+/// Reads and returns the commit hash referred to by the HEAD reference in a Git repository.
+///
+/// This function reads the contents of the Git repository's "HEAD" file to determine the commit hash
+/// to which it is currently referring. The "HEAD" file may contain a reference to a branch or a direct
+/// commit hash. This function resolves the reference and returns the associated commit hash as a string.
+///
+/// # Arguments
+///
+/// * `git_dir`: A string representing the path to the Git repository's root directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the commit hash as a string. In case of success, an `io::Result<String>` is returned.
+///
 pub fn read_head_commit_hash(git_dir: &str) -> io::Result<String> {
     let head_path = format!("{}/HEAD", git_dir);
     let head_content = fs::read_to_string(head_path)?;
