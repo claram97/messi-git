@@ -7,7 +7,7 @@ use std::{
 use crate::{
     cat_file::{self, cat_tree},
     hash_object,
-    index::{self},
+    index::{self}, diff,
 };
 
 const BLOB_NORMAL_MODE: &str = "100644";
@@ -320,7 +320,7 @@ pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)> 
 /// Else, if a blob is found, it adds it to the current tree.
 fn _load_tree_from_file(tree_hash: &str, directory: &str, name: &str) -> io::Result<Tree> {
     let tree_content = cat_tree(tree_hash, directory)?;
-    let mut tree = Tree::new();
+    let mut tree = Tree::new(name);
     tree.name = name.to_string();
 
     for (mode, name, hash) in tree_content {
