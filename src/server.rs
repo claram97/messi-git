@@ -116,19 +116,22 @@ impl ServerInstace {
         Ok(())
     }
 
-    // Reads the wants or haves sent by the client
-    // Returns a set of hashes of wants or haves, depending on the parameter
-    fn read_wants_haves(&mut self, want_have: WantHave) -> io::Result<HashSet<String>> {
-        let mut wants = HashSet::new();
-        loop {
-            let (size, line) = read_pkt_line(&mut self.socket)?;
-            if size < 4 {
-                break;
-            }
-            let hash = parse_line_want_have(&line, want_have)?;
-            wants.insert(hash);
+    // Receives the packfile from the client
+    // After receiving it, it is unpacked and stored in the git_dir
+    // Then, the refs are updated
+    fn receive_pack(&mut self) -> io::Result<()> {
+        self.send_refs()?;
+        let new_refs = self.wait_changes()?;
+
+        if new_refs.is_empty() {
+            return Ok(());
         }
-        Ok(wants)
+
+        let wait_for_packfile = new_refs.iter().any(|(_, (_, new))| new != ZERO_HASH);
+        if wait_for_packfile {
+            self.wait_and_unpack_packfile()?;
+        };
+        self.make_refs_changes(new_refs)
     }
 
     // Sends the server refs to the client
@@ -170,22 +173,37 @@ impl ServerInstace {
         self.flush()
     }
 
-    // Receives the packfile from the client
-    // After receiving it, it is unpacked and stored in the git_dir
-    // Then, the refs are updated
-    fn receive_pack(&mut self) -> io::Result<()> {
-        self.send_refs()?;
-        let new_refs = self.wait_changes()?;
-
-        if new_refs.is_empty() {
-            return Ok(());
+    // Reads the wants or haves sent by the client
+    // Returns a set of hashes of wants or haves, depending on the parameter
+    fn read_wants_haves(&mut self, want_have: WantHave) -> io::Result<HashSet<String>> {
+        let mut wants = HashSet::new();
+        loop {
+            let (size, line) = read_pkt_line(&mut self.socket)?;
+            if size < 4 {
+                break;
+            }
+            let hash = parse_line_want_have(&line, want_have)?;
+            wants.insert(hash);
         }
+        Ok(wants)
+    }
 
-        let wait_for_packfile = new_refs.iter().any(|(_, (_, new))| new != ZERO_HASH);
-        if wait_for_packfile {
-            self.wait_and_unpack_packfile()?;
-        };
-        self.make_refs_changes(new_refs)
+    // Waits for the client to send a packfile
+    // After receiving it, it is unpacked and stored in the git_dir
+    fn wait_and_unpack_packfile(&mut self) -> io::Result<()> {
+        loop {
+            let (size, bytes) = read_pkt_line_bytes(&mut self.socket)?;
+            if size < 4 {
+                break;
+            }
+            if bytes[0] == 1 {
+                return packfile_handler::unpack_packfile(&bytes[..], &self.git_dir_path);
+            }
+        }
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Packfile not found",
+        ))
     }
 
     // Updates the refs with the new ones received from the client
@@ -240,24 +258,6 @@ impl ServerInstace {
     fn delete_ref(&mut self, ref_name: &str) -> io::Result<()> {
         let ref_path = PathBuf::from(&self.git_dir).join(ref_name);
         fs::remove_file(ref_path)
-    }
-
-    // Waits for the client to send a packfile
-    // After receiving it, it is unpacked and stored in the git_dir
-    fn wait_and_unpack_packfile(&mut self) -> io::Result<()> {
-        loop {
-            let (size, bytes) = read_pkt_line_bytes(&mut self.socket)?;
-            if size < 4 {
-                break;
-            }
-            if bytes[0] == 1 {
-                return packfile_handler::unpack_packfile(&bytes[..], &self.git_dir_path);
-            }
-        }
-        Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Packfile not found",
-        ))
     }
 
     // Waits for the client to send the new refs
