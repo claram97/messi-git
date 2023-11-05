@@ -134,6 +134,14 @@ impl ServerInstace {
                 .iter()
                 .map(|(k, v)| format!("{} refs/heads/{}", v, k)),
         );
+
+        if refs.is_empty() {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No refs found",
+            ));
+        }
+
         refs[0] = format!("{}\0{}", refs[0], CAPABILITIES_UPLOAD);
 
         for r in refs {
@@ -155,6 +163,19 @@ impl ServerInstace {
     }
 
     fn make_refs_changes(&mut self, new_refs: HashMap<String, (String, String)>) -> io::Result<()> {
+        let head_ref = fs::read_to_string(PathBuf::from(&self.git_dir_path).join("HEAD"))?;
+        let head_ref = match head_ref.split_once(": ") {
+            Some((_, head_ref)) => String::from(head_ref.trim()),
+            None => String::new(),
+        };
+
+        if new_refs.contains_key(&head_ref) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Can not update actual branch. Please do a checkout and try again",
+            ));
+        }
+
         for (ref_name, (old, new)) in new_refs {
             match (old, new) {
                 (old, new) if old == ZERO_HASH => self.create_ref(&ref_name, &new)?,
@@ -173,20 +194,18 @@ impl ServerInstace {
                 format!("Ref already exists: {}. Use update", ref_name),
             ));
         }
-        fs::write(ref_path, new.as_bytes())
+        let content = [new.as_bytes(), b"\n"].concat();
+        fs::write(ref_path, content)
     }
 
     fn update_ref(&mut self, ref_name: &str, old: &str, new: &str) -> io::Result<()> {
         let ref_path = PathBuf::from(&self.git_dir_path).join(ref_name);
-        dbg!(&ref_path);
         if !ref_path.exists() {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
                 format!("Ref not found: {}. Can not update", ref_name),
             ));
         }
-        // let actual = fs::read_to_string(&ref_path)?;
-        // let actual = actual.trim();
 
         if fs::read_to_string(&ref_path)?.trim() != old {
             return Err(io::Error::new(
@@ -194,7 +213,8 @@ impl ServerInstace {
                 format!("Ref is not at expected hash: {}. Can not update", ref_name),
             ));
         }
-        fs::write(ref_path, new.as_bytes())
+        let content = [new.as_bytes(), b"\n"].concat();
+        fs::write(ref_path, content)
     }
 
     fn delete_ref(&mut self, ref_name: &str) -> io::Result<()> {
