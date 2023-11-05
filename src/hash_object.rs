@@ -153,7 +153,7 @@ pub fn store_bytes_array_to_file(
     //Create the path where the file will be stored
     let output_file_str = output_file_dir + &content_hash[2..];
 
-    let file = File::create(&output_file_str)?;
+    let file = File::create(output_file_str)?;
 
     let mut encoder = ZlibEncoder::new(file, Compression::default());
     encoder.write_all(&complete)?;

@@ -32,6 +32,12 @@ pub struct FetchHead {
     entries: Vec<FetchEntry>,
 }
 
+impl Default for FetchHead {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FetchHead {
 
     /// Creates a new, empty FetchHead instance.

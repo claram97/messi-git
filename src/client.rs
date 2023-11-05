@@ -490,7 +490,7 @@ fn pkt_line(line: &str) -> String {
 fn get_head_branch(git_dir: &str) -> io::Result<String> {
     let head = PathBuf::from(git_dir).join("HEAD");
     let content = fs::read_to_string(head)?;
-    let (_, branch) = content.rsplit_once("/").ok_or(io::Error::new(
+    let (_, branch) = content.rsplit_once('/').ok_or(io::Error::new(
         io::ErrorKind::InvalidData,
         "Invalid data HEAD. Must have ref for fetch",
     ))?;
