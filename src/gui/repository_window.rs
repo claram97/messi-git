@@ -1341,10 +1341,11 @@ fn get_staged_text() -> io::Result<String> {
         Ok(commit) => commit,
         Err(_) => "0000000000000000000000000000000000000000".to_string(),
     };
-    let last_commit_tree: Option<Tree> = match tree_handler::load_tree_from_commit(&last_commit, &git_dir) {
-        Ok(tree) => Some(tree),
-        Err(_) => None,
-    };
+    let last_commit_tree: Option<Tree> =
+        match tree_handler::load_tree_from_commit(&last_commit, &git_dir) {
+            Ok(tree) => Some(tree),
+            Err(_) => None,
+        };
     let index_file = format!("{}{}", git_dir, "/index");
     let gitignore_path = format!("{}{}", current_dir.to_str().unwrap(), "/.gitignore");
     let index = index::Index::load(&index_file, &git_dir, &gitignore_path)?;

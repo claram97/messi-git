@@ -83,7 +83,7 @@ fn create_directory(name: &str) -> io::Result<()> {
 ///
 pub fn store_file(path: &str, git_dir_path: &str) -> io::Result<String> {
     let content_hash = hash_file_content(path, "blob")?;
-    let output_file_dir = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
+    let output_file_dir: String = git_dir_path.to_string() + "/objects/" + &content_hash[..2] + "/";
     create_directory(&output_file_dir)?;
     let output_file_str = output_file_dir + &content_hash[2..];
     compress_content(path, output_file_str.as_str(), "blob")?;

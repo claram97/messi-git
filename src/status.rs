@@ -1,15 +1,10 @@
 const BLOB: &str = "blob";
-
-use std::{fs, path, hash};
-use std::io::{self, Write};
-use std::path::Path;
-
-use rand::Error;
-
-use crate::{hash_object, commit};
+use crate::hash_object;
 use crate::index::Index;
 use crate::tree_handler::Tree;
-
+use std::fs;
+use std::io::{self, Write};
+use std::path::Path;
 /// Recursively find and write information about untracked files in a Git repository.
 ///
 /// This function traverses the directory structure starting from the `current_directory`, compares
