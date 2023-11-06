@@ -114,14 +114,14 @@ pub fn git_clone(
     create_working_dir(&local_git_dir, working_dir)?;
     let mut config_file = config::Config::load(&local_git_dir)?;
     config_file.add_remote(
-        remote_repo_name.to_string(),
-        remote_repo_url.to_string(),
+        "origin".to_string(),
+        remote_repo_url.to_string() + "/" + remote_repo_name,
         remote_repo_url.to_string(),
         &mut io::stdout(),
     )?;
     config_file.add_branch(
         "master".to_string(),
-        remote_repo_name.to_string(),
+        "origin".to_string(),
         "/refs/heads/master".to_string(),
         &mut io::stdout(),
     )?;

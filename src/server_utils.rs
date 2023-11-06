@@ -23,6 +23,12 @@ pub fn connection_not_established_error() -> Error {
 pub fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
     let (size, bytes) = read_pkt_line_bytes(socket)?;
     let line = from_utf8(&bytes).unwrap_or_default().to_string();
+    if line.starts_with("ERR") {
+        return Err(Error::new(
+            io::ErrorKind::Other,
+            format!("Error from server: {}", line),
+        ));
+    }
     Ok((size, line))
 }
 

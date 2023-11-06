@@ -99,7 +99,7 @@ pub fn connect_button_clicked_init_window(
                 }
             } else if button_type == "option3" {
                 let result = create_text_entry_window("Enter the template path", move |text| {
-                    let result = git_init(&dir_str, "main", Some(&text));
+                    let result = git_init(&dir_str, "master", Some(&text));
                     if result.is_err() {
                         eprintln!("Error initiating git.");
                         return;
@@ -113,7 +113,7 @@ pub fn connect_button_clicked_init_window(
                     eprintln!("Error creating text entry window.");
                 }
             } else if button_type == "option1" {
-                let result = git_init(&dir_str, "main", None);
+                let result = git_init(&dir_str, "master", None);
                 if result.is_err() {
                     eprintln!("Error initiating git.");
                     return;
@@ -157,7 +157,7 @@ pub fn connect_button_clicked_init_window(
                 button_ok.connect_clicked(move |_| {
                     let selected_directory = file_chooser.get_filename();
                     if let Some(directory) = selected_directory {
-                        let result = git_init(&directory.to_string_lossy(), "main", None);
+                        let result = git_init(&directory.to_string_lossy(), "master", None);
                         if result.is_err() {
                             eprintln!("Error al iniciar git.");
                             return;
