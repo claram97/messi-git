@@ -190,10 +190,18 @@ fn get_clean_refs(refs: &HashMap<String, String>) -> Vec<String> {
 pub fn git_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) -> io::Result<()> {
     let git_dir = local_dir.to_string() + "/.mgit";
     let config_file = config::Config::load(&git_dir)?;
-    let remote_repo_name = remote_repo_name.unwrap_or("origin");
-
-    let remote_repo_url = config_file.get_url(remote_repo_name, &mut io::stdout())?;
-    let mut client = Client::new(&remote_repo_url, remote_repo_name, host);
+    let remote_name = "origin";
+    let remote_url = config_file.get_url(remote_name, &mut io::stdout())?;
+    let (address, repo_name) = match remote_url.rsplit_once('/') {
+        Some((address, repo_name)) => (address, repo_name),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Invalid data in remote dir: {}", remote_url),
+            ))
+        }
+    };
+    let mut client = Client::new(&address, repo_name, "localhost");
     let refs = client.get_server_refs()?;
     let clean_refs = get_clean_refs(&refs);
     let fetch_head_path = git_dir.to_string() + "/FETCH_HEAD";
@@ -211,7 +219,7 @@ pub fn git_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) ->
             let entry = FetchEntry {
                 commit_hash: hash.to_string(),
                 branch_name: server_ref,
-                remote_repo_url: remote_repo_url.clone(),
+                remote_repo_url: remote_url.clone(),
             };
             fetch_head_file.add_entry(entry);
         }

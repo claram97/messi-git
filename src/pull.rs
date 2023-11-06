@@ -38,7 +38,6 @@ pub fn git_pull(
     }
     let fetch_head_path = git_dir.to_string() + "/FETCH_HEAD";
     let fetch_head = fetch::FetchHead::load_file(&fetch_head_path)?;
-
     let branch_remotes = match fetch_head.get_branch_entry(branch) {
         Some(branch_remotes) => branch_remotes,
         None => {
@@ -48,13 +47,11 @@ pub fn git_pull(
             ));
         }
     };
-
     for entry in fetch_head.get_entries() {
         let branch_file_path = git_dir.to_string() + "/refs/heads/" + &entry.branch_name;
         let mut branch_file = std::fs::File::create(branch_file_path)?;
         branch_file.write_all(entry.commit_hash.as_bytes())?;
     }
-
     let hash = branch_remotes.commit_hash.clone();
     merge::merge_remote_branch(branch, &hash, &git_dir)?;
     Ok(())
