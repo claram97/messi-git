@@ -3,10 +3,10 @@ use crate::server_utils::*;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
-use std::io::{self, Write};
+use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use std::{fs, thread};
 
 const CAPABILITIES_UPLOAD: &str = "multi_ack side-band-64k ofs-delta";
@@ -141,7 +141,7 @@ impl ServerInstace {
 
         let head_path = PathBuf::from(&self.git_dir_path).join("HEAD");
         if head_path.exists() {
-            let head_content = fs::read_to_string(head_path)?;
+            let head_content = read_file_with_lock(&head_path)?;
             if let Some((_, head)) = head_content.rsplit_once('/') {
                 let head = head.trim();
                 if let Some(hash) = server_refs_heads.get(head) {
@@ -229,7 +229,8 @@ impl ServerInstace {
             ));
         }
         let content = [new.as_bytes(), b"\n"].concat();
-        fs::write(ref_path, content)
+        write_file_with_lock(ref_path, content)?;
+        Ok(())
     }
 
     // Updates a ref with the given name and hash
@@ -244,14 +245,15 @@ impl ServerInstace {
             ));
         }
 
-        if fs::read_to_string(&ref_path)?.trim() != old {
+        if read_file_with_lock(&ref_path)?.trim() != old {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 format!("Ref is not at expected hash: {}. Can not update", ref_name),
             ));
         }
         let content = [new.as_bytes(), b"\n"].concat();
-        fs::write(ref_path, content)
+        write_file_with_lock(ref_path, content)?;
+        Ok(())
     }
 
     // Deletes a ref with the given name
@@ -350,4 +352,36 @@ pub fn run(domain: &str, port: &str, path: &str, git_dir: &str) -> io::Result<()
     }
 
     Ok(())
+}
+
+
+fn read_file_with_lock<P>(path: P) -> io::Result<String>
+where
+    P: AsRef<Path>,
+{
+    let file = fs::File::open(path)?;
+    let file_mutex = Mutex::new(file);
+    let result = match file_mutex.lock() {
+        Ok(mut file) => {
+            let mut content = String::new();
+            file.read_to_string(&mut content)?;
+            Ok(content)
+        }
+        Err(e) => Err(io::Error::new(io::ErrorKind::WouldBlock, e.to_string())),
+    };
+    result
+}
+
+fn write_file_with_lock<P, C>(path: P, contents: C) -> io::Result<usize>
+where
+    P: AsRef<Path>,
+    C: AsRef<[u8]>,
+{
+    let file = fs::File::create(path)?;
+    let file_mutex = Mutex::new(file);
+    let size = match file_mutex.lock() {
+        Ok(mut file) => file.write(contents.as_ref()),
+        Err(e) => Err(io::Error::new(io::ErrorKind::WouldBlock, e.to_string())),
+    };
+    size
 }
