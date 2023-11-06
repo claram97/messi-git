@@ -3,3 +3,9 @@
 	filemode = true
 	bare = false
 	logallrefupdates = true
+[remote "repo_prueba"]
+	url = localhost:9418
+	fetch = localhost:9418
+[branch "master"]
+	remote = repo_prueba
+	merge = /refs/heads/master

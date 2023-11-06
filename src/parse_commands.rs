@@ -265,7 +265,7 @@ fn handle_status() {
             return;
         }
     };
-
+   
     let red = "\x1b[31m";
     let yellow = "\x1b[33m";
     let green = "\x1b[32m";
@@ -297,7 +297,7 @@ fn handle_status() {
         }
     };
 
-    let current_branch_path = match get_current_branch_path(&git_dir) {
+    let branch_path = match get_current_branch_path(&git_dir) {
         Ok(path) => path,
         Err(_e) => {
             eprintln!("Error getting current branch path.");
@@ -305,29 +305,36 @@ fn handle_status() {
         }
     };
 
-    let mut current_commit_file = match File::open(&current_branch_path) {
-        Ok(file) => file,
-        Err(_e) => {
-            eprintln!("Error opening the current commit file.");
-            return;
-        }
-    };
+    let current_branch_path = format!("{}/{}",git_dir,branch_path);
+    
+    let mut changes_to_be_committed_output: Vec<u8> = vec![];
 
-    let mut commit_hash = String::new();
-    match current_commit_file.read_to_string(&mut commit_hash) {
-        Ok(_) => {}
-        Err(_e) => {
-            eprintln!("Error reading to string.");
-            return;
+    if let Ok(opening_result) = File::open(&current_branch_path) {
+        let mut current_commit_file = opening_result;
+        let mut commit_hash = String::new();
+        match current_commit_file.read_to_string(&mut commit_hash) {
+            Ok(_) => {}
+            Err(_e) => {
+                eprintln!("Error reading to string.");
+                return;
+            }
+        }
+        let commit_tree = match tree_handler::load_tree_from_commit(&commit_hash, &git_dir) {
+            Ok(tree) => tree,
+            Err(_e) => {
+                eprintln!("Couldn't load tree.");
+                return;
+            }
+        };
+
+        match changes_to_be_committed(&index, &commit_tree, &mut changes_to_be_committed_output) {
+            Ok(_) => {}
+            Err(_e) => {
+                eprintln!("Error on changes to be committed.");
+                return;
+            }
         }
     }
-    let commit_tree = match tree_handler::load_tree_from_commit(&commit_hash, &git_dir) {
-        Ok(tree) => tree,
-        Err(_e) => {
-            eprintln!("Couldn't load tree.");
-            return;
-        }
-    };
 
     let mut untracked_output: Vec<u8> = vec![];
     match find_untracked_files(&current_dir, working_dir, &index, &mut untracked_output) {
@@ -339,7 +346,7 @@ fn handle_status() {
     }
 
     let mut not_staged_for_commit: Vec<u8> = vec![];
-    match find_unstaged_changes(&index, &git_dir, &mut not_staged_for_commit) {
+    match find_unstaged_changes(&index, working_dir.to_string_lossy().as_ref(), &mut not_staged_for_commit) {
         Ok(_) => {}
         Err(_e) => {
             eprintln!("Error finding changes not staged for commit.");
@@ -347,18 +354,14 @@ fn handle_status() {
         }
     }
 
-    let mut changes_to_be_committed_output: Vec<u8> = vec![];
-    match changes_to_be_committed(&index, &commit_tree, &mut changes_to_be_committed_output) {
-        Ok(_) => {}
-        Err(_e) => {
-            eprintln!("Error finding changes not staged for commit.");
-            return;
-        }
-    }
-
-    println!("{}On branch {}{}", branch_name, green, reset);
-    //Personalizar la siguiente línea
+    println!();
+    print!("{}", reset);
+    println!("{}On branch {}{}", green, branch_name, reset);
+    print!("{}", reset);
+    //Falta personalizar la siguiente línea
     print!("Your branch is up to date with 'origin/master'\n\n");
+    print!("{}", reset);
+    println!();
     if !not_staged_for_commit.is_empty() {
         println!("{}Changes not staged for commit:{}", red, reset);
         println!("\t(use \"git add <file>...\" to update what will be committed)");
@@ -369,6 +372,9 @@ fn handle_status() {
         }
     }
 
+    print!("{}", reset);
+    println!();
+
     if !changes_to_be_committed_output.is_empty() {
         println!("{}Changes to be commited:{}", yellow, reset);
         println!("\t(use \"git add <file>...\" to update what will be committed)");
@@ -377,6 +383,10 @@ fn handle_status() {
             print!("{}", *byte as char);
         }
     }
+
+    print!("{}", reset);
+    println!();
+
     if !untracked_output.is_empty() {
         println!("{}Untracked files:{}", yellow, reset);
         println!("\t(use \"git add <file>...\" to include in what will be committed)");
@@ -385,6 +395,8 @@ fn handle_status() {
             print!("{}", *byte as char);
         }
     }
+    print!("{}", reset);
+    println!();
     //Esto no sé de dónde sacarlo ah
     //print!("{}no changes added to commit (use \"git add\" and/or \"git commit -a\"){}\n", green, reset);
 }
@@ -618,8 +630,7 @@ fn handle_fetch() {
         }
     };
 
-    let config_path: String = format!("{}/{}", git_dir, "config");
-    let config = match Config::load(&config_path) {
+    let config = match Config::load(&git_dir) {
         Ok(config) => config,
         Err(_e) => {
             eprintln!("Error al cargar el config file.");
@@ -712,9 +723,7 @@ fn handle_remote(args: Vec<String>) {
         }
     };
 
-    let config_path: String = format!("{}/{}", git_dir, "config");
-
-    let mut config = match Config::load(&config_path) {
+    let mut config = match Config::load(&git_dir) {
         Ok(config) => config,
         Err(_e) => {
             eprintln!("Error al cargar el config file.");
