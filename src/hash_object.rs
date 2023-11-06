@@ -131,7 +131,7 @@ pub fn store_string_to_file(
 
 fn hash_byte_array(array: &Vec<u8>) -> String {
     let mut hasher = Sha1::new();
-    hasher.update(array);
+    hasher.update(&array);
     let result = hasher.finalize();
     format!("{:x}", result)
 }
@@ -153,21 +153,13 @@ pub fn store_bytes_array_to_file(
     //Create the path where the file will be stored
     let output_file_str = output_file_dir + &content_hash[2..];
 
-    let file = File::create(output_file_str)?;
+    let file = File::create(&output_file_str)?;
 
     let mut encoder = ZlibEncoder::new(file, Compression::default());
     encoder.write_all(&complete)?;
     encoder.finish()?;
 
     Ok(content_hash)
-}
-
-fn hash_tree_file(tree_file: &str) -> io::Result<String> {
-    let content = fs::read(tree_file)?;
-    let mut hasher = Sha1::new();
-    hasher.update(content);
-    let result = hasher.finalize();
-    Ok(format!("{:x}", result))
 }
 
 pub fn store_tree_to_file(
@@ -184,30 +176,24 @@ pub fn store_tree_to_file(
     for (mode, name, hash) in blobs.clone() {
         size += mode.len() + name.len() + hash.len() + 2;
     }
+    let mut data: Vec<u8> = Vec::new();
     let header = format!("tree {}\0", size);
-    let mut file = File::create("tree.tmp")?;
-    file.write_all(header.as_bytes())?;
-
+    data.write_all(header.as_bytes())?;
     for (mode, name, hash) in blobs {
-        file.write_all(format!("{} {}\0", mode, name).as_bytes())?;
-        file.write_all(&hash)?;
+        data.write_all(format!("{} {}\0", mode, name).as_bytes())?;
+        data.write_all(&hash)?;
     }
-    drop(file);
-    let tree_hash = hash_tree_file("tree.tmp")?;
+    let tree_hash = hash_byte_array(&data);
     let output_file_dir = git_dir_path.to_string() + "/objects/" + &tree_hash[..2] + "/";
     create_directory(&output_file_dir)?;
     let output_file_str = output_file_dir + &tree_hash[2..];
-    compress_tree("tree.tmp", &output_file_str)?;
-    fs::remove_file("tree.tmp")?;
-
+    compress_tree(data, &output_file_str)?;
     Ok(tree_hash)
 }
 
-fn compress_tree(tree_file: &str, output_file: &str) -> io::Result<()> {
+fn compress_tree(tree_vec: Vec<u8>, output_file: &str) -> io::Result<()> {
     let mut encoder = ZlibEncoder::new(File::create(output_file)?, Compression::default());
-    let tree_file = std::fs::read(tree_file)?;
-
-    encoder.write_all(&tree_file)?;
+    encoder.write_all(&tree_vec)?;
     encoder.finish()?;
     Ok(())
 }

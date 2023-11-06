@@ -196,7 +196,7 @@ mod tests {
         create_if_not_exists(&dir, true)?;
         let file = path.to_string() + "/dir/file";
         create_if_not_exists(&file, false)?;
-        let index_content = "032356 file1.txt\n01211 file2.txt\n01010101 .mgit/file3.txt\n";
+        let index_content = "2c0611919ae5d4d765fc49cef961d67886411cad file1.txt\n0bad9566be86bcf4493d69b6b55d73137efd45a1 file2.txt\n34ae409f501db061fbf67c43085e7a06a9537359 .mgit/file3.txt\n";
         let gitignore_content = "dir\n";
         let mut index_file = OpenOptions::new()
             .write(true)
@@ -230,7 +230,7 @@ mod tests {
         let mut output: Vec<u8> = vec![];
         changes_to_be_committed_for_test("tests/status_feik_repo", true, &mut output)?;
         let index_file_path = "tests/status_feik_repo/.mgit/index";
-        let new_index_content = "032357 file1.txt\n01211 file2.txt\n01010101 .mgit/file3.txt\n";
+        let new_index_content = "2c0611919ae5d4d765fc49cef961d67886411cad file1.txt\nffffffffffffffffffffffffffffffffffffffff file2.txt\n34ae409f501db061fbf67c43085e7a06a9537359 .mgit/file3.txt\n";
         let mut new_index_file = OpenOptions::new()
             .write(true)
             .truncate(true)
@@ -282,7 +282,7 @@ mod tests {
         let git_dir = "tests/status_repo/.mgit";
         let git_ignore_path = "tests/status_repo/.mgitignore";
         let index_file_path = "tests/status_repo/.mgit/index";
-        let index_content = "032356 file1.txt\n01211 file2.txt\n01010101 .mgit/file3.txt\n";
+        let index_content = "2c0611919ae5d4d765fc49cef961d67886411cad file1.txt\n0bad9566be86bcf4493d69b6b55d73137efd45a1 file2.txt\n34ae409f501db061fbf67c43085e7a06a9537359 .mgit/file3.txt\n";
         let gitignore_content = "dir\n";
         let mut index_file = OpenOptions::new()
             .write(true)
