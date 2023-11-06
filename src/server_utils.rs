@@ -227,7 +227,7 @@ fn get_objects_tree_objects(
     let content = cat_file::cat_tree(hash, git_dir)?;
 
     for (mode, _, hash) in content {
-        if mode == "40000" {
+        if mode == "40000 " || mode == "40000" {
             let tree_objects = get_objects_tree_objects(&hash, git_dir)?;
             objects.extend(tree_objects);
         } else {
