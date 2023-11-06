@@ -23,6 +23,7 @@ use crate::log::log;
 use crate::log::Log;
 use crate::merge;
 use crate::pull::git_pull;
+use crate::push;
 use crate::rm::git_rm;
 use crate::status;
 use crate::tree_handler;
@@ -185,7 +186,18 @@ fn handle_git_pull() -> io::Result<()> {
 }
 
 fn handle_git_push() -> io::Result<()> {
-    Ok(())
+    let mut current_dir = std::env::current_dir()?;
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Can't find git dir.\n",
+            ));
+        }
+    };
+    let branch_name = get_branch_name(&git_dir)?;
+    push::git_push(&branch_name, &git_dir)
 }
 
 /// Setup a button with the specified `button_id` using the given GTK builder. This function applies the
