@@ -766,9 +766,12 @@ pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error>
                 "Git directory not found\n",
             ));
         }
-    };
 
-    force_checkout(&git_dir, texto);
+    };
+    if let Err(err) = force_checkout(&git_dir, texto) {
+        eprintln!("Error al forzar el cambio de rama o commit (descartando cambios sin confirmar): {:?}", err);
+    }
+    //force_checkout(&git_dir, texto);
 
     Ok("Ok".to_string())
 }

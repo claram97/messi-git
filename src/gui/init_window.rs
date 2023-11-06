@@ -100,7 +100,7 @@ pub fn connect_button_clicked_init_window(
                         eprintln!("Error initiating git.");
                         return;
                     }
-                    let result = handle_git_init_with_template_result(result, &current_dir, Path::new(&dir_str));
+                    let result = handle_git_init_result(result, &current_dir, Path::new(&dir_str));
                     if result.is_err() {
                         eprintln!("Error handling git init with template");
                     }
@@ -114,7 +114,7 @@ pub fn connect_button_clicked_init_window(
                     eprintln!("Error initiating git.");
                     return;
                 }
-                handle_git_init_main_result(result, &current_dir, Path::new(&dir_str));
+                handle_git_init_result(result, &current_dir, Path::new(&dir_str));
             } else if button_type == "option4" {
                 let result = create_text_entry_window("Enter the directory path", move |text| {
                     let result = git_init(&text, "main", None);
@@ -126,7 +126,7 @@ pub fn connect_button_clicked_init_window(
                         eprintln!("Error setting current directory.");
                         return;
                     }
-                    let result = handle_git_init_with_template_result(result, &current_dir, Path::new(&text));
+                    let result = handle_git_init_result(result, &current_dir, Path::new(&text));
                     if result.is_err() {
                         eprintln!("Error handling git init with template");
                     }
@@ -180,76 +180,4 @@ pub fn handle_git_init_result(result: Result<(), io::Error>, code_dir: &Path, wo
     }
 
     Ok(())
-}
-
-/// Handles the result of a Git initialization operation with a template and performs window management.
-///
-/// This function takes the directory path `dir_str` and the result of a Git initialization operation
-/// with a template as input and manages the opening and closing of windows based on the result.
-///
-/// If the Git initialization with a template is successful, it closes all windows and shows the repository window.
-/// If there's an error, it closes all windows and shows the main window.
-///
-/// # Arguments
-///
-/// - `dir_str`: A string representing the directory path.
-/// - `result`: A `Result` containing the outcome of the Git initialization operation.
-///
-/// # Returns
-///
-/// A `Result` with an empty `Ok(())` value to indicate success.
-pub fn handle_git_init_with_template_result(
-    result: Result<(), io::Error>,
-    code_dir: &Path,
-    work_dir: &Path,
-) -> Result<(), io::Error> {
-    match result {
-        Ok(_) => {
-            close_all_windows();
-            let result = show_repository_window(code_dir, work_dir);
-            if result.is_err() {
-                eprintln!("Couldn't show repository window");
-            }
-        }
-        Err(_err) => {
-            close_all_windows();
-            let result = run_main_window();
-            if result.is_err() {
-                eprintln!("Couldn't show main window");
-            }
-        }
-    }
-
-    Ok(())
-}
-
-/// Handles the result of a Git initialization operation with the "main" branch and performs window management.
-///
-/// This function takes the directory path `dir_str` and the result of a Git initialization operation
-/// with the "main" branch as input and manages the opening and closing of windows based on the result.
-///
-/// If the Git initialization with the "main" branch is successful, it closes all windows and shows the repository window.
-/// If there's an error, it closes all windows and shows the main window.
-///
-/// # Arguments
-///
-/// - `dir_str`: A string representing the directory path.
-/// - `result`: A `Result` containing the outcome of the Git initialization operation.
-pub fn handle_git_init_main_result(result: Result<(), io::Error>, code_dir: &Path, work_dir: &Path) {
-    match result {
-        Ok(_) => {
-            close_all_windows();
-            let result = show_repository_window(code_dir, work_dir);
-            if result.is_err() {
-                eprintln!("Couldn't show repository window");
-            }
-        }
-        Err(_err) => {
-            close_all_windows();
-            let result = run_main_window();
-            if result.is_err() {
-                eprintln!("Couldn't show main window");
-            }
-        }
-    }
 }
