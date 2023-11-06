@@ -1,4 +1,7 @@
-use std::{io::{self, BufRead, Write}, collections::HashMap};
+use std::{
+    collections::HashMap,
+    io::{self, BufRead, Write},
+};
 
 use crate::{client::Client, config};
 
@@ -220,7 +223,7 @@ pub fn git_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) ->
 
 #[cfg(test)]
 mod tests {
-    use std::{env, collections::HashMap};
+    use std::{collections::HashMap, env};
 
     use crate::clone;
 

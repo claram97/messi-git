@@ -1,5 +1,8 @@
 use crate::{client::Client, config, init, tree_handler};
-use std::{io::{self, Read, Write}, collections::HashMap};
+use std::{
+    collections::HashMap,
+    io::{self, Read, Write},
+};
 
 /// Retrieves the commit hash of the default branch from the local Git repository.
 ///
@@ -54,18 +57,17 @@ fn get_clean_refs(refs: HashMap<String, String>) -> Vec<String> {
 }
 
 fn create_working_dir(local_git_dir: &str, working_dir: &str) -> io::Result<()> {
-    let default_branch_commit = get_default_branch_commit(&local_git_dir)?;
-    let commit_tree = tree_handler::load_tree_from_commit(&default_branch_commit, &local_git_dir)?;
+    let default_branch_commit = get_default_branch_commit(local_git_dir)?;
+    let commit_tree = tree_handler::load_tree_from_commit(&default_branch_commit, local_git_dir)?;
     let branch_file_path = local_git_dir.to_string() + "/refs/heads/master";
     let mut branch_file = std::fs::File::create(branch_file_path)?;
     branch_file.write_all(default_branch_commit.as_bytes())?;
-    commit_tree.create_directories(working_dir, &local_git_dir)?;
+    commit_tree.create_directories(working_dir, local_git_dir)?;
     let index_path = local_git_dir.to_string() + "/index";
     let gitignore_path = working_dir.to_string() + "/.gitignore";
-    commit_tree.build_index_file_from_tree(&index_path, &local_git_dir, &gitignore_path)?;
+    commit_tree.build_index_file_from_tree(&index_path, local_git_dir, &gitignore_path)?;
     Ok(())
 }
-
 
 /// Clone a remote Git repository into a local directory using a custom Git client.
 ///
@@ -117,15 +119,21 @@ pub fn git_clone(
 
 #[cfg(test)]
 mod tests {
-    use std::{env, collections::HashMap};
+    use std::{collections::HashMap, env};
 
     const PORT: &str = "9418";
 
     #[test]
     fn test_get_clean_refs() {
         let mut refs = HashMap::new();
-        refs.insert("refs/heads/master".to_string(), "b6b0e2e2e3e2e2e2e2e2e2e2e2e2e2e2e2e2e2e".to_string());
-        refs.insert("refs/heads/develop".to_string(), "b6b0e2e2e3e2e2e2e2e2e2e2e2e2e2e2e2e2e3".to_string());
+        refs.insert(
+            "refs/heads/master".to_string(),
+            "b6b0e2e2e3e2e2e2e2e2e2e2e2e2e2e2e2e2e2e".to_string(),
+        );
+        refs.insert(
+            "refs/heads/develop".to_string(),
+            "b6b0e2e2e3e2e2e2e2e2e2e2e2e2e2e2e2e2e3".to_string(),
+        );
         let clean_refs = super::get_clean_refs(refs);
         assert_eq!(clean_refs[0], "master");
         assert_eq!(clean_refs[1], "develop");

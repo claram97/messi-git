@@ -162,7 +162,11 @@ pub fn store_bytes_array_to_file(
     Ok(content_hash)
 }
 
-pub fn store_tree_to_file(blobs: Vec<(String, String, Vec<u8>)>, trees: Vec<(String, String, Vec<u8>)>, git_dir_path: &str) -> io::Result<String> {
+pub fn store_tree_to_file(
+    blobs: Vec<(String, String, Vec<u8>)>,
+    trees: Vec<(String, String, Vec<u8>)>,
+    git_dir_path: &str,
+) -> io::Result<String> {
     let mut blobs = blobs;
     blobs.append(&mut trees.clone());
 
