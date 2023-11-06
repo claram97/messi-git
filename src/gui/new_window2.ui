@@ -141,6 +141,8 @@
                   <object class="GtkTextView" id="show-branches-text">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <property name="editable">False</property>
+                    <property name="cursor-visible">False</property>
                   </object>
                   <packing>
                     <property name="resize">True</property>
@@ -229,6 +231,8 @@
                           <object class="GtkTextView" id="not-staged-view">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
+                            <property name="editable">False</property>
+                            <property name="cursor-visible">False</property>
                           </object>
                         </child>
                       </object>
@@ -289,12 +293,22 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkTextView" id="staged-view">
+                      <object class="GtkScrolledWindow">
+                        <property name="height-request">150</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
+                        <property name="shadow-type">in</property>
+                        <child>
+                          <object class="GtkTextView" id="staged-view">
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="editable">False</property>
+                            <property name="cursor-visible">False</property>
+                          </object>
+                        </child>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
+                        <property name="expand">True</property>
                         <property name="fill">True</property>
                         <property name="position">1</property>
                       </packing>
