@@ -57,6 +57,7 @@
                 <property name="orientation">vertical</property>
                 <child>
                   <object class="GtkTextView" id="log-text">
+                    <property name="width-request">650</property>
                     <property name="height-request">300</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
