@@ -265,7 +265,7 @@ fn handle_status() {
             return;
         }
     };
-   
+
     let red = "\x1b[31m";
     let yellow = "\x1b[33m";
     let green = "\x1b[32m";
@@ -305,8 +305,8 @@ fn handle_status() {
         }
     };
 
-    let current_branch_path = format!("{}/{}",git_dir,branch_path);
-    
+    let current_branch_path = format!("{}/{}", git_dir, branch_path);
+
     let mut changes_to_be_committed_output: Vec<u8> = vec![];
 
     if let Ok(opening_result) = File::open(&current_branch_path) {
@@ -346,7 +346,11 @@ fn handle_status() {
     }
 
     let mut not_staged_for_commit: Vec<u8> = vec![];
-    match find_unstaged_changes(&index, working_dir.to_string_lossy().as_ref(), &mut not_staged_for_commit) {
+    match find_unstaged_changes(
+        &index,
+        working_dir.to_string_lossy().as_ref(),
+        &mut not_staged_for_commit,
+    ) {
         Ok(_) => {}
         Err(_e) => {
             eprintln!("Error finding changes not staged for commit.");
