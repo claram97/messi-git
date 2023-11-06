@@ -49,9 +49,9 @@ pub fn git_rm(
             return Ok(());
         }
 
-        if let Err(err) = remove_path(&mut index, file_name) {
-            eprintln!("Error removing the file: {}", err);
-            return Err(err);
+        if let Err(_err) = remove_path(&mut index, file_name) {
+            // eprintln!("Error removing the file: {}", err);
+            // return Err(err);
         }
 
         if let Err(err) = index.write_file() {
