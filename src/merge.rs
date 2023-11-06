@@ -178,7 +178,9 @@ mod tests {
 
         let index_file_path = format!("{}/index", git_dir);
         let mut index_file = fs::File::create(&index_file_path).unwrap();
-        index_file.write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c").unwrap();
+        index_file
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c")
+            .unwrap();
 
         let commit_message = "Initial commit";
         let commit_1_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
@@ -221,7 +223,9 @@ mod tests {
 
         let index_file_path = format!("{}/index", git_dir);
         let mut index_file = fs::File::create(&index_file_path).unwrap();
-        index_file.write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c").unwrap();
+        index_file
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c")
+            .unwrap();
 
         let commit_message = "Initial commit";
         let _commit_1_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();

@@ -57,7 +57,7 @@ fn test_upload_pack() -> io::Result<()> {
 fn test_receive_pack() -> io::Result<()> {
     let address = "localhost:".to_owned() + PORT;
     let mut client = Client::new(&address, "repo2", "localhost");
-    client.receive_pack("nueva_main", ".mgit3")?;
+    client.receive_pack("bran2", ".mgit3")?;
     Ok(())
 }
 

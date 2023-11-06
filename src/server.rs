@@ -354,7 +354,6 @@ pub fn run(domain: &str, port: &str, path: &str, git_dir: &str) -> io::Result<()
     Ok(())
 }
 
-
 fn read_file_with_lock<P>(path: P) -> io::Result<String>
 where
     P: AsRef<Path>,
