@@ -11,6 +11,7 @@ use gtk::ButtonExt;
 use gtk::GtkWindowExt;
 use std::env;
 use std::io;
+use std::path::Path;
 
 /// Configures the properties of a clone window in a GTK application.
 ///
@@ -83,7 +84,7 @@ pub fn connect_button_clicked_init_window(
                         eprintln!("Error initiating git.");
                         return;
                     }
-                    let result = handle_git_init_result(result);
+                    let result = handle_git_init_result(result, &current_dir, Path::new(&dir_str));
                     if result.is_err() {
                         eprintln!("Error handling git init result.");
                     }
@@ -99,7 +100,7 @@ pub fn connect_button_clicked_init_window(
                         eprintln!("Error initiating git.");
                         return;
                     }
-                    let result = handle_git_init_with_template_result(result);
+                    let result = handle_git_init_with_template_result(result, &current_dir, Path::new(&dir_str));
                     if result.is_err() {
                         eprintln!("Error handling git init with template");
                     }
@@ -113,7 +114,7 @@ pub fn connect_button_clicked_init_window(
                     eprintln!("Error initiating git.");
                     return;
                 }
-                handle_git_init_main_result(result);
+                handle_git_init_main_result(result, &current_dir, Path::new(&dir_str));
             } else if button_type == "option4" {
                 let result = create_text_entry_window("Enter the directory path", move |text| {
                     let result = git_init(&text, "main", None);
@@ -125,11 +126,10 @@ pub fn connect_button_clicked_init_window(
                         eprintln!("Error setting current directory.");
                         return;
                     }
-                    let result = handle_git_init_with_template_result(result);
+                    let result = handle_git_init_with_template_result(result, &current_dir, Path::new(&text));
                     if result.is_err() {
                         eprintln!("Error handling git init with template");
                     }
-                    let result = env::set_current_dir(text);
                     if result.is_err() {
                         eprintln!("Error setting current directory.");
                     }
@@ -161,11 +161,11 @@ pub fn connect_button_clicked_init_window(
 /// # Returns
 ///
 /// A `Result` with an empty `Ok(())` value to indicate success.
-pub fn handle_git_init_result(result: Result<(), io::Error>) -> Result<(), io::Error> {
+pub fn handle_git_init_result(result: Result<(), io::Error>, code_dir: &Path, work_dir: &Path) -> Result<(), io::Error> {
     match result {
         Ok(_) => {
             close_all_windows();
-            let result = show_repository_window();
+            let result = show_repository_window(code_dir, work_dir);
             if result.is_err() {
                 eprintln!("Couldn't show repository window");
             }
@@ -200,11 +200,13 @@ pub fn handle_git_init_result(result: Result<(), io::Error>) -> Result<(), io::E
 /// A `Result` with an empty `Ok(())` value to indicate success.
 pub fn handle_git_init_with_template_result(
     result: Result<(), io::Error>,
+    code_dir: &Path,
+    work_dir: &Path,
 ) -> Result<(), io::Error> {
     match result {
         Ok(_) => {
             close_all_windows();
-            let result = show_repository_window();
+            let result = show_repository_window(code_dir, work_dir);
             if result.is_err() {
                 eprintln!("Couldn't show repository window");
             }
@@ -233,11 +235,11 @@ pub fn handle_git_init_with_template_result(
 ///
 /// - `dir_str`: A string representing the directory path.
 /// - `result`: A `Result` containing the outcome of the Git initialization operation.
-pub fn handle_git_init_main_result(result: Result<(), io::Error>) {
+pub fn handle_git_init_main_result(result: Result<(), io::Error>, code_dir: &Path, work_dir: &Path) {
     match result {
         Ok(_) => {
             close_all_windows();
-            let result = show_repository_window();
+            let result = show_repository_window(code_dir, work_dir);
             if result.is_err() {
                 eprintln!("Couldn't show repository window");
             }

@@ -39,6 +39,7 @@ use gtk::TextBufferExt;
 use gtk::TextView;
 use gtk::TextViewExt;
 use gtk::WidgetExt;
+use std::env;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
@@ -47,9 +48,23 @@ use std::path::PathBuf;
 ///
 /// This function initializes and displays a GTK repository window using a UI builder. It configures the window, adds buttons with specific actions, and sets their styles and click event handlers. The repository window provides buttons for actions like "Add," "Commit," "Push," and more.
 ///
-pub fn show_repository_window() -> io::Result<()> {
-    let builder = gtk::Builder::new();
-    if let Some(new_window) = load_and_get_window(&builder, "src/gui/new_window2.ui", "window") {
+pub fn show_repository_window(code_dir: &Path, working_dir: &Path) -> io::Result<()> {
+    let builder: Builder = gtk::Builder::new();
+    let complete_path_to_ui = code_dir.join("src/gui/new_window2.ui");
+    let complete_path_to_ui_string = match complete_path_to_ui.to_str() {
+        Some(string) => string,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Failed to convert path to string.\n",
+            ))
+        }
+    };
+    if let Some(new_window) = load_and_get_window(&builder, complete_path_to_ui_string, "window") {
+        match env::set_current_dir(working_dir) {
+            Ok(_) => println!("Working dir was setted correctly."),
+            Err(err) => return Err(io::Error::new(io::ErrorKind::Other, err)),
+        }
         setup_repository_window(&builder, &new_window)?;
         Ok(())
     } else {
@@ -447,11 +462,6 @@ fn handle_create_branch_button() -> io::Result<()> {
         if result.is_err() {
             eprintln!("Error creating text entry window.");
             return;
-        }
-        close_all_windows();
-        let result = show_repository_window();
-        if result.is_err() {
-            eprintln!("Error creating text entry window.");
         }
     });
 
