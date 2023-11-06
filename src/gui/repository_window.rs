@@ -26,6 +26,7 @@ use crate::pull::git_pull;
 use crate::rm::git_rm;
 use crate::status;
 use crate::tree_handler;
+use crate::tree_handler::Tree;
 use crate::utils;
 use crate::utils::find_git_directory;
 use gtk::prelude::BuilderExtManual;
@@ -1335,14 +1336,20 @@ fn get_staged_text() -> io::Result<String> {
         io::ErrorKind::Other,
         "Failed to find git directory",
     ))?;
-    let last_commit = branch::get_current_branch_commit(&git_dir)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-    let last_commit_tree = tree_handler::load_tree_from_commit(&last_commit, &git_dir)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    let last_commit = match branch::get_current_branch_commit(&git_dir) {
+        Ok(commit) => commit,
+        Err(_) => {
+            return Ok("".to_string());
+        }
+    };
+    let last_commit_tree: Option<Tree> = match tree_handler::load_tree_from_commit(&last_commit, &git_dir) {
+        Ok(tree) => Some(tree),
+        Err(_) => None,
+    };
     let index_file = format!("{}{}", git_dir, "/index");
     let gitignore_path = format!("{}{}", current_dir.to_str().unwrap(), "/.gitignore");
     let index = index::Index::load(&index_file, &git_dir, &gitignore_path)?;
-    let staged_files = status::get_staged_changes(&index, &last_commit_tree)
+    let staged_files = status::get_staged_changes(&index, last_commit_tree)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
     Ok(staged_files)

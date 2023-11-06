@@ -1,10 +1,12 @@
 const BLOB: &str = "blob";
 
-use std::fs;
+use std::{fs, path, hash};
 use std::io::{self, Write};
 use std::path::Path;
 
-use crate::hash_object;
+use rand::Error;
+
+use crate::{hash_object, commit};
 use crate::index::Index;
 use crate::tree_handler::Tree;
 
@@ -93,9 +95,26 @@ pub fn changes_to_be_committed(
 }
 
 /// Return a string containing all staged changes in a Git repository's index.
-pub fn get_staged_changes(index: &Index, commit_tree: &Tree) -> Result<String, io::Error> {
-    let mut output: Vec<u8> = vec![];
-    changes_to_be_committed(index, commit_tree, &mut output)?;
+pub fn get_staged_changes(index: &Index, commit_tree: Option<Tree>) -> Result<String, io::Error> {
+    let output = match commit_tree {
+        Some(tree) => {
+            let mut local_output = vec![];
+            let result = changes_to_be_committed(index, &tree, &mut local_output);
+            if result.is_ok() {
+                local_output
+            } else {
+                vec![]
+            }
+        }
+        None => {
+            let mut output: Vec<u8> = vec![];
+            for (path, _) in index.iter() {
+                let buffer = format!("\x1b[31m\t\tmodified:\t {}\x1b[0m\n", path);
+                output.write_all(buffer.as_bytes())?;
+            }
+            output
+        }
+    };
     if let Ok(result) = String::from_utf8(output) {
         let mut resultado = result;
         resultado = resultado.replace("\x1b[31m\t\tmodified:\t ", "");
