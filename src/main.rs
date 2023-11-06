@@ -17,24 +17,48 @@ fn run_with_gui() -> io::Result<()> {
     gtk::main();
     Ok(())
 }
-
 fn run_without_gui() -> io::Result<()> {
-    let args = get_user_input();
-    let second_argument = match args.get(1) {
-        Some(arg) => arg,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "No se ha ingresado el segundo argumento.\n",
-            ));
-        }
-    };
+    loop {
+        let args = get_user_input();
+        let second_argument = match args.get(1) {
+            Some(arg) => arg,
+            None => {
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "No se ha ingresado el segundo argumento.\n",
+                ));
+            }
+        };
 
-    if let Some(git_command) = parse_git_command(second_argument) {
-        handle_git_command(git_command, args);
+        if second_argument == "exit" {
+            // Si se ingresa "exit", salimos del bucle.
+            break;
+        }
+
+        if let Some(git_command) = parse_git_command(second_argument) {
+            handle_git_command(git_command, args);
+        }
     }
     Ok(())
 }
+
+// fn run_without_gui() -> io::Result<()> {
+//     let args = get_user_input();
+//     let second_argument = match args.get(1) {
+//         Some(arg) => arg,
+//         None => {
+//             return Err(io::Error::new(
+//                 io::ErrorKind::Other,
+//                 "No se ha ingresado el segundo argumento.\n",
+//             ));
+//         }
+//     };
+
+//     if let Some(git_command) = parse_git_command(second_argument) {
+//         handle_git_command(git_command, args);
+//     }
+//     Ok(())
+// }
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
