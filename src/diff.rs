@@ -4,6 +4,17 @@ use std::{
     io::{BufRead, BufReader},
 };
 
+/// Prints the difference between two text files using line-by-line comparison.
+///
+/// This function reads the contents of two text files specified by their file paths and compares them
+/// line by line. It then prints the differences between the two files, highlighting additions, deletions,
+/// and modifications. The output is displayed in a human-readable format to the console.
+///
+/// # Arguments
+///
+/// * `path_a`: A string representing the file path of the first text file for comparison.
+/// * `path_b`: A string representing the file path of the second text file for comparison.
+///
 pub fn print_diff(path_a: &str, path_b: &str) {
     let archivo_a = match read_file_lines(path_a) {
         Ok(lines) => lines,

@@ -1,9 +1,8 @@
+use flate2::bufread::ZlibDecoder;
 use std::{
     fs::File,
     io::{self, BufReader, ErrorKind, Read, Write},
 };
-
-use flate2::bufread::ZlibDecoder;
 
 /// It recieves the complete hash of a file and writes the content of the file to output.
 /// output can be anything that implementes Write
@@ -43,6 +42,108 @@ pub fn cat_file_return_content(hash: &str, directory: &str) -> io::Result<String
         Some(partes) => Ok(partes.to_string()),
         None => Ok(content),
     }
+}
+
+/// Extracts and parses the content of a Git tree object.
+///
+/// This function reads and parses the content of a Git tree object identified by its `hash` from the local
+/// Git repository located in the directory specified by `directory`. It returns a list of tuples, each containing
+/// the mode, name, and hash associated with entries in the tree object.
+///
+/// The function performs the following steps:
+/// 1. Opens and decompresses the Git object file.
+/// 2. Extracts the tree object's header.
+/// 3. Parses the entries within the tree, including their mode, name, and hash.
+///
+/// # Arguments
+///
+/// * `hash`: The hash identifier of the Git tree object to extract and parse.
+/// * `directory`: The path to the local directory containing the Git repository.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a vector of tuples, each with three elements: mode, name, and hash of entries
+/// in the tree object. In case of success, the result is wrapped in an `io::Result<Vec<(String, String, String)>>`.
+///
+pub fn cat_tree(hash: &str, directory: &str) -> io::Result<Vec<(String, String, String)>> {
+    let file_dir = format!("{}/objects/{}", directory, &hash[..2]);
+    let file = File::open(format!("{}/{}", file_dir, &hash[2..]))?;
+
+    let content = decompress_into_bytes(file)?;
+
+    let header_len = match content.iter().position(|&x| x == 0) {
+        Some(pos) => pos,
+        None => {
+            return Err(io::Error::new(
+                ErrorKind::InvalidData,
+                "No se encontro el caracter nulo",
+            ))
+        }
+    };
+    let header = content.split_at(header_len);
+    let content = header.1[1..].to_vec();
+
+    //Entry del tree: <modo> <nombre>\0<hash>
+
+    let mut results = vec![];
+    let mut r = BufReader::new(content.as_slice());
+
+    let mut bytes_read = 0;
+    while bytes_read < content.len() {
+        // mientras no haya leido todo el contenido
+        let mut mode: [u8; 6] = [0, 0, 0, 0, 0, 0]; // leo los 6 bytes del modo
+        r.read_exact(&mut mode)?;
+        bytes_read += 6;
+        let mut name: Vec<u8> = vec![]; // lo prixmo es el nombre hasta el \0
+        if mode[0] != 52 {
+            r.read_exact(&mut [0])?; // salteo el espacio
+            bytes_read += 1;
+        }
+        let mut buf: [u8; 1] = [0];
+        loop {
+            r.read_exact(&mut buf)?;
+            bytes_read += 1;
+            if buf[0] == 0 {
+                // si es el \0 termino
+                break;
+            }
+            name.push(buf[0]);
+        }
+
+        let mut hash = [0; 20]; // leo los 20 bytes del hash
+        r.read_exact(&mut hash)?;
+        bytes_read += 20;
+
+        let mode = String::from_utf8(mode.to_vec())
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?; // lo paso a string
+        let hash: Vec<String> = hash.iter().map(|byte| format!("{:02x}", byte)).collect(); // convierto los bytes del hash a string
+        let hash = hash.concat().to_string();
+        let name = String::from_utf8(name.to_vec())
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?;
+        results.push((mode, name, hash)); // agrego el resultado y vuelvo a empezar
+    }
+    Ok(results)
+}
+
+/// Decompresses the content of a Zlib-compressed file into a byte vector.
+///
+/// This function decompresses the content of a Zlib-compressed file provided as an input `File` into a byte
+/// vector. It returns the decompressed content as a vector of unsigned 8-bit integers (`u8`).
+///
+/// # Arguments
+///
+/// * `file`: A `File` representing the Zlib-compressed file to decompress.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the decompressed content as a vector of `u8`. In case of success, the result
+/// is wrapped in an `io::Result<Vec<u8>>`.
+///
+fn decompress_into_bytes(file: File) -> io::Result<Vec<u8>> {
+    let mut decompressor = ZlibDecoder::new(BufReader::new(file));
+    let mut decompressed_content = Vec::new();
+    decompressor.read_to_end(&mut decompressed_content)?;
+    Ok(decompressed_content)
 }
 
 /// Decompresses a given file.

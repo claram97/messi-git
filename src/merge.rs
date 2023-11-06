@@ -125,6 +125,34 @@ pub fn git_merge(
     }
 }
 
+/// Merge a remote branch into the current local branch in a Git repository.
+///
+/// This function performs a merge operation by combining the changes from a remote branch into the
+/// current local branch of a Git repository. The merge process involves updating the index and working
+/// tree to reflect the new merged state.
+///
+/// # Arguments
+///
+/// * `branch`: A string representing the name of the local branch to be merged.
+/// * `remote_hash`: A string representing the commit hash of the remote branch to be merged.
+/// * `git_dir`: A string representing the path to the Git repository directory.
+///
+/// # Returns
+///
+/// Returns an `io::Result` indicating whether the merge operation was successful. If successful,
+/// `Ok(())` is returned; otherwise, an error is returned.
+///
+pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io::Result<()> {
+    let our_commit = branch::get_branch_commit_hash(branch, git_dir)?;
+    let our_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
+    let remote_tree = tree_handler::load_tree_from_commit(remote_hash, git_dir)?;
+    let (new_tree, _conflicts) = tree_handler::merge_trees(&our_tree, &remote_tree, git_dir)?;
+    let index_path = utils::get_index_file_path(git_dir);
+    let new_index_file_contents = new_tree.build_index_file_from_tree(&index_path, git_dir, &get_git_ignore_path(git_dir))?;
+    new_index_file_contents.write_file()?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -179,7 +207,9 @@ mod tests {
 
         let index_file_path = format!("{}/index", git_dir);
         let mut index_file = fs::File::create(&index_file_path).unwrap();
-        index_file.write_all(b"111111111 src/main.c").unwrap();
+        index_file
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c")
+            .unwrap();
 
         let commit_message = "Initial commit";
         let commit_1_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
@@ -195,7 +225,7 @@ mod tests {
 
         let mut index_file = fs::File::create(&index_file_path).unwrap();
         index_file
-            .write_all(b"111111111 src/main.c\n222222222 src/hello.c")
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c\ne4482842d2f8e960ccb99c3026f1210ea2b1d24e src/hello.c")
             .unwrap();
 
         let commit_message = "Second commit";
@@ -203,7 +233,7 @@ mod tests {
 
         let mut index_file = fs::File::create(&index_file_path).unwrap();
         index_file
-            .write_all(b"111111111 src/main.c\n222222222 src/hello.c\n333333333 src/bye.c")
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c\ne4482842d2f8e960ccb99c3026f1210ea2b1d24e src/hello.c\nf454180c3a3b6182000a3ef25b3ef2e10cb10234 src/bye.c")
             .unwrap();
 
         let commit_message = "Third commit";
@@ -222,14 +252,16 @@ mod tests {
 
         let index_file_path = format!("{}/index", git_dir);
         let mut index_file = fs::File::create(&index_file_path).unwrap();
-        index_file.write_all(b"111111111 src/main.c").unwrap();
+        index_file
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c")
+            .unwrap();
 
         let commit_message = "Initial commit";
         let _commit_1_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
 
         let mut index_file = fs::File::create(&index_file_path).unwrap();
         index_file
-            .write_all(b"111111111 src/main.c\n222222222 src/hello.c")
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c\ne4482842d2f8e960ccb99c3026f1210ea2b1d24e src/hello.c")
             .unwrap();
 
         let commit_message = "Second commit";
@@ -246,7 +278,7 @@ mod tests {
 
         let mut index_file = fs::File::create(&index_file_path).unwrap();
         index_file
-            .write_all(b"111111111 src/main.c\n222222222 src/hello.c\n333333333 src/bye.c")
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c\ne4482842d2f8e960ccb99c3026f1210ea2b1d24e src/hello.c\nf454180c3a3b6182000a3ef25b3ef2e10cb10234 src/bye.c")
             .unwrap();
 
         let commit_message = "Third commit";

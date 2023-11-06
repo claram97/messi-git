@@ -39,6 +39,21 @@ fn create_new_commit_file(
     Ok(commit_hash)
 }
 
+/// Retrieves the name of the currently checked-out branch in a Git repository.
+///
+/// This function reads the contents of the Git repository's "HEAD" file to determine the currently
+/// checked-out branch and returns its name as a string. The "HEAD" file typically contains a reference
+/// to the branch that is currently active.
+///
+/// # Arguments
+///
+/// * `git_dir_path`: A string representing the path to the Git repository's root directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the name of the currently checked-out branch as a string. In case of success,
+/// an `io::Result<String>` is returned.
+///
 pub fn get_branch_name(git_dir_path: &str) -> io::Result<String> {
     let head_path = git_dir_path.to_string() + "/HEAD";
     let mut head_file = std::fs::File::open(head_path)?;
@@ -57,6 +72,7 @@ pub fn get_branch_name(git_dir_path: &str) -> io::Result<String> {
     let name: Vec<&str> = branch_name.split('\n').collect();
     Ok(name[0].to_string())
 }
+
 /// Creates a new commit file and updates the branch file.
 /// the refs/heads/branch_name file will be updated with the new commit hash.
 /// If the branch file doesn't exist, it will be created.
@@ -169,6 +185,20 @@ pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<S
     };
     Ok(message.to_string())
 }
+/// Reads and returns the commit hash referred to by the HEAD reference in a Git repository.
+///
+/// This function reads the contents of the Git repository's "HEAD" file to determine the commit hash
+/// to which it is currently referring. The "HEAD" file may contain a reference to a branch or a direct
+/// commit hash. This function resolves the reference and returns the associated commit hash as a string.
+///
+/// # Arguments
+///
+/// * `git_dir`: A string representing the path to the Git repository's root directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the commit hash as a string. In case of success, an `io::Result<String>` is returned.
+///
 pub fn read_head_commit_hash(git_dir: &str) -> io::Result<String> {
     let head_path = format!("{}/HEAD", git_dir);
     let head_content = fs::read_to_string(head_path)?;
@@ -209,11 +239,11 @@ mod tests {
         let mut refs_file =
             std::fs::File::create(git_dir_path.to_string() + "/refs/heads/main").unwrap();
         refs_file
-            .write_all("hash_del_commit_anterior".as_bytes())
+            .write_all("000008507513fcffffffb8914504defeeb800000".as_bytes())
             .unwrap();
 
         let mut index_file = std::fs::File::create(git_dir_path.to_string() + "/index").unwrap();
-        let index_file_content = "hashhashhashhash1 probando.txt\nhashhashhashhash2 src/probando.c\nhashhashhashhash3 src/pruebita.c\nhashhashhashhash4 src/prueba/prueba.c";
+        let index_file_content = "00000855bce90795f20fffff5242cc9235000000 probando.txt\n00000c0a42c61e70f66bfffff38fa653b7200000 src/probando.c\n000008afba902111fffffa8ebcc70522a3e00000 src/pruebita.c\n00000128d8c22fc69fffff0d9620ab896b500000 src/prueba/prueba.c";
         index_file.write_all(index_file_content.as_bytes()).unwrap();
     }
     use super::*;
@@ -222,7 +252,7 @@ mod tests {
         let refs_path = git_dir_path.to_string() + "/refs/heads/main";
         let mut refs_file = std::fs::File::create(&refs_path).unwrap();
         refs_file
-            .write_all("hash_del_commit_anterior".as_bytes())
+            .write_all("000008507513fcffffffb8914504defeeb800000".as_bytes())
             .unwrap();
     }
 
@@ -284,13 +314,13 @@ mod tests {
         let message = "test commit";
         let commit_1_hash = new_commit(git_dir_path, message, "").unwrap();
         let parent_hash = get_parent_hash(&commit_1_hash, git_dir_path).unwrap();
-        assert_eq!(parent_hash, "hash_del_commit_anterior");
+        assert_eq!(parent_hash, "000008507513fcffffffb8914504defeeb800000");
         let mut index_file = std::fs::OpenOptions::new()
             .append(true)
             .open(git_dir_path.to_string() + "/index")
             .unwrap();
         index_file
-            .write_all("\nhashhashhashhash5 src/prueba/prueba2.c".as_bytes())
+            .write_all("\ne4482842d2f8e960ccb99c3026f1210ea2b1d24e src/prueba/prueba2.c".as_bytes())
             .unwrap();
         let message = "test commit 2";
         let commit_2_hash = new_commit(git_dir_path, message, "").unwrap();
@@ -302,7 +332,7 @@ mod tests {
             .open(git_dir_path.to_string() + "/index")
             .unwrap();
         index_file
-            .write_all("\nhashhashhashhash6 src/prueba/prueba3.c".as_bytes())
+            .write_all("\n3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/prueba/prueba3.c".as_bytes())
             .unwrap();
         let message = "test commit 3";
         let commit_3_hash = new_commit(git_dir_path, message, "").unwrap();
@@ -327,7 +357,7 @@ mod tests {
             .open(git_dir_path.to_string() + "/index")
             .unwrap();
         index_file
-            .write_all("\nhashhashhashhash5 src/prueba/prueba2.c".as_bytes())
+            .write_all("\n0894f78e615131459e43d258070b5540081f1d82 src/prueba/prueba2.c".as_bytes())
             .unwrap();
         let commit_2_hash = new_commit(git_dir_path, message, "").unwrap();
         let commit_2_content =
@@ -338,7 +368,7 @@ mod tests {
             .open(git_dir_path.to_string() + "/index")
             .unwrap();
         index_file
-            .write_all("\nhashhashhashhash6 src/prueba/prueba3.c".as_bytes())
+            .write_all("\n85628bead31d2c14e4a56113e524eab2ccff22c9 src/prueba/prueba3.c".as_bytes())
             .unwrap();
         let commit_3_hash = new_commit(git_dir_path, message, "").unwrap();
         let commit_3_content =

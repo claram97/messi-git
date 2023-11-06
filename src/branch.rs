@@ -28,6 +28,22 @@ pub fn get_current_branch_path(git_dir_path: &str) -> io::Result<String> {
     Ok(path_final.to_string())
 }
 
+/// Retrieves the commit hash associated with a specific Git branch.
+///
+/// This function reads the commit hash associated with a given Git branch named `branch_name` from the local
+/// Git repository located in the directory specified by `git_dir`. It accesses the branch reference file to
+/// obtain the commit hash.
+///
+/// # Arguments
+///
+/// * `branch_name`: The name of the Git branch for which to retrieve the commit hash.
+/// * `git_dir`: The path to the local directory containing the Git repository.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the commit hash of the specified branch in case of success, or an error
+/// in case any issue occurs during the operation.
+///
 pub fn get_branch_commit_hash(branch_name: &str, git_dir: &str) -> io::Result<String> {
     let branch_path = git_dir.to_string() + "/refs/heads/" + branch_name;
     let mut branch_file = std::fs::File::open(branch_path)?;
@@ -38,6 +54,22 @@ pub fn get_branch_commit_hash(branch_name: &str, git_dir: &str) -> io::Result<St
     Ok(path_final.to_string())
 }
 
+/// Updates the commit hash associated with a Git branch in the local repository.
+///
+/// This function allows you to update the commit hash associated with a specific Git branch named `branch_name`
+/// in the local Git repository located in the directory specified by `git_dir`. It writes the provided `commit_hash`
+/// to the branch's reference file, effectively changing the commit the branch points to.
+///
+/// # Arguments
+///
+/// * `branch_name`: The name of the Git branch to update.
+/// * `commit_hash`: The new commit hash to associate with the branch.
+/// * `git_dir`: The path to the local directory containing the Git repository.
+///
+/// # Returns
+///
+/// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
+///
 pub fn update_branch_commit_hash(
     branch_name: &str,
     commit_hash: &str,
@@ -49,6 +81,21 @@ pub fn update_branch_commit_hash(
     Ok(())
 }
 
+/// Retrieves the commit hash of the current branch in the local Git repository.
+///
+/// This function reads the commit hash of the currently checked-out branch in the local Git repository located
+/// in the directory specified by `git_dir_path`. It accesses the reference file of the current branch to obtain
+/// the commit hash.
+///
+/// # Arguments
+///
+/// * `git_dir_path`: The path to the local directory containing the Git repository.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the commit hash of the current branch in case of success, or an error
+/// in case any issue occurs during the operation.
+///
 pub fn get_current_branch_commit(git_dir_path: &str) -> io::Result<String> {
     let branch_path = get_current_branch_path(git_dir_path)?;
     let complete_path = git_dir_path.to_string() + "/" + &branch_path;
@@ -58,6 +105,21 @@ pub fn get_current_branch_commit(git_dir_path: &str) -> io::Result<String> {
     Ok(branch_content)
 }
 
+/// Deletes a Git branch from the local repository.
+///
+/// This function is used to delete a specific Git branch named `branch_name` from the local Git repository
+/// located in the directory specified by `git_dir`. If the branch exists, its reference file is removed.
+/// If the branch does not exist, an error message is printed to the standard output.
+///
+/// # Arguments
+///
+/// * `git_dir`: The path to the local directory containing the Git repository.
+/// * `branch_name`: The name of the branch to be deleted.
+///
+/// # Returns
+///
+/// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
+///
 pub fn delete_branch(git_dir: &str, branch_name: &str) -> io::Result<()> {
     let branch_path = git_dir.to_string() + "/refs/heads/" + branch_name;
     let path = Path::new(&branch_path);
