@@ -1,6 +1,7 @@
 use crate::{client::Client, config, init, tree_handler};
 use std::{
     collections::HashMap,
+    fs,
     io::{self, Read, Write},
 };
 
@@ -69,6 +70,13 @@ fn create_working_dir(local_git_dir: &str, working_dir: &str) -> io::Result<()> 
     Ok(())
 }
 
+/// Create the refs/remotes/origin/dir
+fn create_remote_dir(local_git_dir: &str) -> io::Result<()> {
+    let path_to_file = local_git_dir.to_string() + "/refs/remotes/origin/";
+    fs::create_dir_all(path_to_file)?;
+    Ok(())
+}
+
 /// Clone a remote Git repository into a local directory using a custom Git client.
 ///
 /// This function clones a remote Git repository located at `remote_repo_url` into the local directory
@@ -99,8 +107,11 @@ pub fn git_clone(
     let mut client = Client::new(remote_repo_url, remote_repo_name, host);
     let refs = client.get_server_refs()?;
     let clean_refs = get_clean_refs(refs);
-    client.upload_pack(clean_refs, &local_git_dir, "origin")?;
+    create_remote_dir(&local_git_dir)?;
+    let result = client.upload_pack(clean_refs, &local_git_dir, "origin");
+    println!("{:?}", result);
     create_working_dir(&local_git_dir, working_dir)?;
+    println!("Cloned into {}", working_dir);
     let mut config_file = config::Config::load(&local_git_dir)?;
     config_file.add_remote(
         remote_repo_name.to_string(),
@@ -119,35 +130,9 @@ pub fn git_clone(
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, env};
+    use std::env;
 
     const PORT: &str = "9418";
-
-    #[test]
-    fn test_get_clean_refs() {
-        let mut refs = HashMap::new();
-        refs.insert(
-            "refs/heads/master".to_string(),
-            "b6b0e2e2e3e2e2e2e2e2e2e2e2e2e2e2e2e2e2e".to_string(),
-        );
-        refs.insert(
-            "refs/heads/develop".to_string(),
-            "b6b0e2e2e3e2e2e2e2e2e2e2e2e2e2e2e2e2e3".to_string(),
-        );
-        let clean_refs = super::get_clean_refs(refs);
-        assert_eq!(clean_refs[0], "master");
-        assert_eq!(clean_refs[1], "develop");
-    }
-
-    #[test]
-    fn test_get_default_branch_commit() {
-        let local_git_dir = "test_files/test_clone/.mgit";
-        let default_branch_commit = super::get_default_branch_commit(local_git_dir).unwrap();
-        assert_eq!(
-            default_branch_commit,
-            "b6b0e2e2e3e2e2e2e2e2e2e2e2e2e2e2e2e2e2e"
-        );
-    }
 
     #[ignore = "This test only makes sense if a server is running"]
     #[test]

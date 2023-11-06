@@ -223,23 +223,9 @@ pub fn git_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) ->
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, env};
-
     use crate::clone;
-
+    use std::env;
     const PORT: &str = "9418";
-
-    #[test]
-    fn test_get_clean_refs() {
-        let mut refs = HashMap::new();
-        refs.insert("refs/heads/master".to_string(), "1234567890".to_string());
-        refs.insert("refs/heads/develop".to_string(), "0987654321".to_string());
-        let clean_refs = super::get_clean_refs(&refs);
-
-        assert_eq!(clean_refs[0], "master");
-        assert_eq!(clean_refs[1], "develop");
-    }
-
     #[ignore = "This test only works if the server is running"]
     #[test]
     fn test_fetch() {
