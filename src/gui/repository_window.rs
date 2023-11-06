@@ -638,7 +638,7 @@ pub fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
 ///
 /// Searches for the Git directory and Git ignore file in the given current directory.
 /// Returns a tuple containing the Git directory path and Git ignore file path if found.
-fn find_git_directory_and_ignore() -> Result<(String, String), io::Error> {
+pub fn find_git_directory_and_ignore() -> Result<(String, String), io::Error> {
     let current_dir = std::env::current_dir()?;
     let mut current_dir_buf = current_dir.to_path_buf();
     let git_dir = find_git_directory(&mut current_dir_buf, ".mgit")
