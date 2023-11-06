@@ -139,7 +139,6 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "remove-path-button",
         "commit-changes-button",
         "new-branch-button",
-        "close",
         "checkout1",
         "checkout2",
         "checkout3",
@@ -187,14 +186,6 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         "show-log-button" => {
             button.connect_clicked(move |_| {
                 handle_show_log_button_click(&builder_clone);
-            });
-        }
-        "close" => {
-            button.connect_clicked(move |_| {
-                let result = handle_close_window();
-                if result.is_err() {
-                    eprintln!("Error handling close window.")
-                }
             });
         }
         "checkout1" => {

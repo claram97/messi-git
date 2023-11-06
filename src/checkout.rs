@@ -253,6 +253,9 @@ fn replace_working_tree(
 
     latest_tree.delete_directories(root_dir)?;
     commit_tree.create_directories(root_dir, git_dir)?;
+    let index_path = git_dir.to_string() + "/index";
+    let index = commit_tree.build_index_file_from_tree(&index_path, git_dir, "")?;
+    index.write_file()?;
     Ok(())
 }
 
