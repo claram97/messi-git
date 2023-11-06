@@ -207,7 +207,9 @@ mod tests {
 
         let index_file_path = format!("{}/index", git_dir);
         let mut index_file = fs::File::create(&index_file_path).unwrap();
-        index_file.write_all(b"111111111 src/main.c").unwrap();
+        index_file
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c")
+            .unwrap();
 
         let commit_message = "Initial commit";
         let commit_1_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
@@ -223,7 +225,7 @@ mod tests {
 
         let mut index_file = fs::File::create(&index_file_path).unwrap();
         index_file
-            .write_all(b"111111111 src/main.c\n222222222 src/hello.c")
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c\ne4482842d2f8e960ccb99c3026f1210ea2b1d24e src/hello.c")
             .unwrap();
 
         let commit_message = "Second commit";
@@ -231,7 +233,7 @@ mod tests {
 
         let mut index_file = fs::File::create(&index_file_path).unwrap();
         index_file
-            .write_all(b"111111111 src/main.c\n222222222 src/hello.c\n333333333 src/bye.c")
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c\ne4482842d2f8e960ccb99c3026f1210ea2b1d24e src/hello.c\nf454180c3a3b6182000a3ef25b3ef2e10cb10234 src/bye.c")
             .unwrap();
 
         let commit_message = "Third commit";
@@ -250,14 +252,16 @@ mod tests {
 
         let index_file_path = format!("{}/index", git_dir);
         let mut index_file = fs::File::create(&index_file_path).unwrap();
-        index_file.write_all(b"111111111 src/main.c").unwrap();
+        index_file
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c")
+            .unwrap();
 
         let commit_message = "Initial commit";
         let _commit_1_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
 
         let mut index_file = fs::File::create(&index_file_path).unwrap();
         index_file
-            .write_all(b"111111111 src/main.c\n222222222 src/hello.c")
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c\ne4482842d2f8e960ccb99c3026f1210ea2b1d24e src/hello.c")
             .unwrap();
 
         let commit_message = "Second commit";
@@ -274,7 +278,7 @@ mod tests {
 
         let mut index_file = fs::File::create(&index_file_path).unwrap();
         index_file
-            .write_all(b"111111111 src/main.c\n222222222 src/hello.c\n333333333 src/bye.c")
+            .write_all(b"3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/main.c\ne4482842d2f8e960ccb99c3026f1210ea2b1d24e src/hello.c\nf454180c3a3b6182000a3ef25b3ef2e10cb10234 src/bye.c")
             .unwrap();
 
         let commit_message = "Third commit";

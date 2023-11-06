@@ -2,7 +2,7 @@ use std::{
     collections::HashSet,
     fmt::Display,
     fs::File,
-    io::{self, BufReader, Error, Read, Write},
+    io::{self, BufRead, BufReader, Error, Read, Write},
     str::from_utf8,
     vec,
 };
@@ -10,6 +10,8 @@ use std::{
 use flate2::{bufread::ZlibDecoder, write::ZlibEncoder, Compression};
 use sha1::Digest;
 use sha1::Sha1;
+
+use crate::hash_object;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObjectType {
@@ -169,7 +171,6 @@ where
 
         let mut decompressor = ZlibDecoder::new(&mut self.bufreader);
         let mut obj = vec![];
-        dbg!(obj_size);
         let bytes_read = decompressor.read_to_end(&mut obj)?;
         if obj_size != bytes_read {
             println!("type {:?}. bytes:\n{:?}", obj_type, obj);
@@ -226,12 +227,7 @@ pub fn create_packfile_from_set(
     git_dir: &str,
 ) -> io::Result<Vec<u8>> {
     let mut packfile = vec![];
-    // header start (ver si va aca o no)
-    // packfile.push(1);
-    packfile.push(b'P');
-    packfile.push(b'A');
-    packfile.push(b'C');
-    packfile.push(b'K');
+    packfile.extend(b"PACK");
     let version: [u8; 4] = [0, 0, 0, 2];
     packfile.extend(version);
     let obj_count: [u8; 4] = (objects.len() as u32).to_be_bytes();
@@ -245,33 +241,45 @@ fn append_objects(
     objects: HashSet<(ObjectType, String)>,
     git_dir: &str,
 ) -> io::Result<()> {
-    for (obj_type, hash) in objects {
-        let content = decompress_object_into_bytes(&hash, git_dir)?;
-        let obj_size = content.len();
-        let mut compressor = ZlibEncoder::new(Vec::<u8>::new(), Compression::default());
-        compressor.write_all(&content)?;
-        let compressed_content = compressor.finish()?;
-
-        let mut encoded_header: Vec<u8> = Vec::new();
-        // Combina el tipo de objeto y los 4 bits más bajos del tamaño
-        let mut c = (obj_type.as_byte() << 4) | ((obj_size & 0x0F) as u8);
-        // Codifica el tamaño restante usando codificación de bytes variable
-        let mut size = obj_size >> 4;
-        while size > 0 {
-            encoded_header.push(c | 0x80);
-
-            c = size as u8 & 0x7F;
-            size >>= 7;
-        }
-        encoded_header.push(c);
-
-        packfile.extend(encoded_header);
-        packfile.extend(compressed_content);
+    for object in objects {
+        append_object(packfile, object, git_dir)?
     }
     let mut hasher = Sha1::new();
     hasher.update(&packfile);
-    let result = hasher.finalize();
-    write!(packfile, "{:02x}", result)
+    let checksum = hasher.finalize();
+    packfile.extend(checksum);
+    Ok(())
+}
+
+fn append_object(
+    packfile: &mut Vec<u8>,
+    object: (ObjectType, String),
+    git_dir: &str,
+) -> io::Result<()> {
+    let (obj_type, hash) = object;
+
+    let content = decompress_object_into_bytes(&hash, git_dir)?;
+    let obj_size = content.len();
+    let mut compressor = ZlibEncoder::new(Vec::<u8>::new(), Compression::default());
+    compressor.write_all(&content)?;
+    let compressed_content = compressor.finish()?;
+
+    let mut encoded_header: Vec<u8> = Vec::new();
+    // Combina el tipo de objeto y los 4 bits más bajos del tamaño
+    let mut c = (obj_type.as_byte() << 4) | ((obj_size & 0x0F) as u8);
+    // Codifica el tamaño restante usando codificación de bytes variable
+    let mut size = obj_size >> 4;
+    while size > 0 {
+        encoded_header.push(c | 0x80);
+
+        c = size as u8 & 0x7F;
+        size >>= 7;
+    }
+    encoded_header.push(c);
+
+    packfile.extend(encoded_header);
+    packfile.extend(compressed_content);
+    Ok(())
 }
 
 fn decompress_object_into_bytes(hash: &str, git_dir: &str) -> io::Result<Vec<u8>> {
@@ -280,5 +288,24 @@ fn decompress_object_into_bytes(hash: &str, git_dir: &str) -> io::Result<Vec<u8>
     let mut decompressor = ZlibDecoder::new(BufReader::new(file));
     let mut decompressed_content = Vec::new();
     decompressor.read_to_end(&mut decompressed_content)?;
+
+    let mut reader = BufReader::new(decompressed_content.as_slice());
+    reader.read_until(0, &mut Vec::new())?;
+    let mut decompressed_content = Vec::new();
+    reader.read_to_end(&mut decompressed_content)?;
     Ok(decompressed_content)
+}
+
+pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
+    dbg!(git_dir);
+    let packfile = Packfile::reader(packfile)?;
+    for entry in packfile {
+        let entry = entry?;
+        hash_object::store_bytes_array_to_file(
+            entry.content,
+            git_dir,
+            &entry.obj_type.to_string(),
+        )?;
+    }
+    Ok(())
 }

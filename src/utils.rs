@@ -173,13 +173,13 @@ mod tests {
         let mut index_file = io::BufWriter::new(index_file);
         //Write to the index file in the format hash path
         index_file
-            .write_all(b"1f7a7a472abf3dd9643fd615f6da379c4acb3e3a\tREADME.md\n")
+            .write_all(b"85628bead31d2c14e4a56113e524eab2ccff22c9\tREADME.md\n")
             .unwrap();
 
         fs::create_dir_all("tests/utils/parents2/refs/heads").unwrap();
         let mut main_file = fs::File::create("tests/utils/parents2/refs/heads/main").unwrap();
         main_file
-            .write_all(b"a4a7dce85cf63874e984719f4fdd239f5145052e")
+            .write_all(b"0894f78e615131459e43d258070b5540081f1d82")
             .unwrap();
 
         let mut head_file = fs::File::create("tests/utils/parents2/HEAD").unwrap();
@@ -191,7 +191,7 @@ mod tests {
         let git_dir = "tests/utils/parents2";
         let mut expected_parents = Vec::new();
         expected_parents.push(result.clone());
-        expected_parents.push("a4a7dce85cf63874e984719f4fdd239f5145052e".to_string());
+        expected_parents.push("0894f78e615131459e43d258070b5540081f1d82".to_string());
 
         assert_eq!(
             get_branch_commit_history(&result, git_dir).unwrap(),
@@ -231,7 +231,7 @@ mod tests {
             .open(git_dir_path.to_string() + "/index")
             .unwrap();
         index_file
-            .write_all("\nhashhashhashhash5 src/prueba/prueba2.c".as_bytes())
+            .write_all("\ne4482842d2f8e960ccb99c3026f1210ea2b1d24e src/prueba/prueba2.c".as_bytes())
             .unwrap();
         let commit_2_hash = commit::new_commit(git_dir_path, "Aaaa", "").unwrap();
         let mut index_file = std::fs::OpenOptions::new()
@@ -239,7 +239,7 @@ mod tests {
             .open(git_dir_path.to_string() + "/index")
             .unwrap();
         index_file
-            .write_all("\nhashhashhashhash6 src/prueba/prueba3.c".as_bytes())
+            .write_all("\n3ed3021d73efc1e9c5f31cf87934e49cd201a72c src/prueba/prueba3.c".as_bytes())
             .unwrap();
         let commit_3_hash = commit::new_commit(git_dir_path, "Holaaa", "").unwrap();
 
@@ -253,5 +253,7 @@ mod tests {
             get_branch_commit_history(&commit_3_hash, git_dir_path).unwrap(),
             expected_parents
         );
+
+        let _ = fs::remove_dir_all("tests/utils/parents3");
     }
 }

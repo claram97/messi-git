@@ -321,6 +321,7 @@ pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)> 
 fn _load_tree_from_file(tree_hash: &str, directory: &str, name: &str) -> io::Result<Tree> {
     let tree_content = cat_tree(tree_hash, directory)?;
     let mut tree = Tree::new(name);
+    tree.name = name.to_string();
 
     for (mode, name, hash) in tree_content {
         let object_type = match mode.as_str() {

@@ -1,4 +1,7 @@
-use std::io::{self, BufRead, Write};
+use std::{
+    collections::HashMap,
+    io::{self, BufRead, Write},
+};
 
 use crate::{client::Client, config};
 
@@ -156,10 +159,10 @@ impl FetchHead {
 ///
 /// Returns a new vector containing only the last components of the input Git references.
 ///
-fn get_clean_refs(refs: Vec<String>) -> Vec<String> {
+fn get_clean_refs(refs: &HashMap<String, String>) -> Vec<String> {
     let clean_refs = refs
         .iter()
-        .map(|x| match x.split('/').last() {
+        .map(|x| match x.0.split('/').last() {
             Some(string) => string.to_string(),
             None => "".to_string(),
         })
@@ -192,53 +195,37 @@ pub fn git_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) ->
     let remote_repo_url = config_file.get_url(remote_repo_name, &mut io::stdout())?;
     let local_git_dir = local_dir.to_string() + "/.mgit";
     let mut client = Client::new(&remote_repo_url, remote_repo_name, host);
-    let refs = client.get_refs()?;
-    let clean_refs = get_clean_refs(refs);
+    let refs = client.get_server_refs()?;
+    let clean_refs = get_clean_refs(&refs);
     let fetch_head_path = local_git_dir.to_string() + "/FETCH_HEAD";
     let mut fetch_head_file = FetchHead::new();
+    client.upload_pack(clean_refs.clone(), &local_git_dir, "origin")?;
     for server_ref in clean_refs {
-        let result = client.upload_pack(&server_ref, &local_git_dir, "origin");
-        match result {
-            Ok(commit_hash) => {
-                if server_ref != "HEAD" {
-                    let entry = FetchEntry {
-                        commit_hash,
-                        branch_name: server_ref,
-                        remote_repo_url: remote_repo_url.clone(),
-                    };
-                    fetch_head_file.add_entry(entry);
+        if server_ref != "HEAD" {
+            let hash = match refs.get(&server_ref) {
+                Some(hash) => hash,
+                None => {
+                    println!("Error: Could not find hash for {}", server_ref);
+                    continue;
                 }
-            }
-            Err(error) => {
-                println!("Error: {:?}", error);
-            }
+            };
+            let entry = FetchEntry {
+                commit_hash: hash.to_string(),
+                branch_name: server_ref,
+                remote_repo_url: remote_repo_url.clone(),
+            };
+            fetch_head_file.add_entry(entry);
         }
     }
-
     fetch_head_file.write_file(&fetch_head_path)?;
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use std::env;
-
     use crate::clone;
-
+    use std::env;
     const PORT: &str = "9418";
-
-    #[test]
-    fn test_get_clean_refs() {
-        let refs = vec![
-            "refs/heads/master".to_string(),
-            "refs/heads/develop".to_string(),
-        ];
-        let clean_refs = super::get_clean_refs(refs);
-
-        assert_eq!(clean_refs[0], "master");
-        assert_eq!(clean_refs[1], "develop");
-    }
-
     #[ignore = "This test only works if the server is running"]
     #[test]
     fn test_fetch() {
