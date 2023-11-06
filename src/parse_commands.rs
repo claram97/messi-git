@@ -99,19 +99,6 @@ pub fn get_user_input() -> Vec<String> {
 /// `Some`. If the argument does not match any known Git command, an error message is printed
 /// to the standard error stream (stderr), and `None` is returned.
 ///
-/// ## Example
-///
-/// ```
-/// use messi::parse_commands::{parse_git_command, GitCommand};
-///
-/// let arg = "init";
-/// let result = parse_git_command(arg);
-/// match result {
-///     Some(cmd) => println!("Parsed Git command: {:?}", cmd),
-///     None => println!("Invalid Git command argument"),
-/// }
-/// ```
-///
 /// The function can be used to parse user-supplied Git command arguments and determine
 /// the corresponding `GitCommand` variant.
 ///
