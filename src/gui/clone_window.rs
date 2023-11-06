@@ -1,3 +1,4 @@
+use crate::clone;
 use crate::gui::gui::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::apply_entry_style;
@@ -14,8 +15,13 @@ use gtk::FileChooserAction;
 use gtk::FileChooserDialog;
 use gtk::FileChooserExt;
 use gtk::GtkWindowExt;
+use std::env;
 use std::io;
+use std::path::Path;
+use std::result;
 
+use super::gui::close_all_windows;
+use super::repository_window::show_repository_window;
 use super::style::show_message_dialog;
 
 /// Handles the "Browse" button click event in a GTK application.
@@ -95,6 +101,11 @@ fn connect_button_clicked_clone_repository(
     button.connect_clicked(move |_| {
         let url_text = url_entry_clone.get_text().to_string();
         let dir_text = dir_to_clone_entry_clone.get_text().to_string();
+        let code_dir = match env::current_dir() {
+            Ok(dir) => dir,
+            Err(_) => Path::new("").to_path_buf(),
+        };
+
 
         if url_text.is_empty() || dir_text.is_empty() {
             // let error_dialog = gtk::MessageDialog::new(
@@ -108,11 +119,47 @@ fn connect_button_clicked_clone_repository(
             // error_dialog.close();
             show_message_dialog("Error", "Faltan datos: URL o directorio de clonación.");
         } else {
-            println!("Ok!");
+            //The remote repo url is the first part of the URL, up until the last '/'.
+            let remote_repo_url = match url_text.rsplit_once('/') {
+                Some((string, _)) => string,
+                None => "",
+            };
+
+            //The remote repository name is the last part of the URL.
+            let remote_repo_name = match url_text.split('/').last() {
+                Some(string) => string,
+                None => "",
+            };
+
+            println!("URL: {}", remote_repo_url);
+            println!("Remote repo URL: {}", remote_repo_url);
+            let working_dir = Path::new(&dir_text);
+
+            let result = clone::git_clone(&remote_repo_url, remote_repo_name, "localhost", &dir_text);
+            handle_clone_result(result, &code_dir, &working_dir);
         }
     });
     Ok(())
 }
+
+fn handle_clone_result(result: result::Result<(), io::Error>, code_dir: &Path, working_dir: &Path) {
+    if result.is_err() {
+        show_message_dialog("Error", "Error al clonar el repositorio.");
+    } else {
+        show_message_dialog("Ok", "Repositorio clonado correctamente.");
+        let result = env::set_current_dir(working_dir);
+        if result.is_err() {
+            show_message_dialog("Error", "Error al cambiar de directorio.");
+        } else {
+            close_all_windows();
+            let result = show_repository_window(code_dir, working_dir);
+            if result.is_err() {
+                show_message_dialog("Error", "Error al mostrar la ventana del repositorio.");
+            }
+        }
+    }
+}
+
 
 /// Configures the properties of a clone window in a GTK application.
 ///
