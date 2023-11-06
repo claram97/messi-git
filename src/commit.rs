@@ -156,7 +156,6 @@ pub fn new_merge_commit(
 ///
 pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
-
     let parent_hash: &str = match commit_file.split('\n').nth(1) {
         Some(parent_hash) => match parent_hash.split(' ').nth(1) {
             Some(parent_hash) => parent_hash,
@@ -178,6 +177,14 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
     Ok(parent_hash.to_string())
 }
 
+pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
+    let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
+    let message: &str = match commit_file.split('\n').nth(5) {
+        Some(message) => message,
+        None => return Err(io::Error::new(io::ErrorKind::NotFound, "Message not found")),
+    };
+    Ok(message.to_string())
+}
 /// Reads and returns the commit hash referred to by the HEAD reference in a Git repository.
 ///
 /// This function reads the contents of the Git repository's "HEAD" file to determine the commit hash
@@ -375,6 +382,21 @@ mod tests {
             commit_3_content.split("\n").last().unwrap(),
             "test commit 3"
         );
+        let _ = std::fs::remove_dir_all(git_dir_path);
+    }
+
+    #[test]
+    fn test_get_message_works_correctly() {
+        let git_dir_path: &str = "tests/commit/.mgit_test_message";
+        create_git_dir(git_dir_path);
+        let refs_dir = git_dir_path.to_string() + "/refs/heads/main";
+        let mut ref_actual = std::fs::File::open(&refs_dir).unwrap();
+        let mut ref_actual_content = String::new();
+        ref_actual.read_to_string(&mut ref_actual_content).unwrap();
+        let message = "test commit";
+        let commit_hash = new_commit(git_dir_path, message, "").unwrap();
+        let commit_message = get_commit_message(&commit_hash, git_dir_path).unwrap();
+        assert_eq!(commit_message, message);
         let _ = std::fs::remove_dir_all(git_dir_path);
     }
 }

@@ -454,12 +454,13 @@ fn merge_file(
     current_tree: &mut Tree,
     filename: &str,
     git_dir: &str,
-) -> io::Result<()> {
+) -> io::Result<String> {
     let their_hash = their_tree.get_hash_from_path(path);
     match their_hash {
         Some(their_hash) => {
             if their_hash == hash {
                 current_tree.add_file(filename, hash);
+                Ok("".to_string())
             } else {
                 let mut new_file = fs::File::create(path)?;
                 let diff = diff::return_object_diff_string(&their_hash, hash, git_dir);
@@ -469,18 +470,20 @@ fn merge_file(
                         new_file.write_all(diff.as_bytes())?;
                         let new_hash = hash_object::store_string_to_file(&diff, git_dir, "blob")?;
                         current_tree.add_file(filename, &new_hash);
+                        Ok(path.to_string())
                     }
                     Err(_) => {
                         current_tree.add_file(filename, hash);
+                        Ok("".to_string())
                     }
                 }
             }
         }
         None => {
             current_tree.add_file(filename, hash);
+            Ok("".to_string())
         }
     }
-    Ok(())
 }
 
 /// Given two trees, it merges them into a new tree.
@@ -498,9 +501,14 @@ fn merge_file(
 /// ## Errors
 /// This function can return I/O (`io::Result`) errors if there are issues when reading
 /// the content of the commit or loading the tree from the filesystem.
-pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> io::Result<Tree> {
+pub fn merge_trees(
+    our_tree: &Tree,
+    their_tree: &Tree,
+    git_dir: &str,
+) -> io::Result<(Tree, Vec<String>)> {
     let our_tree_vec = our_tree.squash_tree_into_vec("");
     let mut new_tree = Tree::new("");
+    let mut conflicting_paths: Vec<String> = Vec::new();
 
     for (path, hash) in our_tree_vec {
         let mut path_vec = path.split('/').collect::<Vec<&str>>();
@@ -509,7 +517,7 @@ pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> io::Res
             None => {
                 return Err(io::Error::new(
                     io::ErrorKind::NotFound,
-                    "Invalid path in index file.",
+                    "Invalid path in index file.\n",
                 ))
             }
         };
@@ -517,14 +525,17 @@ pub fn merge_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> io::Res
         for dir in path_vec {
             current_tree = current_tree.get_or_create_dir(dir);
         }
-        merge_file(&path, &hash, their_tree, current_tree, filename, git_dir)?;
+        let result = merge_file(&path, &hash, their_tree, current_tree, filename, git_dir)?;
+        if !result.is_empty() {
+            conflicting_paths.push(result);
+        }
     }
 
     let new_tree = merge_their_tree_into_ours(our_tree, their_tree, new_tree);
-    Ok(new_tree)
+    let tuple = (new_tree, conflicting_paths);
+    Ok(tuple)
 }
 
-//Tests
 #[cfg(test)]
 mod tests {
     use super::*;

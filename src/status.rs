@@ -1,43 +1,10 @@
 const BLOB: &str = "blob";
-
-use std::fs;
-use std::io::{self, Write};
-use std::path::{Path, PathBuf};
-
 use crate::hash_object;
 use crate::index::Index;
 use crate::tree_handler::Tree;
-/// Recursively searches for a directory named "name_of_git_directory" in the file system
-/// starting from the location specified by "current_dir."
-///
-/// # Arguments
-///
-/// * `current_dir`: A mutable reference to a `PathBuf` representing the initial location from which the search begins.
-/// * `name_of_git_directory`: The name of the directory being sought.
-///
-/// # Returns
-///
-/// This function returns an `Option<String>` containing the path to the found directory as a string if it is found.
-/// If the directory is not found, it returns `None`.
-///
-pub fn find_git_directory(
-    current_dir: &mut PathBuf,
-    name_of_git_directory: &str,
-) -> Option<String> {
-    loop {
-        let git_dir = current_dir.join(name_of_git_directory);
-        if git_dir.exists() && git_dir.is_dir() {
-            return Some(git_dir.display().to_string());
-        }
-
-        if !current_dir.pop() {
-            break;
-        }
-    }
-
-    None
-}
-
+use std::fs;
+use std::io::{self, Write};
+use std::path::Path;
 /// Recursively find and write information about untracked files in a Git repository.
 ///
 /// This function traverses the directory structure starting from the `current_directory`, compares
@@ -122,6 +89,40 @@ pub fn changes_to_be_committed(
     Ok(())
 }
 
+/// Return a string containing all staged changes in a Git repository's index.
+pub fn get_staged_changes(index: &Index, commit_tree: Option<Tree>) -> Result<String, io::Error> {
+    let output = match commit_tree {
+        Some(tree) => {
+            let mut local_output = vec![];
+            let result = changes_to_be_committed(index, &tree, &mut local_output);
+            if result.is_ok() {
+                local_output
+            } else {
+                vec![]
+            }
+        }
+        None => {
+            let mut output: Vec<u8> = vec![];
+            for (path, _) in index.iter() {
+                let buffer = format!("\x1b[31m\t\tmodified:\t {}\x1b[0m\n", path);
+                output.write_all(buffer.as_bytes())?;
+            }
+            output
+        }
+    };
+    if let Ok(result) = String::from_utf8(output) {
+        let mut resultado = result;
+        resultado = resultado.replace("\x1b[31m\t\tmodified:\t ", "");
+        resultado = resultado.replace("\x1b[0m\n", "\n");
+        Ok(resultado)
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Parent hash not found",
+        ))
+    }
+}
+
 /// Find and write information about unstaged changes in a Git repository's index.
 ///
 /// This function compares the hash of files in the provided `Index` with their current content
@@ -146,15 +147,30 @@ pub fn find_unstaged_changes(
 ) -> io::Result<()> {
     for (path, hash) in index.iter() {
         let complete_path = git_dir.to_string() + "/" + path;
-        println!("complete path: {}", complete_path);
         let new_hash = hash_object::hash_file_content(&complete_path, BLOB)?;
         if hash.ne(&new_hash) {
             let buffer = format!("\x1b[31m\t\tmodified:\t {}\x1b[0m\n", path);
             output.write_all(buffer.as_bytes())?;
         }
     }
-
     Ok(())
+}
+
+/// Return a string containing all unstaged changes in a Git repository's index.
+pub fn get_unstaged_changes(index: &Index, git_dir: &str) -> Result<String, io::Error> {
+    let mut output: Vec<u8> = vec![];
+    find_unstaged_changes(index, git_dir, &mut output)?;
+    if let Ok(result) = String::from_utf8(output) {
+        let mut resultado = result;
+        resultado = resultado.replace("\x1b[31m\t\tmodified:\t ", "");
+        resultado = resultado.replace("\x1b[0m\n", "\n");
+        Ok(resultado)
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Parent hash not found",
+        ))
+    }
 }
 
 #[cfg(test)]

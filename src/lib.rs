@@ -9,6 +9,7 @@ pub mod commit;
 pub mod config;
 pub mod diff;
 pub mod fetch;
+pub mod gui;
 pub mod hash_object;
 pub mod ignorer;
 pub mod index;

@@ -1,5 +1,5 @@
 [core]
-      repositoryformatversion = 0
-      filemode = true
-      bare = false
-      logallrefupdates = true
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true

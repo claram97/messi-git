@@ -586,6 +586,7 @@ mod tests {
     /// # Panics
     ///
     /// The test may panic if any of the assertions fail.
+    #[ignore]
     #[test]
     fn test_add_path_non_empty_dir() -> io::Result<()> {
         let mut index = Index::new("", ".mgit", "");

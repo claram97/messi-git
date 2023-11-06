@@ -31,6 +31,25 @@ pub fn find_git_directory(
     None
 }
 
+pub fn get_branch_commit_history_with_messages(
+    commit_hash: &str,
+    git_dir: &str,
+) -> io::Result<Vec<(String, String)>> {
+    let mut parents: Vec<(String, String)> = Vec::new();
+    let commit_message: String = commit::get_commit_message(commit_hash, git_dir)?;
+    parents.push((commit_hash.to_string(), commit_message.to_string()));
+    let mut commit_parent = commit::get_parent_hash(commit_hash, git_dir);
+    while let Ok(parent) = commit_parent {
+        println!("{}", parent);
+        let commit_message = match commit::get_commit_message(&parent, git_dir) {
+            Ok(message) => message,
+            Err(_) => break,
+        };
+        parents.push((parent.clone(), commit_message.to_string()));
+        commit_parent = commit::get_parent_hash(&parent, git_dir);
+    }
+    Ok(parents)
+}
 /// Get the commit history for a given commit hash in a Git repository.
 ///
 /// This function retrieves the commit history for a specified commit hash by recursively

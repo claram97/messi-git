@@ -71,19 +71,19 @@ fn two_way_merge(
     their_branch: &str,
     git_dir: &str,
     root_dir: &str,
-) -> io::Result<()> {
+) -> io::Result<Vec<String>> {
     let our_commit = branch::get_branch_commit_hash(our_branch, git_dir)?;
     let their_commit = branch::get_branch_commit_hash(their_branch, git_dir)?;
     let our_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
     let their_tree = tree_handler::load_tree_from_commit(&their_commit, git_dir)?;
-    let new_tree = tree_handler::merge_trees(&our_tree, &their_tree, git_dir)?;
+    let (new_tree, conflicting_paths) = tree_handler::merge_trees(&our_tree, &their_tree, git_dir)?;
     our_tree.delete_directories(root_dir)?;
     new_tree.create_directories(root_dir, git_dir)?;
     let index_path = utils::get_index_file_path(git_dir);
     let new_index_file_contents =
         new_tree.build_index_file_from_tree(&index_path, git_dir, &get_git_ignore_path(git_dir))?;
     new_index_file_contents.write_file()?;
-    Ok(())
+    Ok(conflicting_paths)
 }
 
 /// Given two branches, merges `our_branch` with `their_branch`.
@@ -106,21 +106,22 @@ pub fn git_merge(
     their_branch: &str,
     git_dir: &str,
     root_dir: &str,
-) -> io::Result<String> {
+) -> io::Result<(String, Vec<String>)> {
     let our_commit = branch::get_branch_commit_hash(our_branch, git_dir)?;
     let their_commit = branch::get_branch_commit_hash(their_branch, git_dir)?;
 
     let common_ancestor = find_common_ancestor(&our_commit, &their_commit, git_dir)?;
-
     if is_fast_forward(&our_commit, &common_ancestor) {
         fast_forward_merge(our_branch, their_branch, git_dir, root_dir)?;
-        Ok(their_commit)
+        let tuple = (our_commit, vec![]);
+        Ok(tuple)
     } else {
-        two_way_merge(our_branch, their_branch, git_dir, root_dir)?;
+        let conflicting_paths = two_way_merge(our_branch, their_branch, git_dir, root_dir)?;
         let commit_message = format!("Merge branch '{}'", their_branch);
         let hash =
             commit::new_merge_commit(git_dir, &commit_message, &our_commit, &their_commit, "")?;
-        Ok(hash)
+        let tuple = (hash, conflicting_paths);
+        Ok(tuple)
     }
 }
 
@@ -145,7 +146,7 @@ pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io
     let our_commit = branch::get_branch_commit_hash(branch, git_dir)?;
     let our_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
     let remote_tree = tree_handler::load_tree_from_commit(remote_hash, git_dir)?;
-    let new_tree = tree_handler::merge_trees(&our_tree, &remote_tree, git_dir)?;
+    let (new_tree, _conflicts) = tree_handler::merge_trees(&our_tree, &remote_tree, git_dir)?;
     let index_path = utils::get_index_file_path(git_dir);
     let new_index_file_contents =
         new_tree.build_index_file_from_tree(&index_path, git_dir, &get_git_ignore_path(git_dir))?;
@@ -537,7 +538,7 @@ mod tests {
             fs::remove_file(file_path).unwrap();
         }
 
-        let merge_commit_hash = git_merge("main", "branch", &git_dir, "").unwrap();
+        let merge_commit_hash = git_merge("main", "branch", &git_dir, "").unwrap().0;
 
         let main_branch_hash = branch::get_branch_commit_hash("main", &git_dir).unwrap();
         assert_eq!(main_branch_hash, merge_commit_hash);
@@ -738,7 +739,7 @@ mod tests {
             fs::remove_file(file_path).unwrap();
         }
 
-        let merge_commit_hash = git_merge("main", "branch", &git_dir, "").unwrap();
+        let merge_commit_hash = git_merge("main", "branch", &git_dir, "").unwrap().0;
 
         let main_branch_hash = branch::get_branch_commit_hash("main", &git_dir).unwrap();
         assert_eq!(main_branch_hash, merge_commit_hash);

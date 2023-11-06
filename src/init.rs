@@ -77,6 +77,10 @@ pub fn git_init(
     let config_file = format!("{}/config", &git_dir);
     create_file_if_not_exists(&config_file, config_content)?;
 
+    // Index file
+    let index_file = format!("{}/index", &git_dir);
+    create_file_if_not_exists(&index_file, "")?;
+
     // Copy files from the template directory
     if let Some(template) = template_directory {
         let template_dir = Path::new(template);

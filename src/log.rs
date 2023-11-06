@@ -208,6 +208,16 @@ pub fn print_logs(log_iter: impl Iterator<Item = Log>) {
     }
 }
 
+pub fn accumulate_logs(log_iter: impl Iterator<Item = Log>) -> String {
+    let mut log_text = String::new();
+
+    for log in log_iter {
+        log_text.push_str(&format!("{log}\n"));
+    }
+
+    log_text
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
