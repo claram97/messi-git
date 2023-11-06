@@ -2,26 +2,6 @@ use std::io::{self, Write};
 
 use crate::{fetch, merge};
 
-/// Checks if a branch exists in the local Git repository's references.
-///
-/// This function determines whether a specific branch, identified by its name, exists in the local Git repository's references.
-/// It checks if a corresponding file for the branch is present in the ".mgit/refs/heads/" directory.
-///
-/// # Arguments
-///
-/// * `branch`: The name of the branch to check for existence.
-/// * `local_dir`: The path to the local directory containing the Git repository.
-///
-/// # Returns
-///
-/// Returns `true` if the branch exists in the references, and `false` otherwise.
-///
-fn branch_is_in_refs(branch: &str, local_dir: &str) -> bool {
-    let path = local_dir.to_string() + "/.mgit/refs/heads/" + branch;
-    let result = std::fs::File::open(path);
-    result.is_ok()
-}
-
 /// Perform a Git pull operation to update a local branch from a remote repository.
 ///
 /// This function executes a Git pull operation, which involves fetching the most recent commits and objects
@@ -69,10 +49,10 @@ pub fn git_pull(
         }
     };
 
-    if !branch_is_in_refs(branch, local_dir) {
-        let branch_file_path = git_dir.to_string() + "/refs/heads/" + branch;
+    for entry in fetch_head.get_entries() {
+        let branch_file_path = git_dir.to_string() + "/refs/heads/" + &entry.branch_name;
         let mut branch_file = std::fs::File::create(branch_file_path)?;
-        branch_file.write_all(branch_remotes.commit_hash.as_bytes())?;
+        branch_file.write_all(entry.commit_hash.as_bytes())?;
     }
 
     let hash = branch_remotes.commit_hash.clone();

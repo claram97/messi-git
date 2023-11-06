@@ -18,7 +18,7 @@ use crate::{client::Client, config};
 ///
 pub struct FetchEntry {
     pub commit_hash: String,
-    branch_name: String,
+    pub branch_name: String,
     remote_repo_url: String,
 }
 
