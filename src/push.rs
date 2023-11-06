@@ -16,7 +16,6 @@ pub fn git_push(branch: &str, git_dir: &str) -> io::Result<()>{
     };
     let mut client = Client::new(address, repo_name, "localhost");
     let result = client.receive_pack(branch, git_dir);
-    println!("Result: {:?}", result);
     result
 }
 
