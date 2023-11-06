@@ -132,21 +132,15 @@ impl TryFrom<&str> for WantHave {
 }
 
 /// Parse a line in PKT format with the format: want|have hash
-pub fn parse_line_want_have(line: &str, want_have: WantHave) -> io::Result<String> {
+pub fn parse_line_want_have(line: &str) -> io::Result<(WantHave, String)> {
     let (want_or_have, hash) = line.split_once(' ').ok_or(io::Error::new(
         io::ErrorKind::InvalidData,
         format!("Invalid want line: {}", line),
     ))?;
 
-    if WantHave::try_from(want_or_have)? != want_have {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            format!("Expecting want line: {}", line),
-        ));
-    }
-
+    let t = WantHave::try_from(want_or_have)?;
     let (hash, _) = hash.split_once(' ').unwrap_or((hash, ""));
-    Ok(hash.trim().to_string())
+    Ok((t, hash.trim().to_string()))
 }
 
 /// Get missing objects of a repository
