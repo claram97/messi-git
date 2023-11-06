@@ -81,7 +81,12 @@ impl ServerInstace {
             io::ErrorKind::InvalidData,
             format!("Invalid command line: {}", command),
         ))?;
+
         self.git_dir_path = format!("{}{}/{}", self.path, repo, &self.git_dir);
+        if !Path::new(&self.git_dir_path).exists() {
+            self.git_dir_path = format!("{}{}", self.path, repo);
+        }
+        dbg!(&self.git_dir_path);
         Command::try_from(git_command)
     }
 
@@ -151,7 +156,9 @@ impl ServerInstace {
         );
 
         if refs.is_empty() {
-            return Err(io::Error::new(io::ErrorKind::NotFound, "No refs found"));
+            let empty = format!("{} refs/heads/master\0{}", ZERO_HASH, CAPABILITIES_UPLOAD);
+            self.send(&pkt_line(&empty))?;
+            return self.flush();
         }
 
         refs[0] = format!("{}\0{}", refs[0], CAPABILITIES_UPLOAD);
@@ -209,11 +216,11 @@ impl ServerInstace {
 
     // Updates the refs with the new ones received from the client
     fn make_refs_changes(&mut self, new_refs: HashMap<String, (String, String)>) -> io::Result<()> {
-        for (ref_name, (old, new)) in new_refs {
+        for (ref_name, (old, new)) in &new_refs {
             match (old, new) {
-                (old, new) if old == ZERO_HASH => self.create_ref(&ref_name, &new)?,
-                (_old, new) if new == ZERO_HASH => self.delete_ref(&ref_name)?,
-                (old, new) => self.update_ref(&ref_name, &old, &new)?,
+                (old, new) if old == ZERO_HASH => self.create_ref(ref_name, new)?,
+                (_old, new) if new == ZERO_HASH => self.delete_ref(ref_name)?,
+                (old, new) => self.update_ref(ref_name, old, new)?,
             }
         }
         Ok(())
@@ -267,12 +274,6 @@ impl ServerInstace {
     // Returns a hashmap with the new refs and the old and new hashes
     // Will fail if the client tries to update the actual branch (same as git daemon)
     fn wait_changes(&mut self) -> io::Result<HashMap<String, (String, String)>> {
-        let head_ref = match get_head_from_branch(&self.git_dir_path, "HEAD") {
-            Ok(head) => head,
-            Err(e) if e.kind() == io::ErrorKind::InvalidData => String::new(),
-            Err(e) => return Err(e),
-        };
-
         let mut new_refs = HashMap::new();
         loop {
             let (size, line) = read_pkt_line(&mut self.socket)?;
@@ -298,7 +299,13 @@ impl ServerInstace {
                     ref_name.trim().to_string(),
                 )
             };
-            if ref_name == head_ref {
+
+            let head_ref = match get_head_from_branch(&self.git_dir_path, "HEAD") {
+                Ok(head) => head,
+                Err(e) if e.kind() == io::ErrorKind::InvalidData => String::new(),
+                Err(e) => return Err(e),
+            };
+            if !is_repo_bare(&self.git_dir_path)? && ref_name == head_ref {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
                     "Can not update actual branch. Please do a checkout and try again",
@@ -384,4 +391,25 @@ where
         Err(e) => Err(io::Error::new(io::ErrorKind::WouldBlock, e.to_string())),
     };
     size
+}
+
+fn is_repo_bare(git_dir: &str) -> io::Result<bool> {
+    let config_path = PathBuf::from(git_dir).join("config");
+    if !config_path.exists() {
+        return Ok(true);
+    }
+    let content = read_file_with_lock(config_path)?;
+    let bare = content
+        .lines()
+        .find(|l| l.trim().starts_with("bare"))
+        .ok_or(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Can not find bare config",
+        ))?;
+    let (_, bare) = bare.split_once('=').ok_or(io::Error::new(
+        io::ErrorKind::InvalidData,
+        "Can not find bare config",
+    ))?;
+    let bare = bare.trim();
+    Ok(bare == "true")
 }
