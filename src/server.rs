@@ -82,7 +82,6 @@ impl ServerInstace {
             format!("Invalid command line: {}", command),
         ))?;
 
-        
         self.git_dir_path = format!("{}{}/{}", self.path, repo, &self.git_dir);
         if !Path::new(&self.git_dir_path).exists() {
             self.git_dir_path = format!("{}{}", self.path, repo);
@@ -159,7 +158,7 @@ impl ServerInstace {
         if refs.is_empty() {
             let empty = format!("{} refs/heads/master\0{}", ZERO_HASH, CAPABILITIES_UPLOAD);
             self.send(&pkt_line(&empty))?;
-            return self.flush()
+            return self.flush();
         }
 
         refs[0] = format!("{}\0{}", refs[0], CAPABILITIES_UPLOAD);
@@ -219,9 +218,9 @@ impl ServerInstace {
     fn make_refs_changes(&mut self, new_refs: HashMap<String, (String, String)>) -> io::Result<()> {
         for (ref_name, (old, new)) in &new_refs {
             match (old, new) {
-                (old, new) if old == ZERO_HASH => self.create_ref(&ref_name, &new)?,
-                (_old, new) if new == ZERO_HASH => self.delete_ref(&ref_name)?,
-                (old, new) => self.update_ref(&ref_name, &old, &new)?,
+                (old, new) if old == ZERO_HASH => self.create_ref(ref_name, new)?,
+                (_old, new) if new == ZERO_HASH => self.delete_ref(ref_name)?,
+                (old, new) => self.update_ref(ref_name, old, new)?,
             }
         }
         Ok(())
@@ -306,13 +305,11 @@ impl ServerInstace {
                 Err(e) if e.kind() == io::ErrorKind::InvalidData => String::new(),
                 Err(e) => return Err(e),
             };
-            if !is_repo_bare(&self.git_dir_path)? {
-                if ref_name == head_ref {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        "Can not update actual branch. Please do a checkout and try again",
-                    ));
-                }
+            if !is_repo_bare(&self.git_dir_path)? && ref_name == head_ref {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Can not update actual branch. Please do a checkout and try again",
+                ));
             }
             new_refs.insert(ref_name, (old, new));
         }
