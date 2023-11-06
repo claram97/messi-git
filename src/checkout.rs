@@ -520,7 +520,7 @@ mod tests {
             .expect("Failed to write HEAD file");
 
         // Execute the force_checkout function with an existing branch
-        force_checkout(Path::new(TEST_GIT), branch_name);
+        let _ = force_checkout(Path::new(TEST_GIT), branch_name);
 
         // Verify that the HEAD file has been updated to force the branch change
         let head_contents = fs::read_to_string(&head_file).expect("Failed to read HEAD file");

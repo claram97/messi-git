@@ -5,8 +5,10 @@ use crate::checkout::checkout_commit_detached;
 use crate::checkout::create_and_checkout_branch;
 use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
+use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
+use crate::fetch::git_fetch;
 use crate::hash_object::store_file;
 use crate::index::Index;
 use crate::init::git_init;
@@ -164,7 +166,7 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
         GitCommand::Checkout => handle_checkout(args),
         GitCommand::Log => handle_log(),
         GitCommand::Clone => handle_clone(args),
-        GitCommand::Fetch => handle_fetch(args),
+        GitCommand::Fetch => handle_fetch(),
         GitCommand::Merge => handle_merge(args),
         GitCommand::Remote => handle_remote(args),
         GitCommand::Pull => handle_pull(),
@@ -561,12 +563,95 @@ fn handle_log() {
     print_logs(log_iter);
 }
 
-fn handle_clone(_args: Vec<String>) {
-    println!("Handling Clone command with argument: ");
+fn handle_clone(args: Vec<String>) {
+    let current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+    let url_text = &args[2];
+    let dir_text = current_dir.to_string_lossy().to_string();
+    let remote_repo_url = match url_text.rsplit_once('/') {
+        Some((string, _)) => string,
+        None => "",
+    };
+
+    let remote_repo_name = url_text.split('/').last().unwrap_or("");
+
+    //println!("URL: {}", remote_repo_url);
+    //println!("Remote repo URL: {}", remote_repo_url);
+
+    match git_clone(remote_repo_url, remote_repo_name, "localhost", &dir_text) {
+        Ok(_) => {
+            println!("Cloned successfully.")
+        }
+        Err(_e) => {
+            eprintln!("Couldn't clone.");
+        }
+    }
 }
 
-fn handle_fetch(_args: Vec<String>) {
-    println!("Handling Fetch command with argument: ");
+fn handle_fetch() {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(parent) => parent.to_string_lossy().to_string(),
+        None => {
+            eprintln!("Error al obtener el working dir");
+            return;
+        }
+    };
+
+    let config_path: String = format!("{}/{}", git_dir, "config");
+    let config = match Config::load(&config_path) {
+        Ok(config) => config,
+        Err(_e) => {
+            eprintln!("Error al cargar el config file.");
+            return;
+        }
+    };
+
+    let branch_name = match get_branch_name(&git_dir) {
+        Ok(name) => name,
+        Err(_) => {
+            eprintln!("No se pudo obtener la rama actual");
+            return;
+        }
+    };
+
+    let remote_name_from_branch = match config.get_branch_remote_name(&branch_name) {
+        Some(name) => name,
+        None => {
+            eprintln!("No se pudo obtener el nombre del remoto de la rama actual");
+            return;
+        }
+    };
+
+    let remote_name = Some(&remote_name_from_branch);
+    match git_fetch(remote_name.map(|x| x.as_str()), "localhost", &working_dir) {
+        Ok(_) => {
+            eprintln!("Fetched ok.")
+        }
+        Err(_) => {
+            eprintln!("Fetch not ok :(")
+        }
+    };
 }
 
 fn handle_merge(args: Vec<String>) {
@@ -627,15 +712,7 @@ fn handle_remote(args: Vec<String>) {
         }
     };
 
-    let working_dir = match Path::new(&git_dir).parent() {
-        Some(parent) => parent.to_string_lossy().to_string(),
-        None => {
-            eprintln!("Error al obtener el working dir");
-            return;
-        }
-    };
-
-    let config_path = format!("{}/{}", working_dir, ".mgitignore");
+    let config_path: String = format!("{}/{}", git_dir, "config");
 
     let mut config = match Config::load(&config_path) {
         Ok(config) => config,

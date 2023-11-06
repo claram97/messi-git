@@ -19,6 +19,7 @@ pub mod logger;
 pub mod merge;
 pub mod packfile_handler;
 pub mod parse_commands;
+pub mod pull;
 pub mod remote;
 pub mod remote_handler;
 pub mod rm;
