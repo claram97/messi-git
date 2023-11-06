@@ -187,7 +187,7 @@ fn get_clean_refs(refs: &HashMap<String, String>) -> Vec<String> {
 ///
 /// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
 ///
-pub fn git_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) -> io::Result<()> {
+pub fn git_fetch(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) -> io::Result<()> {
     let git_dir = local_dir.to_string() + "/.mgit";
     let config_file = config::Config::load(&git_dir)?;
     let remote_name = "origin";
@@ -201,7 +201,7 @@ pub fn git_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) ->
             ))
         }
     };
-    let mut client = Client::new(&address, repo_name, "localhost");
+    let mut client = Client::new(address, repo_name, "localhost");
     let refs = client.get_server_refs()?;
     let clean_refs = get_clean_refs(&refs);
     let fetch_head_path = git_dir.to_string() + "/FETCH_HEAD";

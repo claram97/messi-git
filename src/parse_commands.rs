@@ -17,7 +17,7 @@ use crate::remote::git_remote;
 use crate::rm::git_rm;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::utils::find_git_directory;
-use crate::{add, log, tree_handler};
+use crate::{add, log, push, tree_handler};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -139,19 +139,6 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
 ///
 /// - `git_command`: The `GitCommand` enum representing the Git command to execute.
 /// - `args`: A vector of strings containing the arguments for the Git command.
-///
-/// ## Example
-///
-/// ```
-/// use messi::parse_commands::{handle_git_command, GitCommand};
-///
-/// let git_command = GitCommand::Init;
-/// let args = vec!["init".to_string()];
-/// handle_git_command(git_command, args);
-/// ```
-///
-/// The function allows for the execution of different Git commands based on the provided
-/// `GitCommand` enum and its corresponding arguments.
 ///
 pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
     match git_command {
@@ -363,7 +350,7 @@ fn handle_status() {
     //Falta personalizar la siguiente línea
     print!("Your branch is up to date with 'origin/master'\n\n");
     print!("{}", reset);
- 
+
     if !not_staged_for_commit.is_empty() {
         println!();
         println!("{}Changes not staged for commit:{}", red, reset);
@@ -376,7 +363,6 @@ fn handle_status() {
     }
 
     print!("{}", reset);
-  
 
     if !changes_to_be_committed_output.is_empty() {
         println!();
@@ -401,7 +387,7 @@ fn handle_status() {
         }
     }
     print!("{}", reset);
-    
+
     //Esto no sé de dónde sacarlo ah
     //print!("{}no changes added to commit (use \"git add\" and/or \"git commit -a\"){}\n", green, reset);
 }
@@ -706,7 +692,35 @@ fn handle_pull() {
 }
 
 fn handle_push() {
-    println!("Handling Push command with argument: ");
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Can't find git dir");
+            return;
+        }
+    };
+    let branch_name = match get_branch_name(&git_dir) {
+        Ok(name) => name,
+        Err(_e) => {
+            eprintln!("Error obteniendo branch name.");
+            return;
+        }
+    };
+    match push::git_push(&branch_name, &git_dir) {
+        Ok(_) => {
+            println!("Push ok")
+        }
+        Err(_e) => {
+            eprintln!("Push not ok")
+        }
+    };
 }
 
 fn handle_branch(args: Vec<String>) {
