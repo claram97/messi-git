@@ -12,6 +12,7 @@ use crate::index::Index;
 use crate::init::git_init;
 use crate::log::print_logs;
 use crate::merge::git_merge;
+use crate::pull::git_pull;
 use crate::remote::git_remote;
 use crate::rm::git_rm;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
@@ -179,8 +180,8 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
         GitCommand::Fetch => handle_fetch(args),
         GitCommand::Merge => handle_merge(args),
         GitCommand::Remote => handle_remote(args),
-        GitCommand::Pull => handle_pull(args),
-        GitCommand::Push => handle_push(args),
+        GitCommand::Pull => handle_pull(),
+        GitCommand::Push => handle_push(),
         GitCommand::Branch => handle_branch(args),
         GitCommand::Init => handle_init(args),
     }
@@ -667,11 +668,46 @@ fn handle_remote(args: Vec<String>) {
     }
 }
 
-fn handle_pull(_args: Vec<String>) {
-    println!("Handling Pull command with argument: ");
+fn handle_pull() {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(parent) => parent.to_string_lossy().to_string(),
+        None => {
+            eprintln!("Error al obtener el working dir");
+            return;
+        }
+    };
+
+    let branch_name = match get_branch_name(&git_dir) {
+        Ok(name) => name,
+        Err(_) => {
+            eprintln!("No se pudo obtener la rama actual");
+            return;
+        }
+    };
+    match git_pull(&branch_name,&working_dir, None, "localhost") {
+        Ok(_) => {},
+        Err(_e) => {}
+    };
+ 
 }
 
-fn handle_push(_args: Vec<String>) {
+fn handle_push() {
     println!("Handling Push command with argument: ");
 }
 

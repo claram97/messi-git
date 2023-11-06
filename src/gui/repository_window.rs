@@ -7,9 +7,8 @@ use crate::checkout::create_and_checkout_branch;
 use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
 use crate::commit;
+use crate::commit::get_branch_name;
 use crate::gui::gui::add_to_open_windows;
-use crate::gui::gui::close_all_windows;
-use crate::gui::run_main_window;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
 use crate::gui::style::create_text_entry_window;
@@ -23,6 +22,7 @@ use crate::index;
 use crate::log::log;
 use crate::log::Log;
 use crate::merge;
+use crate::pull::git_pull;
 use crate::rm::git_rm;
 use crate::status;
 use crate::tree_handler;
@@ -153,6 +153,39 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+fn handle_git_pull() -> io::Result<()> {
+    let mut current_dir = std::env::current_dir()?;
+
+    let git_dir = match find_git_directory(&mut current_dir,".mgit") {
+        Some(dir) => dir, 
+        None => {
+            return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Can't find git dir.\n"));
+        },
+    };
+
+     
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(parent) => parent.to_string_lossy().to_string(),
+        None =>{
+            return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Can't find working dir.\n"));
+        },
+    };
+
+    let current_branch = get_branch_name(&git_dir)?;
+
+    git_pull(&current_branch,&working_dir, None, "localhost")?;
+    
+    Ok(())
+}
+
+fn handle_git_push() -> io::Result<()> {
+    Ok(())
+}
+
 /// Setup a button with the specified `button_id` using the given GTK builder. This function applies the
 /// button's style, connects the click event to the corresponding action, and sets up various buttons based
 /// on their IDs.
@@ -255,12 +288,28 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "pull" => {
             button.connect_clicked(move |_| {
-                println!("Pull");
+                let result = handle_git_pull();
+                match result {
+                    Ok(_) => {
+                        show_message_dialog("Éxito", "Succesfully pulled");
+                    },
+                    Err(err) => {
+                        show_message_dialog("Error", &err.to_string());
+                    }
+                }
             });
         }
         "push" => {
             button.connect_clicked(move |_| {
-                println!("push");
+                let result = handle_git_push();
+                match result {
+                    Ok(_) => {
+                        show_message_dialog("Éxito", "Succesfully pushed");
+                    },
+                    Err(err) => {
+                        show_message_dialog("Error", &err.to_string());
+                    }
+                }
             });
         }
         "show-branches-button" => {
@@ -561,22 +610,6 @@ fn handle_checkout_branch_window() -> io::Result<()> {
     });
     if result.is_err() {
         eprintln!("Error creating text entry window.");
-    }
-    Ok(())
-}
-
-/// Handle the "Close" button's click event. This function closes all windows and runs the main window.
-/// It returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description if there's an issue.
-///
-/// # Errors
-///
-/// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
-///
-fn handle_close_window() -> io::Result<()> {
-    close_all_windows();
-    let result = run_main_window().map_err(|err| io::Error::new(io::ErrorKind::Other, err));
-    if result.is_err() {
-        eprintln!("Error trying to run main window");
     }
     Ok(())
 }
