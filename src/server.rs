@@ -90,18 +90,12 @@ impl ServerInstace {
     // Then, the packfile is created and sent to the client
     fn upload_pack(&mut self) -> io::Result<()> {
         self.send_refs()?;
-        let wants = self.read_wants_haves(WantHave::Want)?;
+        let (wants, haves) = self.read_wants_haves()?;
         if wants.is_empty() {
             return Ok(());
         }
-        let haves = self.read_wants_haves(WantHave::Have)?;
-        let (_, line) = read_pkt_line(&mut self.socket)?;
-        if line != "done\n" {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Expecting done line: {}", line),
-            ));
-        }
+        dbg!(&wants);
+        dbg!(&haves);
 
         let mut missing = HashSet::new();
         for want in wants {
@@ -175,17 +169,24 @@ impl ServerInstace {
 
     // Reads the wants or haves sent by the client
     // Returns a set of hashes of wants or haves, depending on the parameter
-    fn read_wants_haves(&mut self, want_have: WantHave) -> io::Result<HashSet<String>> {
+    fn read_wants_haves(&mut self) -> io::Result<(HashSet<String>, HashSet<String>)> {
         let mut wants = HashSet::new();
+        let mut haves = HashSet::new();
         loop {
             let (size, line) = read_pkt_line(&mut self.socket)?;
-            if size < 10 {
+            if size < 4 {
+                continue;
+            }
+            if line == "done\n" {
                 break;
             }
-            let hash = parse_line_want_have(&line, want_have)?;
-            wants.insert(hash);
+            let (t, hash) = parse_line_want_have(&line)?;
+            match t {
+                WantHave::Want => wants.insert(hash),
+                WantHave::Have => haves.insert(hash),
+            };
         }
-        Ok(wants)
+        Ok((wants, haves))
     }
 
     // Waits for the client to send a packfile
