@@ -48,7 +48,7 @@ fn test_refs_has_head() -> io::Result<()> {
 fn test_upload_pack() -> io::Result<()> {
     let address = "localhost:".to_owned() + PORT;
     let mut client = Client::new(&address, "repo3", "localhost");
-    client.upload_pack(vec!["nueva_main", "main", "bran2"], ".mgit3", "origin")?;
+    client.upload_pack(vec!["nueva_main".to_string(), "main".to_string(), "bran2".to_string()], ".mgit3", "origin")?;
     Ok(())
 }
 
