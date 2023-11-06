@@ -36,7 +36,7 @@ pub fn process_args(git_dir_path: &str, root_dir: &str) -> io::Result<()> {
         "--detach" => checkout_commit_detached(git_dir, root_dir, destination),
         // Force the change of branch or commit (discarding uncommitted changes)
         "-f" => {
-            force_checkout(git_dir, destination);
+            force_checkout(git_dir, destination)?;
             Ok(())
         }
         _ => {
@@ -287,9 +287,7 @@ pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) -> Result<(), io::
             // Update the HEAD file to force the branch change
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("ref: {}\n", branch_or_commit);
-            if let Err(err) = fs::write(head_file, new_head_content) {
-                return Err(err);
-            }
+            fs::write(head_file, new_head_content)?;
 
             println!("Force switched to branch: {}", branch_name);
             Ok(())
@@ -306,9 +304,7 @@ pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) -> Result<(), io::
             // Update the HEAD file to force the commit change in "detached" mode
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("{} (commit)\n", commit_id);
-            if let Err(err) = fs::write(head_file, new_head_content) {
-                return Err(err);
-            }
+            fs::write(head_file, new_head_content)?;
 
             println!("Force switched to commit (detached mode): {}", commit_id);
             Ok(())
@@ -317,7 +313,10 @@ pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) -> Result<(), io::
                 "Branch or commit '{}' not found in the repository",
                 branch_or_commit
             );
-            Err(io::Error::new(io::ErrorKind::NotFound, "Branch or commit not found"))
+            Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Branch or commit not found",
+            ))
         }
     }
 }

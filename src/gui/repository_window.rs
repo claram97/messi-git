@@ -452,7 +452,6 @@ fn handle_create_branch_button() -> io::Result<()> {
         let result = git_branch_for_ui(Some(text));
         if result.is_err() {
             eprintln!("Error creating text entry window.");
-            return;
         }
     });
 
@@ -757,10 +756,12 @@ pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error>
                 "Git directory not found\n",
             ));
         }
-
     };
     if let Err(err) = force_checkout(&git_dir, texto) {
-        eprintln!("Error al forzar el cambio de rama o commit (descartando cambios sin confirmar): {:?}", err);
+        eprintln!(
+            "Error al forzar el cambio de rama o commit (descartando cambios sin confirmar): {:?}",
+            err
+        );
     }
     //force_checkout(&git_dir, texto);
 

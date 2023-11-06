@@ -8,15 +8,14 @@ use crate::gui::style::create_text_entry_window;
 use crate::gui::style::get_button;
 use crate::init::git_init;
 use gtk::ButtonExt;
+use gtk::ContainerExt;
+use gtk::FileChooserButtonExt;
+use gtk::FileChooserExt;
 use gtk::GtkWindowExt;
+use gtk::WidgetExt;
 use std::env;
 use std::io;
 use std::path::Path;
-use gtk::WidgetExt;
-use gtk::ContainerExt;
-use gtk::FileChooserExt;
-use gtk::FileChooserButtonExt;
-    
 
 /// Configures the properties of a clone window in a GTK application.
 ///
@@ -119,7 +118,10 @@ pub fn connect_button_clicked_init_window(
                     eprintln!("Error initiating git.");
                     return;
                 }
-                handle_git_init_result(result, &current_dir, Path::new(&dir_str));
+                let result = handle_git_init_result(result, &current_dir, Path::new(&dir_str));
+                if result.is_err() {
+                    eprintln!("Error handling git init result");
+                }
             } else if button_type == "option4" {
                 // Crea una ventana principal
                 let window = gtk::Window::new(gtk::WindowType::Toplevel);
@@ -134,7 +136,10 @@ pub fn connect_button_clicked_init_window(
 
                 // Crea un botón "OK"
                 let button_ok = gtk::Button::with_label("OK");
-                apply_button_style(&button_ok);
+                let result = apply_button_style(&button_ok);
+                if result.is_err() {
+                    eprintln!("Couldn't apply button style");
+                }
                 // Crea una caja vertical para organizar los elementos
                 let vbox = gtk::Box::new(gtk::Orientation::Vertical, 5);
                 vbox.add(&file_chooser);
@@ -157,7 +162,8 @@ pub fn connect_button_clicked_init_window(
                             eprintln!("Error al iniciar git.");
                             return;
                         }
-                        let result = handle_git_init_result(result, &current_dir, Path::new(&directory));
+                        let result =
+                            handle_git_init_result(result, &current_dir, Path::new(&directory));
                         if result.is_err() {
                             eprintln!("Error handling git init with template");
                         }
@@ -169,7 +175,6 @@ pub fn connect_button_clicked_init_window(
                 window.add(&vbox);
                 window.show_all();
 
-            
                 // let result = create_text_entry_window("Enter the directory path", move |text| {
                 //     let result = git_init(&text, "main", None);
                 //     if result.is_err() {
@@ -215,7 +220,11 @@ pub fn connect_button_clicked_init_window(
 /// # Returns
 ///
 /// A `Result` with an empty `Ok(())` value to indicate success.
-pub fn handle_git_init_result(result: Result<(), io::Error>, code_dir: &Path, work_dir: &Path) -> Result<(), io::Error> {
+pub fn handle_git_init_result(
+    result: Result<(), io::Error>,
+    code_dir: &Path,
+    work_dir: &Path,
+) -> Result<(), io::Error> {
     match result {
         Ok(_) => {
             close_all_windows();
