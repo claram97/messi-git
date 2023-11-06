@@ -326,6 +326,15 @@ impl Config {
         Ok(())
     }
 
+    pub fn get_branch_remote_name(&self, branch_name: &str) -> Option<String> {
+        if let Some(index) = self.branches.iter().position(|b| b.name == branch_name) {
+            if let Some(branch) = self.branches.get(index) {
+                return Some(branch.remote.clone());
+            }
+        }
+        None
+    }
+
     /// Removes a branch from the Git configuration.
     ///
     /// This function removes a branch with the specified name from both the in-memory `Config` struct

@@ -193,13 +193,12 @@ pub fn git_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) ->
     let remote_repo_name = remote_repo_name.unwrap_or("origin");
 
     let remote_repo_url = config_file.get_url(remote_repo_name, &mut io::stdout())?;
-    let local_git_dir = local_dir.to_string() + "/.mgit";
     let mut client = Client::new(&remote_repo_url, remote_repo_name, host);
     let refs = client.get_server_refs()?;
     let clean_refs = get_clean_refs(&refs);
-    let fetch_head_path = local_git_dir.to_string() + "/FETCH_HEAD";
+    let fetch_head_path = git_dir.to_string() + "/FETCH_HEAD";
     let mut fetch_head_file = FetchHead::new();
-    client.upload_pack(clean_refs.clone(), &local_git_dir, "origin")?;
+    client.upload_pack(clean_refs.clone(), &git_dir, "origin")?;
     for server_ref in clean_refs {
         if server_ref != "HEAD" {
             let hash = match refs.get(&server_ref) {
