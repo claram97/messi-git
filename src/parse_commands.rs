@@ -5,10 +5,8 @@ use crate::checkout::checkout_commit_detached;
 use crate::checkout::create_and_checkout_branch;
 use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
-use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
-use crate::fetch::git_fetch;
 use crate::hash_object::store_file;
 use crate::index::Index;
 use crate::init::git_init;
@@ -166,7 +164,7 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
         GitCommand::Checkout => handle_checkout(args),
         GitCommand::Log => handle_log(),
         GitCommand::Clone => handle_clone(args),
-        GitCommand::Fetch => handle_fetch(),
+        GitCommand::Fetch => handle_fetch(args),
         GitCommand::Merge => handle_merge(args),
         GitCommand::Remote => handle_remote(args),
         GitCommand::Pull => handle_pull(),
@@ -365,8 +363,9 @@ fn handle_status() {
     //Falta personalizar la siguiente línea
     print!("Your branch is up to date with 'origin/master'\n\n");
     print!("{}", reset);
-    println!();
+ 
     if !not_staged_for_commit.is_empty() {
+        println!();
         println!("{}Changes not staged for commit:{}", red, reset);
         println!("\t(use \"git add <file>...\" to update what will be committed)");
         println!("\t(use \"git restore <file>...\" to discard changes in working directory)");
@@ -377,21 +376,23 @@ fn handle_status() {
     }
 
     print!("{}", reset);
-    println!();
+  
 
     if !changes_to_be_committed_output.is_empty() {
+        println!();
         println!("{}Changes to be commited:{}", yellow, reset);
         println!("\t(use \"git add <file>...\" to update what will be committed)");
         println!("\t(use \"git checkout -- <file>...\" to discard changes in working directory)");
         for byte in &changes_to_be_committed_output {
             print!("{}", *byte as char);
+            println!();
         }
     }
 
     print!("{}", reset);
-    println!();
 
     if !untracked_output.is_empty() {
+        println!();
         println!("{}Untracked files:{}", yellow, reset);
         println!("\t(use \"git add <file>...\" to include in what will be committed)");
 
@@ -400,7 +401,7 @@ fn handle_status() {
         }
     }
     print!("{}", reset);
-    println!();
+    
     //Esto no sé de dónde sacarlo ah
     //print!("{}no changes added to commit (use \"git add\" and/or \"git commit -a\"){}\n", green, reset);
 }
@@ -506,7 +507,6 @@ fn handle_checkout(args: Vec<String>) {
 
     let option = &args[2];
     let git_dir1 = Path::new(&git_dir);
-    println!("aber {}", &args[1]);
     match option.as_str() {
         // Change to the specified branch
 
@@ -579,94 +579,12 @@ fn handle_log() {
     print_logs(log_iter);
 }
 
-fn handle_clone(args: Vec<String>) {
-    let current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-    let url_text = &args[2];
-    let dir_text = current_dir.to_string_lossy().to_string();
-    let remote_repo_url = match url_text.rsplit_once('/') {
-        Some((string, _)) => string,
-        None => "",
-    };
-
-    let remote_repo_name = url_text.split('/').last().unwrap_or("");
-
-    //println!("URL: {}", remote_repo_url);
-    //println!("Remote repo URL: {}", remote_repo_url);
-
-    match git_clone(remote_repo_url, remote_repo_name, "localhost", &dir_text) {
-        Ok(_) => {
-            println!("Cloned successfully.")
-        }
-        Err(_e) => {
-            eprintln!("Couldn't clone.");
-        }
-    }
+fn handle_clone(_args: Vec<String>) {
+    println!("Handling Clone command with argument: ");
 }
 
-fn handle_fetch() {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
-            return;
-        }
-    };
-
-    let working_dir = match Path::new(&git_dir).parent() {
-        Some(parent) => parent.to_string_lossy().to_string(),
-        None => {
-            eprintln!("Error al obtener el working dir");
-            return;
-        }
-    };
-
-    let config = match Config::load(&git_dir) {
-        Ok(config) => config,
-        Err(_e) => {
-            eprintln!("Error al cargar el config file.");
-            return;
-        }
-    };
-
-    let branch_name = match get_branch_name(&git_dir) {
-        Ok(name) => name,
-        Err(_) => {
-            eprintln!("No se pudo obtener la rama actual");
-            return;
-        }
-    };
-
-    let remote_name_from_branch = match config.get_branch_remote_name(&branch_name) {
-        Some(name) => name,
-        None => {
-            eprintln!("No se pudo obtener el nombre del remoto de la rama actual");
-            return;
-        }
-    };
-
-    let remote_name = Some(&remote_name_from_branch);
-    match git_fetch(remote_name.map(|x| x.as_str()), "localhost", &working_dir) {
-        Ok(_) => {
-            eprintln!("Fetched ok.")
-        }
-        Err(_) => {
-            eprintln!("Fetch not ok :(")
-        }
-    };
+fn handle_fetch(_args: Vec<String>) {
+    println!("Handling Fetch command with argument: ");
 }
 
 fn handle_merge(args: Vec<String>) {
@@ -778,8 +696,12 @@ fn handle_pull() {
         }
     };
     match git_pull(&branch_name, &working_dir, None, "localhost") {
-        Ok(_) => {}
-        Err(_e) => {}
+        Ok(_) => {
+            println!("Pulled successfully");
+        }
+        Err(_e) => {
+            println!("Error on git pull");
+        }
     };
 }
 
@@ -819,19 +741,6 @@ fn handle_branch(args: Vec<String>) {
 ///
 /// - `args`: A vector of strings containing command-line arguments. The function parses
 ///   these arguments to determine the initial branch and template directory.
-///
-/// ## Example
-///
-/// ```
-/// use messi::parse_commands::handle_init;
-/// use messi::init::git_init;
-///
-/// let args = vec!["init".to_string(), "my_repo".to_string(), "-b".to_string(), "mybranch".to_string()];
-/// handle_init(args);
-/// ```
-///
-/// The `handle_init` function initializes a Git repository based on the provided arguments,
-/// allowing you to specify the initial branch and a template directory.
 ///
 pub fn handle_init(args: Vec<String>) {
     let mut current_directory = match std::env::current_dir() {

@@ -9,3 +9,6 @@
 [branch "master"]
 	remote = repo_prueba
 	merge = /refs/heads/master
+[remote "remote"]
+	url = url
+	fetch = +refs/heads/*:refs/remotes/remote/name/*
