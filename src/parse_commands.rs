@@ -700,11 +700,10 @@ fn handle_pull() {
             return;
         }
     };
-    match git_pull(&branch_name,&working_dir, None, "localhost") {
-        Ok(_) => {},
+    match git_pull(&branch_name, &working_dir, None, "localhost") {
+        Ok(_) => {}
         Err(_e) => {}
     };
- 
 }
 
 fn handle_push() {

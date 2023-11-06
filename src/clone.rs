@@ -66,7 +66,8 @@ fn create_working_dir(local_git_dir: &str, working_dir: &str) -> io::Result<()> 
     commit_tree.create_directories(working_dir, local_git_dir)?;
     let index_path = local_git_dir.to_string() + "/index";
     let gitignore_path = working_dir.to_string() + "/.gitignore";
-    let index = commit_tree.build_index_file_from_tree(&index_path, local_git_dir, &gitignore_path)?;
+    let index =
+        commit_tree.build_index_file_from_tree(&index_path, local_git_dir, &gitignore_path)?;
     index.write_file()?;
     Ok(())
 }

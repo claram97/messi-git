@@ -148,7 +148,8 @@ pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io
     let remote_tree = tree_handler::load_tree_from_commit(remote_hash, git_dir)?;
     let (new_tree, _conflicts) = tree_handler::merge_trees(&our_tree, &remote_tree, git_dir)?;
     let index_path = utils::get_index_file_path(git_dir);
-    let new_index_file_contents = new_tree.build_index_file_from_tree(&index_path, git_dir, &get_git_ignore_path(git_dir))?;
+    let new_index_file_contents =
+        new_tree.build_index_file_from_tree(&index_path, git_dir, &get_git_ignore_path(git_dir))?;
     new_index_file_contents.write_file()?;
     Ok(())
 }

@@ -106,7 +106,6 @@ fn connect_button_clicked_clone_repository(
             Err(_) => Path::new("").to_path_buf(),
         };
 
-
         if url_text.is_empty() || dir_text.is_empty() {
             // let error_dialog = gtk::MessageDialog::new(
             //     Some(&new_window_clone_clone),
@@ -132,7 +131,8 @@ fn connect_button_clicked_clone_repository(
             println!("Remote repo URL: {}", remote_repo_url);
             let working_dir = Path::new(&dir_text);
 
-            let result = clone::git_clone(remote_repo_url, remote_repo_name, "localhost", &dir_text);
+            let result =
+                clone::git_clone(remote_repo_url, remote_repo_name, "localhost", &dir_text);
             handle_clone_result(result, &code_dir, working_dir);
         }
     });
@@ -156,7 +156,6 @@ fn handle_clone_result(result: result::Result<(), io::Error>, code_dir: &Path, w
         }
     }
 }
-
 
 /// Configures the properties of a clone window in a GTK application.
 ///

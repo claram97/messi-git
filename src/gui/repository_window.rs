@@ -156,29 +156,30 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
 fn handle_git_pull() -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
 
-    let git_dir = match find_git_directory(&mut current_dir,".mgit") {
-        Some(dir) => dir, 
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
         None => {
             return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Can't find git dir.\n"));
-        },
+                io::ErrorKind::Other,
+                "Can't find git dir.\n",
+            ));
+        }
     };
 
-     
     let working_dir = match Path::new(&git_dir).parent() {
         Some(parent) => parent.to_string_lossy().to_string(),
-        None =>{
+        None => {
             return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Can't find working dir.\n"));
-        },
+                io::ErrorKind::Other,
+                "Can't find working dir.\n",
+            ));
+        }
     };
 
     let current_branch = get_branch_name(&git_dir)?;
 
-    git_pull(&current_branch,&working_dir, None, "localhost")?;
-    
+    git_pull(&current_branch, &working_dir, None, "localhost")?;
+
     Ok(())
 }
 
@@ -292,7 +293,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                 match result {
                     Ok(_) => {
                         show_message_dialog("Éxito", "Succesfully pulled");
-                    },
+                    }
                     Err(err) => {
                         show_message_dialog("Error", &err.to_string());
                     }
@@ -305,7 +306,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                 match result {
                     Ok(_) => {
                         show_message_dialog("Éxito", "Succesfully pushed");
-                    },
+                    }
                     Err(err) => {
                         show_message_dialog("Error", &err.to_string());
                     }
