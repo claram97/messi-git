@@ -66,7 +66,8 @@ fn create_working_dir(local_git_dir: &str, working_dir: &str) -> io::Result<()> 
     commit_tree.create_directories(working_dir, local_git_dir)?;
     let index_path = local_git_dir.to_string() + "/index";
     let gitignore_path = working_dir.to_string() + "/.gitignore";
-    commit_tree.build_index_file_from_tree(&index_path, local_git_dir, &gitignore_path)?;
+    let index = commit_tree.build_index_file_from_tree(&index_path, local_git_dir, &gitignore_path)?;
+    index.write_file()?;
     Ok(())
 }
 
@@ -108,10 +109,8 @@ pub fn git_clone(
     let refs = client.get_server_refs()?;
     let clean_refs = get_clean_refs(refs);
     create_remote_dir(&local_git_dir)?;
-    let result = client.upload_pack(clean_refs, &local_git_dir, "origin");
-    println!("{:?}", result);
+    let _ = client.upload_pack(clean_refs, &local_git_dir, "origin");
     create_working_dir(&local_git_dir, working_dir)?;
-    println!("Cloned into {}", working_dir);
     let mut config_file = config::Config::load(&local_git_dir)?;
     config_file.add_remote(
         remote_repo_name.to_string(),
