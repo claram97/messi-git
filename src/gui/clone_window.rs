@@ -107,15 +107,6 @@ fn connect_button_clicked_clone_repository(
         };
 
         if url_text.is_empty() || dir_text.is_empty() {
-            // let error_dialog = gtk::MessageDialog::new(
-            //     Some(&new_window_clone_clone),
-            //     gtk::DialogFlags::MODAL,
-            //     gtk::MessageType::Error,
-            //     gtk::ButtonsType::Ok,
-            //     "Faltan datos: URL o directorio de clonación.",
-            // );
-            // error_dialog.run();
-            // error_dialog.close();
             show_message_dialog("Error", "Faltan datos: URL o directorio de clonación.");
         } else {
             //The remote repo url is the first part of the URL, up until the last '/'.

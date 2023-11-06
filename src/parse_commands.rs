@@ -295,7 +295,7 @@ fn handle_status() {
         }
     };
 
-    let current_branch_path = match get_current_branch_path(&git_dir) {
+    let branch_path = match get_current_branch_path(&git_dir) {
         Ok(path) => path,
         Err(_e) => {
             eprintln!("Error getting current branch path.");
@@ -303,29 +303,36 @@ fn handle_status() {
         }
     };
 
-    let mut current_commit_file = match File::open(&current_branch_path) {
-        Ok(file) => file,
-        Err(_e) => {
-            eprintln!("Error opening the current commit file.");
-            return;
-        }
-    };
+    let current_branch_path = format!("{}/{}", git_dir, branch_path);
 
-    let mut commit_hash = String::new();
-    match current_commit_file.read_to_string(&mut commit_hash) {
-        Ok(_) => {}
-        Err(_e) => {
-            eprintln!("Error reading to string.");
-            return;
+    let mut changes_to_be_committed_output: Vec<u8> = vec![];
+
+    if let Ok(opening_result) = File::open(&current_branch_path) {
+        let mut current_commit_file = opening_result;
+        let mut commit_hash = String::new();
+        match current_commit_file.read_to_string(&mut commit_hash) {
+            Ok(_) => {}
+            Err(_e) => {
+                eprintln!("Error reading to string.");
+                return;
+            }
+        }
+        let commit_tree = match tree_handler::load_tree_from_commit(&commit_hash, &git_dir) {
+            Ok(tree) => tree,
+            Err(_e) => {
+                eprintln!("Couldn't load tree.");
+                return;
+            }
+        };
+
+        match changes_to_be_committed(&index, &commit_tree, &mut changes_to_be_committed_output) {
+            Ok(_) => {}
+            Err(_e) => {
+                eprintln!("Error on changes to be committed.");
+                return;
+            }
         }
     }
-    let commit_tree = match tree_handler::load_tree_from_commit(&commit_hash, &git_dir) {
-        Ok(tree) => tree,
-        Err(_e) => {
-            eprintln!("Couldn't load tree.");
-            return;
-        }
-    };
 
     let mut untracked_output: Vec<u8> = vec![];
     match find_untracked_files(&current_dir, working_dir, &index, &mut untracked_output) {
@@ -337,7 +344,11 @@ fn handle_status() {
     }
 
     let mut not_staged_for_commit: Vec<u8> = vec![];
-    match find_unstaged_changes(&index, &git_dir, &mut not_staged_for_commit) {
+    match find_unstaged_changes(
+        &index,
+        working_dir.to_string_lossy().as_ref(),
+        &mut not_staged_for_commit,
+    ) {
         Ok(_) => {}
         Err(_e) => {
             eprintln!("Error finding changes not staged for commit.");
@@ -345,19 +356,16 @@ fn handle_status() {
         }
     }
 
-    let mut changes_to_be_committed_output: Vec<u8> = vec![];
-    match changes_to_be_committed(&index, &commit_tree, &mut changes_to_be_committed_output) {
-        Ok(_) => {}
-        Err(_e) => {
-            eprintln!("Error finding changes not staged for commit.");
-            return;
-        }
-    }
-
-    println!("{}On branch {}{}", branch_name, green, reset);
-    //Personalizar la siguiente línea
+    println!();
+    print!("{}", reset);
+    println!("{}On branch {}{}", green, branch_name, reset);
+    print!("{}", reset);
+    //Falta personalizar la siguiente línea
     print!("Your branch is up to date with 'origin/master'\n\n");
+    print!("{}", reset);
+ 
     if !not_staged_for_commit.is_empty() {
+        println!();
         println!("{}Changes not staged for commit:{}", red, reset);
         println!("\t(use \"git add <file>...\" to update what will be committed)");
         println!("\t(use \"git restore <file>...\" to discard changes in working directory)");
@@ -367,15 +375,24 @@ fn handle_status() {
         }
     }
 
+    print!("{}", reset);
+  
+
     if !changes_to_be_committed_output.is_empty() {
+        println!();
         println!("{}Changes to be commited:{}", yellow, reset);
         println!("\t(use \"git add <file>...\" to update what will be committed)");
         println!("\t(use \"git checkout -- <file>...\" to discard changes in working directory)");
         for byte in &changes_to_be_committed_output {
             print!("{}", *byte as char);
+            println!();
         }
     }
+
+    print!("{}", reset);
+
     if !untracked_output.is_empty() {
+        println!();
         println!("{}Untracked files:{}", yellow, reset);
         println!("\t(use \"git add <file>...\" to include in what will be committed)");
 
@@ -383,6 +400,8 @@ fn handle_status() {
             print!("{}", *byte as char);
         }
     }
+    print!("{}", reset);
+    
     //Esto no sé de dónde sacarlo ah
     //print!("{}no changes added to commit (use \"git add\" and/or \"git commit -a\"){}\n", green, reset);
 }
@@ -488,7 +507,6 @@ fn handle_checkout(args: Vec<String>) {
 
     let option = &args[2];
     let git_dir1 = Path::new(&git_dir);
-    println!("aber {}", &args[1]);
     match option.as_str() {
         // Change to the specified branch
 
@@ -627,17 +645,7 @@ fn handle_remote(args: Vec<String>) {
         }
     };
 
-    let working_dir = match Path::new(&git_dir).parent() {
-        Some(parent) => parent.to_string_lossy().to_string(),
-        None => {
-            eprintln!("Error al obtener el working dir");
-            return;
-        }
-    };
-
-    let config_path = format!("{}/{}", working_dir, ".mgitignore");
-
-    let mut config = match Config::load(&config_path) {
+    let mut config = match Config::load(&git_dir) {
         Ok(config) => config,
         Err(_e) => {
             eprintln!("Error al cargar el config file.");
@@ -688,8 +696,12 @@ fn handle_pull() {
         }
     };
     match git_pull(&branch_name, &working_dir, None, "localhost") {
-        Ok(_) => {}
-        Err(_e) => {}
+        Ok(_) => {
+            println!("Pulled successfully");
+        }
+        Err(_e) => {
+            println!("Error on git pull");
+        }
     };
 }
 
@@ -729,19 +741,6 @@ fn handle_branch(args: Vec<String>) {
 ///
 /// - `args`: A vector of strings containing command-line arguments. The function parses
 ///   these arguments to determine the initial branch and template directory.
-///
-/// ## Example
-///
-/// ```
-/// use messi::parse_commands::handle_init;
-/// use messi::init::git_init;
-///
-/// let args = vec!["init".to_string(), "my_repo".to_string(), "-b".to_string(), "mybranch".to_string()];
-/// handle_init(args);
-/// ```
-///
-/// The `handle_init` function initializes a Git repository based on the provided arguments,
-/// allowing you to specify the initial branch and a template directory.
 ///
 pub fn handle_init(args: Vec<String>) {
     let mut current_directory = match std::env::current_dir() {
