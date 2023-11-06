@@ -179,7 +179,7 @@ impl ServerInstace {
         let mut wants = HashSet::new();
         loop {
             let (size, line) = read_pkt_line(&mut self.socket)?;
-            if size < 4 {
+            if size < 10 {
                 break;
             }
             let hash = parse_line_want_have(&line, want_have)?;
@@ -221,7 +221,7 @@ impl ServerInstace {
     // Creates a new ref with the given name and hash
     // The ref must not exist
     fn create_ref(&mut self, ref_name: &str, new: &str) -> io::Result<()> {
-        let ref_path = PathBuf::from(&self.git_dir).join(ref_name);
+        let ref_path = PathBuf::from(&self.git_dir_path).join(ref_name);
         if ref_path.exists() {
             return Err(io::Error::new(
                 io::ErrorKind::AlreadyExists,

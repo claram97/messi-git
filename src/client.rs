@@ -227,9 +227,9 @@ impl Client {
 
     // Sends a 'have' message to the server for each hash in the hashmap
     fn send_haves(&mut self, local_refs: HashMap<String, String>) -> io::Result<()> {
-        if local_refs.is_empty() {
-            return Ok(());
-        }
+        // if local_refs.is_empty() {
+        //     return Ok(());
+        // }
         for hash in local_refs.values() {
             let have = format!("have {}\n", hash);
             let have = pkt_line(&have);
