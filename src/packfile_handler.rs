@@ -205,6 +205,23 @@ where
     }
 }
 
+/// Create a Git packfile containing objects specified in a `HashSet`.
+///
+/// This function generates a Git packfile that contains the objects listed in the provided `HashSet`.
+/// A packfile is a binary format used by Git to store multiple Git objects efficiently in a single file.
+///
+/// # Arguments
+///
+/// * `objects`: A `HashSet` containing tuples of `(ObjectType, String)`, representing the object type
+///   and its identifier (typically a hash).
+/// * `git_dir`: A string representing the path to the Git repository directory where objects are stored.
+///
+/// # Returns
+///
+/// Returns an `io::Result` containing the generated Git packfile as a `Vec<u8>`. If successful,
+/// `Ok(packfile)` is returned, where `packfile` is the binary representation of the packfile;
+/// otherwise, an error is returned.
+///
 pub fn create_packfile_from_set(
     objects: HashSet<(ObjectType, String)>,
     git_dir: &str,

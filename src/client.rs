@@ -67,7 +67,7 @@ impl Client {
     ///    - remote: name of the remote
     pub fn upload_pack(
         &mut self,
-        wanted_branchs: Vec<&str>, // recibir vector con varias branchs
+        wanted_branchs: Vec<String>, // recibir vector con varias branchs
         git_dir: &str,
         remote: &str,
     ) -> io::Result<()> {
@@ -181,12 +181,12 @@ impl Client {
     // Will fail if the server does not have the wanted branchs
     //
     // If the server has the wanted branchs, then it will send the 'want' and 'have' messages
-    fn want_branchs(&mut self, branchs: Vec<&str>) -> io::Result<HashMap<String, String>> {
+    fn want_branchs(&mut self, branchs: Vec<String>) -> io::Result<HashMap<String, String>> {
         let mut fetched_remotes_refs = HashMap::new();
 
         let client_remotes_refs = get_remote_refs(&self.git_dir, &self.remote)?;
         for branch in branchs {
-            let wanted_ref = get_head_from_branch(&self.git_dir, branch)?;
+            let wanted_ref = get_head_from_branch(&self.git_dir, &branch)?;
             let hash = match self.server_refs.get(&wanted_ref) {
                 Some(hash) => hash.clone(),
                 None => {
@@ -196,7 +196,7 @@ impl Client {
                     ))
                 }
             };
-            if let Some(local_hash) = client_remotes_refs.get(branch) {
+            if let Some(local_hash) = client_remotes_refs.get(&branch) {
                 if &hash == local_hash {
                     continue;
                 }

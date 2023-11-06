@@ -98,6 +98,22 @@ pub fn checkout_branch(git_dir_path: &Path, root_dir: &str, branch_name: &str) -
     }
 }
 
+/// Switches to a different branch in the local Git repository by updating references.
+///
+/// This function facilitates switching to a different Git branch identified by `branch_name` within the local Git
+/// repository. It updates the HEAD reference to point to the specified branch, allowing the user to work on the
+/// new branch. The function also returns the commit identifier of the previous branch.
+///
+/// # Arguments
+///
+/// * `git_dir`: A `Path` representing the root directory of the local Git repository.
+/// * `branch_name`: The name of the branch to switch to.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the commit identifier of the previous branch in case of success, or an error
+/// in case any issue occurs during the operation. The result is wrapped in an `io::Result<String>`.
+///
 fn checkout_branch_references(git_dir: &Path, branch_name: &str) -> io::Result<String> {
     let refs_dir = git_dir.join("refs").join("heads");
     let branch_ref_file = refs_dir.join(branch_name);
@@ -176,6 +192,22 @@ pub fn create_and_checkout_branch(
     Ok(())
 }
 
+/// Creates and checks out a new Git branch in the local repository.
+///
+/// This function creates a new Git branch with the specified `branch_name` in the local Git repository located
+/// in the directory specified by `git_dir_str`. After creating the branch, it checks out the newly created branch
+/// and returns the commit identifier of the previous branch.
+///
+/// # Arguments
+///
+/// * `git_dir_str`: The path to the local directory containing the Git repository as a string.
+/// * `branch_name`: The name of the new branch to create and check out.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the commit identifier of the previous branch in case of success, or an error
+/// in case any issue occurs during the operation. The result is wrapped in an `io::Result<String>`.
+///
 fn create_and_checkout_branch_references(
     git_dir_str: &str,
     branch_name: &str,
@@ -280,6 +312,22 @@ pub fn checkout_commit_detached(git_dir: &Path, root_dir: &str, commit_id: &str)
     }
 }
 
+/// Checks out a specific commit in detached HEAD mode in the local Git repository.
+///
+/// This function enables checking out a specific Git commit identified by `commit_id` in detached HEAD mode within
+/// the local Git repository located in the directory specified by `git_dir_str`. In detached HEAD mode, there is
+/// no associated branch, and the HEAD reference directly points to the selected commit.
+///
+/// # Arguments
+///
+/// * `git_dir_str`: The path to the local directory containing the Git repository as a string.
+/// * `commit_id`: The identifier of the Git commit to check out.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the commit identifier of the previous HEAD in case of success, or an error
+/// in case any issue occurs during the operation. The result is wrapped in an `io::Result<String>`.
+///
 fn checkout_commit_detached_references(git_dir_str: &str, commit_id: &str) -> io::Result<String> {
     let head_file = git_dir_str.to_string() + "/HEAD";
     let old_commit_id = branch::get_current_branch_commit(git_dir_str)?;
@@ -288,6 +336,23 @@ fn checkout_commit_detached_references(git_dir_str: &str, commit_id: &str) -> io
     Ok(old_commit_id)
 }
 
+/// Replaces the working tree of a Git repository with the content of a new commit.
+///
+/// This function replaces the working tree of a Git repository with the content associated with a new commit
+/// identified by `new_commit_id`. It removes files and directories that were part of the previous commit
+/// identified by `old_commit_id` and creates new files and directories from the content of the new commit.
+///
+/// # Arguments
+///
+/// * `git_dir`: The path to the local directory containing the Git repository.
+/// * `root_dir`: The root directory of the working tree to be replaced.
+/// * `old_commit_id`: The identifier of the previous commit.
+/// * `new_commit_id`: The identifier of the new commit to replace the working tree with.
+///
+/// # Returns
+///
+/// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
+///
 fn replace_working_tree(
     git_dir: &str,
     root_dir: &str,

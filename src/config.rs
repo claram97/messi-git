@@ -431,11 +431,11 @@ impl Config {
     /// Returns `Ok(())` if the URL of the remote repository is successfully retrieved and written to the output.
     /// If no remote with the specified name is found, it returns an error of type `io::ErrorKind::InvalidInput`.
     ///
-    pub fn get_url(&self, remote_name: &str, output: &mut impl Write) -> io::Result<()> {
+    pub fn get_url(&self, remote_name: &str, output: &mut impl Write) -> io::Result<String> {
         if let Some(index) = self.remotes.iter().position(|r| r.name == remote_name) {
             if let Some(remote) = self.remotes.get(index) {
                 output.write_all(remote.url.as_bytes())?;
-                Ok(())
+                Ok(remote.url.clone())
             } else {
                 let error_message = format!("error: No such remote '{}'", remote_name);
                 output.write_all(error_message.as_bytes())?;

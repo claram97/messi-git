@@ -31,6 +31,23 @@ pub fn find_git_directory(
     None
 }
 
+/// Get the commit history for a given commit hash in a Git repository.
+///
+/// This function retrieves the commit history for a specified commit hash by recursively
+/// traversing the parent commits until the initial commit (root) is reached. The resulting
+/// commit history is returned as a vector of commit hashes in chronological order, starting
+/// from the provided commit hash and going back in time.
+///
+/// # Arguments
+///
+/// * `commit_hash`: A string representing the commit hash from which to start fetching the history.
+/// * `git_dir`: A string representing the path to the Git repository directory.
+///
+/// # Returns
+///
+/// Returns a `Result` with a vector of commit hashes if successful. If an error occurs during
+/// the retrieval process, it returns an `io::Result` with an error message.
+///
 pub fn get_branch_commit_history(commit_hash: &str, git_dir: &str) -> io::Result<Vec<String>> {
     let mut parents = Vec::new();
     parents.push(commit_hash.to_string());
@@ -42,6 +59,22 @@ pub fn get_branch_commit_history(commit_hash: &str, git_dir: &str) -> io::Result
     Ok(parents)
 }
 
+/// Get the unique commit history for a given commit hash in a Git repository.
+///
+/// This function retrieves the unique commit history for a specified commit hash by recursively
+/// traversing the parent commits until the initial commit (root) is reached. The resulting
+/// commit history is returned as a `HashSet` of commit hashes, ensuring uniqueness in the history.
+///
+/// # Arguments
+///
+/// * `commit_hash`: A string representing the commit hash from which to start fetching the history.
+/// * `git_dir`: A string representing the path to the Git repository directory.
+///
+/// # Returns
+///
+/// Returns a `Result` with a `HashSet` of unique commit hashes if successful. If an error occurs
+/// during the retrieval process, it returns an `io::Result` with an error message.
+///
 pub fn get_branch_commit_history_set(
     commit_hash: &str,
     git_dir: &str,
@@ -56,12 +89,40 @@ pub fn get_branch_commit_history_set(
     Ok(parents)
 }
 
+/// Get the path to the Git index file in a Git repository.
+///
+/// This function constructs and returns the path to the Git index file within the specified Git
+/// repository directory. The index file, also known as the staging area or cache, stores information
+/// about the files and their changes to be committed.
+///
+/// # Arguments
+///
+/// * `git_dir`: A string representing the path to the Git repository directory.
+///
+/// # Returns
+///
+/// Returns a `String` containing the full path to the Git index file within the repository directory.
+///
 pub fn get_index_file_path(git_dir: &str) -> String {
     let mut index_file = PathBuf::from(git_dir);
     index_file.push("index");
     index_file.display().to_string()
 }
 
+/// Get the path to the Git ignore file (`.gitignore`) in a Git repository.
+///
+/// This function constructs and returns the path to the `.gitignore` file within the specified Git
+/// repository directory. The `.gitignore` file contains patterns and rules for files and directories
+/// that should be ignored by Git.
+///
+/// # Arguments
+///
+/// * `git_dir`: A string representing the path to the Git repository directory.
+///
+/// # Returns
+///
+/// Returns a `String` containing the full path to the `.gitignore` file within the repository directory.
+///
 pub fn get_git_ignore_path(git_dir: &str) -> String {
     let mut git_ignore_file = PathBuf::from(git_dir);
     git_ignore_file.push(".gitignore");
