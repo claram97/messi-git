@@ -1336,11 +1336,10 @@ fn get_staged_text() -> io::Result<String> {
         io::ErrorKind::Other,
         "Failed to find git directory",
     ))?;
+    println!("LLEGUE");
     let last_commit = match branch::get_current_branch_commit(&git_dir) {
         Ok(commit) => commit,
-        Err(_) => {
-            return Ok("".to_string());
-        }
+        Err(_) => "0000000000000000000000000000000000000000".to_string(),
     };
     let last_commit_tree: Option<Tree> = match tree_handler::load_tree_from_commit(&last_commit, &git_dir) {
         Ok(tree) => Some(tree),
