@@ -12,6 +12,11 @@ use gtk::GtkWindowExt;
 use std::env;
 use std::io;
 use std::path::Path;
+use gtk::WidgetExt;
+use gtk::ContainerExt;
+use gtk::FileChooserExt;
+use gtk::FileChooserButtonExt;
+    
 
 /// Configures the properties of a clone window in a GTK application.
 ///
@@ -116,27 +121,76 @@ pub fn connect_button_clicked_init_window(
                 }
                 handle_git_init_result(result, &current_dir, Path::new(&dir_str));
             } else if button_type == "option4" {
-                let result = create_text_entry_window("Enter the directory path", move |text| {
-                    let result = git_init(&text, "main", None);
-                    if result.is_err() {
-                        eprintln!("Error initiating git.");
-                        return;
-                    }
-                    if result.is_err() {
-                        eprintln!("Error setting current directory.");
-                        return;
-                    }
-                    let result = handle_git_init_result(result, &current_dir, Path::new(&text));
-                    if result.is_err() {
-                        eprintln!("Error handling git init with template");
-                    }
-                    if result.is_err() {
-                        eprintln!("Error setting current directory.");
+                // Crea una ventana principal
+                let window = gtk::Window::new(gtk::WindowType::Toplevel);
+                window.set_title("Directorio de selección");
+                window.set_default_size(400, 150);
+
+                // Crea un cuadro de diálogo de selección de directorio
+                let file_chooser = gtk::FileChooserButton::new(
+                    "Seleccione un directorio",
+                    gtk::FileChooserAction::SelectFolder,
+                );
+
+                // Crea un botón "OK"
+                let button_ok = gtk::Button::with_label("OK");
+                apply_button_style(&button_ok);
+                // Crea una caja vertical para organizar los elementos
+                let vbox = gtk::Box::new(gtk::Orientation::Vertical, 5);
+                vbox.add(&file_chooser);
+                vbox.add(&button_ok);
+
+                // Maneja el evento "file-set" cuando se selecciona un directorio
+                let file_chooser_clone = file_chooser.clone();
+                file_chooser.connect_file_set(move |_| {
+                    let selected_directory = file_chooser_clone.get_filename();
+                    if let Some(directory) = selected_directory {
+                        println!("Directorio seleccionado: {:?}", directory.to_string_lossy());
                     }
                 });
-                if result.is_err() {
-                    eprintln!("Error creating text entry window.");
-                }
+
+                button_ok.connect_clicked(move |_| {
+                    let selected_directory = file_chooser.get_filename();
+                    if let Some(directory) = selected_directory {
+                        let result = git_init(&directory.to_string_lossy(), "main", None);
+                        if result.is_err() {
+                            eprintln!("Error al iniciar git.");
+                            return;
+                        }
+                        let result = handle_git_init_result(result, &current_dir, Path::new(&directory));
+                        if result.is_err() {
+                            eprintln!("Error handling git init with template");
+                        }
+                        println!("Operación exitosa: {}", directory.to_string_lossy());
+                    }
+                });
+
+                // Agrega la caja al contenedor de la ventana y muestra todo
+                window.add(&vbox);
+                window.show_all();
+
+            
+                // let result = create_text_entry_window("Enter the directory path", move |text| {
+                //     let result = git_init(&text, "main", None);
+                //     if result.is_err() {
+                //         eprintln!("Error initiating git.");
+                //         return;
+                //     }
+                //     if result.is_err() {
+                //         eprintln!("Error setting current directory.");
+                //         return;
+                //     }
+                //     let result = handle_git_init_result(result, &current_dir, Path::new(&text));
+                //     if result.is_err() {
+                //         eprintln!("Error handling git init with template");
+                //     }
+                //     if result.is_err() {
+                //         eprintln!("Error setting current directory.");
+                //     }
+                // });
+                // if result.is_err() {
+                //     eprintln!("Error creating text entry window.");
+                // }
             }
         } else {
             eprintln!("No se pudo obtener el directorio actual.");

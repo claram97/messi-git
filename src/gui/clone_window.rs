@@ -35,7 +35,7 @@ use super::style::show_message_dialog;
 /// You can use this function to connect the "clicked" signal of a GTK button to handle
 /// directory selection. When the button is clicked, a file dialog will be displayed,
 /// and the selected directory path will be shown in the specified entry field.
-fn connect_button_clicked_browse(
+pub fn connect_button_clicked_browse(
     button: &gtk::Button,
     new_window: &gtk::Window,
     dir_to_clone_entry: &Entry,
