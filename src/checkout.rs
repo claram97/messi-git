@@ -270,7 +270,7 @@ fn replace_working_tree(
 /// * `branch_or_commit` - A string containing the branch name (e.g., "my_branch") or the commit
 ///                       ID (e.g., "a1b2c3d4e5").
 ///
-pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) {
+pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) -> Result<(), io::Error> {
     // Check if a branch or a commit is provided
     let is_branch = branch_or_commit.starts_with("refs/heads/");
 
@@ -285,13 +285,14 @@ pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) {
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("ref: {}\n", branch_or_commit);
             if let Err(err) = fs::write(head_file, new_head_content) {
-                eprintln!("Failed to update HEAD file: {}", err);
-                return;
+                return Err(err);
             }
 
             println!("Force switched to branch: {}", branch_name);
+            Ok(())
         } else {
             eprintln!("Branch '{}' not found in the repository", branch_name);
+            Err(io::Error::new(io::ErrorKind::NotFound, "Branch not found"))
         }
     } else {
         // Check if the specified commit exists
@@ -303,16 +304,17 @@ pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) {
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("{} (commit)\n", commit_id);
             if let Err(err) = fs::write(head_file, new_head_content) {
-                eprintln!("Failed to update HEAD file: {}", err);
-                return;
+                return Err(err);
             }
 
             println!("Force switched to commit (detached mode): {}", commit_id);
+            Ok(())
         } else {
             eprintln!(
                 "Branch or commit '{}' not found in the repository",
                 branch_or_commit
             );
+            Err(io::Error::new(io::ErrorKind::NotFound, "Branch or commit not found"))
         }
     }
 }

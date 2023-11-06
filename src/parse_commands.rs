@@ -10,8 +10,15 @@ use crate::remote::git_remote;
 use crate::rm::git_rm;
 use crate::{add, log};
 use std::path::{Path, PathBuf};
-//use std::thread::current;
+use crate::checkout::process_args;
+use crate::checkout::create_or_reset_branch;
+use crate::checkout::checkout_commit_detached;
+use crate::checkout::force_checkout;
+use crate::checkout::create_and_checkout_branch;
+use crate::checkout::checkout_branch;
+
 use std::{env, io};
+
 
 const GIT_DIR: &str = ".mgit";
 /// Enumeration representing Git commands.
@@ -342,8 +349,81 @@ fn handle_commit(args: Vec<String>) {
 }
 
 fn handle_checkout(args: Vec<String>) {
-    println!("Handling Checkout command with argument: ");
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(parent) => parent.to_string_lossy().to_string(),
+        None => {
+            eprintln!("Error al obtener el working dir");
+            return;
+        }
+    };
+
+    if args.len() < 2 {
+        eprintln!("Usage: my_git_checkout <option> <branch_or_commit>");
+        return;
+    }
+
+    let option = &args[2];
+    let git_dir1 = Path::new(&git_dir);
+    println!("aber {}", &args[1]);
+    match option.as_str() {
+        // Change to the specified branch
+        
+        // Create and change to a new branch
+        "-b" => {
+            let destination = &args[3];
+
+            if let Err(err) = create_and_checkout_branch(git_dir1, &working_dir, destination) {
+                eprintln!("Error al crear y cambiar a una nueva rama: {:?}", err);
+            }
+        }
+        // Create or reset a branch if it exists
+        "-B" => {
+            let destination = &args[3];
+
+            if let Err(err) = create_or_reset_branch(git_dir1, &working_dir, destination) {
+                eprintln!("Error al crear o restablecer una rama si existe: {:?}", err);
+            }
+        }
+        // Change to a specific commit (detached mode)
+        "--detach" => {
+            let destination = &args[3];
+
+            if let Err(err) = checkout_commit_detached(git_dir1, &working_dir, destination) {
+                eprintln!("Error al cambiar a un commit específico (modo desconectado): {:?}", err);
+            }
+        }
+        // Force the change of branch or commit (discarding uncommitted changes)
+        "-f" => {
+            let destination = &args[3];
+
+            if let Err(err) = force_checkout(git_dir1, destination) {
+                eprintln!("Error al forzar el cambio de rama o commit (descartando cambios sin confirmar): {:?}", err);
+            }
+        }
+        _ => {
+            if let Err(err) = checkout_branch(git_dir1, &working_dir, option) {
+                eprintln!("Error al cambiar a la rama especificada: {:?}", err);
+            }
+        }
+    }
 }
+
 
 fn handle_log() {
     let mut current_dir = match std::env::current_dir() {
