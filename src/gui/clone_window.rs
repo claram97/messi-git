@@ -126,17 +126,14 @@ fn connect_button_clicked_clone_repository(
             };
 
             //The remote repository name is the last part of the URL.
-            let remote_repo_name = match url_text.split('/').last() {
-                Some(string) => string,
-                None => "",
-            };
+            let remote_repo_name = url_text.split('/').last().unwrap_or("");
 
             println!("URL: {}", remote_repo_url);
             println!("Remote repo URL: {}", remote_repo_url);
             let working_dir = Path::new(&dir_text);
 
-            let result = clone::git_clone(&remote_repo_url, remote_repo_name, "localhost", &dir_text);
-            handle_clone_result(result, &code_dir, &working_dir);
+            let result = clone::git_clone(remote_repo_url, remote_repo_name, "localhost", &dir_text);
+            handle_clone_result(result, &code_dir, working_dir);
         }
     });
     Ok(())
