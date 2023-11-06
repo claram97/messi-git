@@ -1,16 +1,20 @@
 use crate::branch::{git_branch, get_current_branch_path};
 use crate::cat_file::cat_file;
-use crate::commit::new_commit;
+use crate::commit::{new_commit, get_branch_name};
 use crate::config::Config;
 use crate::hash_object::store_file;
+use crate::index::Index;
 use crate::init::git_init;
 use crate::log::print_logs;
 use crate::merge::git_merge;
 use crate::remote::git_remote;
 use crate::rm::git_rm;
-use crate::{add, log};
+use crate::status::{find_untracked_files, find_unstaged_changes, changes_to_be_committed};
+use crate::utils::find_git_directory;
+use crate::{add, log, tree_handler};
+use std::fs::File;
+use std::io::Read;
 use std::path::{Path, PathBuf};
-use crate::checkout::process_args;
 use crate::checkout::create_or_reset_branch;
 use crate::checkout::checkout_commit_detached;
 use crate::checkout::force_checkout;
@@ -42,24 +46,6 @@ pub enum GitCommand {
     Pull,
     Push,
     Branch,
-}
-
-//Esta función va a estar en utils.rs
-pub fn find_git_directory(
-    current_dir: &mut PathBuf,
-    name_of_git_directory: &str,
-) -> Option<String> {
-    loop {
-        let git_dir = current_dir.join(name_of_git_directory);
-        if git_dir.exists() && git_dir.is_dir() {
-            return Some(git_dir.display().to_string());
-        }
-
-        if !current_dir.pop() {
-            break;
-        }
-    }
-    None
 }
 
 /// Reads user input from the command line and splits it into a vector of strings.
@@ -184,7 +170,7 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
     match git_command {
         GitCommand::HashObject => handle_hash_object(args),
         GitCommand::CatFile => handle_cat_file(args),
-        GitCommand::Status => handle_status(args),
+        GitCommand::Status => handle_status(),
         GitCommand::Add => handle_add(args),
         GitCommand::Rm => handle_rm(args),
         GitCommand::Commit => handle_commit(args),
@@ -198,7 +184,6 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
         GitCommand::Push => handle_push(args),
         GitCommand::Branch => handle_branch(args),
         GitCommand::Init => handle_init(args),
-        _ => todo!(),
     }
 }
 
@@ -275,8 +260,149 @@ fn handle_cat_file(args: Vec<String>) {
     }
 }
 
-fn handle_status(args: Vec<String>) {
-    println!("Handling Status command with argument: ");
+fn handle_status() {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+
+    let red = "\x1b[31m";
+    let yellow = "\x1b[33m";
+    let green = "\x1b[32m";
+    let reset = "\x1b[0m";
+    let branch_name = match get_branch_name(&git_dir) {
+        Ok(name) => name,
+        Err(_) => {
+            eprintln!("No se pudo obtener la rama actual");
+            return;
+        }
+    };
+    let index_path = format!("{}/{}",git_dir,"index");
+    
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Fatal error on git rm");
+            return;
+        }
+    };
+
+    let git_ignore_path = format!("{}/{}", working_dir.to_string_lossy(), ".mgitignore");
+
+
+    let index = match Index::load(&index_path,&git_dir,&git_ignore_path) {
+        Ok(index) => index,
+        Err(_) => {
+            eprintln!("Error loading index.");
+            return;
+        }
+    };
+
+    let current_branch_path = match get_current_branch_path(&git_dir) {
+        Ok(path) =>path,
+        Err(_e) => {
+            eprintln!("Error getting current branch path.");
+            return;
+        }
+    };
+
+    let mut current_commit_file = match File::open(&current_branch_path) {
+        Ok(file) => file,
+        Err(_e) => {
+            eprintln!("Error opening the current commit file.");
+            return;
+        }
+    };
+    
+    let mut commit_hash = String::new();
+    match current_commit_file.read_to_string(&mut commit_hash) {
+        Ok(_) => {},
+        Err(_e) => {
+            eprintln!("Error reading to string.");
+            return;
+        }
+    }
+    let commit_tree = match tree_handler::load_tree_from_commit(&commit_hash, &git_dir) {
+        Ok(tree) => tree,
+        Err(_e) => {
+            eprintln!("Couldn't load tree.");
+            return;
+        }
+    };
+
+    let mut untracked_output : Vec<u8> = vec![];
+    match find_untracked_files(&current_dir,&working_dir, &index, &mut untracked_output) {
+        Ok(_) => {},
+        Err(_e) => {
+            eprintln!("Error finding untracked files.");
+            return;
+        }
+    }
+    
+    let mut not_staged_for_commit: Vec<u8> = vec![];
+    match find_unstaged_changes(&index,&git_dir,&mut not_staged_for_commit) {
+         Ok(_) => {},
+         Err(_e) => {
+             eprintln!("Error finding changes not staged for commit.");
+             return;
+         }
+    } 
+
+    let mut changes_to_be_committed_output: Vec<u8> = vec![];
+    match changes_to_be_committed(&index, &commit_tree, &mut changes_to_be_committed_output) {
+         Ok(_) => {},
+         Err(_e) => {
+             eprintln!("Error finding changes not staged for commit.");
+             return;
+         }
+    } 
+    
+    print!("{}On branch {}{}\n", branch_name, green, reset);
+    //Personalizar la siguiente línea
+    print!("Your branch is up to date with 'origin/master'\n\n");
+    if !not_staged_for_commit.is_empty() {
+        print!("{}Changes not staged for commit:{}\n", red, reset);
+        print!("\t(use \"git add <file>...\" to update what will be committed)\n");
+        print!("\t(use \"git restore <file>...\" to discard changes in working directory)\n");
+    
+        for byte in &not_staged_for_commit {
+            print!("{}", *byte as char);
+        }
+    }
+
+    if !changes_to_be_committed_output.is_empty() {
+        print!("{}Changes to be commited:{}\n", yellow, reset);
+        println!("\t(use \"git add <file>...\" to update what will be committed)");
+        println!("\t(use \"git checkout -- <file>...\" to discard changes in working directory)");
+        for byte in &changes_to_be_committed_output {
+            print!("{}", *byte as char);
+        }
+  
+    }
+    if !untracked_output.is_empty() {
+        print!("{}Untracked files:{}\n", yellow, reset);
+        print!("\t(use \"git add <file>...\" to include in what will be committed)\n");
+        
+        for byte in &untracked_output {
+            print!("{}", *byte as char);
+        }
+    }
+    //Esto no sé de dónde sacarlo ah
+    //print!("{}no changes added to commit (use \"git add\" and/or \"git commit -a\"){}\n", green, reset);
+
+
 }
 
 fn handle_add(args: Vec<String>) {
@@ -482,43 +608,25 @@ fn handle_merge(args: Vec<String>) {
             eprintln!("Error al obtener el working dir");
             return;
         }
-    };
+    }; 
 
-    let branch_path = match get_current_branch_path(&git_dir) {
-        Ok(path) => path,
+    let branch_name = match get_branch_name(&git_dir) {
+        Ok(name) => name,
         Err(_) => {
             eprintln!("No se pudo obtener la rama actual");
             return;
         }
     };
 
-    let path = Path::new(&branch_path);
+    match git_merge(&branch_name,&args[2],&git_dir,&working_dir) {
+        Ok(_) => {
 
-    // Declarar una variable para el nombre del archivo
-    let branch_name: Option<&str>;
-
-    // Utiliza el método file_name() para obtener el nombre del archivo
-    if let Some(file_name) = path.file_name() {
-        branch_name = file_name.to_str();
-    } else {
-        eprintln!("No se pudo obtener el nombre del archivo.");
-        return;
-    }
-
-    if let Some(branch_name) = branch_name {
-        match git_merge(branch_name,&args[2],&git_dir,&working_dir) {
-            Ok(_) => {
-
-            },
-            Err(_e) => {
-                eprintln!("Error en git merge.");
-            }
-        };
-    }
-    else {
-        eprintln!("Error en git merge");
-    }
-    println!("Handling Merge command with argument: ");
+        },
+        Err(_e) => {
+            eprintln!("Error en git merge.");
+        }
+    };
+    
 }
 
 fn handle_remote(args: Vec<String>) {

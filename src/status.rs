@@ -2,41 +2,11 @@ const BLOB: &str = "blob";
 
 use std::fs;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::hash_object;
 use crate::index::Index;
 use crate::tree_handler::Tree;
-/// Recursively searches for a directory named "name_of_git_directory" in the file system
-/// starting from the location specified by "current_dir."
-///
-/// # Arguments
-///
-/// * `current_dir`: A mutable reference to a `PathBuf` representing the initial location from which the search begins.
-/// * `name_of_git_directory`: The name of the directory being sought.
-///
-/// # Returns
-///
-/// This function returns an `Option<String>` containing the path to the found directory as a string if it is found.
-/// If the directory is not found, it returns `None`.
-///
-pub fn find_git_directory(
-    current_dir: &mut PathBuf,
-    name_of_git_directory: &str,
-) -> Option<String> {
-    loop {
-        let git_dir = current_dir.join(name_of_git_directory);
-        if git_dir.exists() && git_dir.is_dir() {
-            return Some(git_dir.display().to_string());
-        }
-
-        if !current_dir.pop() {
-            break;
-        }
-    }
-
-    None
-}
 
 /// Recursively find and write information about untracked files in a Git repository.
 ///
