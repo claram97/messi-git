@@ -22,6 +22,8 @@ pub mod pull;
 pub mod remote;
 pub mod remote_handler;
 pub mod rm;
+pub mod server;
+pub mod server_utils;
 pub mod status;
 pub mod tree_handler;
 pub mod utils;
