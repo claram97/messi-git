@@ -1,7 +1,7 @@
-use std::io;
 use crate::{client::Client, config};
+use std::io;
 
-pub fn git_push(branch: &str, git_dir: &str) -> io::Result<()>{
+pub fn git_push(branch: &str, git_dir: &str) -> io::Result<()> {
     let config_file = config::Config::load(git_dir)?;
     let remote_name = "origin";
     let remote_url = config_file.get_url(remote_name, &mut io::stdout())?;
@@ -15,15 +15,18 @@ pub fn git_push(branch: &str, git_dir: &str) -> io::Result<()>{
         }
     };
     let mut client = Client::new(address, repo_name, "localhost");
-    let result = client.receive_pack(branch, git_dir);
-    result
+    client.receive_pack(branch, git_dir)
 }
 
 #[cfg(test)]
 mod tests {
-    use std::{env, io::{Write, self}, path::PathBuf};
+    use std::{
+        env,
+        io::{self, Write},
+        path::PathBuf,
+    };
 
-    use crate::{clone, add, commit, branch, checkout};
+    use crate::{add, branch, checkout, clone, commit};
     const PORT: &str = "9418";
     #[ignore = "This test only works if the server is running"]
     #[test]
