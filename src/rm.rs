@@ -65,6 +65,7 @@ pub fn git_rm(
     Ok(())
 }
 
+
 /// Recursively remove a directory and its contents.
 ///
 /// This function removes the directory specified by `dir_path` and all of its contents, including subdirectories and files.
