@@ -434,6 +434,7 @@ fn handle_rm(args: Vec<String>) {
             return;
         }
     };
+    
 
     let index_path = format!("{}/{}", git_dir, "index");
     let git_dir_parent = match Path::new(&git_dir).parent() {
