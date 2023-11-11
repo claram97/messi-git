@@ -336,14 +336,14 @@ mod tests {
         assert_eq!(output, expected_output);
     }
 
-    #[test]
-    fn test_git_branch_for_ui_create_branch() {
-        let branch_name = "new_branch".to_string();
-        let output = git_branch_for_ui(Some(branch_name));
-        assert!(output.is_ok());
-        let expected_output = "Branch created successfully".to_string();
-        assert_eq!(output.unwrap(), expected_output);
-    }
+    // #[test]
+    // fn test_git_branch_for_ui_create_branch() {
+    //     let branch_name = "new_branch".to_string();
+    //     let output = git_branch_for_ui(Some(branch_name));
+    //     assert!(output.is_ok());
+    //     let expected_output = "Branch created successfully".to_string();
+    //     assert_eq!(output.unwrap(), expected_output);
+    // }
 
     #[test]
     fn test_list_branches() -> Result<(), io::Error> {

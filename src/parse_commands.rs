@@ -404,10 +404,18 @@ fn handle_add(args: Vec<String>) {
             }
         };
     let index_path = git_dir.to_string() + "/index";
-    match add::add(&args[2], &index_path, &git_dir, &git_ignore_path, None) {
-        Ok(_) => {}
-        Err(_err) => {}
-    };
+    if &args[2] == "."{
+        match add::add("None", &index_path, &git_dir, &git_ignore_path, Some(vec![".".to_string()])) {
+            Ok(_) => {}
+            Err(_err) => {}
+        };
+    }else{
+        match add::add(&args[2], &index_path, &git_dir, &git_ignore_path, None) {
+            Ok(_) => {}
+            Err(_err) => {}
+        };
+
+    }
 }
 
 fn handle_rm(args: Vec<String>) {
