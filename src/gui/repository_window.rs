@@ -138,6 +138,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "push",
         "show-branches-button",
         "add-path-button",
+        "add-all-button",
         "remove-path-button",
         "commit-changes-button",
         "new-branch-button",
@@ -343,6 +344,14 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         "add-path-button" => {
             button.connect_clicked(move |_| {
                 let result = handle_add_path_button(&builder_clone);
+                if result.is_err() {
+                    eprintln!("Error handling add path button.")
+                }
+            });
+        }
+        "add-all-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_add_all_button(&builder_clone);
                 if result.is_err() {
                     eprintln!("Error handling add path button.")
                 }
@@ -560,6 +569,29 @@ fn handle_add_path_button(builder: &Builder) -> io::Result<()> {
 
     Ok(())
 }
+fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+
+    let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
+    let index_path = format!("{}/index", git_dir);
+        match add("None", &index_path, &git_dir, &git_ignore_path, Some(vec![".".to_string()])) {
+            Ok(_) => {
+                println!("La función 'add' se ejecutó correctamente.");
+            }
+            Err(err) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    format!("Error al llamar a la función 'add': {:?}", err),
+                ))
+            }
+        }
+        let result = set_staging_area_texts(&builder_clone);
+                if result.is_err() {
+                    eprintln!("No se pudo actualizar la vista de staging.");
+                }
+
+    Ok(())
+}
 
 /// Handle the "Remove Path" button's click event. This function opens a text entry window for users to enter
 /// the path of the file they want to remove. Once the path is entered and confirmed, it attempts to remove the file
@@ -718,22 +750,6 @@ pub fn find_git_directory_and_ignore() -> Result<(String, String), io::Error> {
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
 fn stage_changes(git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<String, io::Error> {
     let index_path = format!("{}/index", git_dir);
-
-    if texto == "." {
-        let options = Some(vec!["-u".to_string()]);
-        match add("", &index_path, git_dir, git_ignore_path, options) {
-            Ok(_) => {
-                println!("La función 'add' se ejecutó correctamente.");
-            }
-            Err(err) => {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    format!("Error al llamar a la función 'add': {:?}", err),
-                ))
-            }
-        }
-    }
-
     match add(texto, &index_path, git_dir, git_ignore_path, None) {
         Ok(_) => {
             println!("La función 'add' se ejecutó correctamente.");
