@@ -503,6 +503,31 @@ fn handle_commit(args: Vec<String>) {
     };
 }
 
+fn get_working_directory(git_dir: &str) -> io::Result<String> {
+    match Path::new(git_dir).parent() {
+        Some(parent) => Ok(parent.to_string_lossy().to_string()),
+        None => Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Error al obtener el working dir",
+        )),
+    }
+}
+
+fn handle_checkout_option(
+    git_dir: &Path,
+    working_dir: &str,
+    option: &str,
+    args: Vec<String>,
+) -> io::Result<()> {
+    match option {
+        "-b" => create_and_checkout_branch(git_dir, working_dir, &args[3]),
+        "-B" => create_or_reset_branch(git_dir, working_dir, &args[3]),
+        "--detach" => checkout_commit_detached(git_dir, working_dir, &args[3]),
+        "-f" => force_checkout(git_dir, &args[3]),
+        _ => checkout_branch(git_dir, working_dir, option),
+    }
+}
+
 /// Handles the 'git checkout' command, allowing various options such as creating a new branch,
 /// switching branches, or checking out a specific commit.
 ///
@@ -514,7 +539,7 @@ fn handle_commit(args: Vec<String>) {
 /// * `args` - A vector of command-line arguments, where the third element is the checkout option
 ///            ('-b', '-B', '--detach', '-f') and the fourth element is the branch or commit to checkout.
 ///
-fn handle_checkout(args: Vec<String>) {
+pub fn handle_checkout(args: Vec<String>) {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -531,10 +556,10 @@ fn handle_checkout(args: Vec<String>) {
         }
     };
 
-    let working_dir = match Path::new(&git_dir).parent() {
-        Some(parent) => parent.to_string_lossy().to_string(),
-        None => {
-            eprintln!("Error al obtener el working dir");
+    let working_dir = match get_working_directory(&git_dir) {
+        Ok(working_dir) => working_dir,
+        Err(err) => {
+            eprintln!("{}", err);
             return;
         }
     };
@@ -546,43 +571,10 @@ fn handle_checkout(args: Vec<String>) {
 
     let option = &args[2];
     let git_dir1 = Path::new(&git_dir);
-    match option.as_str() {
-        "-b" => {
-            let destination = &args[3];
+    let destination = &args;
 
-            if let Err(err) = create_and_checkout_branch(git_dir1, &working_dir, destination) {
-                eprintln!("Error al crear y cambiar a una nueva rama: {:?}", err);
-            }
-        }
-        "-B" => {
-            let destination = &args[3];
-
-            if let Err(err) = create_or_reset_branch(git_dir1, &working_dir, destination) {
-                eprintln!("Error al crear o restablecer una rama si existe: {:?}", err);
-            }
-        }
-        "--detach" => {
-            let destination = &args[3];
-
-            if let Err(err) = checkout_commit_detached(git_dir1, &working_dir, destination) {
-                eprintln!(
-                    "Error al cambiar a un commit específico (modo desconectado): {:?}",
-                    err
-                );
-            }
-        }
-        "-f" => {
-            let destination = &args[3];
-
-            if let Err(err) = force_checkout(git_dir1, destination) {
-                eprintln!("Error al forzar el cambio de rama o commit (descartando cambios sin confirmar): {:?}", err);
-            }
-        }
-        _ => {
-            if let Err(err) = checkout_branch(git_dir1, &working_dir, option) {
-                eprintln!("Error al cambiar a la rama especificada: {:?}", err);
-            }
-        }
+    if let Err(err) = handle_checkout_option(git_dir1, &working_dir, option, destination.to_vec()) {
+        eprintln!("Error al realizar el checkout: {:?}", err);
     }
 }
 
@@ -835,31 +827,40 @@ fn handle_branch(args: Vec<String>) {
     }
 }
 
-/// Initializes a Git repository with optional configuration.
+/// Handles the initialization of a Git repository.
 ///
-/// This function initializes a Git repository in the specified directory. It supports
-/// optional configuration through command-line arguments:
+/// # Arguments
 ///
-/// - `-b` or `--initial-branch`: Specifies the name of the initial branch. If not provided,
-///   the default branch name 'main' is used.
-/// - `--template`: Specifies a template directory to copy files from.
-///
-/// If the provided `current_directory` doesn't exist, it will be created.
-///
-/// ## Parameters
-///
-/// - `args`: A vector of strings containing command-line arguments. The function parses
-///   these arguments to determine the initial branch and template directory.
-///
+/// * `args` - A vector of command-line arguments.
 pub fn handle_init(args: Vec<String>) {
+    // Extract configuration parameters from command-line arguments
+    let (current_directory, initial_branch, template_directory) = extract_init_params(&args);
+
+    // Initialize the Git repository with the extracted parameters
+    if let Err(err) = git_init(&current_directory, &initial_branch, template_directory) {
+        eprintln!("Error al inicializar el repositorio Git: {}", err);
+    }
+}
+
+/// Extracts initialization parameters from command-line arguments.
+///
+/// # Arguments
+///
+/// * `args` - A vector of command-line arguments.
+///
+/// # Returns
+///
+/// A tuple containing the current directory, initial branch, and template directory.
+fn extract_init_params(args: &Vec<String>) -> (String, String, Option<&str>) {
     let mut current_directory = match std::env::current_dir() {
         Ok(dir) => dir.to_string_lossy().to_string(),
         Err(_) => {
             eprintln!("Current dir not found");
-            return;
+            return (String::new(), String::from("main"), None);
         }
     };
-    let mut initial_branch = "main";
+
+    let mut initial_branch = String::from("main");
     let mut template_directory: Option<&str> = None;
 
     let mut index = 2;
@@ -868,7 +869,7 @@ pub fn handle_init(args: Vec<String>) {
         match arg.as_str() {
             "-b" | "--initial-branch" => {
                 if index + 1 < args.len() {
-                    initial_branch = &args[index + 1];
+                    initial_branch = args[index + 1].clone();
                     index += 1;
                 }
             }
@@ -884,7 +885,6 @@ pub fn handle_init(args: Vec<String>) {
         }
         index += 1;
     }
-    if let Err(err) = git_init(&current_directory, initial_branch, template_directory) {
-        eprintln!("Error al inicializar el repositorio Git: {}", err);
-    }
+
+    (current_directory, initial_branch, template_directory)
 }
