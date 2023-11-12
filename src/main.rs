@@ -59,12 +59,11 @@ fn run_without_gui() -> io::Result<()> {
         }
         if second_argument == "init" {
             handle_init_command(args)?;
-        } else {
-            if let Some(git_command) = parse_git_command(second_argument) {
-                handle_git_command(git_command, args);
-            }
+        } else if let Some(git_command) = parse_git_command(second_argument) {
+            handle_git_command(git_command, args);
         }
     }
+
     process_user_input()
 }
 
@@ -138,7 +137,6 @@ fn process_user_input() -> io::Result<()> {
 
     Ok(())
 }
-
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();

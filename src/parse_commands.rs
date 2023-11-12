@@ -5,12 +5,12 @@ use crate::checkout::checkout_commit_detached;
 use crate::checkout::create_and_checkout_branch;
 use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
+use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
+use crate::fetch::git_fetch;
 use crate::hash_object::store_file;
 use crate::index::Index;
-use crate::clone::git_clone;
-use crate::fetch::git_fetch;
 use crate::init::git_init;
 use crate::log::print_logs;
 use crate::merge::git_merge;
@@ -18,10 +18,10 @@ use crate::pull::git_pull;
 use crate::remote::git_remote;
 use crate::rm::git_rm;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
+use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
 use crate::{add, log, push, tree_handler};
 use std::fs::File;
-use crate::tree_handler::Tree;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
@@ -254,9 +254,9 @@ fn handle_cat_file(args: Vec<String>) {
 /// otherwise returns an `io::Error` with a description of the encountered issue.
 ///
 fn get_working_directory_status(git_dir: &str) -> io::Result<PathBuf> {
-    let parent = Path::new(git_dir).parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::Other, "Error al obtener el working dir")
-    })?;
+    let parent = Path::new(git_dir)
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Error al obtener el working dir"))?;
     Ok(parent.to_path_buf())
 }
 
@@ -280,22 +280,29 @@ fn get_working_directory_status(git_dir: &str) -> io::Result<PathBuf> {
 ///
 fn load_index_and_commit_tree(git_dir: &str) -> io::Result<(Index, Tree)> {
     let index_path = format!("{}/{}", git_dir, "index");
-    let git_ignore_path = format!("{}/{}", get_working_directory_status(git_dir)?.to_string_lossy(), ".mgitignore");
-    
+    let git_ignore_path = format!(
+        "{}/{}",
+        get_working_directory_status(git_dir)?.to_string_lossy(),
+        ".mgitignore"
+    );
+
     let index = Index::load(&index_path, git_dir, &git_ignore_path)?;
-    
+
     let branch_path = get_current_branch_path(git_dir)?;
     let current_branch_path = format!("{}/{}", git_dir, branch_path);
 
-    if let Ok(mut current_commit_file) = File::open(&current_branch_path) {
+    if let Ok(mut current_commit_file) = File::open(current_branch_path) {
         let mut commit_hash = String::new();
         current_commit_file.read_to_string(&mut commit_hash)?;
 
         let commit_tree = tree_handler::load_tree_from_commit(&commit_hash, git_dir)?;
-        
+
         Ok((index, commit_tree))
     } else {
-        Err(io::Error::new(io::ErrorKind::Other, "Error al abrir el archivo de commit"))
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Error al abrir el archivo de commit",
+        ))
     }
 }
 
@@ -321,10 +328,10 @@ fn load_index_and_commit_tree(git_dir: &str) -> io::Result<(Index, Tree)> {
 fn print_changes_to_be_committed(index: &Index, commit_tree: &Tree) -> io::Result<()> {
     let mut changes_to_be_committed_output: Vec<u8> = vec![];
     changes_to_be_committed(index, commit_tree, &mut changes_to_be_committed_output)?;
-    
+
     if !changes_to_be_committed_output.is_empty() {
         println!();
-        println!("{}Changes to be commited:{}\n", "\x1b[33m", "\x1b[0m");
+        println!("\x1b[33mChanges to be commited:\x1b[0m\n");
         println!("\t(use \"git add <file>...\" to update what will be committed)");
         println!("\t(use \"git checkout -- <file>...\" to discard changes in working directory)");
 
@@ -363,7 +370,7 @@ fn print_untracked_files(current_dir: &Path, working_dir: &Path, index: &Index) 
 
     if !untracked_output.is_empty() {
         println!();
-        println!("{}Untracked files:{}\n", "\x1b[33m", "\x1b[0m");
+        println!("\x1b[33mUntracked files:\x1b[0m\n");
         println!("\t(use \"git add <file>...\" to include in what will be committed)");
 
         for byte in &untracked_output {
@@ -395,11 +402,15 @@ fn print_untracked_files(current_dir: &Path, working_dir: &Path, index: &Index) 
 ///
 fn print_not_staged_for_commit(index: &Index, working_dir: &Path) -> io::Result<()> {
     let mut not_staged_for_commit: Vec<u8> = vec![];
-    find_unstaged_changes(index, working_dir.to_string_lossy().as_ref(), &mut not_staged_for_commit)?;
+    find_unstaged_changes(
+        index,
+        working_dir.to_string_lossy().as_ref(),
+        &mut not_staged_for_commit,
+    )?;
 
     if !not_staged_for_commit.is_empty() {
         println!();
-        println!("{}Changes not staged for commit:{}\n", "\x1b[31m", "\x1b[0m");
+        println!("\x1b[31mChanges not staged for commit:\x1b[0m\n");
         println!("\t(use \"git add <file>...\" to update what will be committed)");
         println!("\t(use \"git restore <file>...\" to discard changes in working directory)");
 
@@ -453,18 +464,24 @@ pub fn handle_status() {
 
     if let Ok(working_dir) = get_working_directory(&git_dir) {
         if let Err(err) = print_not_staged_for_commit(&index, working_dir.as_ref()) {
-            eprintln!("Error al imprimir los cambios no preparados para commit: {:?}", err);
+            eprintln!(
+                "Error al imprimir los cambios no preparados para commit: {:?}",
+                err
+            );
         }
     } else {
         eprintln!("Error al obtener el directorio de trabajo.");
     }
-    
+
     if let Err(err) = print_changes_to_be_committed(&index, &commit_tree) {
-        eprintln!("Error al imprimir los cambios preparados para commit: {:?}", err);
+        eprintln!(
+            "Error al imprimir los cambios preparados para commit: {:?}",
+            err
+        );
     }
 
     if let Ok(working_dir) = get_working_directory(&git_dir) {
-        if let Err(err) = print_untracked_files(&current_dir, &working_dir.as_ref(), &index) {
+        if let Err(err) = print_untracked_files(&current_dir, working_dir.as_ref(), &index) {
             eprintln!("Error al imprimir los archivos no rastreados: {:?}", err);
         }
     } else {
@@ -483,7 +500,7 @@ pub fn handle_status() {
 ///
 pub fn print_branch_status(branch_name: &str) {
     println!();
-    print!("On branch {}{}", "\x1b[32m", branch_name);
+    print!("On branch \x1b[32m{}", branch_name);
     print!("\n\n");
 }
 
@@ -711,7 +728,7 @@ fn handle_log() {
 ///   repository is expected at index 2.
 ///
 fn handle_clone(_args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
             eprintln!("Error al obtener el directorio actual: {:?}", err);
@@ -727,10 +744,12 @@ fn handle_clone(_args: Vec<String>) {
 
     //The remote repository name is the last part of the URL.
     let remote_repo_name = url_text.split('/').last().unwrap_or("");
-    let working_dir = Path::new(&current_dir);
-    let result =
-            git_clone(remote_repo_url, remote_repo_name, "localhost",  current_dir.to_str().expect("Error "));
-    
+    let _ = git_clone(
+        remote_repo_url,
+        remote_repo_name,
+        "localhost",
+        current_dir.to_str().expect("Error "),
+    );
 }
 
 /// Handles the 'fetch' command, which fetches changes from a remote repository.
@@ -740,7 +759,7 @@ fn handle_clone(_args: Vec<String>) {
 /// * `_args` - A vector of command-line arguments.
 ///
 fn handle_fetch(_args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
             eprintln!("Error al obtener el directorio actual: {:?}", err);
@@ -749,14 +768,18 @@ fn handle_fetch(_args: Vec<String>) {
     };
     let url_text = &_args[2];
     //The remote repo url is the first part of the URL, up until the last '/'.
-    let remote_repo_url = match url_text.rsplit_once('/') {
+    let _remote_repo_url = match url_text.rsplit_once('/') {
         Some((string, _)) => string,
         None => "",
     };
 
     //The remote repository name is the last part of the URL.
     let remote_repo_name = url_text.split('/').last().unwrap_or("");
-    let result = git_fetch(Some(remote_repo_name), "localhost", current_dir.to_str().expect("Error "));
+    let result = git_fetch(
+        Some(remote_repo_name),
+        "localhost",
+        current_dir.to_str().expect("Error "),
+    );
 
     // Manejo del resultado (puede imprimir un mensaje o manejar errores según sea necesario).
     match result {
