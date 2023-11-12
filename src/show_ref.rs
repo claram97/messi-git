@@ -284,7 +284,6 @@ fn process_files_in_directory(
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::init;
@@ -304,8 +303,12 @@ mod tests {
 
     #[test]
     fn test_verify_ref_invalid_args() -> io::Result<()> {
-        let line = vec!["git".to_string(), "show-ref".to_string(), "--verify".to_string()];
-        let mut output : Vec<u8> = vec![];
+        let line = vec![
+            "git".to_string(),
+            "show-ref".to_string(),
+            "--verify".to_string(),
+        ];
+        let mut output: Vec<u8> = vec![];
         show_ref_with_options("git_dir", line, &mut output)?;
         let output_string = String::from_utf8(output).unwrap();
         assert!(output_string.contains("fatal"));
@@ -315,7 +318,7 @@ mod tests {
     #[test]
     fn test_invalid_args() -> io::Result<()> {
         let line = vec!["git".to_string(), "show-ref".to_string(), "--a".to_string()];
-        let mut output : Vec<u8> = vec![];
+        let mut output: Vec<u8> = vec![];
         let result = show_ref_with_options("git_dir", line, &mut output);
         assert!(result.is_err());
         let output_string = String::from_utf8(output).unwrap();
@@ -326,11 +329,16 @@ mod tests {
     #[test]
     fn test_verify_ref_invalid_ref() -> io::Result<()> {
         let path = "tests/show_ref_fake_repo_2";
-        let git_dir = format!("{}/{}",path,".mgit");
+        let git_dir = format!("{}/{}", path, ".mgit");
         create_if_not_exists(path, true)?;
         init::git_init(path, "current_branch", None)?;
-        let line = vec!["git".to_string(), "show-ref".to_string(), "--verify".to_string(), "refs/heads/some_ref".to_string()];
-        let mut output : Vec<u8> = vec![];
+        let line = vec![
+            "git".to_string(),
+            "show-ref".to_string(),
+            "--verify".to_string(),
+            "refs/heads/some_ref".to_string(),
+        ];
+        let mut output: Vec<u8> = vec![];
         verify_ref(&git_dir, line, &mut output)?;
         let output_string = String::from_utf8(output).unwrap();
         assert!(output_string.contains("fatal"));
@@ -338,37 +346,41 @@ mod tests {
         Ok(())
     }
 
-    
     #[test]
     fn test_verify_ref_finds_the_correct_reference() -> io::Result<()> {
         let path = "tests/show_ref_fake_repo_3";
-        let git_dir = format!("{}/{}",path,".mgit");
-        let head_ref = format!("{}/{}",git_dir,"refs/heads/some_ref");
+        let git_dir = format!("{}/{}", path, ".mgit");
+        let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
         create_if_not_exists(path, true)?;
         init::git_init(path, "current_branch", None)?;
         create_if_not_exists(&head_ref, false)?;
-        let line = vec!["git".to_string(), "show-ref".to_string(), "--verify".to_string(), "refs/heads/some_ref".to_string()];
-        let mut output : Vec<u8> = vec![];
+        let line = vec![
+            "git".to_string(),
+            "show-ref".to_string(),
+            "--verify".to_string(),
+            "refs/heads/some_ref".to_string(),
+        ];
+        let mut output: Vec<u8> = vec![];
         verify_ref(&git_dir, line, &mut output)?;
         let output_string = String::from_utf8(output).unwrap();
         assert!(output_string.contains("refs/heads/some_ref"));
         std::fs::remove_dir_all(path)?;
         Ok(())
     }
-    
+
     #[test]
     fn test_show_ref_shows_both_heads_and_tags() -> io::Result<()> {
         let path = "tests/show_ref_fake_repo_4";
-        let git_dir = format!("{}/{}",path,".mgit");
-        let tags = format!("{}/{}",git_dir,"refs/tags");
-        let head_ref = format!("{}/{}",git_dir,"refs/heads/some_ref");
-        let tag_ref = format!("{}/{}",git_dir,"refs/tags/some_tag");
+        let git_dir = format!("{}/{}", path, ".mgit");
+        let tags = format!("{}/{}", git_dir, "refs/tags");
+        let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
+        let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
         create_if_not_exists(path, true)?;
         init::git_init(path, "current_branch", None)?;
         create_if_not_exists(&tags, true)?;
         create_if_not_exists(&head_ref, false)?;
         create_if_not_exists(&tag_ref, false)?;
-        let mut output : Vec<u8> = vec![];
+        let mut output: Vec<u8> = vec![];
         show_ref(&git_dir, &mut output)?;
         let output_string = String::from_utf8(output).unwrap();
         assert!(output_string.contains("refs/heads/some_ref"));
@@ -380,17 +392,21 @@ mod tests {
     #[test]
     fn test_show_heads_ref_shows_only_heads_refs() -> io::Result<()> {
         let path = "tests/show_ref_fake_repo_5";
-        let git_dir = format!("{}/{}",path,".mgit");
-        let tags = format!("{}/{}",git_dir,"refs/tags");
-        let head_ref = format!("{}/{}",git_dir,"refs/heads/some_ref");
-        let tag_ref = format!("{}/{}",git_dir,"refs/tags/some_tag");
+        let git_dir = format!("{}/{}", path, ".mgit");
+        let tags = format!("{}/{}", git_dir, "refs/tags");
+        let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
+        let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
         create_if_not_exists(path, true)?;
         init::git_init(path, "current_branch", None)?;
         create_if_not_exists(&tags, true)?;
         create_if_not_exists(&head_ref, false)?;
         create_if_not_exists(&tag_ref, false)?;
-        let line = vec!["git".to_string(), "show-ref".to_string(), "--heads".to_string()];
-        let mut output : Vec<u8> = vec![];
+        let line = vec![
+            "git".to_string(),
+            "show-ref".to_string(),
+            "--heads".to_string(),
+        ];
+        let mut output: Vec<u8> = vec![];
         show_ref_with_options(&git_dir, line, &mut output)?;
         let output_string = String::from_utf8(output).unwrap();
         assert!(output_string.contains("refs/heads/some_ref"));
@@ -402,17 +418,21 @@ mod tests {
     #[test]
     fn test_show_tags_ref_shows_only_tags_refs() -> io::Result<()> {
         let path = "tests/show_ref_fake_repo_6";
-        let git_dir = format!("{}/{}",path,".mgit");
-        let tags = format!("{}/{}",git_dir,"refs/tags");
-        let head_ref = format!("{}/{}",git_dir,"refs/heads/some_ref");
-        let tag_ref = format!("{}/{}",git_dir,"refs/tags/some_tag");
+        let git_dir = format!("{}/{}", path, ".mgit");
+        let tags = format!("{}/{}", git_dir, "refs/tags");
+        let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
+        let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
         create_if_not_exists(path, true)?;
         init::git_init(path, "current_branch", None)?;
         create_if_not_exists(&tags, true)?;
         create_if_not_exists(&head_ref, false)?;
         create_if_not_exists(&tag_ref, false)?;
-        let line = vec!["git".to_string(), "show-ref".to_string(), "--tags".to_string()];
-        let mut output : Vec<u8> = vec![];
+        let line = vec![
+            "git".to_string(),
+            "show-ref".to_string(),
+            "--tags".to_string(),
+        ];
+        let mut output: Vec<u8> = vec![];
         show_ref_with_options(&git_dir, line, &mut output)?;
         let output_string = String::from_utf8(output).unwrap();
         assert!(!output_string.contains("refs/heads/some_ref"));
@@ -430,10 +450,10 @@ mod tests {
     #[test]
     fn test_show_hashes_refs_shows_only_hashes_from_both_tags_and_refs() -> io::Result<()> {
         let path = "tests/show_ref_fake_repo_7";
-        let git_dir = format!("{}/{}",path,".mgit");
-        let tags = format!("{}/{}",git_dir,"refs/tags");
-        let head_ref = format!("{}/{}",git_dir,"refs/heads/some_ref");
-        let tag_ref = format!("{}/{}",git_dir,"refs/tags/some_tag");
+        let git_dir = format!("{}/{}", path, ".mgit");
+        let tags = format!("{}/{}", git_dir, "refs/tags");
+        let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
+        let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
         create_if_not_exists(path, true)?;
         init::git_init(path, "current_branch", None)?;
         create_if_not_exists(&tags, true)?;
@@ -441,8 +461,12 @@ mod tests {
         create_if_not_exists(&tag_ref, false)?;
         write_to_file(&head_ref, "1234")?;
         write_to_file(&tag_ref, "4567")?;
-        let line = vec!["git".to_string(), "show-ref".to_string(), "--hash".to_string()];
-        let mut output : Vec<u8> = vec![];
+        let line = vec![
+            "git".to_string(),
+            "show-ref".to_string(),
+            "--hash".to_string(),
+        ];
+        let mut output: Vec<u8> = vec![];
         show_ref_with_options(&git_dir, line, &mut output)?;
         let output_string = String::from_utf8(output).unwrap();
         assert!(output_string.contains("1234"));
@@ -456,11 +480,11 @@ mod tests {
     #[test]
     fn test_process_files_in_directory_correct_function() -> io::Result<()> {
         let path = "tests/show_ref_fake_repo_1";
-        let git_dir = format!("{}/{}",path,".mgit");
-        let heads_path = format!("{}/{}",git_dir,"refs/heads");
-        let tags_path = format!("{}/{}",git_dir,"refs/tags");
-        let head_ref = format!("{}/{}",git_dir,"refs/heads/some_ref");
-        let tag_ref = format!("{}/{}",git_dir,"refs/tags/some_tag");
+        let git_dir = format!("{}/{}", path, ".mgit");
+        let heads_path = format!("{}/{}", git_dir, "refs/heads");
+        let tags_path = format!("{}/{}", git_dir, "refs/tags");
+        let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
+        let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
         create_if_not_exists(path, true)?;
         init::git_init(path, "current_branch", None)?;
         create_if_not_exists(&tags_path, true)?;
@@ -468,7 +492,7 @@ mod tests {
         create_if_not_exists(&tag_ref, false)?;
         write_to_file(&head_ref, "1234")?;
         write_to_file(&tag_ref, "4567")?;
-        let mut output : Vec<u8> = vec![];
+        let mut output: Vec<u8> = vec![];
         let result = process_files_in_directory(&heads_path, "heads", false, &mut output);
         assert!(result.is_ok());
         let result = process_files_in_directory(&tags_path, "tags", false, &mut output);
@@ -485,11 +509,11 @@ mod tests {
     #[test]
     fn test_process_files_in_directory_correct_function_hash_option() -> io::Result<()> {
         let path = "tests/show_ref_fake_repo_8";
-        let git_dir = format!("{}/{}",path,".mgit");
-        let heads_path = format!("{}/{}",git_dir,"refs/heads");
-        let tags_path = format!("{}/{}",git_dir,"refs/tags");
-        let head_ref = format!("{}/{}",git_dir,"refs/heads/some_ref");
-        let tag_ref = format!("{}/{}",git_dir,"refs/tags/some_tag");
+        let git_dir = format!("{}/{}", path, ".mgit");
+        let heads_path = format!("{}/{}", git_dir, "refs/heads");
+        let tags_path = format!("{}/{}", git_dir, "refs/tags");
+        let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
+        let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
         create_if_not_exists(path, true)?;
         init::git_init(path, "current_branch", None)?;
         create_if_not_exists(&tags_path, true)?;
@@ -497,7 +521,7 @@ mod tests {
         create_if_not_exists(&tag_ref, false)?;
         write_to_file(&head_ref, "1234")?;
         write_to_file(&tag_ref, "4567")?;
-        let mut output : Vec<u8> = vec![];
+        let mut output: Vec<u8> = vec![];
         let result = process_files_in_directory(&heads_path, "heads", true, &mut output);
         assert!(result.is_ok());
         let result = process_files_in_directory(&tags_path, "tags", true, &mut output);
@@ -513,20 +537,23 @@ mod tests {
 
     #[test]
     fn test_git_show_ref_verify_without_path_returns_error() -> io::Result<()> {
-        let mut output : Vec<u8> = vec![];
-        let line = vec!["git".to_string(), "show-ref".to_string(), "--verify".to_string()];
+        let mut output: Vec<u8> = vec![];
+        let line = vec![
+            "git".to_string(),
+            "show-ref".to_string(),
+            "--verify".to_string(),
+        ];
         let result = git_show_ref("git_dir", line, &mut output);
         assert!(result.is_err());
-        Ok(()) 
+        Ok(())
     }
 
     #[test]
     fn test_git_show_ref_unknown_arguments_returns_error() -> io::Result<()> {
-        let mut output : Vec<u8> = vec![];
+        let mut output: Vec<u8> = vec![];
         let line = vec!["git".to_string(), "show-ref".to_string(), "--a".to_string()];
         let result = git_show_ref("git_dir", line, &mut output);
         assert!(result.is_err());
-        Ok(()) 
+        Ok(())
     }
-    
 }

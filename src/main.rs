@@ -3,8 +3,7 @@ use std::{env, io};
 use messi::gui::run_main_window;
 use messi::parse_commands::get_user_input;
 use messi::parse_commands::{handle_git_command, parse_git_command};
-use messi::{server, hash_object};
-use messi::show_ref::git_show_ref;
+use messi::server;
 
 fn run_with_gui() -> io::Result<()> {
     if gtk::init().is_err() {
@@ -86,27 +85,27 @@ fn main() -> io::Result<()> {
     //     &mut io::stdout(),
     // )?;
 
-    // let args: Vec<String> = env::args().collect();
-    // if args.len() != 1 && args.len() != 2 && args.len() != 5 {
-    //     return Err(io::Error::new(
-    //         io::ErrorKind::InvalidInput,
-    //         "Cantidad inválida de parámetros\n",
-    //     ));
-    // }
+    let args: Vec<String> = env::args().collect();
+    if args.len() != 1 && args.len() != 2 && args.len() != 5 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Cantidad inválida de parámetros\n",
+        ));
+    }
 
-    // if args.len() == 2 {
-    //     if args[1] != "gui" {
-    //         return Err(io::Error::new(
-    //             io::ErrorKind::InvalidInput,
-    //             "Comando no reconocido\n",
-    //         ));
-    //     }
+    if args.len() == 2 {
+        if args[1] != "gui" {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Comando no reconocido\n",
+            ));
+        }
 
-    //     run_with_gui()?;
-    // } else if args.len() == 5 && args[1] == "server" {
-    //     server::run(&args[2], &args[3], &args[4], ".mgit")?;
-    // } else if args.len() == 1 {
-    //     run_without_gui()?;
-    // }
+        run_with_gui()?;
+    } else if args.len() == 5 && args[1] == "server" {
+        server::run(&args[2], &args[3], &args[4], ".mgit")?;
+    } else if args.len() == 1 {
+        run_without_gui()?;
+    }
     Ok(())
 }
