@@ -261,7 +261,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton">
+                          <object class="GtkButton" id="add-all-button">
                             <property name="label" translatable="yes">Add all</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
