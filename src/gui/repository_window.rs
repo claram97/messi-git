@@ -156,6 +156,17 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Handles the Git pull operation in the current working directory.
+///
+/// # Errors
+///
+/// This function may return an error in the following cases:
+/// - If it fails to determine the current directory.
+/// - If it can't find the Git directory (".mgit").
+/// - If it can't find the working directory based on the Git directory.
+/// - If it fails to determine the current branch name.
+/// - If there is an error during the Git pull operation.
+///
 fn handle_git_pull() -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
 
@@ -186,6 +197,16 @@ fn handle_git_pull() -> io::Result<()> {
     Ok(())
 }
 
+/// Handles the Git push operation in the current working directory.
+///
+/// # Errors
+///
+/// This function may return an error in the following cases:
+/// - If it fails to determine the current directory.
+/// - If it can't find the Git directory (".mgit").
+/// - If it fails to determine the current branch name.
+/// - If there is an error during the Git push operation.
+///
 fn handle_git_push() -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
@@ -569,6 +590,20 @@ fn handle_add_path_button(builder: &Builder) -> io::Result<()> {
 
     Ok(())
 }
+
+/// Handles the action when the "Add All" button is clicked in the user interface.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to the GUI builder used to interact with the user interface.
+///
+/// # Errors
+///
+/// This function may return an error in the following cases:
+/// - If it fails to determine the Git directory or the Git ignore path.
+/// - If there is an error during the Git add operation.
+/// - If there is an error updating the staging area view in the user interface.
+///
 fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
 
@@ -586,9 +621,9 @@ fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
             }
         }
         let result = set_staging_area_texts(&builder_clone);
-                if result.is_err() {
-                    eprintln!("No se pudo actualizar la vista de staging.");
-                }
+        if result.is_err() {
+            eprintln!("No se pudo actualizar la vista de staging.");
+        }
 
     Ok(())
 }
