@@ -19,6 +19,7 @@ use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untrack
 use crate::utils::find_git_directory;
 use crate::{add, log, push, tree_handler};
 use std::fs::File;
+use crate::tree_handler::Tree;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
@@ -234,12 +235,89 @@ fn handle_cat_file(args: Vec<String>) {
     }
 }
 
-/// Handles the 'git status' command by analyzing the working directory and index.
-///
-/// This function prints information about the current branch, changes not staged for commit,
-/// and changes to be committed, as well as untracked files.
-///
-fn handle_status() {
+fn get_working_directory_status(git_dir: &str) -> io::Result<PathBuf> {
+    let parent = Path::new(git_dir).parent().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::Other, "Error al obtener el working dir")
+    })?;
+    Ok(parent.to_path_buf())
+}
+
+fn load_index_and_commit_tree(git_dir: &str) -> io::Result<(Index, Tree)> {
+    let index_path = format!("{}/{}", git_dir, "index");
+    let git_ignore_path = format!("{}/{}", get_working_directory_status(git_dir)?.to_string_lossy(), ".mgitignore");
+    
+    let index = Index::load(&index_path, git_dir, &git_ignore_path)?;
+    
+    let branch_path = get_current_branch_path(git_dir)?;
+    let current_branch_path = format!("{}/{}", git_dir, branch_path);
+
+    if let Ok(mut current_commit_file) = File::open(&current_branch_path) {
+        let mut commit_hash = String::new();
+        current_commit_file.read_to_string(&mut commit_hash)?;
+
+        let commit_tree = tree_handler::load_tree_from_commit(&commit_hash, git_dir)?;
+        
+        Ok((index, commit_tree))
+    } else {
+        Err(io::Error::new(io::ErrorKind::Other, "Error al abrir el archivo de commit"))
+    }
+}
+
+fn print_changes_to_be_committed(index: &Index, commit_tree: &Tree) -> io::Result<()> {
+    let mut changes_to_be_committed_output: Vec<u8> = vec![];
+    changes_to_be_committed(index, commit_tree, &mut changes_to_be_committed_output)?;
+    
+    if !changes_to_be_committed_output.is_empty() {
+        println!();
+        println!("{}Changes to be commited:{}\n", "\x1b[33m", "\x1b[0m");
+        println!("\t(use \"git add <file>...\" to update what will be committed)");
+        println!("\t(use \"git checkout -- <file>...\" to discard changes in working directory)");
+
+        for byte in &changes_to_be_committed_output {
+            print!("{}", *byte as char);
+            println!();
+        }
+    }
+
+    Ok(())
+}
+
+fn print_untracked_files(current_dir: &Path, working_dir: &Path, index: &Index) -> io::Result<()> {
+    let mut untracked_output: Vec<u8> = vec![];
+    find_untracked_files(current_dir, working_dir, index, &mut untracked_output)?;
+
+    if !untracked_output.is_empty() {
+        println!();
+        println!("{}Untracked files:{}\n", "\x1b[33m", "\x1b[0m");
+        println!("\t(use \"git add <file>...\" to include in what will be committed)");
+
+        for byte in &untracked_output {
+            print!("{}", *byte as char);
+        }
+    }
+
+    Ok(())
+}
+
+fn print_not_staged_for_commit(index: &Index, working_dir: &Path) -> io::Result<()> {
+    let mut not_staged_for_commit: Vec<u8> = vec![];
+    find_unstaged_changes(index, working_dir.to_string_lossy().as_ref(), &mut not_staged_for_commit)?;
+
+    if !not_staged_for_commit.is_empty() {
+        println!();
+        println!("{}Changes not staged for commit:{}\n", "\x1b[31m", "\x1b[0m");
+        println!("\t(use \"git add <file>...\" to update what will be committed)");
+        println!("\t(use \"git restore <file>...\" to discard changes in working directory)");
+
+        for byte in &not_staged_for_commit {
+            print!("{}", *byte as char);
+        }
+    }
+
+    Ok(())
+}
+
+pub fn handle_status() {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -256,10 +334,6 @@ fn handle_status() {
         }
     };
 
-    let red = "\x1b[31m";
-    let yellow = "\x1b[33m";
-    let green = "\x1b[32m";
-    let reset = "\x1b[0m";
     let branch_name = match get_branch_name(&git_dir) {
         Ok(name) => name,
         Err(_) => {
@@ -267,134 +341,41 @@ fn handle_status() {
             return;
         }
     };
-    let index_path = format!("{}/{}", git_dir, "index");
 
-    let working_dir = match Path::new(&git_dir).parent() {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Fatal error on git rm");
+    let (index, commit_tree) = match load_index_and_commit_tree(&git_dir) {
+        Ok(tuple) => tuple,
+        Err(err) => {
+            eprintln!("Error cargando el índice y el árbol de commit: {:?}", err);
             return;
         }
     };
+    print_branch_status(&branch_name);
 
-    let git_ignore_path = format!("{}/{}", working_dir.to_string_lossy(), ".mgitignore");
-
-    let index = match Index::load(&index_path, &git_dir, &git_ignore_path) {
-        Ok(index) => index,
-        Err(_) => {
-            eprintln!("Error loading index.");
-            return;
+    if let Ok(working_dir) = get_working_directory(&git_dir) {
+        if let Err(err) = print_not_staged_for_commit(&index, working_dir.as_ref()) {
+            eprintln!("Error al imprimir los cambios no preparados para commit: {:?}", err);
         }
-    };
-
-    let branch_path = match get_current_branch_path(&git_dir) {
-        Ok(path) => path,
-        Err(_e) => {
-            eprintln!("Error getting current branch path.");
-            return;
-        }
-    };
-
-    let current_branch_path = format!("{}/{}", git_dir, branch_path);
-
-    let mut changes_to_be_committed_output: Vec<u8> = vec![];
-
-    if let Ok(opening_result) = File::open(&current_branch_path) {
-        let mut current_commit_file = opening_result;
-        let mut commit_hash = String::new();
-        match current_commit_file.read_to_string(&mut commit_hash) {
-            Ok(_) => {}
-            Err(_e) => {
-                eprintln!("Error reading to string.");
-                return;
-            }
-        }
-        let commit_tree = match tree_handler::load_tree_from_commit(&commit_hash, &git_dir) {
-            Ok(tree) => tree,
-            Err(_e) => {
-                eprintln!("Couldn't load tree.");
-                return;
-            }
-        };
-
-        match changes_to_be_committed(&index, &commit_tree, &mut changes_to_be_committed_output) {
-            Ok(_) => {}
-            Err(_e) => {
-                eprintln!("Error on changes to be committed.");
-                return;
-            }
-        }
+    } else {
+        eprintln!("Error al obtener el directorio de trabajo.");
+    }
+    
+    if let Err(err) = print_changes_to_be_committed(&index, &commit_tree) {
+        eprintln!("Error al imprimir los cambios preparados para commit: {:?}", err);
     }
 
-    let mut untracked_output: Vec<u8> = vec![];
-    match find_untracked_files(&current_dir, working_dir, &index, &mut untracked_output) {
-        Ok(_) => {}
-        Err(_e) => {
-            eprintln!("Error finding untracked files.");
-            return;
+    if let Ok(working_dir) = get_working_directory(&git_dir) {
+        if let Err(err) = print_untracked_files(&current_dir, &working_dir.as_ref(), &index) {
+            eprintln!("Error al imprimir los archivos no rastreados: {:?}", err);
         }
+    } else {
+        eprintln!("Error al obtener el directorio de trabajo.");
     }
+}
 
-    let mut not_staged_for_commit: Vec<u8> = vec![];
-    match find_unstaged_changes(
-        &index,
-        working_dir.to_string_lossy().as_ref(),
-        &mut not_staged_for_commit,
-    ) {
-        Ok(_) => {}
-        Err(_e) => {
-            eprintln!("Error finding changes not staged for commit.");
-            return;
-        }
-    }
-
+pub fn print_branch_status(branch_name: &str) {
     println!();
-    print!("{}", reset);
-    println!("{}On branch {}{}", green, branch_name, reset);
-    print!("{}", reset);
-    //Falta personalizar la siguiente línea
-    print!("Your branch is up to date with 'origin/master'\n\n");
-    print!("{}", reset);
-
-    if !not_staged_for_commit.is_empty() {
-        println!();
-        println!("{}Changes not staged for commit:{}", red, reset);
-        println!("\t(use \"git add <file>...\" to update what will be committed)");
-        println!("\t(use \"git restore <file>...\" to discard changes in working directory)");
-
-        for byte in &not_staged_for_commit {
-            print!("{}", *byte as char);
-        }
-    }
-
-    print!("{}", reset);
-
-    if !changes_to_be_committed_output.is_empty() {
-        println!();
-        println!("{}Changes to be commited:{}", yellow, reset);
-        println!("\t(use \"git add <file>...\" to update what will be committed)");
-        println!("\t(use \"git checkout -- <file>...\" to discard changes in working directory)");
-        for byte in &changes_to_be_committed_output {
-            print!("{}", *byte as char);
-            println!();
-        }
-    }
-
-    print!("{}", reset);
-
-    if !untracked_output.is_empty() {
-        println!();
-        println!("{}Untracked files:{}", yellow, reset);
-        println!("\t(use \"git add <file>...\" to include in what will be committed)");
-
-        for byte in &untracked_output {
-            print!("{}", *byte as char);
-        }
-    }
-    print!("{}", reset);
-
-    //Esto no sé de dónde sacarlo ah
-    //print!("{}no changes added to commit (use \"git add\" and/or \"git commit -a\"){}\n", green, reset);
+    print!("On branch {}{}", "\x1b[32m", branch_name);
+    print!("\n\n");
 }
 
 /// Handles the 'git add' command, adding specified files to the staging area.
