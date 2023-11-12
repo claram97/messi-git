@@ -57,6 +57,20 @@ fn get_clean_refs(refs: HashMap<String, String>) -> Vec<String> {
     clean_refs
 }
 
+/// Creates a working directory based on the default branch commit of a local Git repository.
+///
+/// # Arguments
+///
+/// * `local_git_dir` - A string specifying the path to the local Git directory.
+/// * `working_dir` - A string specifying the path to the desired working directory.
+///
+/// # Errors
+///
+/// This function may return an error in the following cases:
+/// - If there is an issue while creating or writing to files.
+/// - If there is an issue while loading the default branch commit or the commit tree.
+/// - If there is an issue while creating directories or building the index file.
+///
 fn create_working_dir(local_git_dir: &str, working_dir: &str) -> io::Result<()> {
     let default_branch_commit = get_default_branch_commit(local_git_dir)?;
     let commit_tree = tree_handler::load_tree_from_commit(&default_branch_commit, local_git_dir)?;

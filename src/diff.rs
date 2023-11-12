@@ -35,6 +35,17 @@ pub fn print_diff(path_a: &str, path_b: &str) {
     show_diff(&archivo_a, &archivo_b, archivo_a.len(), archivo_b.len());
 }
 
+/// Reads the lines from a file and returns them as a vector of strings.
+///
+/// # Arguments
+///
+/// * `path` - A string representing the path to the file.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a vector of strings if the file is successfully read,
+/// otherwise returns an `Err` with an error message as a `String`.
+///
 fn read_file_lines(path: &str) -> Result<Vec<String>, String> {
     match File::open(path) {
         Ok(file) => {
@@ -49,6 +60,21 @@ fn read_file_lines(path: &str) -> Result<Vec<String>, String> {
     }
 }
 
+/// Computes the matrix for the Longest Common Subsequence (LCS) problem.
+///
+/// This function calculates the matrix for the Longest Common Subsequence problem
+/// given two vectors of strings. The matrix represents the length of the LCS between
+/// the elements of the two vectors.
+///
+/// # Arguments
+///
+/// * `a` - A reference to a vector of strings.
+/// * `b` - A reference to another vector of strings.
+///
+/// # Returns
+///
+/// Returns a 2D vector (matrix) of integers representing the LCS lengths.
+///
 fn compute_longest_common_subsequence_matrix(a: &Vec<String>, b: &Vec<String>) -> Vec<Vec<i32>> {
     let mut matrix = vec![vec![0; b.len() + 1]; a.len() + 1];
     for i in matrix.iter_mut() {
@@ -94,6 +120,23 @@ fn show_diff(x: &Vec<String>, y: &Vec<String>, i: usize, j: usize) {
     }
 }
 
+/// Returns the difference between two files as a vector of strings.
+///
+/// This function takes two file paths, reads their contents, and calculates the difference
+/// between them using a simple line-based diff algorithm. The result is a vector of strings
+/// representing the lines that differ between the two files.
+///
+/// # Arguments
+///
+/// * `path_a` - A string representing the path to the first file.
+/// * `path_b` - A string representing the path to the second file.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a vector of strings representing the difference
+/// between the two files. If there is an error reading the files, an `Err` variant
+/// with an error message is returned.
+///
 pub fn return_diff(path_a: &str, path_b: &str) -> Result<Vec<String>, String> {
     let archivo_a = read_file_lines(path_a)?;
     let archivo_b = read_file_lines(path_b)?;
@@ -106,6 +149,22 @@ pub fn return_diff(path_a: &str, path_b: &str) -> Result<Vec<String>, String> {
     ))
 }
 
+/// Converts the result of a longest common subsequence matrix computation into a vector of strings representing the differences.
+///
+/// This function takes two sequences represented by vectors (`x` and `y`) and their corresponding longest common subsequence matrix (`c`).
+/// It recursively processes the matrix to identify and generate a vector of strings representing the differences between the two sequences.
+///
+/// # Arguments
+///
+/// * `x` - A reference to the first sequence as a vector of strings.
+/// * `y` - A reference to the second sequence as a vector of strings.
+/// * `i` - The index in the first sequence.
+/// * `j` - The index in the second sequence.
+///
+/// # Returns
+///
+/// Returns a vector of strings representing the differences between the two sequences.
+///
 fn diff_to_vec(x: &Vec<String>, y: &Vec<String>, i: usize, j: usize) -> Vec<String> {
     let c: Vec<Vec<i32>> = compute_longest_common_subsequence_matrix(x, y);
     let mut output: Vec<String> = Vec::new();
@@ -123,17 +182,23 @@ fn diff_to_vec(x: &Vec<String>, y: &Vec<String>, i: usize, j: usize) -> Vec<Stri
     output
 }
 
-// pub fn write_diff_to_file(path_a: &str, path_b: &str, output: &mut impl Write) -> io::Result<()> {
-//     let archivo_a = read_file_lines(path_a)?;
-//     let archivo_b = read_file_lines(path_b)?;
-
-//     let mut output = BufWriter::new(output);
-//     for line in diff_to_vec(&archivo_a, &archivo_b, archivo_a.len(), archivo_b.len()) {
-//         writeln!(output, "{}", line)?;
-//     }
-//     Ok(())
-// }
-
+/// Returns a string representing the differences between two Git objects identified by their commit hashes.
+///
+/// This function takes two commit hashes (`hash_a` and `hash_b`) and the Git directory path (`git_dir`).
+/// It retrieves the content of the Git objects corresponding to the given hashes, then computes the differences
+/// between their content using the `diff_to_vec` function.
+///
+/// # Arguments
+///
+/// * `hash_a` - The commit hash of the first Git object.
+/// * `hash_b` - The commit hash of the second Git object.
+/// * `git_dir` - The path to the Git directory.
+///
+/// # Returns
+///
+/// Returns a `Result` where `Ok` contains a string representing the differences between the two Git objects,
+/// and `Err` contains an error message if any error occurs during the process.
+///
 pub fn return_object_diff_string(
     hash_a: &str,
     hash_b: &str,

@@ -130,6 +130,14 @@ fn connect_button_clicked_clone_repository(
     Ok(())
 }
 
+/// Handles the result of a repository clone operation and performs corresponding actions.
+///
+/// # Arguments
+///
+/// * `result` - The result of the repository clone operation.
+/// * `code_dir` - The path to the directory containing the cloned repository.
+/// * `working_dir` - The working directory where the user intends to operate.
+///
 fn handle_clone_result(result: result::Result<(), io::Error>, code_dir: &Path, working_dir: &Path) {
     if result.is_err() {
         show_message_dialog("Error", "Error al clonar el repositorio.");

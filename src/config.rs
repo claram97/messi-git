@@ -326,6 +326,18 @@ impl Config {
         Ok(())
     }
 
+    /// Gets the remote name associated with a given branch name.
+    ///
+    /// # Arguments
+    ///
+    /// * `self` - A reference to an instance of the struct containing branch information.
+    /// * `branch_name` - A string representing the name of the branch.
+    ///
+    /// # Returns
+    ///
+    /// Returns an `Option` containing the remote name as a `String` if the branch is found,
+    /// otherwise returns `None`.
+    ///
     pub fn get_branch_remote_name(&self, branch_name: &str) -> Option<String> {
         if let Some(index) = self.branches.iter().position(|b| b.name == branch_name) {
             if let Some(branch) = self.branches.get(index) {
@@ -559,7 +571,6 @@ impl Config {
         }
         Ok(())
     }
-
 }
 
 #[cfg(test)]

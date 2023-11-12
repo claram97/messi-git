@@ -11,6 +11,15 @@ use crate::{cat_file, packfile_handler::ObjectType};
 
 // HELPER MODULE
 
+/// Creates an error indicating that the connection was not established.
+///
+/// This function returns an `io::Error` with the error kind set to `BrokenPipe` and a message
+/// indicating that the operation failed because the connection was not established.
+///
+/// # Returns
+///
+/// An `io::Error` indicating that the connection was not established.
+///
 pub fn connection_not_established_error() -> Error {
     Error::new(
         io::ErrorKind::BrokenPipe,
@@ -190,6 +199,20 @@ struct CommitHashes {
 }
 
 impl CommitHashes {
+    /// Creates a new commit instance by loading commit information from a given hash.
+    ///
+    /// This function reads the commit content associated with the provided hash in the Git repository
+    /// specified by `git_dir`. It then parses the commit information and returns a `Commit` instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `hash` - The hash of the commit to load.
+    /// * `git_dir` - The path to the Git repository.
+    ///
+    /// # Returns
+    ///
+    /// A Result containing the new `Commit` instance if successful, or an `io::Error` if an error occurs.
+    ///
     pub fn new(hash: &str, git_dir: &str) -> io::Result<Self> {
         let commit_content = cat_file::cat_file_return_content(hash, git_dir)?;
         let header_lines = commit_content.lines().position(|line| line.is_empty());
@@ -209,6 +232,15 @@ impl CommitHashes {
         }
     }
 
+    /// Parses a single line from a commit header and updates the commit instance accordingly.
+    ///
+    /// This function is part of the commit loading process and is responsible for interpreting
+    /// specific lines in the commit header, such as the tree reference and parent references.
+    ///
+    /// # Arguments
+    ///
+    /// * `line` - A single line from the commit header to be parsed.
+    ///
     fn parse_commit(&mut self, line: &str) {
         match line.split_once(' ') {
             Some(("tree", hash)) => self.tree = hash.to_string(),
@@ -218,6 +250,21 @@ impl CommitHashes {
     }
 }
 
+/// Recursively retrieves objects (trees and blobs) associated with a given tree hash.
+///
+/// This function traverses the tree structure recursively and collects the object references
+/// (hashes) along with their corresponding types (tree or blob). The result is a HashSet
+/// containing tuples of object types and their respective hashes.
+///
+/// # Arguments
+///
+/// * `hash` - The hash of the tree for which objects are to be retrieved.
+/// * `git_dir` - The path to the Git directory.
+///
+/// # Returns
+///
+/// An `io::Result` containing a `HashSet` of tuples representing object types and their hashes.
+///
 fn get_objects_tree_objects(
     hash: &str,
     git_dir: &str,

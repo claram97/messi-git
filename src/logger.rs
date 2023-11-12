@@ -96,6 +96,17 @@ impl Write for Logger {
         Ok(buf.len())
     }
 
+    /// Flushes the internal file buffer asynchronously.
+    ///
+    /// This function spawns a new thread to flush the file buffer in the background. It is designed
+    /// to be non-blocking, allowing the main program to continue execution while the flushing occurs.
+    /// The function returns immediately after spawning the thread, and any potential errors during
+    /// the flushing process are ignored.
+    ///
+    /// # Returns
+    ///
+    /// A `std::io::Result<()>` indicating whether the flushing operation was successful.
+    ///
     fn flush(&mut self) -> std::io::Result<()> {
         let file_clone = self.file.clone();
 
