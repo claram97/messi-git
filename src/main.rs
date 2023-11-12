@@ -3,7 +3,7 @@ use std::{env, io};
 use messi::gui::run_main_window;
 use messi::parse_commands::get_user_input;
 use messi::parse_commands::{handle_git_command, parse_git_command};
-use messi::server;
+use messi::{server, hash_object};
 use messi::show_ref::git_show_ref;
 
 fn run_with_gui() -> io::Result<()> {
@@ -77,13 +77,14 @@ fn run_without_gui() -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
-    let args = env::args();
-    let line: Vec<String> = args.skip(1).collect();
-    git_show_ref(
-        "/home/claram97/taller/23C2-messi/.mgit",
-        line,
-        &mut io::stdout(),
-    )?;
+    //Esto iría en parse commands
+    // let args = env::args();
+    // let line: Vec<String> = args.skip(1).collect();
+    // git_show_ref(
+    //     "/home/claram97/taller/23C2-messi/.mgit",
+    //     line,
+    //     &mut io::stdout(),
+    // )?;
 
     // let args: Vec<String> = env::args().collect();
     // if args.len() != 1 && args.len() != 2 && args.len() != 5 {
