@@ -1,6 +1,9 @@
+use std::io::stdout;
 use std::{env, io};
 
 use messi::gui::run_main_window;
+use messi::index::Index;
+use messi::ls_files::git_ls_files;
 use messi::parse_commands::get_user_input;
 use messi::parse_commands::{handle_git_command, parse_git_command};
 use messi::server;
@@ -77,27 +80,38 @@ fn run_without_gui() -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
-    if args.len() != 1 && args.len() != 2 && args.len() != 5 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "Cantidad inválida de parámetros\n",
-        ));
-    }
 
-    if args.len() == 2 {
-        if args[1] != "gui" {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "Comando no reconocido\n",
-            ));
-        }
+    let args = env::args();
+    let line : Vec<String> = args.skip(1).collect();
+    let index = Index::load("/home/claram97/taller/23C2-messi/.mgit/index","/home/claram97/taller/23C2-messi/.mgit", "/home/claram97/taller/23C2-messi/.mgitignore")?;
+    // for (hash, path) in index.iter() {
+    //     println!("Path {} and hash {}",path, hash);
+    // }
+    // println!();
+    git_ls_files("/home/claram97/taller/23C2-messi", "/home/claram97/taller/23C2-messi/.mgit", "/home/claram97/taller/23C2-messi", line, &index, &mut stdout())?;
 
-        run_with_gui()?;
-    } else if args.len() == 5 && args[1] == "server" {
-        server::run(&args[2], &args[3], &args[4], ".mgit")?;
-    } else if args.len() == 1 {
-        run_without_gui()?;
-    }
     Ok(())
+    // let args: Vec<String> = env::args().collect();
+    // if args.len() != 1 && args.len() != 2 && args.len() != 5 {
+    //     return Err(io::Error::new(
+    //         io::ErrorKind::InvalidInput,
+    //         "Cantidad inválida de parámetros\n",
+    //     ));
+    // }
+
+    // if args.len() == 2 {
+    //     if args[1] != "gui" {
+    //         return Err(io::Error::new(
+    //             io::ErrorKind::InvalidInput,
+    //             "Comando no reconocido\n",
+    //         ));
+    //     }
+
+    //     run_with_gui()?;
+    // } else if args.len() == 5 && args[1] == "server" {
+    //     server::run(&args[2], &args[3], &args[4], ".mgit")?;
+    // } else if args.len() == 1 {
+    //     run_without_gui()?;
+    // }
+    // Ok(())
 }
