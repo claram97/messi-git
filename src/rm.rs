@@ -50,20 +50,12 @@ pub fn git_rm(
         }
 
         if let Err(_err) = remove_path(&mut index, file_name) {
-            // eprintln!("Error removing the file: {}", err);
-            // return Err(err);
+            eprintln!("Error removing the file: {}", _err);
+            return Err(_err);
         }
 
         if let Err(err) = index.write_file() {
             eprintln!("Error saving the index: {}", err);
-            return Err(err);
-        }
-
-        if let Err(err) = fs::remove_file(file_name) {
-            eprintln!(
-                "Error removing the file from the working directory: {}",
-                err
-            );
             return Err(err);
         }
     } else {
@@ -72,6 +64,7 @@ pub fn git_rm(
 
     Ok(())
 }
+
 
 /// Recursively remove a directory and its contents.
 ///
