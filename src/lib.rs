@@ -26,7 +26,7 @@ pub mod remote_handler;
 pub mod rm;
 pub mod server;
 pub mod server_utils;
+pub mod show_ref;
 pub mod status;
 pub mod tree_handler;
 pub mod utils;
-pub mod show_ref;
