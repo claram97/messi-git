@@ -96,17 +96,17 @@ pub fn git_show_ref(git_dir: &str, line: Vec<String>, output: &mut impl Write) -
 /// writer is correctly implemented.
 ///
 fn verify_ref(git_dir: &str, line: Vec<String>, output: &mut impl Write) -> io::Result<()> {
-    for i in 3..line.len() {
-        let path_to_verify = format!("{}/{}", git_dir, &line[i]);
+    for line_path in line.iter().skip(3) {
+        let path_to_verify = format!("{}/{}", git_dir, &line_path);
         let path = Path::new(&path_to_verify);
 
         if !path.exists() {
-            writeln!(output, "fatal: '{}' - not a valid ref\n", &line[i])?;
+            writeln!(output, "fatal: '{}' - not a valid ref\n", &line_path)?;
         } else {
-            let mut file = File::open(&path)?;
+            let mut file = File::open(path)?;
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
-            writeln!(output, "{}\t{}\n", contents.trim(), &line[i])?;
+            writeln!(output, "{}\t{}\n", contents.trim(), &line_path)?;
         }
     }
     Ok(())
@@ -309,7 +309,8 @@ mod tests {
             "--verify".to_string(),
         ];
         let mut output: Vec<u8> = vec![];
-        show_ref_with_options("git_dir", line, &mut output)?;
+        let result = show_ref_with_options("git_dir", line, &mut output);
+        assert!(result.is_err());
         let output_string = String::from_utf8(output).unwrap();
         assert!(output_string.contains("fatal"));
         Ok(())
