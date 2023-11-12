@@ -19,6 +19,7 @@ pub enum ObjectType {
     Tree,
     Blob,
     Tag,
+    OfsDelta,
 }
 
 impl ObjectType {
@@ -28,6 +29,7 @@ impl ObjectType {
             ObjectType::Tree => 2,
             ObjectType::Blob => 3,
             ObjectType::Tag => 4,
+            ObjectType::OfsDelta => 6,
         }
     }
 }
@@ -39,6 +41,7 @@ impl Display for ObjectType {
             ObjectType::Tree => write!(f, "tree"),
             ObjectType::Blob => write!(f, "blob"),
             ObjectType::Tag => write!(f, "tag"),
+            ObjectType::OfsDelta => write!(f, "ofs-delta"),
         }
     }
 }
@@ -69,6 +72,7 @@ impl TryFrom<u8> for ObjectType {
             2 => Ok(Self::Tree),
             3 => Ok(Self::Blob),
             4 => Ok(Self::Tag),
+            6 => Ok(Self::OfsDelta),
             t => Err(Error::new(
                 io::ErrorKind::InvalidData,
                 format!("Unsopported object type: {}", t),
@@ -387,7 +391,6 @@ fn decompress_object_into_bytes(hash: &str, git_dir: &str) -> io::Result<Vec<u8>
 /// Returns an `io::Error` if there is an issue reading or storing the objects.
 ///
 pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
-    dbg!(git_dir);
     let packfile = Packfile::reader(packfile)?;
     for entry in packfile {
         let entry = entry?;
