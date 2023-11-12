@@ -234,6 +234,11 @@ fn handle_cat_file(args: Vec<String>) {
     }
 }
 
+/// Handles the 'git status' command by analyzing the working directory and index.
+///
+/// This function prints information about the current branch, changes not staged for commit,
+/// and changes to be committed, as well as untracked files.
+///
 fn handle_status() {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -392,6 +397,15 @@ fn handle_status() {
     //print!("{}no changes added to commit (use \"git add\" and/or \"git commit -a\"){}\n", green, reset);
 }
 
+/// Handles the 'git add' command, adding specified files to the staging area.
+///
+/// This function extracts the Git directory and Git ignore path, then calls the 'add::add' function
+/// to add the specified files to the index (staging area).
+///
+/// # Arguments
+///
+/// * `args` - A vector of command-line arguments, where the second element is the file or directory to add.
+///
 fn handle_add(args: Vec<String>) {
     let (git_dir, git_ignore_path) =
         match crate::gui::repository_window::find_git_directory_and_ignore() {
@@ -416,6 +430,15 @@ fn handle_add(args: Vec<String>) {
     }
 }
 
+/// Handles the 'git rm' command, removing specified files from the working directory and index.
+///
+/// This function retrieves the current directory, Git directory, and index path, then calls the 'git_rm'
+/// function to remove the specified files from the working directory and index.
+///
+/// # Arguments
+///
+/// * `args` - A vector of command-line arguments, where the second element is the file or directory to remove.
+///
 fn handle_rm(args: Vec<String>) {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -451,14 +474,22 @@ fn handle_rm(args: Vec<String>) {
     }
 }
 
+/// Handles the 'git commit' command, creating a new commit with the specified message.
+///
+/// This function uses the 'find_git_directory_and_ignore' function to retrieve the Git directory
+/// and ignore file path. It then calls the 'new_commit' function to create a new commit with the
+/// specified message.
+///
+/// # Arguments
+///
+/// * `args` - A vector of command-line arguments, where the fourth element is the commit message.
+///
 fn handle_commit(args: Vec<String>) {
     let (git_dir, git_ignore_path) =
         match crate::gui::repository_window::find_git_directory_and_ignore() {
             Ok((dir, ignore_path)) => (dir, ignore_path),
             Err(err) => {
-                eprintln!("Error: {:?}", err); // Imprime el error en la salida de error estándar
-                                               // Aquí puedes tomar acciones adicionales en caso de error si es necesario
-                                               // Por ejemplo, puedes retornar valores por defecto o finalizar el programa.
+                eprintln!("Error: {:?}", err); 
                 return;
             }
         };
@@ -468,6 +499,17 @@ fn handle_commit(args: Vec<String>) {
     };
 }
 
+/// Handles the 'git checkout' command, allowing various options such as creating a new branch,
+/// switching branches, or checking out a specific commit.
+///
+/// This function retrieves the Git directory, working directory, and command-line arguments. It then
+/// interprets the provided options and calls corresponding functions to perform the checkout operation.
+///
+/// # Arguments
+///
+/// * `args` - A vector of command-line arguments, where the third element is the checkout option
+///            ('-b', '-B', '--detach', '-f') and the fourth element is the branch or commit to checkout.
+///
 fn handle_checkout(args: Vec<String>) {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -540,6 +582,12 @@ fn handle_checkout(args: Vec<String>) {
     }
 }
 
+/// Handles the 'git log' command, displaying commit history for the repository.
+///
+/// This function retrieves the current directory, finds the Git directory, and calls the 'git log'
+/// function to obtain an iterator over the commit logs. It then prints the logs using the
+/// 'print_logs' function.
+///
 fn handle_log() {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -574,6 +622,16 @@ fn handle_fetch(_args: Vec<String>) {
     println!("Handling Fetch command with argument: ");
 }
 
+/// Handles the 'git merge' command, merging changes from one branch into the current branch.
+///
+/// This function retrieves the current directory, finds the Git directory, and calls the 'git merge'
+/// function to perform a merge operation. It requires the name of the branch to be merged as an argument.
+///
+/// # Arguments
+///
+/// * `args` - A vector of strings containing command-line arguments, where the second element is
+///            expected to be the name of the branch to be merged.
+///
 fn handle_merge(args: Vec<String>) {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -615,6 +673,17 @@ fn handle_merge(args: Vec<String>) {
     };
 }
 
+/// Handles the 'git remote' command, allowing the user to manage remote repositories.
+///
+/// This function retrieves the current directory, finds the Git directory, and loads the Git
+/// configuration file. It then calls the 'git remote' function to perform remote repository
+/// management operations based on the provided command-line arguments.
+///
+/// # Arguments
+///
+/// * `args` - A vector of strings containing command-line arguments, starting from the third element,
+///            representing the 'git remote' subcommand and its options.
+///
 fn handle_remote(args: Vec<String>) {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -650,6 +719,12 @@ fn handle_remote(args: Vec<String>) {
     }
 }
 
+/// Handles the 'git pull' command, allowing the user to fetch and merge changes from a remote repository.
+///
+/// This function retrieves the current directory, finds the Git directory, and determines the working directory.
+/// It then gets the current branch name, and finally, it calls the 'git pull' function to fetch and merge changes
+/// from the specified remote repository.
+///
 fn handle_pull() {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -692,6 +767,11 @@ fn handle_pull() {
     };
 }
 
+/// Handles the 'git push' command, allowing the user to push changes to a remote repository.
+///
+/// This function retrieves the current directory, finds the Git directory, and gets the current branch name.
+/// It then calls the 'git push' function to push changes to the remote repository associated with the current branch.
+///
 fn handle_push() {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -724,6 +804,16 @@ fn handle_push() {
     };
 }
 
+/// Handles the 'git branch' command, allowing the user to list or create branches.
+///
+/// This function checks the number of arguments provided. If there are only two arguments,
+/// it calls the 'git_branch' function to list existing branches. If there are more than two arguments,
+/// it assumes the user wants to create a new branch with the specified name and calls the 'git_branch' function accordingly.
+///
+/// # Arguments
+///
+/// * `args` - A vector of command-line arguments.
+///
 fn handle_branch(args: Vec<String>) {
     if args.len() == 2 {
         let result = git_branch(None);
