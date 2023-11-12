@@ -168,7 +168,6 @@ pub fn connect_button_clicked_init_window(
 
                 window.add(&vbox);
                 window.show_all();
-
             }
         } else {
             eprintln!("No se pudo obtener el directorio actual.");

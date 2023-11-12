@@ -609,21 +609,27 @@ fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
 
     let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
     let index_path = format!("{}/index", git_dir);
-        match add("None", &index_path, &git_dir, &git_ignore_path, Some(vec![".".to_string()])) {
-            Ok(_) => {
-                println!("La función 'add' se ejecutó correctamente.");
-            }
-            Err(err) => {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    format!("Error al llamar a la función 'add': {:?}", err),
-                ))
-            }
+    match add(
+        "None",
+        &index_path,
+        &git_dir,
+        &git_ignore_path,
+        Some(vec![".".to_string()]),
+    ) {
+        Ok(_) => {
+            println!("La función 'add' se ejecutó correctamente.");
         }
-        let result = set_staging_area_texts(&builder_clone);
-        if result.is_err() {
-            eprintln!("No se pudo actualizar la vista de staging.");
+        Err(err) => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("Error al llamar a la función 'add': {:?}", err),
+            ))
         }
+    }
+    let result = set_staging_area_texts(&builder_clone);
+    if result.is_err() {
+        eprintln!("No se pudo actualizar la vista de staging.");
+    }
 
     Ok(())
 }

@@ -411,22 +411,27 @@ fn handle_add(args: Vec<String>) {
         match crate::gui::repository_window::find_git_directory_and_ignore() {
             Ok((dir, ignore_path)) => (dir, ignore_path),
             Err(err) => {
-                eprintln!("Error: {:?}", err); 
+                eprintln!("Error: {:?}", err);
                 return;
             }
         };
     let index_path = git_dir.to_string() + "/index";
-    if &args[2] == "."{
-        match add::add("None", &index_path, &git_dir, &git_ignore_path, Some(vec![".".to_string()])) {
+    if &args[2] == "." {
+        match add::add(
+            "None",
+            &index_path,
+            &git_dir,
+            &git_ignore_path,
+            Some(vec![".".to_string()]),
+        ) {
             Ok(_) => {}
             Err(_err) => {}
         };
-    }else{
+    } else {
         match add::add(&args[2], &index_path, &git_dir, &git_ignore_path, None) {
             Ok(_) => {}
             Err(_err) => {}
         };
-
     }
 }
 
@@ -455,7 +460,6 @@ fn handle_rm(args: Vec<String>) {
             return;
         }
     };
-
 
     let index_path = format!("{}/{}", git_dir, "index");
     let git_dir_parent = match Path::new(&git_dir).parent() {
@@ -489,7 +493,7 @@ fn handle_commit(args: Vec<String>) {
         match crate::gui::repository_window::find_git_directory_and_ignore() {
             Ok((dir, ignore_path)) => (dir, ignore_path),
             Err(err) => {
-                eprintln!("Error: {:?}", err); 
+                eprintln!("Error: {:?}", err);
                 return;
             }
         };

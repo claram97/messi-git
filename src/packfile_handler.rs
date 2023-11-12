@@ -189,7 +189,7 @@ where
         self.total = u32::from_be_bytes(buf);
         Ok(())
     }
-    
+
     /// Reads the next object from the packfile and returns a `PackfileEntry`.
     ///
     /// This method reads the object type and size information from the packfile and then reads the

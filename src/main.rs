@@ -45,55 +45,54 @@ fn run_without_gui() -> io::Result<()> {
     println!("Por favor, inicie un repositorio de Git utilizando 'git init'.");
 
     loop {
-                let args = get_user_input();
-                let second_argument = match args.get(1) {
-                    Some(arg) => arg,
-                    None => {
-                        return Err(io::Error::new(
-                            io::ErrorKind::Other,
-                            "No se ha ingresado el segundo argumento.\n",
-                        ));
-                    }
-                };
-        
-                if second_argument == "exit" {
-                    break;
-                }
-                
-                if second_argument == "init" {
-                    if let Some(git_command) = parse_git_command(second_argument) {
-                        if args.len() == 2 {
-                            handle_git_command(git_command, args);
-                        }
-                        else {
-                            env::set_current_dir(&args[2]).unwrap();
-                            handle_git_command(git_command, args);
-                        }
-                    }
-                    break;
-                }
+        let args = get_user_input();
+        let second_argument = match args.get(1) {
+            Some(arg) => arg,
+            None => {
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "No se ha ingresado el segundo argumento.\n",
+                ));
             }
+        };
 
-    loop {
-                let args = get_user_input();
-                let second_argument = match args.get(1) {
-                    Some(arg) => arg,
-                    None => {
-                        return Err(io::Error::new(
-                            io::ErrorKind::Other,
-                            "No se ha ingresado el segundo argumento.\n",
-                        ));
-                    }
-                };
-        
-                if second_argument == "exit" {
-                    break;
-                }
-        
-                if let Some(git_command) = parse_git_command(second_argument) {
+        if second_argument == "exit" {
+            break;
+        }
+
+        if second_argument == "init" {
+            if let Some(git_command) = parse_git_command(second_argument) {
+                if args.len() == 2 {
+                    handle_git_command(git_command, args);
+                } else {
+                    env::set_current_dir(&args[2]).unwrap();
                     handle_git_command(git_command, args);
                 }
             }
+            break;
+        }
+    }
+
+    loop {
+        let args = get_user_input();
+        let second_argument = match args.get(1) {
+            Some(arg) => arg,
+            None => {
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "No se ha ingresado el segundo argumento.\n",
+                ));
+            }
+        };
+
+        if second_argument == "exit" {
+            break;
+        }
+
+        if let Some(git_command) = parse_git_command(second_argument) {
+            handle_git_command(git_command, args);
+        }
+    }
 
     Ok(())
 }

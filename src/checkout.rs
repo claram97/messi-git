@@ -4,7 +4,6 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-
 /// Checkout a specific branch by updating the HEAD reference in a Git-like repository.
 ///
 /// This function is responsible for changing the currently checked-out branch in the repository.

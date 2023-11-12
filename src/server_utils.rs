@@ -199,7 +199,6 @@ struct CommitHashes {
 }
 
 impl CommitHashes {
-
     /// Creates a new commit instance by loading commit information from a given hash.
     ///
     /// This function reads the commit content associated with the provided hash in the Git repository

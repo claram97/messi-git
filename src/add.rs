@@ -16,10 +16,7 @@ use crate::index::Index;
 /// * `index` - A mutable reference to an `Index` that represents the index of the Git repository.
 /// * `file_name` - A string representing the path of the file or directory to be processed.
 ///
-pub fn process_file_name(
-    index: &mut Index,
-    file_name: &str,
-) -> io::Result<()> {
+pub fn process_file_name(index: &mut Index, file_name: &str) -> io::Result<()> {
     if fs::metadata(file_name)?.is_dir() {
         for entry in fs::read_dir(file_name)? {
             let entry = entry?;
@@ -61,22 +58,18 @@ pub fn add(
         if params.len() == 1 && params[0] == "." {
             let current_dir = std::env::current_dir()?;
             let current_dir_str = current_dir.to_str().unwrap();
-            
+
             let file_names: Vec<String> = fs::read_dir(current_dir_str)?
-                .filter_map(|entry| {
-                    entry.ok().and_then(|e| {
-                        e.file_name().into_string().ok()
-                    })
-                })
+                .filter_map(|entry| entry.ok().and_then(|e| e.file_name().into_string().ok()))
                 .collect();
 
-                for file_name in file_names {
-                    let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
-                    process_file_name(&mut index, &file_name)?;
-                    index.write_file()?;
-                }
+            for file_name in file_names {
+                let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
+                process_file_name(&mut index, &file_name)?;
+                index.write_file()?;
+            }
         }
-    }else{
+    } else {
         let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
         process_file_name(&mut index, path)?;
         index.write_file()?;
