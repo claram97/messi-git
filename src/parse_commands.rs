@@ -9,6 +9,8 @@ use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
 use crate::hash_object::store_file;
 use crate::index::Index;
+use crate::clone::git_clone;
+use crate::fetch::git_fetch;
 use crate::init::git_init;
 use crate::log::print_logs;
 use crate::merge::git_merge;
@@ -698,12 +700,69 @@ fn handle_log() {
     print_logs(log_iter);
 }
 
+/// Handles the 'clone' command for the custom Git implementation.
+///
+/// This function takes a vector of command-line arguments (`_args`) and performs
+/// the necessary steps to clone a remote Git repository into the current directory.
+///
+/// # Arguments
+///
+/// * `_args` - A vector of command-line arguments where the URL of the remote Git
+///   repository is expected at index 2.
+///
 fn handle_clone(_args: Vec<String>) {
-    println!("Handling Clone command with argument: ");
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+    let url_text = &_args[2];
+    //The remote repo url is the first part of the URL, up until the last '/'.
+    let remote_repo_url = match url_text.rsplit_once('/') {
+        Some((string, _)) => string,
+        None => "",
+    };
+
+    //The remote repository name is the last part of the URL.
+    let remote_repo_name = url_text.split('/').last().unwrap_or("");
+    let working_dir = Path::new(&current_dir);
+    let result =
+            git_clone(remote_repo_url, remote_repo_name, "localhost",  current_dir.to_str().expect("Error "));
+    
 }
 
+/// Handles the 'fetch' command, which fetches changes from a remote repository.
+///
+/// # Arguments
+///
+/// * `_args` - A vector of command-line arguments.
+///
 fn handle_fetch(_args: Vec<String>) {
-    println!("Handling Fetch command with argument: ");
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+    let url_text = &_args[2];
+    //The remote repo url is the first part of the URL, up until the last '/'.
+    let remote_repo_url = match url_text.rsplit_once('/') {
+        Some((string, _)) => string,
+        None => "",
+    };
+
+    //The remote repository name is the last part of the URL.
+    let remote_repo_name = url_text.split('/').last().unwrap_or("");
+    let result = git_fetch(Some(remote_repo_name), "localhost", current_dir.to_str().expect("Error "));
+
+    // Manejo del resultado (puede imprimir un mensaje o manejar errores según sea necesario).
+    match result {
+        Ok(()) => println!("Fetch successful!"),
+        Err(err) => eprintln!("Error during fetch: {:?}", err),
+    }
 }
 
 /// Handles the 'git merge' command, merging changes from one branch into the current branch.
