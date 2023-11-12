@@ -62,6 +62,12 @@ pub struct Log {
     oneline: bool,
 }
 
+/// Creates a custom `io::Error` with the `InvalidData` kind, representing an error due to
+/// invalid data encountered during processing.
+///
+/// This function takes a string `commit` as a parameter and constructs an `io::Error` with
+/// `InvalidData` kind, providing additional information about the commit causing the error.
+///
 fn invalid_data_error(commit: &str) -> Error {
     Error::new(io::ErrorKind::InvalidData, format!("Commit: {}", commit))
 }
@@ -86,6 +92,20 @@ impl Log {
         }
     }
 
+    /// Load the current commit from the HEAD reference in the specified Git directory.
+    ///
+    /// This function reads the contents of the HEAD file, extracts the reference to the last commit,
+    /// and loads the corresponding commit from either the heads directory or directly using the
+    /// commit hash. The commit is then returned as a result.
+    ///
+    /// # Arguments
+    ///
+    /// * `git_dir` - A string representing the path to the Git directory.
+    ///
+    /// # Returns
+    ///
+    /// Returns a result containing the loaded commit on success, or an `io::Error` on failure.
+    ///
     fn load_from_head(git_dir: &str) -> io::Result<Self> {
         let head_path = format!("{}/HEAD", git_dir);
         let head_content = fs::read_to_string(head_path)?;
@@ -105,6 +125,22 @@ impl Log {
         }
     }
 
+    /// Load a commit from a given commit hash in the specified Git directory.
+    ///
+    /// This function retrieves the content of the commit using `cat-file`, parses the commit header
+    /// lines to extract relevant information, and constructs a `Commit` struct. The commit's message,
+    /// Git directory path, and commit hash are set based on the parsed content. The resulting commit
+    /// is returned as a result.
+    ///
+    /// # Arguments
+    ///
+    /// * `hash` - A string representing the commit hash.
+    /// * `git_dir` - A string representing the path to the Git directory.
+    ///
+    /// # Returns
+    ///
+    /// Returns a result containing the loaded commit on success, or an `io::Error` on failure.
+    ///
     fn load_from_hash(hash: &str, git_dir: &str) -> io::Result<Self> {
         let commit_content = cat_file::cat_file_return_content(hash, git_dir)?;
         let header_lines = commit_content.lines().position(|line| line.is_empty());
@@ -124,6 +160,26 @@ impl Log {
         }
     }
 
+    /// Parse a commit header line and update the relevant fields of the `Commit` struct.
+    ///
+    /// This function takes a commit header line as input and extracts information such as the tree
+    /// hash, parent hash (if present), author details, and committer information. The extracted
+    /// information is then used to update the corresponding fields of the `Commit` struct.
+    ///
+    /// # Arguments
+    ///
+    /// * `line` - A string representing a single line from the commit header.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the parsing is successful and the fields are updated, or an `io::Error`
+    /// if the input line does not match expected patterns.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an `io::Error` if the provided line does not conform to the expected
+    /// format for commit header lines, or if there is insufficient data to update the commit fields.
+    ///
     fn parse_commit_header_line(&mut self, line: &str) -> io::Result<()> {
         match line.split_once(' ') {
             Some(("tree", hash)) => self.tree_hash = hash.to_string(),
@@ -143,11 +199,38 @@ impl Log {
         Ok(())
     }
 
+    /// Set the online mode for formatting and return a new instance with the updated configuration.
+    ///
+    /// This method modifies the current configuration by toggling the online mode, which affects
+    /// how the formatter outputs information. After setting the online mode, it returns a new
+    /// instance of the configuration with the updated setting.
+    ///
+    /// # Arguments
+    ///
+    /// * `oneline` - A boolean value indicating whether the online mode should be enabled (`true`)
+    ///               or disabled (`false`).
+    ///
+    /// # Returns
+    ///
+    /// Returns a new instance of the configuration with the online mode updated according to the
+    /// provided boolean value.
+    ///
     fn set_online(mut self, oneline: bool) -> Self {
         self.oneline = oneline;
         self
     }
 
+    /// Retrieve the parent log of the current commit.
+    ///
+    /// This method attempts to load the log of the commit's parent, if it exists. If successful,
+    /// it returns an `Option<Log>` containing the parent log with an updated online mode, otherwise
+    /// it returns `None`.
+    ///
+    /// # Returns
+    ///
+    /// Returns an `Option<Log>` containing the parent log with an updated online mode if the parent
+    /// commit exists and can be loaded successfully. Returns `None` otherwise.
+    ///
     fn get_parent_log(&self) -> Option<Self> {
         if let Some(parent) = &self.parent_hash {
             if let Ok(log) = Log::load_from_hash(parent, &self.git_dir) {
@@ -202,12 +285,36 @@ pub fn log(
     Ok(log.iter().skip(skip).take(amount))
 }
 
+/// Print logs from an iterator.
+///
+/// This function takes an iterator of logs and prints each log to the console. It is a convenient
+/// way to display commit information directly from an iterator, such as the result of iterating
+/// over a commit history.
+///
+/// # Arguments
+///
+/// * `log_iter`: An iterator yielding instances of `Log` representing commit information.
+///
 pub fn print_logs(log_iter: impl Iterator<Item = Log>) {
     for log in log_iter {
         println!("{log}")
     }
 }
 
+/// Accumulate logs from an iterator into a single string.
+///
+/// This function takes an iterator of logs and concatenates their string representations into
+/// a single string. It can be useful when you want to accumulate commit information for further
+/// processing or display.
+///
+/// # Arguments
+///
+/// * `log_iter`: An iterator yielding instances of `Log` representing commit information.
+///
+/// # Returns
+///
+/// A `String` containing the concatenated string representations of the logs.
+///
 pub fn accumulate_logs(log_iter: impl Iterator<Item = Log>) -> String {
     let mut log_text = String::new();
 

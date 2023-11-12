@@ -5,6 +5,16 @@ use messi::parse_commands::get_user_input;
 use messi::parse_commands::{handle_git_command, parse_git_command};
 use messi::server;
 
+/// Runs the application with a graphical user interface (GUI) using GTK.
+///
+/// This function initializes the GTK library and attempts to create and run the main application
+/// window. If the initialization or window creation fails, an error is returned. Otherwise, the
+/// function enters the GTK main loop and continues until the application exits.
+///
+/// # Returns
+///
+/// A `std::io::Result<()>` indicating whether the GUI application ran successfully.
+///
 fn run_with_gui() -> io::Result<()> {
     if gtk::init().is_err() {
         return Err(io::Error::new(
@@ -19,6 +29,18 @@ fn run_with_gui() -> io::Result<()> {
     Ok(())
 }
 
+/// Runs the application in a command-line mode without a graphical user interface (GUI).
+///
+/// This function prompts the user to initiate a Git repository using 'git init'. It then enters a
+/// loop where the user can provide Git commands. The loop continues until the user enters 'exit'.
+/// If the second argument is 'init', the function attempts to set the current directory based on
+/// the user input and then processes the Git command. Otherwise, it processes the provided Git
+/// command directly.
+///
+/// # Returns
+///
+/// A `std::io::Result<()>` indicating whether the command-line application ran successfully.
+///
 fn run_without_gui() -> io::Result<()> {
     println!("Por favor, inicie un repositorio de Git utilizando 'git init'.");
 
