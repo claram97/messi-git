@@ -129,6 +129,19 @@ pub fn store_string_to_file(
     Ok(content_hash)
 }
 
+/// Hashes a byte array using the SHA-1 algorithm and returns the hash as a hexadecimal string.
+///
+/// This function takes a reference to a byte array (`array`) and calculates its SHA-1 hash.
+/// The resulting hash is then formatted as a hexadecimal string and returned.
+///
+/// # Arguments
+///
+/// * `array` - A reference to a byte array to be hashed.
+///
+/// # Returns
+///
+/// Returns a `String` representing the SHA-1 hash of the input byte array in hexadecimal format.
+///
 fn hash_byte_array(array: &Vec<u8>) -> String {
     let mut hasher = Sha1::new();
     hasher.update(array);
@@ -136,6 +149,23 @@ fn hash_byte_array(array: &Vec<u8>) -> String {
     format!("{:x}", result)
 }
 
+/// Stores a byte array into a file in the Git object database and returns its content hash.
+///
+/// This function takes a byte array (`content`), a Git directory path (`git_dir_path`),
+/// and a file type (`file_type`) as input. It then constructs a Git object file, compresses
+/// it using zlib compression, and stores it in the Git object database. The function returns
+/// the SHA-1 hash of the content, which serves as its unique identifier.
+///
+/// # Arguments
+///
+/// * `content` - The byte array to be stored in the file.
+/// * `git_dir_path` - The path to the Git directory.
+/// * `file_type` - A string representing the type of the file (e.g., "blob" or "commit").
+///
+/// # Returns
+///
+/// Returns a `Result` containing the content hash as a `String` on success, or an `io::Error` on failure.
+///
 pub fn store_bytes_array_to_file(
     content: Vec<u8>,
     git_dir_path: &str,
@@ -162,6 +192,26 @@ pub fn store_bytes_array_to_file(
     Ok(content_hash)
 }
 
+/// Stores a tree structure into a file in the Git object database and returns its content hash.
+///
+/// This function takes two vectors of tuples (`blobs` and `trees`), representing the tree's
+/// contents, a Git directory path (`git_dir_path`), and constructs a Git tree object. The
+/// function then sorts the entries, calculates the tree's size, creates the object's content,
+/// compresses it using zlib compression, and stores it in the Git object database. The function
+/// returns the SHA-1 hash of the content, which serves as its unique identifier.
+///
+/// # Arguments
+///
+/// * `blobs` - A vector of tuples representing blob entries in the tree. Each tuple contains
+///   the file mode, name, and content hash.
+/// * `trees` - A vector of tuples representing subtree entries in the tree. Each tuple contains
+///   the file mode, name, and tree object hash.
+/// * `git_dir_path` - The path to the Git directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the content hash as a `String` on success, or an `io::Error` on failure.
+///
 pub fn store_tree_to_file(
     blobs: Vec<(String, String, Vec<u8>)>,
     trees: Vec<(String, String, Vec<u8>)>,
@@ -191,6 +241,21 @@ pub fn store_tree_to_file(
     Ok(tree_hash)
 }
 
+/// Compresses a given vector of bytes representing a Git tree object and writes it to a file.
+///
+/// This function takes a vector of bytes (`tree_vec`) representing the content of a Git tree object
+/// and compresses it using zlib compression. The compressed content is then written to the specified
+/// output file (`output_file`).
+///
+/// # Arguments
+///
+/// * `tree_vec` - A vector of bytes representing the content of a Git tree object.
+/// * `output_file` - The path to the output file where the compressed content will be written.
+///
+/// # Returns
+///
+/// Returns a `Result` with `Ok(())` on success, or an `io::Error` on failure.
+///
 fn compress_tree(tree_vec: Vec<u8>, output_file: &str) -> io::Result<()> {
     let mut encoder = ZlibEncoder::new(File::create(output_file)?, Compression::default());
     encoder.write_all(&tree_vec)?;
