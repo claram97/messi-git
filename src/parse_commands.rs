@@ -235,6 +235,22 @@ fn handle_cat_file(args: Vec<String>) {
     }
 }
 
+/// Retrieves the working directory of a Git repository based on the provided Git directory.
+///
+/// This function takes a Git directory path (`git_dir`) and returns the corresponding
+/// working directory. It is assumed that the Git directory is a valid path, and the function
+/// attempts to obtain the parent directory as the working directory. If successful, it returns
+/// a `PathBuf` containing the working directory.
+///
+/// # Arguments
+///
+/// * `git_dir` - A string slice representing the path to the Git directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a `PathBuf` with the working directory if successful,
+/// otherwise returns an `io::Error` with a description of the encountered issue.
+///
 fn get_working_directory_status(git_dir: &str) -> io::Result<PathBuf> {
     let parent = Path::new(git_dir).parent().ok_or_else(|| {
         io::Error::new(io::ErrorKind::Other, "Error al obtener el working dir")
@@ -242,6 +258,24 @@ fn get_working_directory_status(git_dir: &str) -> io::Result<PathBuf> {
     Ok(parent.to_path_buf())
 }
 
+/// Loads the index and commit tree of a Git repository.
+///
+/// This function reads and returns the index and commit tree of a Git repository
+/// based on the provided Git directory.
+///
+/// # Arguments
+///
+/// * `git_dir` - A string slice representing the path to the Git directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a tuple with the loaded `Index` and `Tree` if successful,
+/// otherwise returns an `io::Error` with a description of the encountered issue.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there are issues loading the index or commit tree.
+///
 fn load_index_and_commit_tree(git_dir: &str) -> io::Result<(Index, Tree)> {
     let index_path = format!("{}/{}", git_dir, "index");
     let git_ignore_path = format!("{}/{}", get_working_directory_status(git_dir)?.to_string_lossy(), ".mgitignore");
@@ -263,6 +297,25 @@ fn load_index_and_commit_tree(git_dir: &str) -> io::Result<(Index, Tree)> {
     }
 }
 
+/// Prints the changes to be committed based on the Git index and commit tree.
+///
+/// This function prints the changes that are currently staged for commit according to
+/// the provided Git index and commit tree. It provides information about files that
+/// are scheduled to be committed.
+///
+/// # Arguments
+///
+/// * `index` - A reference to the Git index.
+/// * `commit_tree` - A reference to the commit tree.
+///
+/// # Returns
+///
+/// Returns an `io::Result` indicating whether the operation was successful or encountered an error.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there are issues while determining the changes to be committed.
+///
 fn print_changes_to_be_committed(index: &Index, commit_tree: &Tree) -> io::Result<()> {
     let mut changes_to_be_committed_output: Vec<u8> = vec![];
     changes_to_be_committed(index, commit_tree, &mut changes_to_be_committed_output)?;
@@ -282,6 +335,26 @@ fn print_changes_to_be_committed(index: &Index, commit_tree: &Tree) -> io::Resul
     Ok(())
 }
 
+/// Prints information about untracked files based on the current state of the Git repository.
+///
+/// This function identifies and prints information about files in the working directory
+/// that are not currently tracked by Git. It provides guidance on how to include these
+/// files in the next commit.
+///
+/// # Arguments
+///
+/// * `current_dir` - A reference to the current directory.
+/// * `working_dir` - A reference to the working directory.
+/// * `index` - A reference to the Git index.
+///
+/// # Returns
+///
+/// Returns an `io::Result` indicating whether the operation was successful or encountered an error.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there are issues while finding untracked files.
+///
 fn print_untracked_files(current_dir: &Path, working_dir: &Path, index: &Index) -> io::Result<()> {
     let mut untracked_output: Vec<u8> = vec![];
     find_untracked_files(current_dir, working_dir, index, &mut untracked_output)?;
@@ -299,6 +372,25 @@ fn print_untracked_files(current_dir: &Path, working_dir: &Path, index: &Index) 
     Ok(())
 }
 
+/// Prints information about changes not staged for commit in the Git repository.
+///
+/// This function identifies and prints information about changes in the working directory
+/// that have not been staged for the next commit. It provides guidance on how to update
+/// the changes to be included in the next commit or discard them.
+///
+/// # Arguments
+///
+/// * `index` - A reference to the Git index.
+/// * `working_dir` - A reference to the working directory.
+///
+/// # Returns
+///
+/// Returns an `io::Result` indicating whether the operation was successful or encountered an error.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there are issues while finding changes not staged for commit.
+///
 fn print_not_staged_for_commit(index: &Index, working_dir: &Path) -> io::Result<()> {
     let mut not_staged_for_commit: Vec<u8> = vec![];
     find_unstaged_changes(index, working_dir.to_string_lossy().as_ref(), &mut not_staged_for_commit)?;
@@ -317,6 +409,12 @@ fn print_not_staged_for_commit(index: &Index, working_dir: &Path) -> io::Result<
     Ok(())
 }
 
+/// Handles the status command for a Git repository.
+///
+/// This function provides information about the current status of the Git repository,
+/// including changes not staged for commit, changes to be committed, and untracked files.
+/// It prints the status information to the console.
+///
 pub fn handle_status() {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -372,6 +470,15 @@ pub fn handle_status() {
     }
 }
 
+/// Prints the current branch status to the console.
+///
+/// This function displays information about the current Git branch,
+/// emphasizing the branch name with green color.
+///
+/// # Arguments
+///
+/// * `branch_name` - The name of the current Git branch.
+///
 pub fn print_branch_status(branch_name: &str) {
     println!();
     print!("On branch {}{}", "\x1b[32m", branch_name);
