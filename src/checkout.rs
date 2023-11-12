@@ -1,6 +1,5 @@
 use crate::branch;
 use crate::tree_handler;
-use std::env;
 use std::fs;
 use std::io;
 use std::path::Path;

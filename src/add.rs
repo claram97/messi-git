@@ -1,5 +1,4 @@
 const MGIT: &str = ".mgit";
-const OPTIONS_ALL: &str = "-u";
 
 use std::fs;
 use std::io;
