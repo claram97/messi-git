@@ -7,12 +7,21 @@ use std::io;
 use crate::ignorer::is_subpath;
 use crate::index::Index;
 
+/// Process a file or directory specified by `file_name` and update the index accordingly.
+///
+/// If the path represented by `file_name` is a directory, add all files inside it to the index.
+/// If it's a file, add only that file to the index.
+///
+/// # Arguments
+///
+/// * `index` - A mutable reference to an `Index` that represents the index of the Git repository.
+/// * `file_name` - A string representing the path of the file or directory to be processed.
+///
 pub fn process_file_name(
     index: &mut Index,
     file_name: &str,
 ) -> io::Result<()> {
     if fs::metadata(file_name)?.is_dir() {
-        // If the file_name is a directory, add all files inside
         for entry in fs::read_dir(file_name)? {
             let entry = entry?;
             let file_path = entry.path();
@@ -21,7 +30,6 @@ pub fn process_file_name(
             }
         }
     } else {
-        // If the path is a file, add only that file
         index.add_path(file_name)?;
     }
 

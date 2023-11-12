@@ -397,9 +397,7 @@ fn handle_add(args: Vec<String>) {
         match crate::gui::repository_window::find_git_directory_and_ignore() {
             Ok((dir, ignore_path)) => (dir, ignore_path),
             Err(err) => {
-                eprintln!("Error: {:?}", err); // Imprime el error en la salida de error estándar
-                                               // Aquí puedes tomar acciones adicionales en caso de error si es necesario
-                                               // Por ejemplo, puedes retornar valores por defecto o finalizar el programa.
+                eprintln!("Error: {:?}", err); 
                 return;
             }
         };
@@ -434,7 +432,7 @@ fn handle_rm(args: Vec<String>) {
             return;
         }
     };
-    
+
 
     let index_path = format!("{}/{}", git_dir, "index");
     let git_dir_parent = match Path::new(&git_dir).parent() {
@@ -503,9 +501,6 @@ fn handle_checkout(args: Vec<String>) {
     let option = &args[2];
     let git_dir1 = Path::new(&git_dir);
     match option.as_str() {
-        // Change to the specified branch
-
-        // Create and change to a new branch
         "-b" => {
             let destination = &args[3];
 
@@ -513,7 +508,6 @@ fn handle_checkout(args: Vec<String>) {
                 eprintln!("Error al crear y cambiar a una nueva rama: {:?}", err);
             }
         }
-        // Create or reset a branch if it exists
         "-B" => {
             let destination = &args[3];
 
@@ -521,7 +515,6 @@ fn handle_checkout(args: Vec<String>) {
                 eprintln!("Error al crear o restablecer una rama si existe: {:?}", err);
             }
         }
-        // Change to a specific commit (detached mode)
         "--detach" => {
             let destination = &args[3];
 
@@ -532,7 +525,6 @@ fn handle_checkout(args: Vec<String>) {
                 );
             }
         }
-        // Force the change of branch or commit (discarding uncommitted changes)
         "-f" => {
             let destination = &args[3];
 

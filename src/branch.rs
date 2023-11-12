@@ -293,6 +293,17 @@ pub fn git_branch_for_ui(name: Option<String>) -> io::Result<String> {
     }
 }
 
+/// Checks if a branch with the specified name exists in the Git repository.
+///
+/// # Arguments
+///
+/// * `branch` - A string representing the name of the branch to check.
+/// * `git_dir` - A string specifying the path to the Git directory.
+///
+/// # Returns
+///
+/// Returns `true` if the branch exists, otherwise `false`.
+///
 pub fn is_an_existing_branch(branch: &str, git_dir: &str) -> bool {
     let path = format!("{}/refs/heads/{}", git_dir, branch);
 
