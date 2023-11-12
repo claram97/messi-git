@@ -30,6 +30,12 @@ impl Ignorer {
         }
         false
     }
+
+    pub fn print(&self) {
+        for path in &self.paths {
+            println!("{:?}", path);
+        }
+    }
 }
 
 fn get_subpaths(path: &str) -> Vec<&str> {
