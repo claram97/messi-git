@@ -112,6 +112,33 @@ fn verify_ref(git_dir: &str, line: Vec<String>, output: &mut impl Write) -> io::
     Ok(())
 }
 
+fn show_refs_in_remotes_folder(
+    remotes_path: &str,
+    is_hash: bool,
+    output: &mut impl Write,
+) -> io::Result<()> {
+    for entry in fs::read_dir(remotes_path)? {
+        let entry = entry?;
+        let path = entry.path();
+        println!("Path is {}", path.display());
+        if path.is_dir() {
+            let string_path = path.to_string_lossy().to_string();
+            let splitted: Vec<&str> = string_path.split("remotes").collect();
+            let type_ = format!("{}{}", "remotes", splitted[1]);
+            println!("splitted {:?}", splitted);
+            println!("Type is {}", type_);
+            process_files_in_directory(
+                &path.to_string_lossy().to_string(),
+                &type_,
+                is_hash,
+                output,
+            )?;
+        }
+    }
+
+    Ok(())
+}
+
 /// Shows references in the specified Git directory for heads and tags.
 ///
 /// # Arguments
@@ -144,8 +171,11 @@ fn verify_ref(git_dir: &str, line: Vec<String>, output: &mut impl Write) -> io::
 fn show_ref(git_dir: &str, output: &mut impl Write) -> io::Result<()> {
     let heads_path = format!("{}/{}", git_dir, "refs/heads");
     let tags_path = format!("{}/{}", git_dir, "refs/tags");
+    let remotes_path = format!("{}/{}", git_dir, "refs/remotes");
     process_files_in_directory(&heads_path, "heads", false, output)?;
     process_files_in_directory(&tags_path, "tags", false, output)?;
+    show_refs_in_remotes_folder(&remotes_path, false, output)?;
+
     Ok(())
 }
 
@@ -196,8 +226,10 @@ fn show_ref_with_options(
     } else if line[2].eq("--hash") {
         let heads_path = format!("{}/{}", git_dir, "refs/heads");
         let tags_path = format!("{}/{}", git_dir, "refs/tags");
+        let remotes_path = format!("{}/{}", git_dir, "refs/remotes");
         process_files_in_directory(&heads_path, "heads", true, output)?;
         process_files_in_directory(&tags_path, "tags", true, output)?;
+        show_refs_in_remotes_folder(&remotes_path, true, output)?;
     } else if line[2].eq("--verify") {
         writeln!(output, "fatal: --verify requires a reference")?;
         return Err(io::Error::new(
@@ -449,17 +481,24 @@ mod tests {
     }
 
     #[test]
-    fn test_show_hashes_refs_shows_only_hashes_from_both_tags_and_refs() -> io::Result<()> {
+    fn test_show_hashes_refs_shows_only_hashes_from_all_tags_heads_and_remotes() -> io::Result<()> {
         let path = "tests/show_ref_fake_repo_7";
         let git_dir = format!("{}/{}", path, ".mgit");
         let tags = format!("{}/{}", git_dir, "refs/tags");
         let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
         let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
         create_if_not_exists(path, true)?;
+        let remotes_path = format!("{}/{}", git_dir, "refs/remotes");
+        let origin_folder = format!("{}/{}", git_dir, "refs/remotes/origin");
+        let origin_ref = format!("{}/{}", git_dir, "refs/remotes/origin/branch");
         init::git_init(path, "current_branch", None)?;
         create_if_not_exists(&tags, true)?;
         create_if_not_exists(&head_ref, false)?;
         create_if_not_exists(&tag_ref, false)?;
+        create_if_not_exists(&remotes_path, true)?;
+        create_if_not_exists(&origin_folder, true)?;
+        create_if_not_exists(&origin_ref, false)?;
+        write_to_file(&origin_ref, "7891")?;
         write_to_file(&head_ref, "1234")?;
         write_to_file(&tag_ref, "4567")?;
         let line = vec![
@@ -470,9 +509,11 @@ mod tests {
         let mut output: Vec<u8> = vec![];
         show_ref_with_options(&git_dir, line, &mut output)?;
         let output_string = String::from_utf8(output).unwrap();
+        assert!(output_string.contains("7891"));
         assert!(output_string.contains("1234"));
         assert!(output_string.contains("4567"));
         assert!(!output_string.contains("refs/heads/some_ref"));
+        assert!(!output_string.contains("refs/remotes/origin/branch"));
         assert!(!output_string.contains("refs/tags/some_tag"));
         std::fs::remove_dir_all(path)?;
         Ok(())
@@ -484,25 +525,40 @@ mod tests {
         let git_dir = format!("{}/{}", path, ".mgit");
         let heads_path = format!("{}/{}", git_dir, "refs/heads");
         let tags_path = format!("{}/{}", git_dir, "refs/tags");
+        let remotes_path = format!("{}/{}", git_dir, "refs/remotes");
         let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
         let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
+        let origin_folder = format!("{}/{}", git_dir, "refs/remotes/origin");
+        let origin_ref = format!("{}/{}", git_dir, "refs/remotes/origin/branch");
         create_if_not_exists(path, true)?;
         init::git_init(path, "current_branch", None)?;
         create_if_not_exists(&tags_path, true)?;
+        create_if_not_exists(&remotes_path, true)?;
+        create_if_not_exists(&origin_folder, true)?;
+        create_if_not_exists(&origin_ref, false)?;
         create_if_not_exists(&head_ref, false)?;
         create_if_not_exists(&tag_ref, false)?;
         write_to_file(&head_ref, "1234")?;
         write_to_file(&tag_ref, "4567")?;
+        write_to_file(&origin_ref, "7891")?;
         let mut output: Vec<u8> = vec![];
         let result = process_files_in_directory(&heads_path, "heads", false, &mut output);
         assert!(result.is_ok());
         let result = process_files_in_directory(&tags_path, "tags", false, &mut output);
         assert!(result.is_ok());
+        // let result = process_files_in_directory(&remotes_path, "remotes/origin", false, &mut output);
+        // assert!(result.is_ok());
+        let result = show_refs_in_remotes_folder(&remotes_path, false, &mut output);
+        assert!(result.is_ok());
         let output_string = String::from_utf8(output).unwrap();
+        let mut file = File::create("tests/test.txt")?;
+        file.write_all(output_string.as_bytes())?;
         assert!(output_string.contains("1234"));
         assert!(output_string.contains("4567"));
+        assert!(output_string.contains("7891"));
         assert!(output_string.contains("refs/heads/some_ref"));
         assert!(output_string.contains("refs/tags/some_tag"));
+        assert!(output_string.contains("refs/remotes/origin/branch"));
         std::fs::remove_dir_all(path)?;
         Ok(())
     }
@@ -515,23 +571,34 @@ mod tests {
         let tags_path = format!("{}/{}", git_dir, "refs/tags");
         let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
         let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
+        let remotes_path = format!("{}/{}", git_dir, "refs/remotes");
+        let origin_folder = format!("{}/{}", git_dir, "refs/remotes/origin");
+        let origin_ref = format!("{}/{}", git_dir, "refs/remotes/origin/branch");
         create_if_not_exists(path, true)?;
         init::git_init(path, "current_branch", None)?;
         create_if_not_exists(&tags_path, true)?;
         create_if_not_exists(&head_ref, false)?;
         create_if_not_exists(&tag_ref, false)?;
+        create_if_not_exists(&remotes_path, true)?;
+        create_if_not_exists(&origin_folder, true)?;
+        create_if_not_exists(&origin_ref, false)?;
         write_to_file(&head_ref, "1234")?;
         write_to_file(&tag_ref, "4567")?;
+        write_to_file(&origin_ref, "7891")?;
         let mut output: Vec<u8> = vec![];
         let result = process_files_in_directory(&heads_path, "heads", true, &mut output);
         assert!(result.is_ok());
         let result = process_files_in_directory(&tags_path, "tags", true, &mut output);
         assert!(result.is_ok());
+        let result = show_refs_in_remotes_folder(&remotes_path, true, &mut output);
+        assert!(result.is_ok());
         let output_string = String::from_utf8(output).unwrap();
+        assert!(output_string.contains("7891"));
         assert!(output_string.contains("1234"));
         assert!(output_string.contains("4567"));
         assert!(!output_string.contains("refs/heads/some_ref"));
         assert!(!output_string.contains("refs/tags/some_tag"));
+        assert!(!output_string.contains("refs/remotes/origin/branch"));
         std::fs::remove_dir_all(path)?;
         Ok(())
     }
