@@ -150,7 +150,7 @@ pub fn find_unstaged_changes(
         let complete_path = Path::new(&complete_path_string);
         if complete_path.is_file() {
             let new_hash = hash_object::hash_file_content(&complete_path_string, BLOB)?;
-            
+
             if hash.ne(&new_hash) {
                 let buffer = format!("\x1b[31m\t\tmodified:\t {}\x1b[0m\n", path);
                 output.write_all(buffer.as_bytes())?;
