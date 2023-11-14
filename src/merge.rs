@@ -230,7 +230,7 @@ mod tests {
         let commit_1_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
 
         let branch_name = "test";
-        let _ = branch::create_new_branch(&git_dir, "test", &mut io::stdout());
+        let _ = branch::create_new_branch(&git_dir, "test", None, &mut io::stdout());
 
         let head_file_path = format!("{}/HEAD", git_dir);
         let mut head_file = fs::File::create(&head_file_path).unwrap();
@@ -283,7 +283,7 @@ mod tests {
         let commit_2_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
 
         let branch_name = "branch1";
-        let _ = branch::create_new_branch(&git_dir, branch_name, &mut io::stdout());
+        let _ = branch::create_new_branch(&git_dir, branch_name, None, &mut io::stdout());
 
         let head_file_path = format!("{}/HEAD", git_dir);
         let mut head_file = fs::File::create(&head_file_path).unwrap();
@@ -351,7 +351,7 @@ mod tests {
         let commit_1_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
 
         let branch_name = "branch";
-        let _ = branch::create_new_branch(&git_dir, branch_name, &mut io::stdout());
+        let _ = branch::create_new_branch(&git_dir, branch_name, None, &mut io::stdout());
 
         let head_file_path = format!("{}/.mgit/HEAD", root_dir);
         let mut head_file = fs::File::create(&head_file_path).unwrap();
@@ -456,7 +456,7 @@ mod tests {
         let commit_1_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
 
         let branch_name = "branch";
-        let _ = branch::create_new_branch(&git_dir, branch_name, &mut io::stdout());
+        let _ = branch::create_new_branch(&git_dir, branch_name, None, &mut io::stdout());
 
         let head_file_path = format!("{}/.mgit/HEAD", root_dir);
         let mut head_file = fs::File::create(&head_file_path).unwrap();
@@ -628,7 +628,7 @@ mod tests {
         let commit_1_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
 
         let branch_name = "branch";
-        let _ = branch::create_new_branch(&git_dir, branch_name, &mut io::stdout());
+        let _ = branch::create_new_branch(&git_dir, branch_name, None, &mut io::stdout());
 
         let head_file_path = format!("{}/.mgit/HEAD", root_dir);
         let mut head_file = fs::File::create(&head_file_path).unwrap();

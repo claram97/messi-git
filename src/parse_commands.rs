@@ -988,14 +988,14 @@ fn handle_push() {
 ///
 fn handle_branch(args: Vec<String>) {
     if args.len() == 2 {
-        let result = git_branch(None);
+        let result = git_branch(None, None, None, &mut io::stdout());
         match result {
             Ok(_) => {}
             Err(_e) => {}
         }
     } else {
         let name = args[2].to_string();
-        let result = git_branch(Some(name));
+        let result = git_branch(Some(name), None, None, &mut io::stdout());
         match result {
             Ok(_) => {}
             Err(_e) => {}
