@@ -1,4 +1,8 @@
-use std::{io::{BufReader, self, Read, BufRead, Error}, fs::File, str::from_utf8};
+use std::{
+    fs::File,
+    io::{self, BufRead, BufReader, Error, Read},
+    str::from_utf8,
+};
 
 use flate2::bufread::ZlibDecoder;
 
@@ -40,7 +44,9 @@ impl PackfileEntry {
         reader.read_until(0, &mut size_buf)?;
         let size = from_utf8(&size_buf)
             .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
-        let size = usize::from_str_radix(size.trim_end_matches('\0'), 10)
+        let size = size
+            .trim_end_matches('\0')
+            .parse::<usize>()
             .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
 
         let mut decompressed_content = Vec::new();
