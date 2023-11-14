@@ -1,8 +1,10 @@
 use std::{
+    cell::RefCell,
     collections::HashSet,
     fmt::Display,
     fs::File,
-    io::{self, BufRead, BufReader, Error, Read, Write},
+    io::{self, BufRead, BufReader, Cursor, Error, Read, Seek, Write},
+    rc::Rc,
     str::from_utf8,
     vec,
 };
@@ -11,7 +13,7 @@ use flate2::{bufread::ZlibDecoder, write::ZlibEncoder, Compression};
 use sha1::Digest;
 use sha1::Sha1;
 
-use crate::hash_object;
+use crate::{hash_object, server};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObjectType {
@@ -101,7 +103,7 @@ impl PackfileEntry {
 #[derive(Debug)]
 pub struct Packfile<R>
 where
-    R: Read,
+    R: Read + Seek,
 {
     bufreader: BufReader<R>,
     position: u32,
@@ -110,7 +112,7 @@ where
 
 impl<R> Packfile<R>
 where
-    R: Read,
+    R: Read + Seek,
 {
     /// Creates a new `PackfileReader` from the provided reader.
     ///
@@ -148,9 +150,8 @@ where
     /// the version is not 2.
     ///
     fn validate(&mut self) -> io::Result<()> {
-        let mut buf: [u8; 4] = [0, 0, 0, 0];
-        self.bufreader.read_exact(&mut [0])?;
-        self.bufreader.read_exact(&mut buf)?;
+        let [_] = read_bytes(self.bufreader.get_mut())?;
+        let mut buf: [u8; 4] = read_bytes(self.bufreader.get_mut())?;
 
         let signature = from_utf8(&buf)
             .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
@@ -162,7 +163,7 @@ where
             ));
         }
 
-        self.bufreader.read_exact(&mut buf)?;
+        let mut buf = read_bytes(self.bufreader.get_mut())?;
         let version = u32::from_be_bytes(buf);
 
         if version != 2 {
@@ -188,8 +189,7 @@ where
     /// Returns an `io::Error` if there is an issue reading the total object count.
     ///
     fn count_objects(&mut self) -> io::Result<()> {
-        let mut buf: [u8; 4] = [0, 0, 0, 0];
-        self.bufreader.read_exact(&mut buf)?;
+        let mut buf = read_bytes(self.bufreader.get_mut())?;
         self.total = u32::from_be_bytes(buf);
         Ok(())
     }
@@ -205,6 +205,38 @@ where
     /// Returns an `io::Error` if there is an issue reading or decompressing the object.
     ///
     fn get_next(&mut self) -> io::Result<PackfileEntry> {
+        let initial_position = self.bufreader.stream_position()?;
+        let (obj_type, obj_size) = self.get_obj_type_size()?;
+
+        dbg!(obj_type, obj_size);
+        match obj_type {
+            ObjectType::OfsDelta => {
+                let delta_offset = self.read_offset_encoding()?;
+                let position = self.bufreader.stream_position()?;
+                self.bufreader
+                    .seek(io::SeekFrom::Start(initial_position - delta_offset))?;
+                let base_object = self.get_next()?;
+                self.bufreader.seek(io::SeekFrom::Start(position))?;
+                // todo!("OfsDelta yet not implemented")
+                self.apply_delta(&base_object)
+            }
+            _ => {
+                let mut decompressor = ZlibDecoder::new(&mut self.bufreader);
+                let mut obj = vec![];
+                let bytes_read = decompressor.read_to_end(&mut obj)?;
+                if obj_size != bytes_read {
+                    println!("type {:?}. bytes:\n{:?}", obj_type, obj);
+                    return Err(Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "Corrupted packfile. Size is not correct",
+                    ));
+                }
+                Ok(PackfileEntry::new(obj_type, obj_size, obj))
+            }
+        }
+    }
+
+    fn get_obj_type_size(&mut self) -> io::Result<(ObjectType, usize)> {
         let mut byte = self.read_byte()?;
         let obj_type = ObjectType::try_from((byte & 0x70) >> 4)?;
         let mut obj_size = (byte & 0x0f) as usize;
@@ -214,19 +246,24 @@ where
             obj_size |= ((byte & 0x7f) as usize) << bshift;
             bshift += 7;
         }
+        Ok((obj_type, obj_size))
+    }
 
-        let mut decompressor = ZlibDecoder::new(&mut self.bufreader);
-        let mut obj = vec![];
-        let bytes_read = decompressor.read_to_end(&mut obj)?;
-        if obj_size != bytes_read {
-            println!("type {:?}. bytes:\n{:?}", obj_type, obj);
-            return Err(Error::new(
-                io::ErrorKind::InvalidInput,
-                "Corrupted packfile. Size is not correct",
-            ));
+    fn read_varint_byte(&mut self) -> io::Result<(u8, bool)> {
+        let byte = self.read_byte()?;
+        Ok((byte & 0x7f, byte & 0x80 != 0))
+    }
+
+    fn read_offset_encoding(&mut self) -> io::Result<u64> {
+        let mut value = 0;
+        loop {
+            let (byte_value, more_bytes) = self.read_varint_byte()?;
+            value = (value << 7) | byte_value as u64;
+            if !more_bytes {
+                return Ok(value);
+            }
+            value += 1;
         }
-
-        Ok(PackfileEntry::new(obj_type, obj_size, obj))
     }
 
     /// Reads a single byte from the packfile.
@@ -236,28 +273,152 @@ where
     /// Returns an `io::Error` if there is an issue reading the byte.
     ///
     fn read_byte(&mut self) -> io::Result<u8> {
-        let mut buf: [u8; 1] = [0];
-        self.bufreader.read_exact(&mut buf)?;
-        Ok(buf[0])
+        let [buf] = self.read_bytes()?;
+        Ok(buf)
+    }
+    fn read_bytes<const N: usize>(&mut self) -> io::Result<[u8; N]> {
+        let mut bytes = [0; N];
+        self.bufreader.read_exact(&mut bytes)?;
+        Ok(bytes)
+    }
+
+    fn apply_delta(&mut self, base: &PackfileEntry) -> io::Result<PackfileEntry> {
+        let mut delta = ZlibDecoder::new(&mut self.bufreader);
+        let base_size = read_size_encoding(&mut delta)?;
+        if base.size != base_size {
+            return Err(make_error("Incorrect base object length"));
+        }
+
+        let result_size = read_size_encoding(&mut delta)?;
+        let mut result = Vec::with_capacity(result_size);
+        while apply_delta_instruction(&mut delta, &base.content, &mut result)? {}
+        if result.len() != result_size {
+            return Err(make_error("Incorrect object length"));
+        }
+        Ok(PackfileEntry {
+            obj_type: base.obj_type,
+            size: result_size,
+            content: result,
+        })
     }
 }
 
 impl<R> Iterator for Packfile<R>
 where
-    R: Read,
+    R: Read + Seek,
 {
     type Item = io::Result<PackfileEntry>;
 
     /// Advances the packfile reader to the next object entry.
     ///
     /// If there are no more objects to read, returns `None`.
-    ///
     fn next(&mut self) -> Option<Self::Item> {
         if self.position >= self.total {
             return None;
         }
         self.position += 1;
         Some(self.get_next())
+    }
+}
+
+const COPY_INSTRUCTION_FLAG: u8 = 1 << 7;
+const COPY_OFFSET_BYTES: u8 = 4;
+const COPY_SIZE_BYTES: u8 = 3;
+const COPY_ZERO_SIZE: usize = 0x10000;
+
+// Read an integer of up to `bytes` bytes.
+// `present_bytes` indicates which bytes are provided. The others are 0.
+fn read_partial_int<R: Read>(
+    stream: &mut R,
+    bytes: u8,
+    present_bytes: &mut u8,
+) -> io::Result<usize> {
+    let mut value = 0;
+    for byte_index in 0..bytes {
+        // Use one bit of `present_bytes` to determine if the byte exists
+        if *present_bytes & 1 != 0 {
+            let [byte] = read_bytes(stream)?;
+            value |= (byte as usize) << (byte_index * 8);
+        }
+        *present_bytes >>= 1;
+    }
+    Ok(value)
+}
+
+// Reads a single delta instruction from a stream
+// and appends the relevant bytes to `result`.
+// Returns whether the delta stream still had instructions.
+fn apply_delta_instruction<R: Read>(
+    stream: &mut R,
+    base: &[u8],
+    result: &mut Vec<u8>,
+) -> io::Result<bool> {
+    // Check if the stream has ended, meaning the new object is done
+    let instruction = match read_bytes(stream) {
+        Ok([instruction]) => instruction,
+        Err(err) if err.kind() == io::ErrorKind::UnexpectedEof => return Ok(false),
+        Err(err) => return Err(err),
+    };
+    if instruction & COPY_INSTRUCTION_FLAG == 0 {
+        // Data instruction; the instruction byte specifies the number of data bytes
+        if instruction == 0 {
+            // Appending 0 bytes doesn't make sense, so git disallows it
+            return Err(make_error("Invalid data instruction"));
+        }
+
+        // Append the provided bytes
+        let mut data = vec![0; instruction as usize];
+        stream.read_exact(&mut data)?;
+        result.extend_from_slice(&data);
+    } else {
+        // Copy instruction
+        let mut nonzero_bytes = instruction;
+        let offset = read_partial_int(stream, COPY_OFFSET_BYTES, &mut nonzero_bytes)?;
+        let mut size = read_partial_int(stream, COPY_SIZE_BYTES, &mut nonzero_bytes)?;
+        if size == 0 {
+            // Copying 0 bytes doesn't make sense, so git assumes a different size
+            size = COPY_ZERO_SIZE;
+        }
+        // Copy bytes from the base object
+        let base_data = base
+            .get(offset..(offset + size))
+            .ok_or_else(|| make_error("Invalid copy instruction"))?;
+        result.extend_from_slice(base_data);
+    }
+    Ok(true)
+}
+
+fn make_error(message: &str) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, message.to_string())
+}
+
+fn read_bytes<R: Read, const N: usize>(stream: &mut R) -> io::Result<[u8; N]> {
+    let mut bytes = [0; N];
+    stream.read_exact(&mut bytes)?;
+    Ok(bytes)
+}
+
+// Read 7 bits of data and a flag indicating whether there are more
+fn read_varint_byte<R: Read>(stream: &mut R) -> io::Result<(u8, bool)> {
+    let [byte] = read_bytes(stream)?;
+    let value = byte & 0x7f;
+    let more_bytes = byte & 0x80 != 0;
+    Ok((value, more_bytes))
+}
+
+fn read_size_encoding<R: Read>(stream: &mut R) -> io::Result<usize> {
+    let mut value = 0;
+    let mut length = 0; // the number of bits of data read so far
+    loop {
+        let (byte_value, more_bytes) = read_varint_byte(stream)?;
+        // Add in the data bits
+        value |= (byte_value as usize) << length;
+        // Stop if this is the last byte
+        if !more_bytes {
+            return Ok(value);
+        }
+
+        length += 7;
     }
 }
 
@@ -391,7 +552,7 @@ fn decompress_object_into_bytes(hash: &str, git_dir: &str) -> io::Result<Vec<u8>
 /// Returns an `io::Error` if there is an issue reading or storing the objects.
 ///
 pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
-    let packfile = Packfile::reader(packfile)?;
+    let packfile = Packfile::reader(Cursor::new(packfile))?;
     for entry in packfile {
         let entry = entry?;
         hash_object::store_bytes_array_to_file(
