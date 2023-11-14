@@ -41,6 +41,7 @@ pub fn checkout_branch(git_dir_path: &Path, root_dir: &str, branch_name: &str) -
                 Err(err) => Err(err),
             }
         }
+       
         Err(err) => Err(err),
     }
 }

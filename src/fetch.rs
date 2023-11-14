@@ -227,6 +227,48 @@ pub fn git_fetch(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) 
     fetch_head_file.write_file(&fetch_head_path)?;
     Ok(())
 }
+pub fn git_fetch_for_gui(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) -> io::Result<Vec<String>> {
+    let git_dir = local_dir.to_string() + "/.mgit";
+    let config_file = config::Config::load(&git_dir)?;
+    let remote_name = "origin";
+    let remote_url = config_file.get_url(remote_name, &mut io::stdout())?;
+    let (address, repo_name) = match remote_url.rsplit_once('/') {
+        Some((address, repo_name)) => (address, repo_name),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Invalid data in remote dir: {}", remote_url),
+            ))
+        }
+    };
+    let mut client = Client::new(address, repo_name, "localhost");
+    let refs = client.get_server_refs()?;
+    let clean_refs = get_clean_refs(&refs);
+    let fetch_head_path = git_dir.to_string() + "/FETCH_HEAD";
+    let mut fetch_head_file = FetchHead::new();
+    client.upload_pack(clean_refs.clone(), &git_dir, "origin")?;
+    for server_ref in &clean_refs {
+        println!("{}", server_ref);
+        if server_ref != "HEAD" {
+            let hash = match refs.get(server_ref.as_str()) {
+                Some(hash) => hash,
+                None => {
+                    println!("Error: Could not find hash for {}", server_ref);
+                    continue;
+                }
+            };
+            let entry = FetchEntry {
+                commit_hash: hash.to_string(),
+                branch_name: server_ref.to_string(),
+                remote_repo_url: remote_url.clone(),
+            };
+            fetch_head_file.add_entry(entry);
+        }
+    }
+    
+    fetch_head_file.write_file(&fetch_head_path)?;
+    Ok(clean_refs)
+}
 
 #[cfg(test)]
 mod tests {
