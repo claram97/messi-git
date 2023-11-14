@@ -680,25 +680,14 @@ pub fn handle_checkout(args: Vec<String>) {
     let git_dir1 = Path::new(&git_dir);
     let destination = &args;
 
-            if let Err(err) = force_checkout(git_dir1, destination) {
-                eprintln!("Error al forzar el cambio de rama o commit (descartando cambios sin confirmar): {:?}", err);
-            }
-        }
-        _ => {
-            if let Err(err) = checkout_branch(git_dir1, &working_dir, option) {
-                match err.kind() {
-                    std::io::ErrorKind::UnexpectedEof => {
-                        eprintln!(" ");
-                    }
-                   
-                    _ => { eprintln!("Error cambiar de rama : {:?}", err);}
-                }
-               
-            }
-        }
+     
     if let Err(err) = handle_checkout_option(git_dir1, &working_dir, option, destination.to_vec()) {
-        eprintln!("Error al realizar el checkout: {:?}", err);
-
+        match err.kind() {
+            std::io::ErrorKind::UnexpectedEof => {
+                eprintln!(" ");
+            }           
+            _ => { eprintln!("Error cambiar de rama : {:?}", err);}
+            }    
     }
 }
 

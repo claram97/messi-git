@@ -149,6 +149,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "checkout3",
         "checkout4",
         "checkout5",
+        "show-fetch"
     ];
 
     for button_id in button_ids.iter() {
