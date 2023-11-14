@@ -1,4 +1,4 @@
-use crate::packfile_handler::{self, create_packfile_from_set};
+use crate::packfile::handler::{create_packfile_from_set, unpack_packfile};
 use crate::server_utils::*;
 
 use std::collections::{HashMap, HashSet};
@@ -205,7 +205,7 @@ impl ServerInstace {
                 break;
             }
             if bytes[0] == 1 {
-                return packfile_handler::unpack_packfile(&bytes[..], &self.git_dir_path);
+                return unpack_packfile(&bytes[..], &self.git_dir_path);
             }
         }
         Err(io::Error::new(

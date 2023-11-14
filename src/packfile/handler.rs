@@ -127,11 +127,7 @@ impl PackfileEntry {
         let mut decompressed_content = Vec::new();
         reader.read_to_end(&mut decompressed_content)?;
 
-        Ok(Self {
-            obj_type,
-            size,
-            content: decompressed_content,
-        })
+        Ok(Self::new(obj_type, size, decompressed_content))
     }
 }
 
@@ -140,6 +136,7 @@ pub struct Packfile<R: Read + Seek> {
     bufreader: BufReader<R>,
     position: u32,
     total: u32,
+    git_dir: String,
 }
 
 impl<R: Read + Seek> Packfile<R> {
@@ -157,11 +154,12 @@ impl<R: Read + Seek> Packfile<R> {
     /// Returns a `Result` containing the initialized `PackfileReader` if successful, or an `io::Error`
     /// if validation or counting fails.
     ///
-    pub fn reader(packfile: R) -> io::Result<Self> {
+    pub fn reader(packfile: R, git_dir: &str) -> io::Result<Self> {
         let mut packfile = Self {
             bufreader: BufReader::new(packfile),
             position: 0,
             total: 0,
+            git_dir: git_dir.to_string(),
         };
         packfile.validate()?;
         packfile.count_objects()?;
@@ -252,7 +250,9 @@ impl<R: Read + Seek> Packfile<R> {
                 todo!("RefDelta not implemented");
                 // let mut hash = [0; 20];
                 // self.bufreader.read_exact(&mut hash)?;
-                // let base_object = decompress_object_into_bytes(hash, self.git_dir)?;
+                // let hash: Vec<String> = hash.iter().map(|byte| format!("{:02x}", byte)).collect(); // convierto los bytes del hash a string
+                // let hash = hash.concat().to_string();
+                // let base_object = PackfileEntry::from_hash(&hash, &self.git_dir)?;
                 // self.apply_delta(&base_object)
             }
             _ => {
@@ -527,10 +527,10 @@ fn append_object(
 ) -> io::Result<()> {
     let (obj_type, hash) = object;
 
-    let content = decompress_object_into_bytes(&hash, git_dir)?;
-    let obj_size = content.len();
+    let object = PackfileEntry::from_hash(&hash, git_dir)?;
+    let obj_size = object.size;
     let mut compressor = ZlibEncoder::new(Vec::<u8>::new(), Compression::default());
-    compressor.write_all(&content)?;
+    compressor.write_all(&object.content)?;
     let compressed_content = compressor.finish()?;
 
     let mut encoded_header: Vec<u8> = Vec::new();
@@ -549,30 +549,6 @@ fn append_object(
     Ok(())
 }
 
-/// Decompresses a Git object into a vector of bytes.
-///
-/// The `hash` parameter is the hash of the Git object.
-///
-/// The `git_dir` parameter is the path to the Git directory.
-///
-/// # Errors
-///
-/// Returns an `io::Error` if there is an issue decompressing or reading the object.
-///
-fn decompress_object_into_bytes(hash: &str, git_dir: &str) -> io::Result<Vec<u8>> {
-    let file_dir = format!("{}/objects/{}", git_dir, &hash[..2]);
-    let file = File::open(format!("{}/{}", file_dir, &hash[2..]))?;
-    let mut decompressor = ZlibDecoder::new(BufReader::new(file));
-    let mut decompressed_content = Vec::new();
-    decompressor.read_to_end(&mut decompressed_content)?;
-
-    let mut reader = BufReader::new(decompressed_content.as_slice());
-    reader.read_until(0, &mut Vec::new())?;
-    let mut decompressed_content = Vec::new();
-    reader.read_to_end(&mut decompressed_content)?;
-    Ok(decompressed_content)
-}
-
 /// Unpacks a Git packfile into individual Git objects.
 ///
 /// The `packfile` parameter is a slice containing the content of the Git packfile.
@@ -584,7 +560,10 @@ fn decompress_object_into_bytes(hash: &str, git_dir: &str) -> io::Result<Vec<u8>
 /// Returns an `io::Error` if there is an issue reading or storing the objects.
 ///
 pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
-    let packfile = Packfile::reader(Cursor::new(packfile))?;
+    let mut file = File::create("tests/packfiles/pack-ref-delta.pack")?;
+    file.write_all(packfile)?;
+    dbg!("Pacfile written");
+    let packfile = Packfile::reader(Cursor::new(packfile), git_dir)?;
     for entry in packfile {
         let entry = entry?;
         hash_object::store_bytes_array_to_file(

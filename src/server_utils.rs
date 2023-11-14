@@ -7,7 +7,7 @@ use std::{
     str::from_utf8,
 };
 
-use crate::{cat_file, packfile_handler::ObjectType};
+use crate::{cat_file, packfile::handler::ObjectType};
 
 // HELPER MODULE
 

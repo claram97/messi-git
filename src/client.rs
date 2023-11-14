@@ -6,7 +6,7 @@ use std::{
     path::PathBuf,
 };
 
-use crate::{packfile_handler, server_utils::*};
+use crate::{packfile, server_utils::*};
 
 const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
@@ -247,7 +247,7 @@ impl Client {
                 break;
             }
             if bytes[0] == 1 {
-                return packfile_handler::unpack_packfile(&bytes[..], &self.git_dir);
+                return packfile::handler::unpack_packfile(&bytes[..], &self.git_dir);
             }
         }
         Err(Error::new(io::ErrorKind::NotFound, "Packfile not found"))
@@ -285,7 +285,7 @@ impl Client {
         haves.insert(prev_hash.to_string());
 
         let missing_objects = get_missing_objects_from(new_hash, &haves, &self.git_dir)?;
-        let packfile = packfile_handler::create_packfile_from_set(missing_objects, &self.git_dir)?;
+        let packfile = packfile::handler::create_packfile_from_set(missing_objects, &self.git_dir)?;
         let packfile: Vec<u8> = [vec![1], packfile].concat();
         self.send_bytes(&pkt_line_bytes(&packfile))?;
         Ok(())
