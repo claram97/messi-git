@@ -1,23 +1,22 @@
 use crate::gui::main_window::add_to_open_windows;
 use crate::gui::main_window::close_all_windows;
-use crate::gui::repository_window::show_repository_window;
 use crate::gui::main_window::run_main_window;
+use crate::gui::repository_window::show_repository_window;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::apply_window_style;
 use crate::gui::style::create_text_entry_window;
 use crate::gui::style::get_button;
 use crate::init::git_init;
+use gtk::prelude::*;
 use gtk::ButtonExt;
 use gtk::ContainerExt;
 use gtk::FileChooserExt;
 use gtk::GtkWindowExt;
 use gtk::WidgetExt;
+use gtk::{Box, Button, FileChooserAction, FileChooserButton, Orientation, Window, WindowType};
 use std::env;
 use std::io;
 use std::path::Path;
-use gtk::prelude::*;
-use gtk::{FileChooserAction, FileChooserButton, Button, Box, Orientation, Window, WindowType};
-
 
 /// Configures the properties of a clone window in a GTK application.
 ///
@@ -84,7 +83,8 @@ pub fn connect_button_clicked_init_window(
             };
             if button_type == "option2" {
                 let result = show_text_entry_window("Enter the branch", move |text| {
-                    if let Err(err) = handle_git_init_and_change_dir(&dir_str, &text, &current_dir) {
+                    if let Err(err) = handle_git_init_and_change_dir(&dir_str, &text, &current_dir)
+                    {
                         eprintln!("{}", err);
                     }
                 });
@@ -146,10 +146,8 @@ fn create_selection_window() -> (Window, Button, FileChooserButton, Box) {
     window.set_title("Selection Directory");
     window.set_default_size(400, 150);
 
-    let file_chooser = FileChooserButton::new(
-        "Select a directory ",
-        FileChooserAction::SelectFolder,
-    );
+    let file_chooser =
+        FileChooserButton::new("Select a directory ", FileChooserAction::SelectFolder);
 
     let button_ok = Button::with_label("OK");
     if let Err(err) = apply_button_style(&button_ok) {
@@ -205,8 +203,8 @@ fn init_git_and_handle_errors(dir_str: &str, current_dir: &Path) {
 /// * `current_dir` - The current directory path.
 ///
 fn handle_template_path_entry(dir_str: &str, current_dir: &Path) {
-    let dir_str = dir_str.to_string();  
-    let current_dir_clone = current_dir.to_path_buf();  
+    let dir_str = dir_str.to_string();
+    let current_dir_clone = current_dir.to_path_buf();
 
     let result = create_text_entry_window("Enter the template path", move |text| {
         let result = git_init(&dir_str, "master", Some(&text));
@@ -244,7 +242,7 @@ fn handle_template_path_entry(dir_str: &str, current_dir: &Path) {
 ///
 fn show_text_entry_window<'a, F>(prompt: &str, callback: F) -> Result<(), String>
 where
-    F: Fn(String) + 'a + 'static, 
+    F: Fn(String) + 'a + 'static,
 {
     let result = create_text_entry_window(prompt, callback);
     if result.is_err() {
@@ -268,10 +266,14 @@ where
 ///
 /// # Errors
 ///
-/// The function returns a `Result` indicating whether the operation was successful or if an error occurred. 
+/// The function returns a `Result` indicating whether the operation was successful or if an error occurred.
 /// In case of an error, a `String` with a descriptive error message is returned.
 ///
-fn handle_git_init_and_change_dir(dir_str: &str, branch_name: &str, current_dir: &Path) -> Result<(), String> {
+fn handle_git_init_and_change_dir(
+    dir_str: &str,
+    branch_name: &str,
+    current_dir: &Path,
+) -> Result<(), String> {
     let result = git_init(dir_str, branch_name, None);
     if result.is_err() {
         return Err("Error initiating git.".to_string());

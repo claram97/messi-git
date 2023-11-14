@@ -8,6 +8,7 @@ use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
+use crate::fetch::git_fetch_for_gui;
 use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
@@ -18,7 +19,6 @@ use crate::gui::style::get_entry;
 use crate::gui::style::get_text_view;
 use crate::gui::style::load_and_get_window;
 use crate::gui::style::show_message_dialog;
-use crate::fetch::git_fetch_for_gui;
 use crate::index;
 use crate::log::log;
 use crate::log::Log;
@@ -150,7 +150,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "checkout3",
         "checkout4",
         "checkout5",
-        "show-fetch"
+        "show-fetch",
     ];
 
     for button_id in button_ids.iter() {
@@ -257,7 +257,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     };
     match button_id {
         "show-fetch" => {
-            button.connect_clicked(move |_|{
+            button.connect_clicked(move |_| {
                 handle_fetch_button(&builder_clone);
             });
         }
@@ -429,7 +429,7 @@ pub fn obtain_text_from_fetch() -> Result<String, std::io::Error> {
     //     Ok(dir) => dir,
     //     Err(err) => {
     //         eprintln!("Error al obtener el directorio actual: {:?}", err);
-            
+
     //     }
     // };
     // let url_text = &_args[2];//aca hay q poner la url
@@ -456,28 +456,27 @@ fn handle_fetch_button(builder: &gtk::Builder) {
     let log_text_view_result: Option<gtk::TextView> = builder.get_object("fetch-text");
 
     if let Some(log_text_view) = log_text_view_result {
-    let text_from_function = obtain_text_from_fetch();
+        let text_from_function = obtain_text_from_fetch();
 
-    match text_from_function {
-    Ok(texto) => {
-        log_text_view.set_hexpand(true);
-        log_text_view.set_halign(gtk::Align::Start);
+        match text_from_function {
+            Ok(texto) => {
+                log_text_view.set_hexpand(true);
+                log_text_view.set_halign(gtk::Align::Start);
 
-        if let Some(buffer) = log_text_view.get_buffer() {
-            buffer.set_text(texto.as_str());
-        } else {
-            eprintln!("Fatal error in show repository window.");
+                if let Some(buffer) = log_text_view.get_buffer() {
+                    buffer.set_text(texto.as_str());
+                } else {
+                    eprintln!("Fatal error in show repository window.");
+                }
+            }
+            Err(err) => {
+                eprintln!("Error al obtener el texto: {}", err);
+            }
         }
-    }
-    Err(err) => {
-        eprintln!("Error al obtener el texto: {}", err);
-    }
-    }
     } else {
-    eprintln!("We couldn't find log text view 'log-text'");
+        eprintln!("We couldn't find log text view 'log-text'");
     }
 }
-
 
 /// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
 /// and attempts to create and checkout a new branch based on the provided path. It shows a success message
@@ -651,7 +650,7 @@ fn handle_delete_branch_button() -> io::Result<()> {
 }
 fn handle_modify_branch_button() -> io::Result<()> {
     let create_result = create_text_entry_window("Enter the name of the branch", |text| {
-        let result = git_branch_for_ui(Some(text));// aca te dejo pa q le metas la llamada
+        let result = git_branch_for_ui(Some(text)); // aca te dejo pa q le metas la llamada
         if result.is_err() {
             eprintln!("Error creating text entry window.");
         }
@@ -718,21 +717,27 @@ fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
 
     let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
     let index_path = format!("{}/index", git_dir);
-        match add("None", &index_path, &git_dir, &git_ignore_path, Some(vec![".".to_string()])) {
-            Ok(_) => {
-                println!("La función 'add' se ejecutó correctamente.");
-            }
-            Err(err) => {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    format!("Error al llamar a la función 'add': {:?}", err),
-                ))
-            }
+    match add(
+        "None",
+        &index_path,
+        &git_dir,
+        &git_ignore_path,
+        Some(vec![".".to_string()]),
+    ) {
+        Ok(_) => {
+            println!("La función 'add' se ejecutó correctamente.");
         }
-        let result = set_staging_area_texts(&builder_clone);
-        if result.is_err() {
-            eprintln!("No se pudo actualizar la vista de staging.");
+        Err(err) => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("Error al llamar a la función 'add': {:?}", err),
+            ))
         }
+    }
+    let result = set_staging_area_texts(&builder_clone);
+    if result.is_err() {
+        eprintln!("No se pudo actualizar la vista de staging.");
+    }
 
     Ok(())
 }
@@ -793,15 +798,14 @@ fn handle_checkout_branch_window() -> io::Result<()> {
             Ok(texto) => {
                 show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
             }
-            Err(_err) => {
-                match _err.kind() {
-                    std::io::ErrorKind::UnexpectedEof => {
-                        show_message_dialog("Éxito", &format!("Changed correctly to branch "));
-                    }
-                    _ => {show_message_dialog("Error", "La rama indicada no existe.");
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Éxito", &format!("Changed correctly to branch "));
                 }
+                _ => {
+                    show_message_dialog("Error", "La rama indicada no existe.");
                 }
-            }
+            },
         }
     });
     if result.is_err() {
@@ -1156,15 +1160,15 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
             std::io::ErrorKind::UnexpectedEof => {
                 eprintln!("exito.");
             }
-            _ => {return Err(io::Error::new(
-                        io::ErrorKind::NotFound,
-                        "Error calling the 'checkout branch' function\n",
-                    ));}
-        })
-    
-        ,
+            _ => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "Error calling the 'checkout branch' function\n",
+                ));
+            }
+        }),
     };
-  
+
     Ok("Ok".to_string())
 }
 
@@ -1308,7 +1312,6 @@ pub fn merge_button_connect_clicked(
                 }
                 Err(_e) => {
                     show_message_dialog("Error", "Merge interrupted due to an error.");
-                   
                 }
             };
         }
