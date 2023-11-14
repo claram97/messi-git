@@ -15,3 +15,13 @@ fn test_1() -> io::Result<()> {
     }
     Ok(())
 }
+
+#[test]
+fn test_load_object() -> io::Result<()> {
+    let hash = "d4fcb8b438a753430575dc76ac380af0f9a002a4";
+    let git_dir = "tests/packfiles/.mgit";
+    let entry = packfile_handler::PackfileEntry::from_hash(hash, git_dir)?;
+    dbg!(&entry);
+    from_utf8(&entry.content).unwrap();
+    Ok(())
+}

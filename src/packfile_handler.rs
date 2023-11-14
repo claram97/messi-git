@@ -1,10 +1,8 @@
 use std::{
-    cell::RefCell,
     collections::HashSet,
     fmt::Display,
     fs::File,
     io::{self, BufRead, BufReader, Cursor, Error, Read, Seek, Write},
-    rc::Rc,
     str::from_utf8,
     vec,
 };
@@ -13,7 +11,7 @@ use flate2::{bufread::ZlibDecoder, write::ZlibEncoder, Compression};
 use sha1::Digest;
 use sha1::Sha1;
 
-use crate::{hash_object, server};
+use crate::hash_object;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObjectType {
@@ -22,6 +20,7 @@ pub enum ObjectType {
     Blob,
     Tag,
     OfsDelta,
+    RefDelta,
 }
 
 impl ObjectType {
@@ -32,6 +31,7 @@ impl ObjectType {
             ObjectType::Blob => 3,
             ObjectType::Tag => 4,
             ObjectType::OfsDelta => 6,
+            ObjectType::RefDelta => 7,
         }
     }
 }
@@ -44,6 +44,7 @@ impl Display for ObjectType {
             ObjectType::Blob => write!(f, "blob"),
             ObjectType::Tag => write!(f, "tag"),
             ObjectType::OfsDelta => write!(f, "ofs-delta"),
+            ObjectType::RefDelta => write!(f, "ref-delta"),
         }
     }
 }
@@ -75,6 +76,7 @@ impl TryFrom<u8> for ObjectType {
             3 => Ok(Self::Blob),
             4 => Ok(Self::Tag),
             6 => Ok(Self::OfsDelta),
+            7 => Ok(Self::RefDelta),
             t => Err(Error::new(
                 io::ErrorKind::InvalidData,
                 format!("Unsopported object type: {}", t),
@@ -98,22 +100,49 @@ impl PackfileEntry {
             content,
         }
     }
+
+    pub fn from_hash(hash: &str, git_dir: &str) -> io::Result<Self> {
+        let file_dir = format!("{}/objects/{}", git_dir, &hash[..2]);
+        let file = File::open(format!("{}/{}", file_dir, &hash[2..]))?;
+        let mut decompressor = ZlibDecoder::new(BufReader::new(file));
+        let mut decompressed_content = Vec::new();
+        decompressor.read_to_end(&mut decompressed_content)?;
+
+        let mut reader = BufReader::new(decompressed_content.as_slice());
+
+        // get type
+        let mut type_buf = Vec::new();
+        reader.read_until(b' ', &mut type_buf)?;
+        let obj_type = from_utf8(&type_buf)
+            .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
+        let obj_type = ObjectType::try_from(obj_type.trim())?;
+
+        let mut size_buf = Vec::new();
+        reader.read_until(0, &mut size_buf)?;
+        let size = from_utf8(&size_buf)
+            .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
+        let size = usize::from_str_radix(size.trim_end_matches('\0'), 10)
+            .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
+
+        let mut decompressed_content = Vec::new();
+        reader.read_to_end(&mut decompressed_content)?;
+
+        Ok(Self {
+            obj_type,
+            size,
+            content: decompressed_content,
+        })
+    }
 }
 
 #[derive(Debug)]
-pub struct Packfile<R>
-where
-    R: Read + Seek,
-{
+pub struct Packfile<R: Read + Seek> {
     bufreader: BufReader<R>,
     position: u32,
     total: u32,
 }
 
-impl<R> Packfile<R>
-where
-    R: Read + Seek,
-{
+impl<R: Read + Seek> Packfile<R> {
     /// Creates a new `PackfileReader` from the provided reader.
     ///
     /// This function initializes a `PackfileReader` with the given reader, validating the packfile format,
@@ -151,7 +180,7 @@ where
     ///
     fn validate(&mut self) -> io::Result<()> {
         let [_] = read_bytes(self.bufreader.get_mut())?;
-        let mut buf: [u8; 4] = read_bytes(self.bufreader.get_mut())?;
+        let buf: [u8; 4] = read_bytes(self.bufreader.get_mut())?;
 
         let signature = from_utf8(&buf)
             .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
@@ -163,7 +192,7 @@ where
             ));
         }
 
-        let mut buf = read_bytes(self.bufreader.get_mut())?;
+        let buf = read_bytes(self.bufreader.get_mut())?;
         let version = u32::from_be_bytes(buf);
 
         if version != 2 {
@@ -189,7 +218,7 @@ where
     /// Returns an `io::Error` if there is an issue reading the total object count.
     ///
     fn count_objects(&mut self) -> io::Result<()> {
-        let mut buf = read_bytes(self.bufreader.get_mut())?;
+        let buf = read_bytes(self.bufreader.get_mut())?;
         self.total = u32::from_be_bytes(buf);
         Ok(())
     }
@@ -217,8 +246,14 @@ where
                     .seek(io::SeekFrom::Start(initial_position - delta_offset))?;
                 let base_object = self.get_next()?;
                 self.bufreader.seek(io::SeekFrom::Start(position))?;
-                // todo!("OfsDelta yet not implemented")
                 self.apply_delta(&base_object)
+            }
+            ObjectType::RefDelta => {
+                todo!("RefDelta not implemented");
+                // let mut hash = [0; 20];
+                // self.bufreader.read_exact(&mut hash)?;
+                // let base_object = decompress_object_into_bytes(hash, self.git_dir)?;
+                // self.apply_delta(&base_object)
             }
             _ => {
                 let mut decompressor = ZlibDecoder::new(&mut self.bufreader);
@@ -303,10 +338,7 @@ where
     }
 }
 
-impl<R> Iterator for Packfile<R>
-where
-    R: Read + Seek,
-{
+impl<R: Read + Seek> Iterator for Packfile<R> {
     type Item = io::Result<PackfileEntry>;
 
     /// Advances the packfile reader to the next object entry.
