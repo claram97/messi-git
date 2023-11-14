@@ -579,7 +579,16 @@ fn handle_checkout(args: Vec<String>) {
             }
         }
         _ => {
-            checkout_branch(git_dir1, &working_dir, option);
+            if let Err(err) = checkout_branch(git_dir1, &working_dir, option) {
+                match err.kind() {
+                    std::io::ErrorKind::UnexpectedEof => {
+                        eprintln!(" ");
+                    }
+                    // Agregar más casos según sea necesario.
+                    _ => { eprintln!("Error cambiar de rama : {:?}", err);}
+                }
+               
+            }
         }
     }
 }

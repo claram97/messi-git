@@ -691,7 +691,13 @@ fn handle_checkout_branch_window() -> io::Result<()> {
                 show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => {
-                show_message_dialog("Error", "La rama indicada no existe.");
+                match _err.kind() {
+                    std::io::ErrorKind::UnexpectedEof => {
+                        show_message_dialog("Éxito", &format!("Changed correctly to branch "));
+                    }
+                    _ => {show_message_dialog("Error", "La rama indicada no existe.");
+                }
+                }
             }
         }
     });
@@ -1043,17 +1049,19 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
         text,
     ) {
         Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
-        Err(err) => Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("Error calling the 'checkout branch' function: {:?}\n", err),
-        )),
+        Err(err) => Err(match err.kind() {
+            std::io::ErrorKind::UnexpectedEof => {
+                eprintln!("exito.");
+            }
+            _ => {return Err(io::Error::new(
+                        io::ErrorKind::NotFound,
+                        "Error calling the 'checkout branch' function\n",
+                    ));}
+        })
+    
+        ,
     };
-    if result.is_err() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Error calling the 'checkout branch' function\n",
-        ));
-    }
+  
     Ok("Ok".to_string())
 }
 
