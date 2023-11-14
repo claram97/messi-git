@@ -137,6 +137,8 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "pull",
         "push",
         "show-branches-button",
+        "delete-branch-button",
+        "modify-branch-button",
         "add-path-button",
         "add-all-button",
         "remove-path-button",
@@ -361,6 +363,22 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                 }
             });
         }
+        "delete-branch-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_delete_branch_button();
+                if result.is_err() {
+                    eprintln!("Error handling create branch button.")
+                }
+            });
+        }
+        "modify-branch-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_modify_branch_button();
+                if result.is_err() {
+                    eprintln!("Error handling create branch button.")
+                }
+            });
+        }
 
         "add-path-button" => {
             button.connect_clicked(move |_| {
@@ -555,6 +573,35 @@ fn handle_create_branch_button() -> io::Result<()> {
     Ok(())
 }
 
+fn handle_delete_branch_button() -> io::Result<()> {
+    let create_result = create_text_entry_window("Enter the name of the branch", |text| {
+        let result = git_branch_for_ui(Some(text)); // te dejo pa q le metas la llamdad
+        if result.is_err() {
+            eprintln!("Error creating text entry window.");
+        }
+    });
+
+    if create_result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+fn handle_modify_branch_button() -> io::Result<()> {
+    let create_result = create_text_entry_window("Enter the name of the branch", |text| {
+        let result = git_branch_for_ui(Some(text));// aca te dejo pa q le metas la llamada
+        if result.is_err() {
+            eprintln!("Error creating text entry window.");
+        }
+    });
+
+    if create_result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+
 /// Handle the "Add Path" button's click event. This function opens a text entry window for users to enter the path of
 /// the file they want to add to the staging area. Once the path is entered and confirmed, it attempts to add the file
 /// and displays a success message or an error message if there was an issue.
@@ -609,27 +656,21 @@ fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
 
     let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
     let index_path = format!("{}/index", git_dir);
-    match add(
-        "None",
-        &index_path,
-        &git_dir,
-        &git_ignore_path,
-        Some(vec![".".to_string()]),
-    ) {
-        Ok(_) => {
-            println!("La función 'add' se ejecutó correctamente.");
+        match add("None", &index_path, &git_dir, &git_ignore_path, Some(vec![".".to_string()])) {
+            Ok(_) => {
+                println!("La función 'add' se ejecutó correctamente.");
+            }
+            Err(err) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    format!("Error al llamar a la función 'add': {:?}", err),
+                ))
+            }
         }
-        Err(err) => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                format!("Error al llamar a la función 'add': {:?}", err),
-            ))
+        let result = set_staging_area_texts(&builder_clone);
+        if result.is_err() {
+            eprintln!("No se pudo actualizar la vista de staging.");
         }
-    }
-    let result = set_staging_area_texts(&builder_clone);
-    if result.is_err() {
-        eprintln!("No se pudo actualizar la vista de staging.");
-    }
 
     Ok(())
 }
@@ -1205,14 +1246,7 @@ pub fn merge_button_connect_clicked(
                 }
                 Err(_e) => {
                     show_message_dialog("Error", "Merge interrupted due to an error.");
-                    // match text_view_clone.get_buffer() {
-                    //     Some(buff) => {
-                    //         buff.set_text("Conflicts on merge!");
-                    //     }
-                    //     None => {
-                    //         eprintln!("Couldn't write the output on the text view.");
-                    //     }
-                    // };
+                   
                 }
             };
         }
@@ -1234,8 +1268,6 @@ pub fn set_merge_button_behavior(
     entry: &gtk::Entry,
     text_view: &gtk::TextView,
 ) -> io::Result<()> {
-    //let entry_clone = entry.clone();
-    //let text_view_clone = text_view.clone();
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
         Some(dir) => dir,
