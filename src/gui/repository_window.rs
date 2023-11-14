@@ -18,6 +18,7 @@ use crate::gui::style::get_entry;
 use crate::gui::style::get_text_view;
 use crate::gui::style::load_and_get_window;
 use crate::gui::style::show_message_dialog;
+use crate::fetch::git_fetch_for_gui;
 use crate::index;
 use crate::log::log;
 use crate::log::Log;
@@ -255,6 +256,11 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
     };
     match button_id {
+        "show-fetch" => {
+            button.connect_clicked(move |_|{
+                handle_fetch_button(&builder_clone);
+            });
+        }
         "show-log-button" => {
             button.connect_clicked(move |_| {
                 handle_show_log_button_click(&builder_clone);
@@ -417,6 +423,61 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     }
     Ok(())
 }
+
+pub fn obtain_text_from_fetch() -> Result<String, std::io::Error> {
+    // let current_dir = match std::env::current_dir() {
+    //     Ok(dir) => dir,
+    //     Err(err) => {
+    //         eprintln!("Error al obtener el directorio actual: {:?}", err);
+            
+    //     }
+    // };
+    // let url_text = &_args[2];//aca hay q poner la url
+    // //The remote repo url is the first part of the URL, up until the last '/'.
+    // let _remote_repo_url = match url_text.rsplit_once('/') {
+    //     Some((string, _)) => string,
+    //     None => "",
+    // };
+
+    // //The remote repository name is the last part of the URL.
+    // let remote_repo_name = url_text.split('/').last().unwrap_or("");
+    // let result = git_fetch_for_gui(
+    //     Some(remote_repo_name),
+    //     "localhost",
+    //     current_dir.to_str().expect("Error "),
+    // );
+    // let refs_text: String = result.join("\n");
+
+    // Ok(refs_text)
+    Ok("hola".to_string())
+}
+
+fn handle_fetch_button(builder: &gtk::Builder) {
+    let log_text_view_result: Option<gtk::TextView> = builder.get_object("fetch-text");
+
+    if let Some(log_text_view) = log_text_view_result {
+    let text_from_function = obtain_text_from_fetch();
+
+    match text_from_function {
+    Ok(texto) => {
+        log_text_view.set_hexpand(true);
+        log_text_view.set_halign(gtk::Align::Start);
+
+        if let Some(buffer) = log_text_view.get_buffer() {
+            buffer.set_text(texto.as_str());
+        } else {
+            eprintln!("Fatal error in show repository window.");
+        }
+    }
+    Err(err) => {
+        eprintln!("Error al obtener el texto: {}", err);
+    }
+    }
+    } else {
+    eprintln!("We couldn't find log text view 'log-text'");
+    }
+}
+
 
 /// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
 /// and attempts to create and checkout a new branch based on the provided path. It shows a success message

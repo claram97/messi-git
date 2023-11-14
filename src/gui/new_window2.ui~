@@ -958,7 +958,14 @@
                 <property name="can-focus">True</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <placeholder/>
+                  <object class="GtkTextView">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                  </object>
+                  <packing>
+                    <property name="resize">True</property>
+                    <property name="shrink">True</property>
+                  </packing>
                 </child>
                 <child>
                   <object class="GtkButtonBox">
@@ -969,7 +976,7 @@
                     <property name="homogeneous">True</property>
                     <property name="layout-style">end</property>
                     <child>
-                      <object class="GtkButton">
+                      <object class="GtkButton" id="show-fetch">
                         <property name="label" translatable="yes">Show </property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
