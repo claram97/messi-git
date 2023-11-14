@@ -12,7 +12,7 @@ use sha1::Sha1;
 
 use crate::hash_object;
 
-use super::{object_type::ObjectType, entry::PackfileEntry, delta_utils};
+use super::{delta_utils, entry::PackfileEntry, object_type::ObjectType};
 
 #[derive(Debug)]
 pub struct Packfile<R: Read + Seek> {
@@ -120,37 +120,47 @@ impl<R: Read + Seek> Packfile<R> {
 
         dbg!(obj_type, obj_size);
         match obj_type {
-            ObjectType::OfsDelta => {
-                let delta_offset = self.read_offset_encoding()?;
-                let position = self.bufreader.stream_position()?;
-                self.bufreader
-                    .seek(io::SeekFrom::Start(initial_position - delta_offset))?;
-                let base_object = self.get_next()?;
-                self.bufreader.seek(io::SeekFrom::Start(position))?;
-                self.apply_delta(&base_object)
-            }
-            ObjectType::RefDelta => {
-                let mut hash = [0; 20];
-                self.bufreader.read_exact(&mut hash)?;
-                let hash: Vec<String> = hash.iter().map(|byte| format!("{:02x}", byte)).collect(); // convierto los bytes del hash a string
-                let hash = hash.concat().to_string();
-                let base_object = PackfileEntry::from_hash(&hash, &self.git_dir)?;
-                self.apply_delta(&base_object)
-            }
-            _ => {
-                let mut decompressor = ZlibDecoder::new(&mut self.bufreader);
-                let mut obj = vec![];
-                let bytes_read = decompressor.read_to_end(&mut obj)?;
-                if obj_size != bytes_read {
-                    println!("type {:?}. bytes:\n{:?}", obj_type, obj);
-                    return Err(Error::new(
-                        io::ErrorKind::InvalidInput,
-                        "Corrupted packfile. Size is not correct",
-                    ));
-                }
-                Ok(PackfileEntry::new(obj_type, obj_size, obj))
-            }
+            ObjectType::OfsDelta => self.get_ofs_delta_object(initial_position),
+            ObjectType::RefDelta => self.get_ref_delta_object(),
+            _ => self.get_base_object(obj_type, obj_size),
         }
+    }
+
+    fn get_base_object(
+        &mut self,
+        obj_type: ObjectType,
+        obj_size: usize,
+    ) -> io::Result<PackfileEntry> {
+        let mut decompressor = ZlibDecoder::new(&mut self.bufreader);
+        let mut obj = vec![];
+        let bytes_read = decompressor.read_to_end(&mut obj)?;
+        if obj_size != bytes_read {
+            println!("type {:?}. bytes:\n{:?}", obj_type, obj);
+            return Err(Error::new(
+                io::ErrorKind::InvalidInput,
+                "Corrupted packfile. Size is not correct",
+            ));
+        }
+        Ok(PackfileEntry::new(obj_type, obj_size, obj))
+    }
+
+    fn get_ofs_delta_object(&mut self, initial_position: u64) -> io::Result<PackfileEntry> {
+        let delta_offset = self.read_offset_encoding()?;
+        let position = self.bufreader.stream_position()?;
+        self.bufreader
+            .seek(io::SeekFrom::Start(initial_position - delta_offset))?;
+        let base_object = self.get_next()?;
+        self.bufreader.seek(io::SeekFrom::Start(position))?;
+        self.apply_delta(&base_object)
+    }
+
+    fn get_ref_delta_object(&mut self) -> io::Result<PackfileEntry> {
+        let mut hash = [0; 20];
+        self.bufreader.read_exact(&mut hash)?;
+        let hash: Vec<String> = hash.iter().map(|byte| format!("{:02x}", byte)).collect(); // convierto los bytes del hash a string
+        let hash = hash.concat().to_string();
+        let base_object = PackfileEntry::from_hash(&hash, &self.git_dir)?;
+        self.apply_delta(&base_object)
     }
 
     fn get_obj_type_size(&mut self) -> io::Result<(ObjectType, usize)> {
