@@ -579,9 +579,7 @@ fn handle_checkout(args: Vec<String>) {
             }
         }
         _ => {
-            if let Err(err) = checkout_branch(git_dir1, &working_dir, option) {
-                eprintln!("Error al cambiar a la rama especificada: {:?}", err);
-            }
+            checkout_branch(git_dir1, &working_dir, option);
         }
     }
 }
