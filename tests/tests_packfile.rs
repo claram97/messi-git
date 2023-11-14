@@ -1,6 +1,6 @@
 use std::{io, fs, str::from_utf8};
 
-use messi::packfile;
+use messi::packfile::{self, entry::PackfileEntry};
 
 #[test]
 fn test_ofs_delta() -> io::Result<()> {
@@ -28,7 +28,7 @@ fn test_ref_deltas() -> io::Result<()> {
 fn test_load_object() -> io::Result<()> {
     let hash = "d4fcb8b438a753430575dc76ac380af0f9a002a4";
     let git_dir = "tests/packfiles/.mgit";
-    let entry = packfile::handler::PackfileEntry::from_hash(hash, git_dir)?;
+    let entry = PackfileEntry::from_hash(hash, git_dir)?;
     assert!(from_utf8(&entry.content).is_ok());
     Ok(())
 }

@@ -1,8 +1,7 @@
 use std::{
     collections::HashSet,
-    fmt::Display,
     fs::File,
-    io::{self, BufRead, BufReader, Cursor, Error, Read, Seek, Write},
+    io::{self, BufReader, Cursor, Error, Read, Seek, Write},
     str::from_utf8,
     vec,
 };
@@ -13,123 +12,7 @@ use sha1::Sha1;
 
 use crate::hash_object;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ObjectType {
-    Commit,
-    Tree,
-    Blob,
-    Tag,
-    OfsDelta,
-    RefDelta,
-}
-
-impl ObjectType {
-    fn as_byte(&self) -> u8 {
-        match self {
-            ObjectType::Commit => 1,
-            ObjectType::Tree => 2,
-            ObjectType::Blob => 3,
-            ObjectType::Tag => 4,
-            ObjectType::OfsDelta => 6,
-            ObjectType::RefDelta => 7,
-        }
-    }
-}
-
-impl Display for ObjectType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ObjectType::Commit => write!(f, "commit"),
-            ObjectType::Tree => write!(f, "tree"),
-            ObjectType::Blob => write!(f, "blob"),
-            ObjectType::Tag => write!(f, "tag"),
-            ObjectType::OfsDelta => write!(f, "ofs-delta"),
-            ObjectType::RefDelta => write!(f, "ref-delta"),
-        }
-    }
-}
-
-impl TryFrom<&str> for ObjectType {
-    type Error = io::Error;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value {
-            "commit" => Ok(Self::Commit),
-            "tree" => Ok(Self::Tree),
-            "blob" => Ok(Self::Blob),
-            "tag" => Ok(Self::Tag),
-            t => Err(Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Unsopported object type: {}", t),
-            )),
-        }
-    }
-}
-
-impl TryFrom<u8> for ObjectType {
-    type Error = io::Error;
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            1 => Ok(Self::Commit),
-            2 => Ok(Self::Tree),
-            3 => Ok(Self::Blob),
-            4 => Ok(Self::Tag),
-            6 => Ok(Self::OfsDelta),
-            7 => Ok(Self::RefDelta),
-            t => Err(Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Unsopported object type: {}", t),
-            )),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct PackfileEntry {
-    pub obj_type: ObjectType,
-    pub size: usize,
-    pub content: Vec<u8>,
-}
-
-impl PackfileEntry {
-    pub fn new(obj_type: ObjectType, size: usize, content: Vec<u8>) -> Self {
-        Self {
-            obj_type,
-            size,
-            content,
-        }
-    }
-
-    pub fn from_hash(hash: &str, git_dir: &str) -> io::Result<Self> {
-        let file_dir = format!("{}/objects/{}", git_dir, &hash[..2]);
-        let file = File::open(format!("{}/{}", file_dir, &hash[2..]))?;
-        let mut decompressor = ZlibDecoder::new(BufReader::new(file));
-        let mut decompressed_content = Vec::new();
-        decompressor.read_to_end(&mut decompressed_content)?;
-
-        let mut reader = BufReader::new(decompressed_content.as_slice());
-
-        // get type
-        let mut type_buf = Vec::new();
-        reader.read_until(b' ', &mut type_buf)?;
-        let obj_type = from_utf8(&type_buf)
-            .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
-        let obj_type = ObjectType::try_from(obj_type.trim())?;
-
-        let mut size_buf = Vec::new();
-        reader.read_until(0, &mut size_buf)?;
-        let size = from_utf8(&size_buf)
-            .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
-        let size = usize::from_str_radix(size.trim_end_matches('\0'), 10)
-            .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
-
-        let mut decompressed_content = Vec::new();
-        reader.read_to_end(&mut decompressed_content)?;
-
-        Ok(Self::new(obj_type, size, decompressed_content))
-    }
-}
+use super::{object_type::ObjectType, entry::PackfileEntry, delta_utils};
 
 #[derive(Debug)]
 pub struct Packfile<R: Read + Seek> {
@@ -177,8 +60,8 @@ impl<R: Read + Seek> Packfile<R> {
     /// the version is not 2.
     ///
     fn validate(&mut self) -> io::Result<()> {
-        let [_] = read_bytes(self.bufreader.get_mut())?;
-        let buf: [u8; 4] = read_bytes(self.bufreader.get_mut())?;
+        let [_] = self.read_bytes()?;
+        let buf: [u8; 4] = self.read_bytes()?;
 
         let signature = from_utf8(&buf)
             .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
@@ -190,7 +73,7 @@ impl<R: Read + Seek> Packfile<R> {
             ));
         }
 
-        let buf = read_bytes(self.bufreader.get_mut())?;
+        let buf = self.read_bytes()?;
         let version = u32::from_be_bytes(buf);
 
         if version != 2 {
@@ -216,7 +99,7 @@ impl<R: Read + Seek> Packfile<R> {
     /// Returns an `io::Error` if there is an issue reading the total object count.
     ///
     fn count_objects(&mut self) -> io::Result<()> {
-        let buf = read_bytes(self.bufreader.get_mut())?;
+        let buf = self.read_bytes()?;
         self.total = u32::from_be_bytes(buf);
         Ok(())
     }
@@ -247,13 +130,12 @@ impl<R: Read + Seek> Packfile<R> {
                 self.apply_delta(&base_object)
             }
             ObjectType::RefDelta => {
-                todo!("RefDelta not implemented");
-                // let mut hash = [0; 20];
-                // self.bufreader.read_exact(&mut hash)?;
-                // let hash: Vec<String> = hash.iter().map(|byte| format!("{:02x}", byte)).collect(); // convierto los bytes del hash a string
-                // let hash = hash.concat().to_string();
-                // let base_object = PackfileEntry::from_hash(&hash, &self.git_dir)?;
-                // self.apply_delta(&base_object)
+                let mut hash = [0; 20];
+                self.bufreader.read_exact(&mut hash)?;
+                let hash: Vec<String> = hash.iter().map(|byte| format!("{:02x}", byte)).collect(); // convierto los bytes del hash a string
+                let hash = hash.concat().to_string();
+                let base_object = PackfileEntry::from_hash(&hash, &self.git_dir)?;
+                self.apply_delta(&base_object)
             }
             _ => {
                 let mut decompressor = ZlibDecoder::new(&mut self.bufreader);
@@ -319,16 +201,16 @@ impl<R: Read + Seek> Packfile<R> {
 
     fn apply_delta(&mut self, base: &PackfileEntry) -> io::Result<PackfileEntry> {
         let mut delta = ZlibDecoder::new(&mut self.bufreader);
-        let base_size = read_size_encoding(&mut delta)?;
+        let base_size = delta_utils::read_size_encoding(&mut delta)?;
         if base.size != base_size {
-            return Err(make_error("Incorrect base object length"));
+            return Err(delta_utils::make_error("Incorrect base object length"));
         }
 
-        let result_size = read_size_encoding(&mut delta)?;
+        let result_size = delta_utils::read_size_encoding(&mut delta)?;
         let mut result = Vec::with_capacity(result_size);
-        while apply_delta_instruction(&mut delta, &base.content, &mut result)? {}
+        while delta_utils::apply_delta_instruction(&mut delta, &base.content, &mut result)? {}
         if result.len() != result_size {
-            return Err(make_error("Incorrect object length"));
+            return Err(delta_utils::make_error("Incorrect object length"));
         }
         Ok(PackfileEntry {
             obj_type: base.obj_type,
@@ -350,107 +232,6 @@ impl<R: Read + Seek> Iterator for Packfile<R> {
         }
         self.position += 1;
         Some(self.get_next())
-    }
-}
-
-const COPY_INSTRUCTION_FLAG: u8 = 1 << 7;
-const COPY_OFFSET_BYTES: u8 = 4;
-const COPY_SIZE_BYTES: u8 = 3;
-const COPY_ZERO_SIZE: usize = 0x10000;
-
-// Read an integer of up to `bytes` bytes.
-// `present_bytes` indicates which bytes are provided. The others are 0.
-fn read_partial_int<R: Read>(
-    stream: &mut R,
-    bytes: u8,
-    present_bytes: &mut u8,
-) -> io::Result<usize> {
-    let mut value = 0;
-    for byte_index in 0..bytes {
-        // Use one bit of `present_bytes` to determine if the byte exists
-        if *present_bytes & 1 != 0 {
-            let [byte] = read_bytes(stream)?;
-            value |= (byte as usize) << (byte_index * 8);
-        }
-        *present_bytes >>= 1;
-    }
-    Ok(value)
-}
-
-// Reads a single delta instruction from a stream
-// and appends the relevant bytes to `result`.
-// Returns whether the delta stream still had instructions.
-fn apply_delta_instruction<R: Read>(
-    stream: &mut R,
-    base: &[u8],
-    result: &mut Vec<u8>,
-) -> io::Result<bool> {
-    // Check if the stream has ended, meaning the new object is done
-    let instruction = match read_bytes(stream) {
-        Ok([instruction]) => instruction,
-        Err(err) if err.kind() == io::ErrorKind::UnexpectedEof => return Ok(false),
-        Err(err) => return Err(err),
-    };
-    if instruction & COPY_INSTRUCTION_FLAG == 0 {
-        // Data instruction; the instruction byte specifies the number of data bytes
-        if instruction == 0 {
-            // Appending 0 bytes doesn't make sense, so git disallows it
-            return Err(make_error("Invalid data instruction"));
-        }
-
-        // Append the provided bytes
-        let mut data = vec![0; instruction as usize];
-        stream.read_exact(&mut data)?;
-        result.extend_from_slice(&data);
-    } else {
-        // Copy instruction
-        let mut nonzero_bytes = instruction;
-        let offset = read_partial_int(stream, COPY_OFFSET_BYTES, &mut nonzero_bytes)?;
-        let mut size = read_partial_int(stream, COPY_SIZE_BYTES, &mut nonzero_bytes)?;
-        if size == 0 {
-            // Copying 0 bytes doesn't make sense, so git assumes a different size
-            size = COPY_ZERO_SIZE;
-        }
-        // Copy bytes from the base object
-        let base_data = base
-            .get(offset..(offset + size))
-            .ok_or_else(|| make_error("Invalid copy instruction"))?;
-        result.extend_from_slice(base_data);
-    }
-    Ok(true)
-}
-
-fn make_error(message: &str) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidData, message.to_string())
-}
-
-fn read_bytes<R: Read, const N: usize>(stream: &mut R) -> io::Result<[u8; N]> {
-    let mut bytes = [0; N];
-    stream.read_exact(&mut bytes)?;
-    Ok(bytes)
-}
-
-// Read 7 bits of data and a flag indicating whether there are more
-fn read_varint_byte<R: Read>(stream: &mut R) -> io::Result<(u8, bool)> {
-    let [byte] = read_bytes(stream)?;
-    let value = byte & 0x7f;
-    let more_bytes = byte & 0x80 != 0;
-    Ok((value, more_bytes))
-}
-
-fn read_size_encoding<R: Read>(stream: &mut R) -> io::Result<usize> {
-    let mut value = 0;
-    let mut length = 0; // the number of bits of data read so far
-    loop {
-        let (byte_value, more_bytes) = read_varint_byte(stream)?;
-        // Add in the data bits
-        value |= (byte_value as usize) << length;
-        // Stop if this is the last byte
-        if !more_bytes {
-            return Ok(value);
-        }
-
-        length += 7;
     }
 }
 
@@ -483,6 +264,32 @@ pub fn create_packfile_from_set(
     packfile.extend(obj_count);
     append_objects(&mut packfile, objects, git_dir)?;
     Ok(packfile)
+}
+
+/// Unpacks a Git packfile into individual Git objects.
+///
+/// The `packfile` parameter is a slice containing the content of the Git packfile.
+///
+/// The `git_dir` parameter is the path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there is an issue reading or storing the objects.
+///
+pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
+    let mut file = File::create("tests/packfiles/pack-ref-delta.pack")?;
+    file.write_all(packfile)?;
+    dbg!("Pacfile written");
+    let packfile = Packfile::reader(Cursor::new(packfile), git_dir)?;
+    for entry in packfile {
+        let entry = entry?;
+        hash_object::store_bytes_array_to_file(
+            entry.content,
+            git_dir,
+            &entry.obj_type.to_string(),
+        )?;
+    }
+    Ok(())
 }
 
 /// Appends objects to the given `packfile` vector.
@@ -546,31 +353,5 @@ fn append_object(
 
     packfile.extend(encoded_header);
     packfile.extend(compressed_content);
-    Ok(())
-}
-
-/// Unpacks a Git packfile into individual Git objects.
-///
-/// The `packfile` parameter is a slice containing the content of the Git packfile.
-///
-/// The `git_dir` parameter is the path to the Git directory.
-///
-/// # Errors
-///
-/// Returns an `io::Error` if there is an issue reading or storing the objects.
-///
-pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
-    let mut file = File::create("tests/packfiles/pack-ref-delta.pack")?;
-    file.write_all(packfile)?;
-    dbg!("Pacfile written");
-    let packfile = Packfile::reader(Cursor::new(packfile), git_dir)?;
-    for entry in packfile {
-        let entry = entry?;
-        hash_object::store_bytes_array_to_file(
-            entry.content,
-            git_dir,
-            &entry.obj_type.to_string(),
-        )?;
-    }
     Ok(())
 }
