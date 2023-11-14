@@ -108,6 +108,17 @@ pub fn connect_button_clicked_init_window(
     Ok(())
 }
 
+/// Handle the selection of a directory using a file chooser button.
+///
+/// This function takes a GTK file chooser button and the current directory as parameters.
+/// It retrieves the selected directory from the file chooser, initializes a Git repository,
+/// and handles the result by changing the current directory or printing an error message.
+///
+/// # Arguments
+///
+/// * `file_chooser` - A GTK file chooser button for selecting directories.
+/// * `current_dir` - The current directory as a `Path`.
+///
 fn handle_directory_selection(file_chooser: &FileChooserButton, current_dir: &Path) {
     if let Some(selected_directory) = file_chooser.get_filename() {
         let result = git_init(&selected_directory.to_string_lossy(), "master", None);
@@ -121,6 +132,15 @@ fn handle_directory_selection(file_chooser: &FileChooserButton, current_dir: &Pa
         }
     }
 }
+
+/// Create a selection window with a file chooser and an OK button.
+///
+/// This function creates a GTK window containing a file chooser button and an OK button.
+/// The file chooser is set to select directories, and the window is styled with a vertical box.
+/// The selected directory is printed to the console when chosen.
+///
+/// # Returns
+///
 fn create_selection_window() -> (Window, Button, FileChooserButton, Box) {
     let window = Window::new(WindowType::Toplevel);
     window.set_title("Selection Directory");
@@ -151,6 +171,16 @@ fn create_selection_window() -> (Window, Button, FileChooserButton, Box) {
     (window, button_ok, file_chooser, vbox)
 }
 
+/// Initialize a Git repository and handle potential errors.
+///
+/// This function initializes a Git repository in the specified directory with the default branch
+/// set to "master". It also handles errors that may occur during the initialization process.
+///
+/// # Arguments
+///
+/// * `dir_str` - A string representing the directory in which the Git repository will be initialized.
+/// * `current_dir` - The current directory path.
+///
 fn init_git_and_handle_errors(dir_str: &str, current_dir: &Path) {
     let result = git_init(&dir_str, "master", None);
     if result.is_err() {
@@ -164,6 +194,16 @@ fn init_git_and_handle_errors(dir_str: &str, current_dir: &Path) {
     }
 }
 
+/// Handle the entry of a template path.
+///
+/// This function prompts the user to enter a template path using a text entry window. The entered
+/// path is then used to initialize a Git repository with the specified template.
+///
+/// # Arguments
+///
+/// * `dir_str` - A string representing the directory in which the Git repository will be initialized.
+/// * `current_dir` - The current directory path.
+///
 fn handle_template_path_entry(dir_str: &str, current_dir: &Path) {
     let dir_str = dir_str.to_string();  
     let current_dir_clone = current_dir.to_path_buf();  
@@ -186,6 +226,22 @@ fn handle_template_path_entry(dir_str: &str, current_dir: &Path) {
     }
 }
 
+/// Show a text entry window.
+///
+/// This function displays a window with a text entry field and an "OK" button. The provided callback
+/// function is invoked when the "OK" button is clicked, passing the entered text as an argument.
+///
+/// # Arguments
+///
+/// * `prompt` - A prompt message displayed in the text entry window.
+/// * `callback` - A callback function that takes a `String` as input. This function is invoked
+///               when the user clicks the "OK" button, passing the entered text to the callback.
+///
+/// # Errors
+///
+/// Returns a `Result` indicating whether the operation was successful or if an error occurred.
+/// In case of an error, a `String` with a descriptive error message is returned.
+///
 fn show_text_entry_window<'a, F>(prompt: &str, callback: F) -> Result<(), String>
 where
     F: Fn(String) + 'a + 'static, 
@@ -197,6 +253,24 @@ where
     Ok(())
 }
 
+/// Initialize a Git repository and change the current directory.
+///
+/// This function performs the following steps:
+/// 1. Initializes a Git repository in the specified directory (`dir_str`) with the specified branch (`branch_name`).
+/// 2. Handles any errors resulting from the Git initialization.
+/// 3. Changes the current directory to the newly created directory.
+///
+/// # Arguments
+///
+/// * `dir_str` - Path of the directory where the Git repository will be initialized.
+/// * `branch_name` - Name of the branch to create during Git initialization.
+/// * `current_dir` - Current directory before Git initialization.
+///
+/// # Errors
+///
+/// The function returns a `Result` indicating whether the operation was successful or if an error occurred. 
+/// In case of an error, a `String` with a descriptive error message is returned.
+///
 fn handle_git_init_and_change_dir(dir_str: &str, branch_name: &str, current_dir: &Path) -> Result<(), String> {
     let result = git_init(dir_str, branch_name, None);
     if result.is_err() {
