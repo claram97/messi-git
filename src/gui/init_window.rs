@@ -1,7 +1,7 @@
-use crate::gui::gui::add_to_open_windows;
-use crate::gui::gui::close_all_windows;
+use crate::gui::main_window::add_to_open_windows;
+use crate::gui::main_window::close_all_windows;
 use crate::gui::repository_window::show_repository_window;
-use crate::gui::run_main_window;
+use crate::gui::main_window::run_main_window;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::apply_window_style;
 use crate::gui::style::create_text_entry_window;

@@ -8,7 +8,7 @@ use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
-use crate::gui::gui::add_to_open_windows;
+use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
 use crate::gui::style::create_text_entry_window;

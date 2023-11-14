@@ -1,5 +1,5 @@
 use crate::clone;
-use crate::gui::gui::add_to_open_windows;
+use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::apply_entry_style;
 use crate::gui::style::apply_label_style;
@@ -20,7 +20,7 @@ use std::io;
 use std::path::Path;
 use std::result;
 
-use super::gui::close_all_windows;
+use super::main_window::close_all_windows;
 use super::repository_window::show_repository_window;
 use super::style::show_message_dialog;
 
