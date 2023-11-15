@@ -4,6 +4,7 @@ use messi::gui::main_window::run_main_window;
 use messi::parse_commands::get_user_input;
 use messi::parse_commands::{handle_git_command, parse_git_command};
 use messi::server;
+use messi::show_ref::git_show_ref;
 
 /// Runs the application with a graphical user interface (GUI) using GTK.
 ///
@@ -54,6 +55,7 @@ fn run_without_gui() -> io::Result<()> {
                 ));
             }
         };
+
         if second_argument == "exit" {
             break;
         }
@@ -139,27 +141,36 @@ fn process_user_input() -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
-    if args.len() != 1 && args.len() != 2 && args.len() != 5 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "Cantidad inválida de parámetros\n",
-        ));
-    }
+    //Esto iría en parse commands
+    /*let args = env::args();
+    let line: Vec<String> = args.skip(1).collect();
+    git_show_ref(
+        "/home/claram97/taller/23C2-messi/.mgit",
+        line,
+        &mut io::stdout(),
+    )?;*/
 
-    if args.len() == 2 {
-        if args[1] != "gui" {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "Comando no reconocido\n",
-            ));
-        }
+     let args: Vec<String> = env::args().collect();
+     if args.len() != 1 && args.len() != 2 && args.len() != 5 {
+         return Err(io::Error::new(
+             io::ErrorKind::InvalidInput,
+             "Cantidad inválida de parámetros\n",
+         ));
+     }
 
-        run_with_gui()?;
-    } else if args.len() == 5 && args[1] == "server" {
-        server::run(&args[2], &args[3], &args[4], ".mgit")?;
-    } else if args.len() == 1 {
-        run_without_gui()?;
-    }
+     if args.len() == 2 {
+         if args[1] != "gui" {
+             return Err(io::Error::new(
+                 io::ErrorKind::InvalidInput,
+                 "Comando no reconocido\n",
+             ));
+         }
+
+         run_with_gui()?;
+     } else if args.len() == 5 && args[1] == "server" {
+         server::run(&args[2], &args[3], &args[4], ".mgit")?;
+     } else if args.len() == 1 {
+         run_without_gui()?;
+     }
     Ok(())
 }
