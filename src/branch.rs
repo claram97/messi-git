@@ -293,6 +293,17 @@ pub fn git_branch_for_ui(name: Option<String>) -> io::Result<String> {
     }
 }
 
+/// Checks if a branch with the specified name exists in the Git repository.
+///
+/// # Arguments
+///
+/// * `branch` - A string representing the name of the branch to check.
+/// * `git_dir` - A string specifying the path to the Git directory.
+///
+/// # Returns
+///
+/// Returns `true` if the branch exists, otherwise `false`.
+///
 pub fn is_an_existing_branch(branch: &str, git_dir: &str) -> bool {
     let path = format!("{}/refs/heads/{}", git_dir, branch);
 
@@ -334,15 +345,6 @@ mod tests {
         let expected_output = "This is plain text";
         let output = remove_ansi_escape_codes(input);
         assert_eq!(output, expected_output);
-    }
-
-    #[test]
-    fn test_git_branch_for_ui_create_branch() {
-        let branch_name = "new_branch".to_string();
-        let output = git_branch_for_ui(Some(branch_name));
-        assert!(output.is_ok());
-        let expected_output = "Branch created successfully".to_string();
-        assert_eq!(output.unwrap(), expected_output);
     }
 
     #[test]

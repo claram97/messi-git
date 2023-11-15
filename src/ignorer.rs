@@ -38,6 +38,20 @@ impl Ignorer {
     }
 }
 
+/// Splits a given path into its individual subpaths and returns them as a vector of strings.
+///
+/// This function takes a string `path` representing a file path or directory path, splits it
+/// using the '/' delimiter, filters out empty subpaths, and collects the remaining subpaths
+/// into a vector of strings.
+///
+/// # Arguments
+///
+/// * `path` - A string representing a file path or directory path.
+///
+/// # Returns
+///
+/// Returns a vector of strings, where each string is a subpath of the original path.
+///
 fn get_subpaths(path: &str) -> Vec<&str> {
     path.split('/')
         .filter(|subpath| !subpath.is_empty())

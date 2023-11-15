@@ -1,50 +1,8 @@
 use crate::branch;
 use crate::tree_handler;
-use std::env;
 use std::fs;
 use std::io;
 use std::path::Path;
-
-/// Process command-line arguments and options to perform various actions in a Git-like application.
-///
-/// This function expects command-line arguments and options in the form of `<option> <branch_or_commit>`.
-///
-/// # Arguments
-/// `git_dir_path` - A string representing the path to the Git repository directory.
-/// `root_dir` - A string representing the path to the root directory of the repository.
-///
-pub fn process_args(git_dir_path: &str, root_dir: &str) -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
-
-    if args.len() < 2 {
-        eprintln!("Usage: my_git_checkout <option> <branch_or_commit>");
-        std::process::exit(1);
-    }
-
-    let option = &args[1];
-    let destination = &args[2];
-    let git_dir = Path::new(git_dir_path);
-
-    match option.as_str() {
-        // Change to the specified branch
-        "" => checkout_branch(git_dir, root_dir, destination),
-        // Create and change to a new branch
-        "-b" => create_and_checkout_branch(git_dir, root_dir, destination),
-        // Create or reset a branch if it exists
-        "-B" => create_or_reset_branch(git_dir, root_dir, destination),
-        // Change to a specific commit (detached mode)
-        "--detach" => checkout_commit_detached(git_dir, root_dir, destination),
-        // Force the change of branch or commit (discarding uncommitted changes)
-        "-f" => {
-            force_checkout(git_dir, destination)?;
-            Ok(())
-        }
-        _ => {
-            eprintln!("Invalid option: {}", option);
-            std::process::exit(1);
-        }
-    }
-}
 
 /// Checkout a specific branch by updating the HEAD reference in a Git-like repository.
 ///
@@ -83,6 +41,7 @@ pub fn checkout_branch(git_dir_path: &Path, root_dir: &str, branch_name: &str) -
                 Err(err) => Err(err),
             }
         }
+       
         Err(err) => Err(err),
     }
 }

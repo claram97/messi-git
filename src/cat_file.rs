@@ -76,7 +76,7 @@ pub fn cat_tree(hash: &str, directory: &str) -> io::Result<Vec<(String, String, 
         None => {
             return Err(io::Error::new(
                 ErrorKind::InvalidData,
-                "No se encontro el caracter nulo",
+                "Null character not found",
             ))
         }
     };

@@ -1,6 +1,21 @@
 use crate::{client::Client, config};
 use std::io;
 
+/// Pushes the specified branch to the remote repository.
+///
+/// This function loads the Git configuration file, retrieves the remote URL, and uses it to
+/// create a Git client. It then calls the `receive_pack` method of the client to push the branch
+/// to the remote repository.
+///
+/// # Arguments
+///
+/// * `branch` - The name of the branch to be pushed.
+/// * `git_dir` - The path to the Git directory.
+///
+/// # Returns
+///
+/// A Result indicating success or an io::Error if an issue occurs during the push operation.
+///
 pub fn git_push(branch: &str, git_dir: &str) -> io::Result<()> {
     let config_file = config::Config::load(git_dir)?;
     let remote_name = "origin";
