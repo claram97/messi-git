@@ -78,6 +78,20 @@ impl Tree {
         max_depth + 1
     }
 
+    /// Converts a vector of hexadecimal tuples (representing bytes) to a vector of u8 bytes.
+    ///
+    /// This function takes a vector of tuples where each tuple contains two hexadecimal
+    /// characters (0-9, A-F) and converts them into u8 bytes. Each tuple represents one byte.
+    /// The resulting vector contains the bytes obtained from the hexadecimal tuples.
+    ///
+    /// # Arguments
+    ///
+    /// * `hexa_tuples` - A vector of tuples, where each tuple contains two hexadecimal characters.
+    ///
+    /// # Returns
+    ///
+    /// A vector of u8 bytes obtained by converting the hexadecimal tuples.
+    ///
     fn map_hexa_tuples_to_bytes(hexa_tuples: Vec<(char, char)>) -> Vec<u8> {
         hexa_tuples
             .iter()
@@ -274,6 +288,20 @@ pub fn build_tree_from_index(
     Ok(tree)
 }
 
+/// Converts a vector of hexadecimal tuples (representing bytes) to a vector of u8 bytes.
+///
+/// This function takes a vector of tuples where each tuple contains two hexadecimal
+/// characters (0-9, A-F) and converts them into u8 bytes. Each tuple represents one byte.
+/// The resulting vector contains the bytes obtained from the hexadecimal tuples.
+///
+/// # Arguments
+///
+/// * `hexa_tuples` - A vector of tuples, where each tuple contains two hexadecimal characters.
+///
+/// # Returns
+///
+/// A vector of u8 bytes obtained by converting the hexadecimal tuples.
+///
 fn map_hexa_tuples_to_bytes(hexa_tuples: Vec<(char, char)>) -> Vec<u8> {
     hexa_tuples
         .iter()
@@ -377,6 +405,22 @@ pub fn load_tree_from_commit(commit_hash: &str, directory: &str) -> io::Result<T
     Ok(tree)
 }
 
+/// Checks if the tree has changed since the last commit.
+///
+/// This function compares the hash of a new tree with the hash of the tree
+/// in the last commit. If they are different, it implies that the tree
+/// has changed since the last commit.
+///
+/// # Arguments
+///
+/// * `new_tree_hash` - The hash of the new tree to be checked.
+/// * `last_commit_hash` - The hash of the last commit to retrieve the tree hash.
+/// * `directory` - The directory of the Git repository.
+///
+/// # Returns
+///
+/// Returns `true` if the tree has changed, `false` otherwise.
+///
 pub fn has_tree_changed_since_last_commit(
     new_tree_hash: &str,
     last_commit_hash: &str,
@@ -422,6 +466,23 @@ pub fn print_tree_console(tree: &Tree, depth: usize) {
     }
 }
 
+/// Merges the contents of their tree into our tree, resolving conflicts.
+///
+/// This function takes three trees: our tree, their tree, and the new tree,
+/// and merges the contents of their tree into our tree. It resolves conflicts
+/// by keeping our version of the file if it exists; otherwise, it adds the file
+/// from their tree to the new tree.
+///
+/// # Arguments
+///
+/// * `our_tree` - The tree representing our current state.
+/// * `their_tree` - The tree representing the state to be merged.
+/// * `new_tree` - The new tree being constructed with merged contents.
+///
+/// # Returns
+///
+/// Returns the merged tree containing both our and their changes.
+///
 fn merge_their_tree_into_ours(our_tree: &Tree, their_tree: &Tree, mut new_tree: Tree) -> Tree {
     let their_tree_vec = their_tree.squash_tree_into_vec("");
 

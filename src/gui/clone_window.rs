@@ -1,5 +1,5 @@
 use crate::clone;
-use crate::gui::gui::add_to_open_windows;
+use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::apply_entry_style;
 use crate::gui::style::apply_label_style;
@@ -20,7 +20,7 @@ use std::io;
 use std::path::Path;
 use std::result;
 
-use super::gui::close_all_windows;
+use super::main_window::close_all_windows;
 use super::repository_window::show_repository_window;
 use super::style::show_message_dialog;
 
@@ -130,6 +130,14 @@ fn connect_button_clicked_clone_repository(
     Ok(())
 }
 
+/// Handles the result of a repository clone operation and performs corresponding actions.
+///
+/// # Arguments
+///
+/// * `result` - The result of the repository clone operation.
+/// * `code_dir` - The path to the directory containing the cloned repository.
+/// * `working_dir` - The working directory where the user intends to operate.
+///
 fn handle_clone_result(result: result::Result<(), io::Error>, code_dir: &Path, working_dir: &Path) {
     if result.is_err() {
         show_message_dialog("Error", "Error al clonar el repositorio.");

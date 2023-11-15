@@ -299,6 +299,7 @@ impl Client {
         }
     }
 
+    /// Ends the connection by flushing the socket and setting it to `None`.
     fn end_connection(&mut self) -> io::Result<()> {
         self.flush()?;
         self.socket = None;

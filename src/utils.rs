@@ -31,6 +31,22 @@ pub fn find_git_directory(
     None
 }
 
+/// Retrieves the commit history of a branch with corresponding commit messages.
+///
+/// This function takes a commit hash and the Git directory, then traverses the commit
+/// history backwards, collecting commit hashes along with their commit messages. The result
+/// is a vector of tuples, each containing a commit hash and its associated commit message.
+///
+/// # Arguments
+///
+/// * `commit_hash` - The hash of the initial commit to start retrieving the history.
+/// * `git_dir` - The path to the Git directory containing the repository information.
+///
+/// # Returns
+///
+/// Returns a vector of tuples, where each tuple contains a commit hash and its commit message.
+/// The vector represents the commit history of the given branch.
+///
 pub fn get_branch_commit_history_with_messages(
     commit_hash: &str,
     git_dir: &str,
@@ -50,6 +66,7 @@ pub fn get_branch_commit_history_with_messages(
     }
     Ok(parents)
 }
+
 /// Get the commit history for a given commit hash in a Git repository.
 ///
 /// This function retrieves the commit history for a specified commit hash by recursively

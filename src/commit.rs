@@ -177,6 +177,18 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
     Ok(parent_hash.to_string())
 }
 
+/// Retrieves the commit message associated with a given commit hash in a Git repository.
+///
+/// # Arguments
+///
+/// * `commit_hash` - A string representing the hash of the commit.
+/// * `git_dir_path` - A string specifying the path to the Git directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the commit message as a `String` if successful,
+/// otherwise returns an `io::Error`.
+///
 pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
     let message: &str = match commit_file.split('\n').nth(5) {
@@ -185,6 +197,7 @@ pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<S
     };
     Ok(message.to_string())
 }
+
 /// Reads and returns the commit hash referred to by the HEAD reference in a Git repository.
 ///
 /// This function reads the contents of the Git repository's "HEAD" file to determine the commit hash

@@ -1,4 +1,4 @@
-use messi::{add, index};
+use messi::{add, index, rm};
 use std::fs;
 use std::io::{self, Write};
 
@@ -67,12 +67,15 @@ fn test_removing_file() -> io::Result<()> {
     write_file(path, "a new file!")?;
     // When added to staging area
     add::add(path, index_path, GIT_DIR, "", None)?;
+    // Then the file is in the index
+    let index_before_removal = index::Index::load(index_path, GIT_DIR, "")?;
+    assert!(index_before_removal.contains(path));
+
     // And after it is deleted
-    fs::remove_file(path)?;
-    // And added again
-    add::add(path, index_path, GIT_DIR, "", None)?;
-    // Then the file is no longer in staging area
-    let index = index::Index::load(index_path, GIT_DIR, "")?;
-    assert!(!index.contains(path));
+    rm::git_rm(path, index_path, GIT_DIR, "");
+    // Then the file is no longer in the index
+    let index_after_removal = index::Index::load(index_path, GIT_DIR, "")?;
+    assert!(!index_after_removal.contains(path));
+
     Ok(())
 }

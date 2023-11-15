@@ -1,4 +1,4 @@
-use crate::gui::gui::add_to_open_windows;
+use crate::gui::main_window::add_to_open_windows;
 use gtk::prelude::*;
 use gtk::BinExt;
 use gtk::Builder;
