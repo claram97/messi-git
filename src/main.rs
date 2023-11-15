@@ -141,6 +141,23 @@ fn process_user_input() -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
+    // let args = env::args();
+    // let line: Vec<String> = args.skip(1).collect();
+    // let index = Index::load(
+    //     "/home/claram97/taller/23C2-messi/.mgit/index",
+    //     "/home/claram97/taller/23C2-messi/.mgit",
+    //     "/home/claram97/taller/23C2-messi/.mgitignore",
+    // )?;
+    // git_ls_files(
+    //     "/home/claram97/taller/23C2-messi",
+    //     "/home/claram97/taller/23C2-messi/.mgit",
+    //     "/home/claram97/taller/23C2-messi",
+    //     line,
+    //     &index,
+    //     &mut stdout(),
+    // )?;
+
+    //let args: Vec<String> = env::args().collect();
 
     //Esto iría al parse commands
     // let args = env::args();
@@ -149,6 +166,7 @@ fn main() -> io::Result<()> {
     // git_check_ignore(".mgitignore", &ignorer, line, &mut io::stdout())?;
 
     /*let args: Vec<String> = env::args().collect();
+
     if args.len() != 1 && args.len() != 2 && args.len() != 5 {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -165,28 +183,27 @@ fn main() -> io::Result<()> {
         &mut io::stdout(),
     )?;*/
 
+    let args: Vec<String> = env::args().collect();
+    if args.len() != 1 && args.len() != 2 && args.len() != 5 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Cantidad inválida de parámetros\n",
+        ));
+    }
 
-     let args: Vec<String> = env::args().collect();
-     if args.len() != 1 && args.len() != 2 && args.len() != 5 {
-         return Err(io::Error::new(
-             io::ErrorKind::InvalidInput,
-             "Cantidad inválida de parámetros\n",
-         ));
-     }
+    if args.len() == 2 {
+        if args[1] != "gui" {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Comando no reconocido\n",
+            ));
+        }
 
-     if args.len() == 2 {
-         if args[1] != "gui" {
-             return Err(io::Error::new(
-                 io::ErrorKind::InvalidInput,
-                 "Comando no reconocido\n",
-             ));
-         }
-
-         run_with_gui()?;
-     } else if args.len() == 5 && args[1] == "server" {
-         server::run(&args[2], &args[3], &args[4], ".mgit")?;
-     } else if args.len() == 1 {
-         run_without_gui()?;
-     }
+        run_with_gui()?;
+    } else if args.len() == 5 && args[1] == "server" {
+        server::run(&args[2], &args[3], &args[4], ".mgit")?;
+    } else if args.len() == 1 {
+        run_without_gui()?;
+    }
     Ok(())
 }

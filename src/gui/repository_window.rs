@@ -149,7 +149,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "checkout3",
         "checkout4",
         "checkout5",
-        "show-fetch"
+        "show-fetch",
     ];
 
     for button_id in button_ids.iter() {
@@ -590,7 +590,7 @@ fn handle_delete_branch_button() -> io::Result<()> {
 }
 fn handle_modify_branch_button() -> io::Result<()> {
     let create_result = create_text_entry_window("Enter the name of the branch", |text| {
-        let result = git_branch_for_ui(Some(text));// aca te dejo pa q le metas la llamada
+        let result = git_branch_for_ui(Some(text)); // aca te dejo pa q le metas la llamada
         if result.is_err() {
             eprintln!("Error creating text entry window.");
         }
@@ -657,21 +657,27 @@ fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
 
     let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
     let index_path = format!("{}/index", git_dir);
-        match add("None", &index_path, &git_dir, &git_ignore_path, Some(vec![".".to_string()])) {
-            Ok(_) => {
-                println!("La función 'add' se ejecutó correctamente.");
-            }
-            Err(err) => {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    format!("Error al llamar a la función 'add': {:?}", err),
-                ))
-            }
+    match add(
+        "None",
+        &index_path,
+        &git_dir,
+        &git_ignore_path,
+        Some(vec![".".to_string()]),
+    ) {
+        Ok(_) => {
+            println!("La función 'add' se ejecutó correctamente.");
         }
-        let result = set_staging_area_texts(&builder_clone);
-        if result.is_err() {
-            eprintln!("No se pudo actualizar la vista de staging.");
+        Err(err) => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("Error al llamar a la función 'add': {:?}", err),
+            ))
         }
+    }
+    let result = set_staging_area_texts(&builder_clone);
+    if result.is_err() {
+        eprintln!("No se pudo actualizar la vista de staging.");
+    }
 
     Ok(())
 }
@@ -732,15 +738,14 @@ fn handle_checkout_branch_window() -> io::Result<()> {
             Ok(texto) => {
                 show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
             }
-            Err(_err) => {
-                match _err.kind() {
-                    std::io::ErrorKind::UnexpectedEof => {
-                        show_message_dialog("Éxito", &format!("Changed correctly to branch "));
-                    }
-                    _ => {show_message_dialog("Error", "La rama indicada no existe.");
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Éxito", &format!("Changed correctly to branch "));
                 }
+                _ => {
+                    show_message_dialog("Error", "La rama indicada no existe.");
                 }
-            }
+            },
         }
     });
     if result.is_err() {
@@ -1095,15 +1100,15 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
             std::io::ErrorKind::UnexpectedEof => {
                 eprintln!("exito.");
             }
-            _ => {return Err(io::Error::new(
-                        io::ErrorKind::NotFound,
-                        "Error calling the 'checkout branch' function\n",
-                    ));}
-        })
-    
-        ,
+            _ => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "Error calling the 'checkout branch' function\n",
+                ));
+            }
+        }),
     };
-  
+
     Ok("Ok".to_string())
 }
 
@@ -1247,7 +1252,6 @@ pub fn merge_button_connect_clicked(
                 }
                 Err(_e) => {
                     show_message_dialog("Error", "Merge interrupted due to an error.");
-                   
                 }
             };
         }

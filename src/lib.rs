@@ -17,6 +17,7 @@ pub mod index;
 pub mod init;
 pub mod log;
 pub mod logger;
+pub mod ls_files;
 pub mod merge;
 pub mod packfile_handler;
 pub mod parse_commands;
