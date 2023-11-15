@@ -22,7 +22,7 @@ use crate::ignorer::Ignorer;
 ///
 pub fn git_check_ignore(
     ignorer_name: &str,
-    git_ignore_path : &str,
+    git_ignore_path: &str,
     line: Vec<String>,
     output: &mut impl Write,
 ) -> io::Result<()> {
@@ -33,25 +33,23 @@ pub fn git_check_ignore(
             io::ErrorKind::InvalidInput,
             "No path specified",
         ));
-    } else {
-        if line[2].eq("-v") {
-            let mut line_number = 1;
-            for path in line.iter().skip(3) {
-                if ignorer.ignore(path) {
-                    writeln!(output, "{}:{}:{}", ignorer_name, line_number, path)?;
-                }
-                line_number += 1;
+    } else if line[2].eq("-v") {
+        let mut line_number = 1;
+        for path in line.iter().skip(3) {
+            if ignorer.ignore(path) {
+                writeln!(output, "{}:{}:{}", ignorer_name, line_number, path)?;
             }
-        } else if line[2].starts_with("-") {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "Invalid option",
-            ));
-        } else {
-            for path in line.iter().skip(2) {
-                if ignorer.ignore(path) {
-                    writeln!(output, "{}", path)?;
-                }
+            line_number += 1;
+        }
+    } else if line[2].starts_with('-') {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Invalid option",
+        ));
+    } else {
+        for path in line.iter().skip(2) {
+            if ignorer.ignore(path) {
+                writeln!(output, "{}", path)?;
             }
         }
     }
