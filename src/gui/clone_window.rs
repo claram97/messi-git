@@ -197,6 +197,19 @@ pub fn configure_clone_window(
     Ok(())
 }
 
+/// Retrieves a GTK label with the specified ID and font size from a GTK builder.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to the GTK builder containing the label.
+/// * `label_id` - The ID of the label to retrieve from the builder.
+/// * `font_size` - The font size to set for the retrieved label.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the retrieved GTK label if successful, or an `io::Error`
+/// if the label with the specified ID is not found in the builder.
+///
 fn get_label_with_error(
     builder: &gtk::Builder,
     label_id: &str,
@@ -210,6 +223,21 @@ fn get_label_with_error(
         )),
     }
 }
+
+/// Applies styles to a GTK window and retrieves two GTK entries with specified IDs.
+///
+/// # Arguments
+///
+/// * `new_window_clone` - A reference to the GTK window to apply styles to.
+/// * `builder` - A reference to the GTK builder containing the entries.
+/// * `url_entry_id` - The ID of the URL entry to retrieve and style.
+/// * `dir_to_clone_entry_id` - The ID of the directory entry to retrieve and style.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a tuple with two GTK entries (URL entry and directory entry)
+/// if successful, or an `io::Error` if any style application or entry retrieval fails.
+///
 fn apply_styles_and_get_entries(
     new_window_clone: &gtk::Window,
     builder: &gtk::Builder,
@@ -226,6 +254,18 @@ fn apply_styles_and_get_entries(
     Ok((url_entry, dir_to_clone_entry))
 }
 
+/// Retrieves a GTK entry from a builder, applies a specific style, and returns the entry.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to the GTK builder containing the entry.
+/// * `entry_id` - The ID of the entry to retrieve and style.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the styled GTK entry if successful,
+/// or an `io::Error` if the entry is not found or if any style application fails.
+///
 fn get_and_apply_entry_style(
     builder: &gtk::Builder,
     entry_id: &str,
