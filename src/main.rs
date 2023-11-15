@@ -141,6 +141,21 @@ fn process_user_input() -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
+
+    //Esto iría al parse commands
+    // let args = env::args();
+    // let ignorer = Ignorer::load("/home/claram97/taller/23C2-messi/.mgitignore");
+    // let line = args.skip(1).collect();
+    // git_check_ignore(".mgitignore", &ignorer, line, &mut io::stdout())?;
+
+    /*let args: Vec<String> = env::args().collect();
+    if args.len() != 1 && args.len() != 2 && args.len() != 5 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Cantidad inválida de parámetros\n",
+        ));
+    }*/
+
     //Esto iría en parse commands
     /*let args = env::args();
     let line: Vec<String> = args.skip(1).collect();
@@ -149,6 +164,7 @@ fn main() -> io::Result<()> {
         line,
         &mut io::stdout(),
     )?;*/
+
 
      let args: Vec<String> = env::args().collect();
      if args.len() != 1 && args.len() != 2 && args.len() != 5 {

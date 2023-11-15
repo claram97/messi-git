@@ -2,6 +2,7 @@ pub mod add;
 pub mod branch;
 pub mod branch_handler;
 pub mod cat_file;
+pub mod check_ignore;
 pub mod checkout;
 pub mod client;
 pub mod clone;
