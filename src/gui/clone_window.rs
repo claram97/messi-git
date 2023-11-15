@@ -109,13 +109,11 @@ fn connect_button_clicked_clone_repository(
         if url_text.is_empty() || dir_text.is_empty() {
             show_message_dialog("Error", "Faltan datos: URL o directorio de clonación.");
         } else {
-            //The remote repo url is the first part of the URL, up until the last '/'.
             let remote_repo_url = match url_text.rsplit_once('/') {
                 Some((string, _)) => string,
                 None => "",
             };
 
-            //The remote repository name is the last part of the URL.
             let remote_repo_name = url_text.split('/').last().unwrap_or("");
 
             println!("URL: {}", remote_repo_url);
