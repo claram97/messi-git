@@ -227,7 +227,11 @@ pub fn git_fetch(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) 
     fetch_head_file.write_file(&fetch_head_path)?;
     Ok(())
 }
-pub fn git_fetch_for_gui(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) -> io::Result<Vec<String>> {
+pub fn git_fetch_for_gui(
+    _remote_repo_name: Option<&str>,
+    _host: &str,
+    local_dir: &str,
+) -> io::Result<Vec<String>> {
     let git_dir = local_dir.to_string() + "/.mgit";
     let config_file = config::Config::load(&git_dir)?;
     let remote_name = "origin";
@@ -265,7 +269,7 @@ pub fn git_fetch_for_gui(_remote_repo_name: Option<&str>, _host: &str, local_dir
             fetch_head_file.add_entry(entry);
         }
     }
-    
+
     fetch_head_file.write_file(&fetch_head_path)?;
     Ok(clean_refs)
 }

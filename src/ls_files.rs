@@ -54,18 +54,19 @@ fn list_files_in_index(index: &Index, output: &mut impl Write) -> io::Result<()>
 ///
 /// Returns an `io::Result<()>`, indicating success or an `io::Error` if any I/O operation fails.
 ///
-fn process_untracked(relative_entry_path_str : &str, entry_path : &Path, line: Vec<String>, working_dir: &str, git_dir: &str, index: &Index, output: &mut impl Write) -> io::Result<()> {
+fn process_untracked(
+    relative_entry_path_str: &str,
+    entry_path: &Path,
+    line: Vec<String>,
+    working_dir: &str,
+    git_dir: &str,
+    index: &Index,
+    output: &mut impl Write,
+) -> io::Result<()> {
     let entry_path_str = entry_path.to_string_lossy().to_string();
 
     if entry_path.is_dir() {
-        git_ls_files(
-            working_dir,
-            git_dir,
-            &entry_path_str,
-            line,
-            index,
-            output,
-        )?;
+        git_ls_files(working_dir, git_dir, &entry_path_str, line, index, output)?;
     }
     if entry_path.is_file() {
         let buffer = format!("{}\n", relative_entry_path_str);
@@ -109,7 +110,15 @@ fn list_untracked_files(
                 && !index.contains(&relative_entry_path_str)
             {
                 let cloned_line = line.clone();
-                process_untracked(&relative_entry_path_str, &entry_path, cloned_line, working_dir, git_dir, index, output)?;
+                process_untracked(
+                    &relative_entry_path_str,
+                    &entry_path,
+                    cloned_line,
+                    working_dir,
+                    git_dir,
+                    index,
+                    output,
+                )?;
             }
         } else {
             return Err(io::Error::new(io::ErrorKind::Interrupted, "Fatal error.\n"));
