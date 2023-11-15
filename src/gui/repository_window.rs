@@ -740,7 +740,7 @@ fn handle_checkout_branch_window() -> io::Result<()> {
             }
             Err(_err) => match _err.kind() {
                 std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Éxito", &"Changed correctly to branch ".to_string());
+                    show_message_dialog("Éxito", "Changed correctly to branch ");
                 }
                 _ => {
                     show_message_dialog("Error", "La rama indicada no existe.");
