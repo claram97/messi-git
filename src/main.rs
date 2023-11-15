@@ -4,7 +4,7 @@ use messi::gui::main_window::run_main_window;
 use messi::parse_commands::get_user_input;
 use messi::parse_commands::{handle_git_command, parse_git_command};
 use messi::server;
-use messi::show_ref::git_show_ref;
+
 
 /// Runs the application with a graphical user interface (GUI) using GTK.
 ///

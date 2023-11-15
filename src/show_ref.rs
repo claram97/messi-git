@@ -128,7 +128,7 @@ fn show_refs_in_remotes_folder(
             println!("splitted {:?}", splitted);
             println!("Type is {}", type_);
             process_files_in_directory(
-                &path.to_string_lossy().to_string(),
+                path.to_string_lossy().as_ref(),
                 &type_,
                 is_hash,
                 output,
