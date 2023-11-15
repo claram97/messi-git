@@ -22,10 +22,11 @@ use crate::ignorer::Ignorer;
 ///
 pub fn git_check_ignore(
     ignorer_name: &str,
-    ignorer: &Ignorer,
+    git_ignore_path : &str,
     line: Vec<String>,
     output: &mut impl Write,
 ) -> io::Result<()> {
+    let ignorer = Ignorer::load(git_ignore_path);
     if line.len() == 2 || (line.len() == 3 && line[2].eq("-v")) {
         writeln!(output, "fatal: no path specified")?;
         return Err(io::Error::new(
@@ -84,8 +85,7 @@ mod tests {
 
         let mut output: Vec<u8> = vec![];
         let command_line: Vec<String> = vec!["git".to_string(), "check-ignore".to_string()];
-        let ignorer = Ignorer::load(&gitignore_path);
-        let result = git_check_ignore(".mgitignore", &ignorer, command_line, &mut output);
+        let result = git_check_ignore(".mgitignore", &gitignore_path, command_line, &mut output);
 
         assert!(result.is_err());
         std::fs::remove_dir_all(test_directory)?;
@@ -105,9 +105,8 @@ mod tests {
             "check-ignore".to_string(),
             "-v".to_string(),
         ];
-        let ignorer = Ignorer::load(&gitignore_path);
 
-        let result = git_check_ignore(".mgitignore", &ignorer, command_line, &mut output);
+        let result = git_check_ignore(".mgitignore", &gitignore_path, command_line, &mut output);
 
         assert!(result.is_err());
 
@@ -128,9 +127,8 @@ mod tests {
             "check-ignore".to_string(),
             "-a".to_string(),
         ];
-        let ignorer = Ignorer::load(&gitignore_path);
 
-        let result = git_check_ignore(".mgitignore", &ignorer, command_line, &mut output);
+        let result = git_check_ignore(".mgitignore", &gitignore_path, command_line, &mut output);
 
         assert!(result.is_err());
 
@@ -151,8 +149,7 @@ mod tests {
             "check-ignore".to_string(),
             "file".to_string(),
         ];
-        let ignorer = Ignorer::load(&gitignore_path);
-        let result = git_check_ignore(".mgitignore", &ignorer, line, &mut output);
+        let result = git_check_ignore(".mgitignore", &gitignore_path, line, &mut output);
         assert!(result.is_ok());
         let result = String::from_utf8(output).expect("Invalid UTF-8");
         assert!(result.eq("file\n"));
@@ -175,8 +172,7 @@ mod tests {
             "-v".to_string(),
             "file".to_string(),
         ];
-        let ignorer = Ignorer::load(&gitignore_path);
-        let result = git_check_ignore(".mgitignore", &ignorer, line, &mut output);
+        let result = git_check_ignore(".mgitignore", &gitignore_path, line, &mut output);
         assert!(result.is_ok());
         let result = String::from_utf8(output).expect("Invalid UTF-8");
         assert!(result.contains("file\n"));
