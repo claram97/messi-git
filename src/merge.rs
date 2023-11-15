@@ -5,6 +5,20 @@ use crate::{
     utils::{self, get_git_ignore_path},
 };
 
+/// Checks if a branch fast-forwards to a common commit.
+///
+/// Determines if the branch's commit is the same as the common commit, indicating a
+/// fast-forward scenario.
+///
+/// # Arguments
+///
+/// * `our_branch_commit` - The commit hash of the branch.
+/// * `common_commit` - The commit hash of the common ancestor.
+///
+/// # Returns
+///
+/// Returns `true` if the branch fast-forwards to the common commit, otherwise `false`.
+///
 pub fn is_fast_forward(our_branch_commit: &str, common_commit: &str) -> bool {
     if our_branch_commit == common_commit {
         return true;

@@ -8,7 +8,7 @@ use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
-use crate::gui::gui::add_to_open_windows;
+use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
 use crate::gui::style::create_text_entry_window;
@@ -137,7 +137,10 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "pull",
         "push",
         "show-branches-button",
+        "delete-branch-button",
+        "modify-branch-button",
         "add-path-button",
+        "add-all-button",
         "remove-path-button",
         "commit-changes-button",
         "new-branch-button",
@@ -146,6 +149,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "checkout3",
         "checkout4",
         "checkout5",
+        "show-fetch"
     ];
 
     for button_id in button_ids.iter() {
@@ -155,6 +159,17 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Handles the Git pull operation in the current working directory.
+///
+/// # Errors
+///
+/// This function may return an error in the following cases:
+/// - If it fails to determine the current directory.
+/// - If it can't find the Git directory (".mgit").
+/// - If it can't find the working directory based on the Git directory.
+/// - If it fails to determine the current branch name.
+/// - If there is an error during the Git pull operation.
+///
 fn handle_git_pull() -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
 
@@ -185,6 +200,16 @@ fn handle_git_pull() -> io::Result<()> {
     Ok(())
 }
 
+/// Handles the Git push operation in the current working directory.
+///
+/// # Errors
+///
+/// This function may return an error in the following cases:
+/// - If it fails to determine the current directory.
+/// - If it can't find the Git directory (".mgit").
+/// - If it fails to determine the current branch name.
+/// - If there is an error during the Git push operation.
+///
 fn handle_git_push() -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
@@ -339,10 +364,34 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                 }
             });
         }
+        "delete-branch-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_delete_branch_button();
+                if result.is_err() {
+                    eprintln!("Error handling create branch button.")
+                }
+            });
+        }
+        "modify-branch-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_modify_branch_button();
+                if result.is_err() {
+                    eprintln!("Error handling create branch button.")
+                }
+            });
+        }
 
         "add-path-button" => {
             button.connect_clicked(move |_| {
                 let result = handle_add_path_button(&builder_clone);
+                if result.is_err() {
+                    eprintln!("Error handling add path button.")
+                }
+            });
+        }
+        "add-all-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_add_all_button(&builder_clone);
                 if result.is_err() {
                     eprintln!("Error handling add path button.")
                 }
@@ -525,6 +574,35 @@ fn handle_create_branch_button() -> io::Result<()> {
     Ok(())
 }
 
+fn handle_delete_branch_button() -> io::Result<()> {
+    let create_result = create_text_entry_window("Enter the name of the branch", |text| {
+        let result = git_branch_for_ui(Some(text)); // te dejo pa q le metas la llamdad
+        if result.is_err() {
+            eprintln!("Error creating text entry window.");
+        }
+    });
+
+    if create_result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+fn handle_modify_branch_button() -> io::Result<()> {
+    let create_result = create_text_entry_window("Enter the name of the branch", |text| {
+        let result = git_branch_for_ui(Some(text));// aca te dejo pa q le metas la llamada
+        if result.is_err() {
+            eprintln!("Error creating text entry window.");
+        }
+    });
+
+    if create_result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+
 /// Handle the "Add Path" button's click event. This function opens a text entry window for users to enter the path of
 /// the file they want to add to the staging area. Once the path is entered and confirmed, it attempts to add the file
 /// and displays a success message or an error message if there was an issue.
@@ -557,6 +635,43 @@ fn handle_add_path_button(builder: &Builder) -> io::Result<()> {
     if create_result.is_err() {
         eprintln!("Error creating text entry window.");
     }
+
+    Ok(())
+}
+
+/// Handles the action when the "Add All" button is clicked in the user interface.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to the GUI builder used to interact with the user interface.
+///
+/// # Errors
+///
+/// This function may return an error in the following cases:
+/// - If it fails to determine the Git directory or the Git ignore path.
+/// - If there is an error during the Git add operation.
+/// - If there is an error updating the staging area view in the user interface.
+///
+fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+
+    let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
+    let index_path = format!("{}/index", git_dir);
+        match add("None", &index_path, &git_dir, &git_ignore_path, Some(vec![".".to_string()])) {
+            Ok(_) => {
+                println!("La función 'add' se ejecutó correctamente.");
+            }
+            Err(err) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    format!("Error al llamar a la función 'add': {:?}", err),
+                ))
+            }
+        }
+        let result = set_staging_area_texts(&builder_clone);
+        if result.is_err() {
+            eprintln!("No se pudo actualizar la vista de staging.");
+        }
 
     Ok(())
 }
@@ -618,7 +733,13 @@ fn handle_checkout_branch_window() -> io::Result<()> {
                 show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => {
-                show_message_dialog("Error", "La rama indicada no existe.");
+                match _err.kind() {
+                    std::io::ErrorKind::UnexpectedEof => {
+                        show_message_dialog("Éxito", &format!("Changed correctly to branch "));
+                    }
+                    _ => {show_message_dialog("Error", "La rama indicada no existe.");
+                }
+                }
             }
         }
     });
@@ -718,22 +839,6 @@ pub fn find_git_directory_and_ignore() -> Result<(String, String), io::Error> {
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
 fn stage_changes(git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<String, io::Error> {
     let index_path = format!("{}/index", git_dir);
-
-    if texto == "." {
-        let options = Some(vec!["-u".to_string()]);
-        match add("", &index_path, git_dir, git_ignore_path, options) {
-            Ok(_) => {
-                println!("La función 'add' se ejecutó correctamente.");
-            }
-            Err(err) => {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    format!("Error al llamar a la función 'add': {:?}", err),
-                ))
-            }
-        }
-    }
-
     match add(texto, &index_path, git_dir, git_ignore_path, None) {
         Ok(_) => {
             println!("La función 'add' se ejecutó correctamente.");
@@ -986,17 +1091,19 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
         text,
     ) {
         Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
-        Err(err) => Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("Error calling the 'checkout branch' function: {:?}\n", err),
-        )),
+        Err(err) => Err(match err.kind() {
+            std::io::ErrorKind::UnexpectedEof => {
+                eprintln!("exito.");
+            }
+            _ => {return Err(io::Error::new(
+                        io::ErrorKind::NotFound,
+                        "Error calling the 'checkout branch' function\n",
+                    ));}
+        })
+    
+        ,
     };
-    if result.is_err() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Error calling the 'checkout branch' function\n",
-        ));
-    }
+  
     Ok("Ok".to_string())
 }
 
@@ -1140,14 +1247,7 @@ pub fn merge_button_connect_clicked(
                 }
                 Err(_e) => {
                     show_message_dialog("Error", "Merge interrupted due to an error.");
-                    // match text_view_clone.get_buffer() {
-                    //     Some(buff) => {
-                    //         buff.set_text("Conflicts on merge!");
-                    //     }
-                    //     None => {
-                    //         eprintln!("Couldn't write the output on the text view.");
-                    //     }
-                    // };
+                   
                 }
             };
         }
@@ -1169,8 +1269,6 @@ pub fn set_merge_button_behavior(
     entry: &gtk::Entry,
     text_view: &gtk::TextView,
 ) -> io::Result<()> {
-    //let entry_clone = entry.clone();
-    //let text_view_clone = text_view.clone();
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
         Some(dir) => dir,

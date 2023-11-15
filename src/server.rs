@@ -362,6 +362,26 @@ pub fn run(domain: &str, port: &str, path: &str, git_dir: &str) -> io::Result<()
     Ok(())
 }
 
+/// Reads the contents of a file with an exclusive lock.
+///
+/// This function opens the specified file, acquires a lock, and reads the entire
+/// contents of the file into a `String`. The lock ensures exclusive access to the file
+/// during the reading process, preventing concurrent modifications.
+///
+/// # Arguments
+///
+/// * `path` - A reference to the path of the file to be read.
+///
+/// # Returns
+///
+/// An `io::Result` containing the file's contents as a `String` if successful, or an
+/// `io::Error` if an error occurs.
+///
+/// # Errors
+///
+/// This function returns an `io::Error` if it encounters any issues during file opening,
+/// lock acquisition, or content reading.
+///
 fn read_file_with_lock<P>(path: P) -> io::Result<String>
 where
     P: AsRef<Path>,
@@ -379,6 +399,27 @@ where
     result
 }
 
+/// Writes the specified contents to a file with an exclusive lock.
+///
+/// This function creates or truncates the specified file, acquires a lock, and writes
+/// the provided contents to the file. The lock ensures exclusive access to the file
+/// during the writing process, preventing concurrent modifications.
+///
+/// # Arguments
+///
+/// * `path` - A reference to the path of the file to be written.
+/// * `contents` - A reference to the contents to be written to the file.
+///
+/// # Returns
+///
+/// An `io::Result` containing the number of bytes written if successful, or an
+/// `io::Error` if an error occurs.
+///
+/// # Errors
+///
+/// This function returns an `io::Error` if it encounters any issues during file creation,
+/// lock acquisition, or content writing.
+///
 fn write_file_with_lock<P, C>(path: P, contents: C) -> io::Result<usize>
 where
     P: AsRef<Path>,
@@ -393,6 +434,27 @@ where
     size
 }
 
+/// Checks whether a Git repository is bare or not.
+///
+/// This function examines the Git configuration file to determine if the repository
+/// is bare. A repository is considered bare if it doesn't have a `config` file.
+/// If the `config` file exists, it checks the content for the presence of the `bare` flag.
+///
+/// # Arguments
+///
+/// * `git_dir` - A string representing the path to the Git repository directory.
+///
+/// # Returns
+///
+/// An `io::Result` containing a boolean indicating whether the repository is bare (`true`)
+/// or not (`false`). Returns an `io::Error` if there are issues accessing or reading
+/// the repository configuration.
+///
+/// # Errors
+///
+/// This function returns an `io::Error` if it encounters any issues accessing or reading
+/// the repository configuration file.
+///
 fn is_repo_bare(git_dir: &str) -> io::Result<bool> {
     let config_path = PathBuf::from(git_dir).join("config");
     if !config_path.exists() {
