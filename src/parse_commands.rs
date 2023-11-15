@@ -1,4 +1,4 @@
-use crate::branch::{get_current_branch_path, git_branch};
+use crate::branch::{get_current_branch_path, git_branch, modify_branch};
 use crate::cat_file::cat_file;
 use crate::checkout::checkout_branch;
 use crate::checkout::checkout_commit_detached;
@@ -987,18 +987,103 @@ fn handle_push() {
 /// * `args` - A vector of command-line arguments.
 ///
 fn handle_branch(args: Vec<String>) {
+    let args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
     if args.len() == 2 {
         let result = git_branch(None, None, None, &mut io::stdout());
         match result {
             Ok(_) => {}
-            Err(_e) => {}
+            Err(_e) => {
+                eprintln!("Error showing branches.");
+            }
         }
-    } else {
-        let name = args[2].to_string();
-        let result = git_branch(Some(name), None, None, &mut io::stdout());
-        match result {
-            Ok(_) => {}
-            Err(_e) => {}
+    } else if args.len() == 3 {
+        if args[2] == "-l" {
+            let result = git_branch(None, None, None, &mut io::stdout());
+            match result {
+                Ok(_) => {
+                    
+                }
+                Err(_e) => {
+                    eprintln!("Error showing branches.");
+                }
+            }
+        } 
+        else {
+            let name = args[2].to_string();
+            let result = git_branch(Some(name), None, None, &mut io::stdout());
+            match result {
+                Ok(_) => {}
+                Err(_e) => {}
+            }
+        }
+    } else if args.len() > 3 {
+        handle_branch_options(args);
+    }
+}
+
+/// Handles various options for Git branch operations.
+///
+/// This function takes a vector of command-line arguments (`args`) and performs different actions
+/// based on the specified options. The supported options include:
+///
+/// - `-m`: Rename a Git branch.
+/// - `-d`: Delete one or more Git branches.
+/// - `-c`: Create a new Git branch.
+///
+/// # Arguments
+///
+/// - `args`: A vector of command-line arguments where the first element is the program name,
+/// the second element is the main command (e.g., "git"), and the third element is the option
+/// specifying the Git branch operation ("-m", "-d", "-c"). The subsequent elements depend on
+/// the chosen option.
+///
+fn handle_branch_options(args : Vec<&str>) {
+    match args[2] {
+        "-m" => {
+            if args.len() == 4 {
+                match git_branch(None, Some("-m"), Some(args[3]), &mut io::stdout()) {
+                    Ok(_) => {
+                        println!("Modified");
+                    },
+                    Err(e) => {eprintln!("{}",e)}
+                }
+            }
+            else if args.len() == 5 {
+                match git_branch(Some(args[3].to_string()), Some("-m"), Some(args[4]), &mut io::stdout()) {
+                    Ok(_) => {
+                        println!("Modified")
+                    },
+                    Err(e) => {eprintln!("{}",e)}
+                }
+            }
+            else {
+                eprintln!("fatal: too many arguments for a rename operation");
+            }
+        },
+        "-d" => {
+            let new_args : Vec<&&str> = args.iter().skip(3).collect();
+            for arg in new_args {
+                match git_branch(Some(arg.to_string()), Some("-d"), None, &mut io::stdout()) {
+                    Ok(_) => {
+                        println!("Deleted");
+                    },
+                    Err(e) => {eprintln!("{}",e)}
+                }
+            }
+        },
+        "-c" => {
+            let new_args : Vec<&&str> = args.iter().skip(3).collect();
+            for arg in new_args {
+                match git_branch(Some(arg.to_string()), Some("-c"), None, &mut io::stdout()) {
+                    Ok(_) => {
+                        println!("Created");
+                    },
+                    Err(e) => {eprintln!("{}",e)}
+                }       
+            }
+        },
+        _ => {
+            eprintln!("Invalid option!");
         }
     }
 }
