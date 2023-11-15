@@ -680,14 +680,15 @@ pub fn handle_checkout(args: Vec<String>) {
     let git_dir1 = Path::new(&git_dir);
     let destination = &args;
 
-     
     if let Err(err) = handle_checkout_option(git_dir1, &working_dir, option, destination.to_vec()) {
         match err.kind() {
             std::io::ErrorKind::UnexpectedEof => {
                 eprintln!(" ");
-            }           
-            _ => { eprintln!("Error cambiar de rama : {:?}", err);}
-            }    
+            }
+            _ => {
+                eprintln!("Error cambiar de rama : {:?}", err);
+            }
+        }
     }
 }
 
