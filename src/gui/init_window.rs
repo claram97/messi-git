@@ -82,7 +82,7 @@ pub fn connect_button_clicked_init_window(
                 }
             };
             if button_type == "option2" {
-                let result = show_text_entry_window("Enter the branch", move |text| {
+                let _result = show_text_entry_window("Enter the branch", move |text| {
                     if let Err(err) = handle_git_init_and_change_dir(&dir_str, &text, &current_dir)
                     {
                         eprintln!("{}", err);
@@ -90,7 +90,7 @@ pub fn connect_button_clicked_init_window(
                 });
             } else if button_type == "option3" {
                 let current_dir_clone = &current_dir.clone();
-                handle_template_path_entry(&dir_str, &current_dir_clone);
+                handle_template_path_entry(&dir_str, current_dir_clone);
             } else if button_type == "option1" {
                 init_git_and_handle_errors(&dir_str, &current_dir);
             } else if button_type == "option4" {
@@ -126,7 +126,7 @@ fn handle_directory_selection(file_chooser: &FileChooserButton, current_dir: &Pa
             eprintln!("Error in git init .");
             return;
         }
-        let result = handle_git_init_result(result, &current_dir, Path::new(&selected_directory));
+        let result = handle_git_init_result(result, current_dir, Path::new(&selected_directory));
         if result.is_err() {
             eprintln!("Error handling git init with template");
         }
@@ -180,13 +180,13 @@ fn create_selection_window() -> (Window, Button, FileChooserButton, Box) {
 /// * `current_dir` - The current directory path.
 ///
 fn init_git_and_handle_errors(dir_str: &str, current_dir: &Path) {
-    let result = git_init(&dir_str, "master", None);
+    let result = git_init(dir_str, "master", None);
     if result.is_err() {
         eprintln!("Error initiating git.");
         return;
     }
 
-    let result = handle_git_init_result(result, &current_dir, Path::new(&dir_str));
+    let result = handle_git_init_result(result, current_dir, Path::new(&dir_str));
     if result.is_err() {
         eprintln!("Error handling git init result");
     }

@@ -137,7 +137,7 @@ pub fn delete_branch(git_dir: &str, branch_name: &str, output: &mut impl Write) 
                     format!(
                         "error: Cannot delete branch {} checked out at {}",
                         branch_name,
-                        working_dir.to_string_lossy().to_string()
+                        working_dir.to_string_lossy()
                     )
                     .as_bytes(),
                 )?;

@@ -170,34 +170,8 @@ pub fn configure_clone_window(
     builder: &gtk::Builder,
 ) -> io::Result<()> {
     add_to_open_windows(new_window_clone);
-    let result = apply_window_style(new_window_clone);
-    if result.is_err() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Interrupted,
-            "Fatal error.\n",
-        ));
-    }
-
-    let url_entry = match get_entry(builder, "url-entry") {
-        Some(entry) => entry,
-        None => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Entry not found: url-entry\n",
-            ))
-        }
-    };
-
-    apply_entry_style(&url_entry);
-    let dir_to_clone_entry = match get_entry(builder, "dir-to-clone-entry") {
-        Some(entry) => entry,
-        None => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Entry not found.\n",
-            ))
-        }
-    };
+    let (url_entry, dir_to_clone_entry) =
+        apply_styles_and_get_entries(new_window_clone, builder, "url-entry", "dir-to-clone-entry")?;
     let dir_to_clone_entry_clone = dir_to_clone_entry.clone();
 
     apply_entry_style(&dir_to_clone_entry);
@@ -211,35 +185,9 @@ pub fn configure_clone_window(
     connect_button_clicked_clone_repository(&clone_button, &url_entry, &dir_to_clone_entry)?;
     connect_button_clicked_browse(&browse_button, new_window_clone, &dir_to_clone_entry);
 
-    let url_label = match get_label(builder, "url-label", 14.0) {
-        Some(label) => label,
-        None => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Label not found: url-label\n",
-            ))
-        }
-    };
-
-    let clone_dir_label = match get_label(builder, "clone-dir-label", 14.0) {
-        Some(label) => label,
-        None => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Label not found: clone-dir-label\n",
-            ))
-        }
-    };
-
-    let clone_info_label = match get_label(builder, "clone-info-label", 26.0) {
-        Some(label) => label,
-        None => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Label not found: clone-info-label\n",
-            ))
-        }
-    };
+    let url_label = get_label_with_error(builder, "url-label", 14.0)?;
+    let clone_dir_label = get_label_with_error(builder, "clone-dir-label", 14.0)?;
+    let clone_info_label = get_label_with_error(builder, "clone-info-label", 26.0)?;
 
     apply_label_style(&url_label);
     apply_label_style(&clone_dir_label);
@@ -247,4 +195,48 @@ pub fn configure_clone_window(
 
     new_window_clone.set_default_size(800, 600);
     Ok(())
+}
+
+fn get_label_with_error(
+    builder: &gtk::Builder,
+    label_id: &str,
+    font_size: f64,
+) -> io::Result<gtk::Label> {
+    match get_label(builder, label_id, font_size) {
+        Some(label) => Ok(label),
+        None => Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Label not found: {}\n", label_id),
+        )),
+    }
+}
+fn apply_styles_and_get_entries(
+    new_window_clone: &gtk::Window,
+    builder: &gtk::Builder,
+    url_entry_id: &str,
+    dir_to_clone_entry_id: &str,
+) -> Result<(gtk::Entry, gtk::Entry), io::Error> {
+    if let Err(err) = apply_window_style(new_window_clone) {
+        eprintln!("Error applying window style: {}", err);
+    }
+
+    let url_entry = get_and_apply_entry_style(builder, url_entry_id)?;
+    let dir_to_clone_entry = get_and_apply_entry_style(builder, dir_to_clone_entry_id)?;
+
+    Ok((url_entry, dir_to_clone_entry))
+}
+
+fn get_and_apply_entry_style(
+    builder: &gtk::Builder,
+    entry_id: &str,
+) -> Result<gtk::Entry, io::Error> {
+    if let Some(entry) = get_entry(builder, entry_id) {
+        apply_entry_style(&entry);
+        Ok(entry)
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Entry not found: {}\n", entry_id),
+        ))
+    }
 }

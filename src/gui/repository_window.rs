@@ -8,7 +8,7 @@ use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
-use crate::fetch::git_fetch_for_gui;
+//use crate::fetch::git_fetch_for_gui;
 use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
@@ -800,7 +800,7 @@ fn handle_checkout_branch_window() -> io::Result<()> {
             }
             Err(_err) => match _err.kind() {
                 std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Éxito", &format!("Changed correctly to branch "));
+                    show_message_dialog("Éxito", "Changed correctly to branch ");
                 }
                 _ => {
                     show_message_dialog("Error", "La rama indicada no existe.");
@@ -1150,25 +1150,29 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
     let git_dir_path = Path::new(&git_dir);
 
-    let result = match checkout_branch(
+    let _result = match checkout_branch(
         git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
         text,
     ) {
         Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
-        Err(err) => Err(match err.kind() {
-            std::io::ErrorKind::UnexpectedEof => {
-                eprintln!("exito.");
-            }
-            _ => {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "Error calling the 'checkout branch' function\n",
-                ));
-            }
-        }),
+        Err(err) => {
+            {
+                match err.kind() {
+                    std::io::ErrorKind::UnexpectedEof => {
+                        eprintln!("exito.");
+                    }
+                    _ => {
+                        return Err(io::Error::new(
+                            io::ErrorKind::NotFound,
+                            "Error calling the 'checkout branch' function\n",
+                        ));
+                    }
+                };
+            };
+            Err(())
+        }
     };
-
     Ok("Ok".to_string())
 }
 
