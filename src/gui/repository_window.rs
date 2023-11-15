@@ -1109,7 +1109,7 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
                 }
             };
             Err(())
-        },
+        }
     };
 
     Ok("Ok".to_string())

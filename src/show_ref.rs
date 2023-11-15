@@ -120,19 +120,11 @@ fn show_refs_in_remotes_folder(
     for entry in fs::read_dir(remotes_path)? {
         let entry = entry?;
         let path = entry.path();
-        println!("Path is {}", path.display());
         if path.is_dir() {
             let string_path = path.to_string_lossy().to_string();
             let splitted: Vec<&str> = string_path.split("remotes").collect();
             let type_ = format!("{}{}", "remotes", splitted[1]);
-            println!("splitted {:?}", splitted);
-            println!("Type is {}", type_);
-            process_files_in_directory(
-                path.to_string_lossy().as_ref(),
-                &type_,
-                is_hash,
-                output,
-            )?;
+            process_files_in_directory(path.to_string_lossy().as_ref(), &type_, is_hash, output)?;
         }
     }
 

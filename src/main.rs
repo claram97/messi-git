@@ -5,7 +5,6 @@ use messi::parse_commands::get_user_input;
 use messi::parse_commands::{handle_git_command, parse_git_command};
 use messi::server;
 
-
 /// Runs the application with a graphical user interface (GUI) using GTK.
 ///
 /// This function initializes the GTK library and attempts to create and run the main application
