@@ -33,6 +33,47 @@ fn list_files_in_index(index: &Index, output: &mut impl Write) -> io::Result<()>
     Ok(())
 }
 
+// Process untracked files and directories.
+///
+/// This function processes untracked items, handling both directories and files. For directories,
+/// it recursively lists the files using the `git_ls_files` function. For files, it writes the
+/// relative entry path to the specified output.
+///
+/// # Arguments
+///
+/// - `relative_entry_path_str`: The relative path of the untracked entry as a string.
+/// - `entry_path`: The path to the untracked entry.
+/// - `line`: A vector of strings representing additional information about the entry.
+/// - `working_dir`: The path to the working directory.
+/// - `git_dir`: The path to the Git directory.
+/// - `index`: A reference to the Git index.
+/// - `output`: A mutable reference to an implementation of the `Write` trait where the output
+///   will be written.
+///
+/// # Returns
+///
+/// Returns an `io::Result<()>`, indicating success or an `io::Error` if any I/O operation fails.
+///
+fn process_untracked(relative_entry_path_str : &str, entry_path : &Path, line: Vec<String>, working_dir: &str, git_dir: &str, index: &Index, output: &mut impl Write) -> io::Result<()> {
+    let entry_path_str = entry_path.to_string_lossy().to_string();
+
+    if entry_path.is_dir() {
+        git_ls_files(
+            working_dir,
+            git_dir,
+            &entry_path_str,
+            line,
+            index,
+            output,
+        )?;
+    }
+    if entry_path.is_file() {
+        let buffer = format!("{}\n", relative_entry_path_str);
+        output.write_all(buffer.as_bytes())?;
+    }
+    Ok(())
+}
+
 /// Recursively lists untracked files in the specified directory by comparing with the given index.
 ///
 /// # Arguments
@@ -62,27 +103,13 @@ fn list_untracked_files(
     for entry in fs::read_dir(current_directory)? {
         let entry = entry?;
         let entry_path = entry.path();
-        let entry_path_str = entry_path.to_string_lossy().to_string();
         if let Ok(relative_entry_path) = entry_path.strip_prefix(working_dir) {
             let relative_entry_path_str = relative_entry_path.to_string_lossy().to_string();
             if !index.path_should_be_ignored(&relative_entry_path_str)
                 && !index.contains(&relative_entry_path_str)
             {
-                if entry_path.is_dir() {
-                    let cloned_line = line.clone();
-                    git_ls_files(
-                        working_dir,
-                        git_dir,
-                        &entry_path_str,
-                        cloned_line,
-                        index,
-                        output,
-                    )?;
-                }
-                if entry_path.is_file() {
-                    let buffer = format!("{}\n", relative_entry_path_str);
-                    output.write_all(buffer.as_bytes())?;
-                }
+                let cloned_line = line.clone();
+                process_untracked(&relative_entry_path_str, &entry_path, cloned_line, working_dir, git_dir, index, output)?;
             }
         } else {
             return Err(io::Error::new(io::ErrorKind::Interrupted, "Fatal error.\n"));
@@ -240,9 +267,7 @@ mod tests {
         std::fs::remove_dir_all(repo_path)?;
         Ok(())
     }
-    /*2c0611919ae5d4d765fc49cef961d67886411cad file1.txt
-    0bad9566be86bcf4493d69b6b55d73137efd45a1 file2.txt
-    34ae409f501db061fbf67c43085e7a06a9537359 .mgit/file3.txt */
+
     #[test]
     fn ls_files_lists_files_on_index() -> io::Result<()> {
         let repo_path = "tests/ls_files_repo_2";
