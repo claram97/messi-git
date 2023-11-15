@@ -1,4 +1,4 @@
-use crate::branch::{get_current_branch_path, git_branch, modify_branch};
+use crate::branch::{get_current_branch_path, git_branch};
 use crate::cat_file::cat_file;
 use crate::checkout::checkout_branch;
 use crate::checkout::checkout_commit_detached;
@@ -1001,15 +1001,12 @@ fn handle_branch(args: Vec<String>) {
         if args[2] == "-l" {
             let result = git_branch(None, None, None, &mut io::stdout());
             match result {
-                Ok(_) => {
-                    
-                }
+                Ok(_) => {}
                 Err(_e) => {
                     eprintln!("Error showing branches.");
                 }
             }
-        } 
-        else {
+        } else {
             let name = args[2].to_string();
             let result = git_branch(Some(name), None, None, &mut io::stdout());
             match result {
@@ -1038,51 +1035,62 @@ fn handle_branch(args: Vec<String>) {
 /// specifying the Git branch operation ("-m", "-d", "-c"). The subsequent elements depend on
 /// the chosen option.
 ///
-fn handle_branch_options(args : Vec<&str>) {
+fn handle_branch_options(args: Vec<&str>) {
     match args[2] {
         "-m" => {
             if args.len() == 4 {
                 match git_branch(None, Some("-m"), Some(args[3]), &mut io::stdout()) {
                     Ok(_) => {
                         println!("Modified");
-                    },
-                    Err(e) => {eprintln!("{}",e)}
+                    }
+                    Err(e) => {
+                        eprintln!("{}", e)
+                    }
                 }
-            }
-            else if args.len() == 5 {
-                match git_branch(Some(args[3].to_string()), Some("-m"), Some(args[4]), &mut io::stdout()) {
+            } else if args.len() == 5 {
+                match git_branch(
+                    Some(args[3].to_string()),
+                    Some("-m"),
+                    Some(args[4]),
+                    &mut io::stdout(),
+                ) {
                     Ok(_) => {
                         println!("Modified")
-                    },
-                    Err(e) => {eprintln!("{}",e)}
+                    }
+                    Err(e) => {
+                        eprintln!("{}", e)
+                    }
                 }
-            }
-            else {
+            } else {
                 eprintln!("fatal: too many arguments for a rename operation");
             }
-        },
+        }
         "-d" => {
-            let new_args : Vec<&&str> = args.iter().skip(3).collect();
+            let new_args: Vec<&&str> = args.iter().skip(3).collect();
             for arg in new_args {
                 match git_branch(Some(arg.to_string()), Some("-d"), None, &mut io::stdout()) {
                     Ok(_) => {
                         println!("Deleted");
-                    },
-                    Err(e) => {eprintln!("{}",e)}
+                    }
+                    Err(e) => {
+                        eprintln!("{}", e)
+                    }
                 }
             }
-        },
+        }
         "-c" => {
-            let new_args : Vec<&&str> = args.iter().skip(3).collect();
+            let new_args: Vec<&&str> = args.iter().skip(3).collect();
             for arg in new_args {
                 match git_branch(Some(arg.to_string()), Some("-c"), None, &mut io::stdout()) {
                     Ok(_) => {
                         println!("Created");
-                    },
-                    Err(e) => {eprintln!("{}",e)}
-                }       
+                    }
+                    Err(e) => {
+                        eprintln!("{}", e)
+                    }
+                }
             }
-        },
+        }
         _ => {
             eprintln!("Invalid option!");
         }
