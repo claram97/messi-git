@@ -1655,13 +1655,12 @@ pub fn check_ignore_button_on_clicked(button : &Button, text_view: &gtk::TextVie
         show_message_dialog("Error", "Debe ingresar un path");
     }
     else {
-        let line : Vec<String>;
-        if cloned_siwtch.get_active() {
-            line = vec!["git".to_string(), "check-ignore".to_string(), "-v".to_string(), path.to_string()];
+        let line : Vec<String> = if cloned_siwtch.get_active() {
+            vec!["git".to_string(), "check-ignore".to_string(), "-v".to_string(), path.to_string()]
         }
         else {
-            line = vec!["git".to_string(), "check-ignore".to_string(), path.to_string()];
-        }
+            vec!["git".to_string(), "check-ignore".to_string(), path.to_string()]
+        };
         let mut output : Vec<u8> = vec![];
 
         match git_check_ignore(".mgitignore", &gitignore_path, line, &mut output) {
@@ -1688,7 +1687,6 @@ pub fn check_ignore_button_on_clicked(button : &Button, text_view: &gtk::TextVie
             Err(e) => {
                 eprintln!("{}",e); 
                 show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
-                return;
                 //no sé, personalizar esto jiji
             }
         }
