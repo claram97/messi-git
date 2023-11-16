@@ -779,7 +779,6 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
                 if result.is_err() {
                     eprintln!("No se pudo actualizar la vista de staging.");
                 }
-                //                println!("Texto: {}", texto);
             }
             Err(_err) => {
                 show_message_dialog("Error", "El path ingresado no es correcto.");
@@ -1648,33 +1647,15 @@ pub fn check_ignore_button_on_clicked(button : &Button, text_view: &gtk::TextVie
 
             return;}
     };
-    let working_dir = match Path::new(&git_dir).parent() {
-        Some(dir) => dir.to_string_lossy().to_string(),
-        None => {
-            eprintln!("No se pudo obtener el working dir.");
-            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
-
-            return;
-        }
-    };
-    let current_dir = &current_dir.to_string_lossy().to_string();
-    let index_path = format!("{}/{}",git_dir,"index");
+ 
     let gitignore_path = format!("{}/{}",git_dir,".mgitignore");
-    let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
-        Ok(index) => index,
-        Err(_e) => {
-            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
-
-            return;
-        }
-    };
-
+    
     let path = cloned_entry.get_text();
     if path.is_empty() {
         show_message_dialog("Error", "Debe ingresar un path");
     }
     else {
-        let mut line : Vec<String> = vec![];
+        let line : Vec<String>;
         if cloned_siwtch.get_active() {
             line = vec!["git".to_string(), "check-ignore".to_string(), "-v".to_string(), path.to_string()];
         }
@@ -1741,7 +1722,12 @@ pub fn check_ignore_window(builder : &Builder) {
         }
     };
 
-    apply_button_style(&check_ignore_button);
+    match apply_button_style(&check_ignore_button) {
+        Ok(_) => {},
+        Err(e) => {
+            eprintln!("{}",e);
+        }
+    }
     apply_entry_style(&check_ignore_entry);
 
     check_ignore_button_on_clicked(&check_ignore_button, &check_ignore_view, &check_ignore_entry, &check_ignore_switch);
