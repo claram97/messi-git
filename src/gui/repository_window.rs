@@ -620,20 +620,16 @@ fn handle_force_checkout_button() -> io::Result<()> {
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
 fn handle_show_branches_button(builder: &gtk::Builder) {
-    // Obtén el TextView y el ScrolledWindow desde el builder
     let branch_text_view: gtk::TextView = builder.get_object("show-branches-text").unwrap();
     let scrolled_window: gtk::ScrolledWindow = builder.get_object("scrolled-window").unwrap();
 
-    // Llamada a la función git_branch_for_ui para obtener el texto
     let text_from_function = git_branch_for_ui(None);
 
     match text_from_function {
         Ok(texto) => {
-            // Configura el TextView con el texto obtenido
             let buffer = branch_text_view.get_buffer().unwrap();
             buffer.set_text(texto.as_str());
 
-            // Configura el ScrolledWindow para que sea scrollable
             scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
             scrolled_window.add(&branch_text_view);
         }
@@ -1987,6 +1983,8 @@ pub fn check_ignore_window(builder: &Builder) {
         }
     };
 
+    let scrolled_window: gtk::ScrolledWindow = builder.get_object("scroll-ig").unwrap();
+
     match apply_button_style(&check_ignore_button) {
         Ok(_) => {}
         Err(e) => {
@@ -1994,6 +1992,10 @@ pub fn check_ignore_window(builder: &Builder) {
         }
     }
     apply_entry_style(&check_ignore_entry);
+
+    // Configura el TextView y añádelo al ScrolledWindow
+    scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+    scrolled_window.add(&check_ignore_view);
 
     check_ignore_button_on_clicked(
         &check_ignore_button,

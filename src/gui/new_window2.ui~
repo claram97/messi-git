@@ -619,14 +619,20 @@
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkTextView" id="check-ignore-view">
-                    <property name="width-request">600</property>
-                    <property name="height-request">500</property>
+                  <object class="GtkScrolledWindow" id="scroll-ig">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <property name="shadow-type">in</property>
+                    <child>
+                      <object class="GtkTextView" id="check-ignore-view">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="cursor-visible">False</property>
+                      </object>
+                    </child>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
+                    <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">0</property>
                   </packing>
@@ -737,6 +743,8 @@
                   <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">11</property>
                     <child>
                       <object class="GtkButton" id="list-untracked-button">
                         <property name="label" translatable="yes">List untracked files</property>
@@ -1058,7 +1066,7 @@
                 <property name="orientation">vertical</property>
                 <property name="homogeneous">True</property>
                 <child>
-                  <object class="GtkScrolledWindow">
+                  <object class="GtkScrolledWindow" id="scrolled-window">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="shadow-type">in</property>
