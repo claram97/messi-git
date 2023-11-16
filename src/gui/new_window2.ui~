@@ -735,6 +735,7 @@
                       <object class="GtkTextView" id="ls-files-view">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
+                        <property name="cursor-visible">False</property>
                       </object>
                     </child>
                   </object>
@@ -877,14 +878,20 @@
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkTextView" id="show-ref-view">
-                    <property name="width-request">600</property>
-                    <property name="height-request">500</property>
+                  <object class="GtkScrolledWindow" id="scroll-ref">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <property name="shadow-type">in</property>
+                    <child>
+                      <object class="GtkTextView" id="show-ref-view">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="cursor-visible">False</property>
+                      </object>
+                    </child>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
+                    <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">0</property>
                   </packing>
@@ -932,6 +939,8 @@
                   <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">11</property>
                     <child>
                       <object class="GtkButton" id="show-ref-button">
                         <property name="label" translatable="yes">Show ref</property>

@@ -2450,6 +2450,11 @@ pub fn show_ref_window(builder: &Builder) {
         }
     };
 
+    let show_ref_scrolled_window: gtk::ScrolledWindow =
+        builder.get_object("scroll-ref").unwrap();
+    show_ref_scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+    show_ref_scrolled_window.add(&show_ref_view);
+
     let show_ref_entry = match get_entry(builder, "show-ref-entry") {
         Some(entry) => entry,
         None => {
