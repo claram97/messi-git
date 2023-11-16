@@ -52,7 +52,7 @@ mod tests {
         let host = "localhost";
         let git_dir_path = local_dir.clone() + "/.mgit";
         let _ = clone::git_clone(&address, remote_repo_name, host, &local_dir);
-        let _ = branch::create_new_branch(&git_dir_path, "branch", &mut io::stdout());
+        let _ = branch::create_new_branch(&git_dir_path, "branch", None, &mut io::stdout());
         let _ = checkout::checkout_branch(&PathBuf::from(&git_dir_path), &local_dir, "branch");
         //Create two new files to push
         let file_path = local_dir.clone() + "/test_file.txt";

@@ -1,10 +1,13 @@
 use std::{
     fs::{self, File},
     io::{self, Read, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
-use crate::{commit, utils};
+use crate::{
+    commit::{self, get_branch_name},
+    utils,
+};
 
 /// Returns the path inside the HEAD file.
 /// The one that contains the path to the current branch.
@@ -120,33 +123,72 @@ pub fn get_current_branch_commit(git_dir_path: &str) -> io::Result<String> {
 ///
 /// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
 ///
-pub fn delete_branch(git_dir: &str, branch_name: &str) -> io::Result<()> {
+pub fn delete_branch(git_dir: &str, branch_name: &str, output: &mut impl Write) -> io::Result<()> {
     let branch_path = git_dir.to_string() + "/refs/heads/" + branch_name;
     let path = Path::new(&branch_path);
+
     if path.exists() {
-        fs::remove_file(path)?;
+        let path_relative_to_refs = format!("{}/{}", "refs/heads", branch_name);
+        let head_path = format!("{}/HEAD", git_dir);
+        let content = fs::read_to_string(head_path)?;
+        if content.eq(&path_relative_to_refs) {
+            if let Some(working_dir) = Path::new(git_dir).parent() {
+                output.write_all(
+                    format!(
+                        "error: Cannot delete branch {} checked out at {}",
+                        branch_name,
+                        working_dir.to_string_lossy()
+                    )
+                    .as_bytes(),
+                )?;
+            } else {
+                output.write_all("Error getting working dir.\n".as_bytes())?;
+            }
+        } else {
+            let content = fs::read_to_string(&branch_path)?;
+            let content = content.chars().take(7).collect::<String>();
+
+            fs::remove_file(path)?;
+            output.write_all(format!("Deleted {} (was {})", branch_name, content).as_bytes())?;
+        }
     } else {
         let buffer = format!("error: branch '{}' not found\n", branch_name);
-        io::stdout().write_all(buffer.as_bytes())?;
+        output.write_all(buffer.as_bytes())?;
     }
 
     Ok(())
 }
 
-/// Creates a new branch in the repo with the given name.
-/// The new branch will point to the same commit as the current branch.
-/// HEAD won't be updated.
-///
-/// ## Arguments
-/// * `git_dir` - The path to the repo directory.
-/// * `branch_name` - The name of the new branch.
-/// * `output` - The output to write the error message if any.
-///
-/// ## Errors
-/// If the branch already exists, the branch is not created and an error is returned.
-/// If the HEAD file is empty, an error is returned.
-/// If there are no tracked files, an error is returned.
-pub fn create_new_branch(
+fn create_branch_from_existing_one(
+    git_dir: &str,
+    branch_name: &str,
+    from: &str,
+    output: &mut impl Write,
+) -> io::Result<()> {
+    let new_refs = (&git_dir).to_string() + "/refs/heads/" + branch_name;
+    let refs_path = Path::new(&new_refs);
+    if refs_path.exists() {
+        let buffer = format!("fatal: A branch named '{}' already exists\n", branch_name);
+        output.write_all(buffer.as_bytes())?;
+        return Ok(());
+    }
+
+    let from_refs = (&git_dir).to_string() + "/refs/heads/" + from;
+    let from_path = Path::new(&from_refs);
+    if !from_path.exists() {
+        let buffer = format!("fatal: Not a valid object name: '{}'.", from);
+        output.write_all(buffer.as_bytes())?;
+        return Ok(());
+    }
+
+    let commit_hash = fs::read_to_string(from_path)?;
+    let mut new_branch_file = File::create(refs_path)?;
+    new_branch_file.write_all(commit_hash.as_bytes())?;
+    new_branch_file.flush()?;
+    Ok(())
+}
+
+fn create_branch_from_current_one(
     git_dir: &str,
     branch_name: &str,
     output: &mut impl Write,
@@ -169,6 +211,33 @@ pub fn create_new_branch(
     let current_commit = get_current_branch_commit(git_dir)?;
     let mut file = File::create(&new_refs)?;
     file.write_all(current_commit.as_bytes())?;
+    Ok(())
+}
+
+/// Creates a new branch in the repo with the given name.
+/// The new branch will point to the same commit as the current branch.
+/// HEAD won't be updated.
+///
+/// ## Arguments
+/// * `git_dir` - The path to the repo directory.
+/// * `branch_name` - The name of the new branch.
+/// * `output` - The output to write the error message if any.
+///
+/// ## Errors
+/// If the branch already exists, the branch is not created and an error is returned.
+/// If the HEAD file is empty, an error is returned.
+/// If there are no tracked files, an error is returned.
+pub fn create_new_branch(
+    git_dir: &str,
+    branch_name: &str,
+    from: Option<&str>,
+    output: &mut impl Write,
+) -> io::Result<()> {
+    if let Some(from) = from {
+        create_branch_from_existing_one(git_dir, branch_name, from, output)?;
+    } else {
+        create_branch_from_current_one(git_dir, branch_name, output)?;
+    }
     Ok(())
 }
 
@@ -195,6 +264,41 @@ pub fn list_branches(git_dir: &str, output: &mut impl Write) -> io::Result<()> {
     Ok(())
 }
 
+pub fn modify_branch(
+    git_dir: &str,
+    branch_name: &str,
+    new_name: &str,
+    output: &mut impl Write,
+) -> io::Result<()> {
+    let branch_path = PathBuf::from(git_dir).join("refs/heads").join(branch_name);
+    let new_branch_path = PathBuf::from(git_dir).join("refs/heads").join(new_name);
+
+    if branch_path.exists() {
+        if new_branch_path.exists() {
+            output.write_all(
+                format!("fatal: A branch named {} already exists.", new_name).as_bytes(),
+            )?;
+        } else {
+            let current_branch = get_branch_name(git_dir)?;
+            if current_branch.eq(branch_name) {
+                let head_path = format!("{}/HEAD", git_dir);
+                let mut head_file = File::create(head_path)?;
+                head_file.write_all(format!("ref: refs/heads/{}", new_name).as_bytes())?;
+                head_file.flush()?;
+            }
+            fs::rename(&branch_path, &new_branch_path)?;
+        }
+    } else {
+        let error_message = format!(
+            "error: refname refs/heads/{} not found\nfatal: Branch rename failed\n",
+            branch_name
+        );
+        output.write_all(error_message.as_bytes())?;
+    }
+
+    Ok(())
+}
+
 /// Lists all the branches in the repo or creates a new branch depending on the argument.
 ///
 /// ## Arguments
@@ -205,7 +309,12 @@ pub fn list_branches(git_dir: &str, output: &mut impl Write) -> io::Result<()> {
 /// If the HEAD file is empty, an error is returned.
 /// If there are no tracked files, an error is returned.
 /// If the git directory is not found, an error is returned.
-pub fn git_branch(name: Option<String>) -> io::Result<()> {
+pub fn git_branch(
+    name: Option<String>,
+    option: Option<&str>,
+    new_name: Option<&str>,
+    output: &mut impl Write,
+) -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match utils::find_git_directory(&mut current_dir, ".mgit") {
         Some(git_dir) => git_dir,
@@ -217,10 +326,33 @@ pub fn git_branch(name: Option<String>) -> io::Result<()> {
         }
     };
 
-    if name.is_some() {
-        create_new_branch(&git_dir, &name.unwrap(), &mut io::stdout())?;
+    if let Some(name) = name {
+        if let Some(option) = option {
+            match option {
+                "-l" => list_branches(&git_dir, output)?,
+                "-d" => delete_branch(&git_dir, &name, output)?,
+                "-m" => {
+                    if let Some(new_name) = new_name {
+                        modify_branch(&git_dir, &name, new_name, output)?;
+                    }
+                }
+                "-c" => {
+                    create_new_branch(&git_dir, &name, None, output)?;
+                }
+                _ => {
+                    output.write_all(b"fatal: Invalid option.\n")?;
+                }
+            }
+        } else {
+            create_new_branch(&git_dir, &name, None, &mut io::stdout())?;
+        }
+    } else if let Some(new_name) = new_name {
+        if name.is_none() {
+            let current_branch = get_branch_name(&git_dir)?;
+            modify_branch(&git_dir, &current_branch, new_name, output)?;
+        }
     } else {
-        list_branches(&git_dir, &mut io::stdout())?;
+        list_branches(&git_dir, output)?;
     }
     Ok(())
 }
@@ -279,7 +411,7 @@ pub fn git_branch_for_ui(name: Option<String>) -> io::Result<String> {
     };
 
     if let Some(branch_name) = name {
-        create_new_branch(&git_dir, &branch_name, &mut io::stdout())?;
+        create_new_branch(&git_dir, &branch_name, None, &mut io::stdout())?;
         Ok("Branch created successfully".to_string())
     } else {
         let mut output: Vec<u8> = vec![];
@@ -293,17 +425,6 @@ pub fn git_branch_for_ui(name: Option<String>) -> io::Result<String> {
     }
 }
 
-/// Checks if a branch with the specified name exists in the Git repository.
-///
-/// # Arguments
-///
-/// * `branch` - A string representing the name of the branch to check.
-/// * `git_dir` - A string specifying the path to the Git directory.
-///
-/// # Returns
-///
-/// Returns `true` if the branch exists, otherwise `false`.
-///
 pub fn is_an_existing_branch(branch: &str, git_dir: &str) -> bool {
     let path = format!("{}/refs/heads/{}", git_dir, branch);
 
@@ -348,6 +469,23 @@ mod tests {
     }
 
     #[test]
+    fn test_git_branch_for_ui_create_branch() -> io::Result<()> {
+        let path = "tests/branch_test_repo";
+        let git_dir = format!("{}/{}", path, ".mgit");
+        init::git_init(path, "current_branch", None)?;
+        let current_branch_path = format!("{}/{}", git_dir, "/refs/heads/current_branch");
+        let mut current_branch_file = File::create(current_branch_path)?;
+        current_branch_file.write_all("12345678910".as_bytes())?;
+        let branch_name = "new_branch".to_string();
+        let output = git_branch_for_ui(Some(branch_name));
+        assert!(output.is_ok());
+        let expected_output = "Branch created successfully".to_string();
+        assert_eq!(output.unwrap(), expected_output);
+        std::fs::remove_dir_all(path)?;
+        Ok(())
+    }
+
+    #[test]
     fn test_list_branches() -> Result<(), io::Error> {
         create_if_not_exists("tests/test_list_branches", true)?;
         init::git_init("tests/test_list_branches", "current_branch", None)?;
@@ -377,6 +515,187 @@ mod tests {
     }
 
     #[test]
+    fn test_modify_current_branch_correctly() -> io::Result<()> {
+        let path = "tests/branch_test_modify_repo";
+        let git_dir = format!("{}/{}", path, ".mgit");
+        init::git_init(path, "current_branch", None)?;
+        let current_branch_string_path = format!("{}/{}", git_dir, "refs/heads/current_branch");
+        let _current_branch_file = File::create(&current_branch_string_path)?;
+        let new_branch_string_path = format!("{}/{}", git_dir, "refs/heads/branch");
+        let current_brach_path = Path::new(&current_branch_string_path);
+        let new_branch_path = Path::new(&new_branch_string_path);
+        let head_path = format!("{}/{}", git_dir, "HEAD");
+        let heads_content = fs::read_to_string(&head_path)?;
+        let before = (current_brach_path.exists())
+            & (!new_branch_path.exists())
+            & heads_content.starts_with("ref: refs/heads/current_branch");
+        let new_branch_name = "branch";
+        let mut output: Vec<u8> = vec![];
+        modify_branch(&git_dir, "current_branch", new_branch_name, &mut output)?;
+        let heads_content = fs::read_to_string(&head_path)?;
+        let after = (!current_brach_path.exists())
+            & (new_branch_path.exists())
+            & heads_content.starts_with("ref: refs/heads/branch");
+        assert!(before & after);
+        std::fs::remove_dir_all(path)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_modify_not_current_branch_correctly() -> io::Result<()> {
+        let path = "tests/branch_test_modify_repo_2";
+        let git_dir = format!("{}/{}", path, ".mgit");
+        init::git_init(path, "current_branch", None)?;
+        let branch_to_modify_string_path = format!("{}/{}", git_dir, "refs/heads/branch");
+        let _branch_to_modify_file = File::create(&branch_to_modify_string_path)?;
+        let new_branch_string_path = format!("{}/{}", git_dir, "refs/heads/new_branch");
+        let branch_to_modify_path = Path::new(&branch_to_modify_string_path);
+        let new_branch_path = Path::new(&new_branch_string_path);
+        let head_path = format!("{}/{}", git_dir, "HEAD");
+        let heads_content = fs::read_to_string(&head_path)?;
+        let before = (branch_to_modify_path.exists())
+            & (!new_branch_path.exists())
+            & heads_content.starts_with("ref: refs/heads/current_branch");
+        let new_branch_name = "new_branch";
+        let mut output: Vec<u8> = vec![];
+        modify_branch(&git_dir, "branch", new_branch_name, &mut output)?;
+        let heads_content = fs::read_to_string(&head_path)?;
+        let after = (!branch_to_modify_path.exists())
+            & (new_branch_path.exists())
+            & heads_content.starts_with("ref: refs/heads/current_branch");
+        assert!(before & after);
+        std::fs::remove_dir_all(path)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_modify_non_existing_branch_informs_error() -> io::Result<()> {
+        let path = "tests/branch_test_modify_repo_3";
+        let git_dir = format!("{}/{}", path, ".mgit");
+        init::git_init(path, "current_branch", None)?;
+        let non_existing_branch_string_path = format!("{}/{}", git_dir, "refs/heads/branch");
+        let new_branch_string_path = format!("{}/{}", git_dir, "refs/heads/new_branch");
+        let non_existing_branch_path = Path::new(&non_existing_branch_string_path);
+        let new_branch_path = Path::new(&new_branch_string_path);
+        let before = (!non_existing_branch_path.exists()) & (!new_branch_path.exists());
+        let new_branch_name = "new_branch";
+        let mut output: Vec<u8> = vec![];
+        modify_branch(&git_dir, "branch", new_branch_name, &mut output)?;
+        let after = (!non_existing_branch_path.exists()) & (!new_branch_path.exists());
+        assert!(before & after);
+        std::fs::remove_dir_all(path)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_modify_branch_to_an_existing_one_informs_error() -> io::Result<()> {
+        let path = "tests/branch_test_modify_repo_4";
+        let git_dir = format!("{}/{}", path, ".mgit");
+        init::git_init(path, "current_branch", None)?;
+        let existing_branch_string_path = format!("{}/{}", git_dir, "refs/heads/branch");
+        let _existing_branch_file = File::create(&existing_branch_string_path)?;
+        let new_branch_string_path = format!("{}/{}", git_dir, "refs/heads/new_branch");
+        let _new_branch_file = File::create(&new_branch_string_path)?;
+        let existing_branch_path = Path::new(&existing_branch_string_path);
+        let new_branch_path = Path::new(&new_branch_string_path);
+        let before = (existing_branch_path.exists()) & (new_branch_path.exists());
+        let new_branch_name = "new_branch";
+        let mut output: Vec<u8> = vec![];
+        modify_branch(&git_dir, "branch", new_branch_name, &mut output)?;
+        let after = (existing_branch_path.exists()) & (new_branch_path.exists());
+        assert!(before & after);
+        std::fs::remove_dir_all(path)?;
+        Ok(())
+    }
+
+    #[test]
+    fn create_branch_from_non_existing_one_informs_error() -> io::Result<()> {
+        let path = "tests/branch_test_create_repo_0";
+        let git_dir = format!("{}/{}", path, ".mgit");
+        init::git_init(path, "current_branch", None)?;
+        let current_branch_string_path = format!("{}/{}", git_dir, "refs/heads/branch");
+        let current_branch_path = Path::new(&current_branch_string_path);
+        let new_branch_string_path = format!("{}/{}", git_dir, "refs/heads/new_branch");
+        let new_branch_path = Path::new(&new_branch_string_path);
+        let before = !current_branch_path.exists() & !new_branch_path.exists();
+        let mut output: Vec<u8> = vec![];
+        let _result = create_new_branch(&git_dir, "new_branch", Some("branch"), &mut output);
+        let after = !current_branch_path.exists() & !new_branch_path.exists();
+        assert!(before & after);
+        std::fs::remove_dir_all(path)?;
+        Ok(())
+    }
+
+    #[test]
+    fn create_branch_from_existing_one_functions_correctly() -> io::Result<()> {
+        let path = "tests/branch_test_create_repo_";
+        let git_dir = format!("{}/{}", path, ".mgit");
+        init::git_init(path, "current_branch", None)?;
+        let current_branch_string_path = format!("{}/{}", git_dir, "refs/heads/branch");
+        let _current_branch_file = File::create(&current_branch_string_path)?;
+        let current_branch_path = Path::new(&current_branch_string_path);
+        let new_branch_string_path = format!("{}/{}", git_dir, "refs/heads/new_branch");
+        let new_branch_path = Path::new(&new_branch_string_path);
+        let before = current_branch_path.exists() & !new_branch_path.exists();
+        let mut output: Vec<u8> = vec![];
+        let _result = create_new_branch(&git_dir, "new_branch", Some("branch"), &mut output);
+        let after = current_branch_path.exists() & new_branch_path.exists();
+        assert!(before & after);
+        std::fs::remove_dir_all(path)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_delete_branch_correctly() -> io::Result<()> {
+        let path = "tests/branch_test_delete_repo";
+        let git_dir = format!("{}/{}", path, ".mgit");
+        init::git_init(path, "current_branch", None)?;
+        let branch_to_delete_path = format!("{}/{}", git_dir, "/refs/heads/branch");
+        File::create(&branch_to_delete_path)?;
+        let branch_to_delete_path = Path::new(&branch_to_delete_path);
+        let before = branch_to_delete_path.exists();
+        // let mut current_branch_file = File::create(current_branch_path)?;
+        // current_branch_file.write_all("12345678910".as_bytes())?;
+        let mut output: Vec<u8> = vec![];
+        delete_branch(&git_dir, "branch", &mut output)?;
+        let after = branch_to_delete_path.exists();
+        assert!((before == true) && (after == false));
+        std::fs::remove_dir_all(path)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_deleting_non_existing_branch_prints_error() -> io::Result<()> {
+        let path = "tests/branch_test_delete_repo_2";
+        let git_dir = format!("{}/{}", path, ".mgit");
+        init::git_init(path, "current_branch", None)?;
+        // let mut current_branch_file = File::create(current_branch_path)?;
+        // current_branch_file.write_all("12345678910".as_bytes())?;
+        let mut output: Vec<u8> = vec![];
+        delete_branch(&git_dir, "branch", &mut output)?;
+        let string = String::from_utf8(output).unwrap();
+        assert!(string.contains("error"));
+        std::fs::remove_dir_all(path)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_deleting_checkouted_branch_cant_be_performed() -> io::Result<()> {
+        let path = "tests/branch_test_delete_repo_3";
+        let git_dir = format!("{}/{}", path, ".mgit");
+        init::git_init(path, "current_branch", None)?;
+        //let current_branch_path = format!("{}/{}",git_dir,"/refs/heads/current_branch");
+        // let mut current_branch_file = File::create(current_branch_path)?;
+        // current_branch_file.write_all("12345678910".as_bytes())?;
+        let mut output: Vec<u8> = vec![];
+        delete_branch(&git_dir, "current_branch", &mut output)?;
+        let string = String::from_utf8(output).unwrap();
+        assert!(string.contains("error"));
+        std::fs::remove_dir_all(path)?;
+        Ok(())
+    }
+
+    #[test]
     fn test_create_new_branch_already_exists() -> Result<(), io::Error> {
         create_if_not_exists("tests/test_list_branches_3", true)?;
         init::git_init("tests/test_list_branches_3", "current_branch", None)?;
@@ -388,6 +707,7 @@ mod tests {
         create_new_branch(
             "tests/test_list_branches_3/.mgit",
             "current_branch",
+            None,
             &mut output,
         )?;
         assert!(!output.is_empty());
@@ -395,8 +715,6 @@ mod tests {
         if result.is_ok() {
             let string = result.unwrap();
             assert!(string.starts_with("fatal: A branch named 'current_branch' already exists\n"));
-            //Acá mirar directamente si el mensaje es el esperado
-            //Acá mirar directamente si el mensaje es el esperado
         }
 
         std::fs::remove_dir_all("tests/test_list_branches_3")?;
@@ -418,7 +736,12 @@ mod tests {
         current_branch_file.write_all(commit_hash.as_bytes())?;
 
         let mut output: Vec<u8> = vec![];
-        create_new_branch("tests/test_list_branches_4/.mgit", "my_branch", &mut output)?;
+        create_new_branch(
+            "tests/test_list_branches_4/.mgit",
+            "my_branch",
+            None,
+            &mut output,
+        )?;
 
         let mut head_file = std::fs::File::open("tests/test_list_branches_4/.mgit/HEAD")?;
         let mut head_content = String::new();
@@ -436,18 +759,23 @@ mod tests {
         std::fs::remove_dir_all("tests/test_list_branches_4")?;
         Ok(())
     }
+
     #[test]
     fn test_create_new_branch_with_no_tracked_files() -> Result<(), io::Error> {
         create_if_not_exists("tests/test_list_branches_5", true)?;
         init::git_init("tests/test_list_branches_5", "current_branch", None)?;
         let mut output: Vec<u8> = vec![];
-        create_new_branch("tests/test_list_branches_5/.mgit", "my_branch", &mut output)?;
+        create_new_branch(
+            "tests/test_list_branches_5/.mgit",
+            "my_branch",
+            None,
+            &mut output,
+        )?;
         assert!(!output.is_empty());
         let result = String::from_utf8(output);
         if result.is_ok() {
             let string = result.unwrap();
             assert!(string.starts_with("fatal: Please commit something to create a branch\n"));
-            //Acá mirar directamente si el mensaje es el esperado
         }
         std::fs::remove_dir_all("tests/test_list_branches_5")?;
         Ok(())

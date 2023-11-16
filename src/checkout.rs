@@ -149,7 +149,7 @@ fn create_and_checkout_branch_references(
     git_dir_str: &str,
     branch_name: &str,
 ) -> io::Result<String> {
-    branch::create_new_branch(git_dir_str, branch_name, &mut io::stdout())?;
+    branch::create_new_branch(git_dir_str, branch_name, None, &mut io::stdout())?;
     let old_commit_id = checkout_branch_references(Path::new(git_dir_str), branch_name)?;
     Ok(old_commit_id)
 }
@@ -180,7 +180,7 @@ pub fn create_or_reset_branch(git_dir: &Path, root_dir: &str, branch_name: &str)
     };
     //Check if the branch reference file exists
     if branch_ref_file.exists() {
-        branch::delete_branch(git_dir_str, branch_name)?;
+        branch::delete_branch(git_dir_str, branch_name, &mut io::stdout())?;
         create_and_checkout_branch(git_dir, root_dir, branch_name)?;
     } else {
         create_and_checkout_branch(git_dir, root_dir, branch_name)?;

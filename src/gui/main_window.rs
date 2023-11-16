@@ -1,10 +1,12 @@
 use super::clone_window::configure_clone_window;
 use super::init_window::configure_init_window;
-use super::style::show_message_dialog;
+use crate::gui::repository_window::show_repository_window;
 use crate::gui::style::{apply_button_style, apply_window_style, get_button, load_and_get_window};
 use gtk::prelude::*;
 use gtk::Builder;
+use gtk::{self, FileChooserAction, FileChooserDialog, FileChooserExt};
 use std::io;
+use std::path::Path;
 use std::sync::Mutex;
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
@@ -52,11 +54,49 @@ pub fn run_main_window() -> io::Result<()> {
     }
 }
 
-fn connect_button_clicked_open_new_repository(button: &gtk::Button) -> io::Result<()> {
-    button.connect_clicked(move |_| show_message_dialog("Warning!", "Not yet implemented."));
+/// Connects the `clicked` signal of a GTK button to open a file dialog for selecting a directory.
+///
+/// # Arguments
+///
+/// * `button` - The GTK button that triggers the action when clicked.
+///
+/// # Returns
+///
+/// Returns a `std::io::Result` indicating whether the operation was successful or resulted in an error.
+///
+fn connect_button_clicked_open_new_repository(button: &gtk::Button) -> std::io::Result<()> {
+    button.connect_clicked(move |_| {
+        let dialog = FileChooserDialog::new(
+            Some("Select Directory"),
+            Some(&gtk::Window::new(gtk::WindowType::Popup)),
+            FileChooserAction::SelectFolder,
+        );
+        dialog.add_button("Open", gtk::ResponseType::Ok);
+        dialog.add_button("Cancel", gtk::ResponseType::Cancel);
+        let result = dialog.run();
+        if result == gtk::ResponseType::Ok {
+            if let Some(selected_directory) = dialog.get_filename() {
+                let mgit_folder_path = selected_directory.join(".mgit");
+                if mgit_folder_path.is_dir() {
+                    let code_dir = match std::env::current_dir() {
+                        Ok(dir) => dir,
+                        Err(_) => Path::new("").to_path_buf(),
+                    };
+                    close_all_windows();
+                    let result = show_repository_window(&code_dir, &selected_directory);
+                    if result.is_err() {
+                        eprintln!("Couldn't show repository window");
+                    }
+                    println!("Selected directory: {:?}", selected_directory);
+                } else {
+                    println!("Not an mgit directory");
+                }
+            }
+        }
+        dialog.hide();
+    });
     Ok(())
 }
-
 /// Connects a GTK button to a specific action.
 ///
 /// This function takes a GTK button and a button type as input and sets an event handler for the "clicked" event of the button.

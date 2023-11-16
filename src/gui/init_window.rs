@@ -7,12 +7,13 @@ use crate::gui::style::apply_window_style;
 use crate::gui::style::create_text_entry_window;
 use crate::gui::style::get_button;
 use crate::init::git_init;
+use gtk::prelude::*;
 use gtk::ButtonExt;
 use gtk::ContainerExt;
-use gtk::FileChooserButtonExt;
 use gtk::FileChooserExt;
 use gtk::GtkWindowExt;
 use gtk::WidgetExt;
+use gtk::{Box, Button, FileChooserAction, FileChooserButton, Orientation, Window, WindowType};
 use std::env;
 use std::io;
 use std::path::Path;
@@ -69,7 +70,6 @@ pub fn connect_button_clicked_init_window(
     button_type: &str,
 ) -> io::Result<()> {
     let button_type = button_type.to_owned();
-
     button.connect_clicked(move |_| {
         let current_dir = std::env::current_dir();
 
@@ -82,97 +82,214 @@ pub fn connect_button_clicked_init_window(
                 }
             };
             if button_type == "option2" {
-                let result = create_text_entry_window("Enter the branch", move |text| {
-                    let result = git_init(&dir_str, &text, None);
-                    if result.is_err() {
-                        eprintln!("Error initiating git.");
-                        return;
+                let _result = show_text_entry_window("Enter the branch", move |text| {
+                    if let Err(err) = handle_git_init_and_change_dir(&dir_str, &text, &current_dir)
+                    {
+                        eprintln!("{}", err);
                     }
-                    let result = handle_git_init_result(result, &current_dir, Path::new(&dir_str));
-                    if result.is_err() {
-                        eprintln!("Error handling git init result.");
-                    }
-                    env::set_current_dir(&dir_str).unwrap();
                 });
-                if result.is_err() {
-                    eprintln!("Error creating text entry window.");
-                }
             } else if button_type == "option3" {
-                let result = create_text_entry_window("Enter the template path", move |text| {
-                    let result = git_init(&dir_str, "master", Some(&text));
-                    if result.is_err() {
-                        eprintln!("Error initiating git.");
-                        return;
-                    }
-                    let result = handle_git_init_result(result, &current_dir, Path::new(&dir_str));
-                    if result.is_err() {
-                        eprintln!("Error handling git init with template");
-                    }
-                });
-                if result.is_err() {
-                    eprintln!("Error creating text entry window.");
-                }
+                let current_dir_clone = &current_dir.clone();
+                handle_template_path_entry(&dir_str, current_dir_clone);
             } else if button_type == "option1" {
-                let result = git_init(&dir_str, "master", None);
-                if result.is_err() {
-                    eprintln!("Error initiating git.");
-                    return;
-                }
-                let result = handle_git_init_result(result, &current_dir, Path::new(&dir_str));
-                if result.is_err() {
-                    eprintln!("Error handling git init result");
-                }
+                init_git_and_handle_errors(&dir_str, &current_dir);
             } else if button_type == "option4" {
-                let window = gtk::Window::new(gtk::WindowType::Toplevel);
-                window.set_title("Directorio de selección");
-                window.set_default_size(400, 150);
-
-                let file_chooser = gtk::FileChooserButton::new(
-                    "Seleccione un directorio",
-                    gtk::FileChooserAction::SelectFolder,
-                );
-
-                let button_ok = gtk::Button::with_label("OK");
-                let result = apply_button_style(&button_ok);
-                if result.is_err() {
-                    eprintln!("Couldn't apply button style");
-                }
-                let vbox = gtk::Box::new(gtk::Orientation::Vertical, 5);
-                vbox.add(&file_chooser);
-                vbox.add(&button_ok);
-
-                let file_chooser_clone = file_chooser.clone();
-                file_chooser.connect_file_set(move |_| {
-                    let selected_directory = file_chooser_clone.get_filename();
-                    if let Some(directory) = selected_directory {
-                        println!("Directorio seleccionado: {:?}", directory.to_string_lossy());
-                    }
-                });
-
+                let (window, button_ok, file_chooser, vbox) = create_selection_window();
                 button_ok.connect_clicked(move |_| {
-                    let selected_directory = file_chooser.get_filename();
-                    if let Some(directory) = selected_directory {
-                        let result = git_init(&directory.to_string_lossy(), "master", None);
-                        if result.is_err() {
-                            eprintln!("Error al iniciar git.");
-                            return;
-                        }
-                        let result =
-                            handle_git_init_result(result, &current_dir, Path::new(&directory));
-                        if result.is_err() {
-                            eprintln!("Error handling git init with template");
-                        }
-                        println!("Operación exitosa: {}", directory.to_string_lossy());
-                    }
+                    handle_directory_selection(&file_chooser, &current_dir);
                 });
-
                 window.add(&vbox);
                 window.show_all();
             }
         } else {
-            eprintln!("No se pudo obtener el directorio actual.");
+            eprintln!("failed to obtain actual directory");
         }
     });
+    Ok(())
+}
+
+/// Handle the selection of a directory using a file chooser button.
+///
+/// This function takes a GTK file chooser button and the current directory as parameters.
+/// It retrieves the selected directory from the file chooser, initializes a Git repository,
+/// and handles the result by changing the current directory or printing an error message.
+///
+/// # Arguments
+///
+/// * `file_chooser` - A GTK file chooser button for selecting directories.
+/// * `current_dir` - The current directory as a `Path`.
+///
+fn handle_directory_selection(file_chooser: &FileChooserButton, current_dir: &Path) {
+    if let Some(selected_directory) = file_chooser.get_filename() {
+        let result = git_init(&selected_directory.to_string_lossy(), "master", None);
+        if result.is_err() {
+            eprintln!("Error in git init .");
+            return;
+        }
+        println!("init dir: {}", &selected_directory.display());
+        let result = handle_git_init_result(result, current_dir, Path::new(&selected_directory));
+        if result.is_err() {
+            eprintln!("Error handling git init with template");
+        }
+    }
+}
+
+/// Create a selection window with a file chooser and an OK button.
+///
+/// This function creates a GTK window containing a file chooser button and an OK button.
+/// The file chooser is set to select directories, and the window is styled with a vertical box.
+/// The selected directory is printed to the console when chosen.
+///
+/// # Returns
+///
+fn create_selection_window() -> (Window, Button, FileChooserButton, Box) {
+    let window = Window::new(WindowType::Toplevel);
+    window.set_title("Selection Directory");
+    window.set_default_size(400, 150);
+
+    let file_chooser =
+        FileChooserButton::new("Select a directory ", FileChooserAction::SelectFolder);
+
+    let button_ok = Button::with_label("OK");
+    if let Err(err) = apply_button_style(&button_ok) {
+        eprintln!("Couldn't apply button style: {:?}", err);
+    }
+
+    let vbox = Box::new(Orientation::Vertical, 5);
+    vbox.add(&file_chooser);
+    vbox.add(&button_ok);
+
+    let file_chooser_clone = file_chooser.clone();
+    file_chooser.connect_file_set(move |_| {
+        if let Some(directory) = file_chooser_clone.get_filename() {
+            println!("Selected directory: {:?}", directory.to_string_lossy());
+        }
+    });
+    window.add(&vbox);
+
+    (window, button_ok, file_chooser, vbox)
+}
+
+/// Initialize a Git repository and handle potential errors.
+///
+/// This function initializes a Git repository in the specified directory with the default branch
+/// set to "master". It also handles errors that may occur during the initialization process.
+///
+/// # Arguments
+///
+/// * `dir_str` - A string representing the directory in which the Git repository will be initialized.
+/// * `current_dir` - The current directory path.
+///
+fn init_git_and_handle_errors(dir_str: &str, current_dir: &Path) {
+    let result = git_init(dir_str, "master", None);
+    if result.is_err() {
+        eprintln!("Error initiating git.");
+        return;
+    }
+
+    let result = handle_git_init_result(result, current_dir, Path::new(&dir_str));
+    if result.is_err() {
+        eprintln!("Error handling git init result");
+    }
+}
+
+/// Handle the entry of a template path.
+///
+/// This function prompts the user to enter a template path using a text entry window. The entered
+/// path is then used to initialize a Git repository with the specified template.
+///
+/// # Arguments
+///
+/// * `dir_str` - A string representing the directory in which the Git repository will be initialized.
+/// * `current_dir` - The current directory path.
+///
+fn handle_template_path_entry(dir_str: &str, current_dir: &Path) {
+    let dir_str = dir_str.to_string();
+    let current_dir_clone = current_dir.to_path_buf();
+
+    let result = create_text_entry_window("Enter the template path", move |text| {
+        let result = git_init(&dir_str, "master", Some(&text));
+        if result.is_err() {
+            eprintln!("Error initiating git.");
+            return;
+        }
+
+        let result = handle_git_init_result(result, &current_dir_clone, Path::new(&dir_str));
+        if result.is_err() {
+            eprintln!("Error handling git init with template");
+        }
+    });
+
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+}
+
+/// Show a text entry window.
+///
+/// This function displays a window with a text entry field and an "OK" button. The provided callback
+/// function is invoked when the "OK" button is clicked, passing the entered text as an argument.
+///
+/// # Arguments
+///
+/// * `prompt` - A prompt message displayed in the text entry window.
+/// * `callback` - A callback function that takes a `String` as input. This function is invoked
+///               when the user clicks the "OK" button, passing the entered text to the callback.
+///
+/// # Errors
+///
+/// Returns a `Result` indicating whether the operation was successful or if an error occurred.
+/// In case of an error, a `String` with a descriptive error message is returned.
+///
+fn show_text_entry_window<'a, F>(prompt: &str, callback: F) -> Result<(), String>
+where
+    F: Fn(String) + 'a + 'static,
+{
+    let result = create_text_entry_window(prompt, callback);
+    if result.is_err() {
+        return Err("Error creating text entry window.".to_string());
+    }
+    Ok(())
+}
+
+/// Initialize a Git repository and change the current directory.
+///
+/// This function performs the following steps:
+/// 1. Initializes a Git repository in the specified directory (`dir_str`) with the specified branch (`branch_name`).
+/// 2. Handles any errors resulting from the Git initialization.
+/// 3. Changes the current directory to the newly created directory.
+///
+/// # Arguments
+///
+/// * `dir_str` - Path of the directory where the Git repository will be initialized.
+/// * `branch_name` - Name of the branch to create during Git initialization.
+/// * `current_dir` - Current directory before Git initialization.
+///
+/// # Errors
+///
+/// The function returns a `Result` indicating whether the operation was successful or if an error occurred.
+/// In case of an error, a `String` with a descriptive error message is returned.
+///
+fn handle_git_init_and_change_dir(
+    dir_str: &str,
+    branch_name: &str,
+    current_dir: &Path,
+) -> Result<(), String> {
+    let result = git_init(dir_str, branch_name, None);
+    if result.is_err() {
+        return Err("Error initiating git.".to_string());
+    }
+
+    let result = handle_git_init_result(result, current_dir, Path::new(dir_str));
+    if result.is_err() {
+        return Err("Error handling git init result.".to_string());
+    }
+
+    // Cambiar el directorio actual
+    if env::set_current_dir(dir_str).is_err() {
+        return Err("Error changing current directory.".to_string());
+    }
+
     Ok(())
 }
 
@@ -201,6 +318,7 @@ pub fn handle_git_init_result(
         Ok(_) => {
             close_all_windows();
             let result = show_repository_window(code_dir, work_dir);
+
             if result.is_err() {
                 eprintln!("Couldn't show repository window");
             }
