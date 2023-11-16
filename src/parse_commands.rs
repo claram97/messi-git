@@ -23,7 +23,7 @@ use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
-use crate::{add, log, push, tree_handler};
+use crate::{add, log, push, tree_handler, ls_tree};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -236,8 +236,32 @@ fn handle_ls_files(args: Vec<String>) {
     }
 }
 
-fn handle_ls_trees(_args: Vec<String>) {
-    // Implementación para el comando "ListTrees"
+fn handle_ls_trees(args: Vec<String>) {
+    if args.len() < 3 {
+        eprintln!("Usage: git ls-trees <tree-ish>");
+        return;
+    }
+
+    let git_dir = match find_git_directory(&mut PathBuf::from("."), ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    if args.len() == 3 {
+        ls_tree::ls_tree_no_args(&args[2], &git_dir);
+    }
+
+    if args.len() == 4 {
+        if args[2] == "-r" {
+            ls_tree::ls_tree_recursive(&args[3], &git_dir);
+        } else {
+            eprintln!("Usage: git ls-trees <tree-ish>");
+        }
+    }
+
 }
 
 fn handle_check_ignore(args: Vec<String>) {

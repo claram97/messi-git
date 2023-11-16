@@ -7,6 +7,8 @@ use std::{
 use flate2::{write::ZlibEncoder, Compression};
 use sha1::{Digest, Sha1};
 
+use crate::tree_handler::Tree;
+
 /// Returns the sha1 hash of the given content.
 /// It does not add any type information to the content.
 /// Do not use for git objects search. Use hash_file_content instead !!!!!
@@ -239,6 +241,24 @@ pub fn store_tree_to_file(
     let output_file_str = output_file_dir + &tree_hash[2..];
     compress_tree(data, &output_file_str)?;
     Ok(tree_hash)
+}
+
+pub fn get_tree_hash(blobs: Vec<(String, String, Vec<u8>)>, trees: Vec<(String, String, Vec<u8>)>) -> String {
+    let mut blobs = blobs;
+    blobs.append(&mut trees.clone());
+    blobs.sort_by(|a, b| a.1.cmp(&b.1));
+    let mut size = 0;
+    for (mode, name, hash) in blobs.clone() {
+        size += mode.len() + name.len() + hash.len() + 2;
+    }
+    let mut data: Vec<u8> = Vec::new();
+    let header = format!("tree {}\0", size);
+    data.write_all(header.as_bytes()).unwrap();
+    for (mode, name, hash) in blobs {
+        data.write_all(format!("{} {}\0", mode, name).as_bytes()).unwrap();
+        data.write_all(&hash).unwrap();
+    }
+    hash_byte_array(&data)
 }
 
 /// Compresses a given vector of bytes representing a Git tree object and writes it to a file.

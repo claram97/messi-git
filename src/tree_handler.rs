@@ -12,6 +12,8 @@ use crate::{
 
 const BLOB_NORMAL_MODE: &str = "100644";
 const TREE_MODE: &str = "40000";
+//For pretty printing
+const TREE_MODE_0: &str = "040000"; 
 
 //Tree structure
 //files is a vector of tuples (file_name, hash)
@@ -105,7 +107,7 @@ impl Tree {
 
     /// Returns a string that contains all the blobs added to the tree.
     /// The blobs are formatted as "blob {hash} {file_name}\n"
-    pub fn tree_blobs_to_string_formatted(&self) -> Vec<(String, String, Vec<u8>)> {
+    fn tree_blobs_to_string_formatted_for_tree(&self) -> Vec<(String, String, Vec<u8>)> {
         let mut result = Vec::new();
         for (file_name, hash) in &self.files {
             //Transform the hash from hexa to bytes
@@ -118,6 +120,15 @@ impl Tree {
 
             let hash = Self::map_hexa_tuples_to_bytes(hash);
             result.push((BLOB_NORMAL_MODE.to_string(), file_name.to_string(), hash));
+        }
+        result
+    }
+
+    /// Returns a vector of tuples (mode, type, file_name, hash) that contains all the blobs added to the tree.
+    fn tree_blobs_formatted_pretty(&self) -> Vec<(String, String, String, String)> {
+        let mut result: Vec<(String, String, String, String)> = Vec::new();
+        for (file_name, hash) in &self.files {
+            result.push((BLOB_NORMAL_MODE.to_string(), "blob".to_string(), hash.to_string(), file_name.to_string()));
         }
         result
     }
@@ -249,6 +260,58 @@ impl Tree {
         }
         Ok(index)
     }
+
+    fn hash_tree(&self) -> (String, String) {
+        let mut subtrees: Vec<(String, String)> = Vec::new();
+        for sub_dir in &self.directories {
+            let sub_tree = sub_dir.hash_tree();
+            subtrees.push(sub_tree);
+        }
+        subtrees.sort();
+        let blobs = self.tree_blobs_to_string_formatted_for_tree();
+        let mut subtrees_vec: Vec<(String, String, Vec<u8>)> = Vec::new();
+        for subtree in subtrees {
+            let hash_bytes = subtree.0.chars().collect::<Vec<char>>();
+            let hash_bytes = hash_bytes
+                .chunks(2)
+                .map(|chunk| (chunk[0], chunk[1]))
+                .collect::<Vec<(char, char)>>();
+            let hash_bytes = Self::map_hexa_tuples_to_bytes(hash_bytes);
+
+            subtrees_vec.push((TREE_MODE.to_string(), subtree.1, hash_bytes));
+        }
+
+        let hash = hash_object::get_tree_hash(blobs, subtrees_vec);
+        (hash, self.name.clone())
+    }
+
+
+    pub fn print_tree(&self, output: &mut impl Write) -> io::Result<()> {
+        let blobs = self.tree_blobs_formatted_pretty();
+        let mut trees = Vec::new();
+        for entry in self.directories.iter() {
+            let (hash, name) = entry.hash_tree();
+            trees.push((TREE_MODE_0.to_string(), "tree".to_string(), hash, name));
+        }
+        let mut result = blobs;
+        result.append(&mut trees);
+        result.sort_by(|a, b| a.3.cmp(&b.3));
+        for (mode, object_type, hash, name) in result {
+            let string = format!("{} {} {} {}\n", mode, object_type, hash, name);
+            output.write(string.as_bytes())?;
+        }
+        Ok(())
+    }
+
+    pub fn print_tree_recursive_no_trees(&self, output: &mut impl Write) -> io::Result<()> {
+        let paths = self.squash_tree_into_vec("");
+        for (name, hash) in paths {
+            let string = format!("{} {} {} {}\n", BLOB_NORMAL_MODE, "blob", hash, name);
+            output.write(string.as_bytes())?;
+        }
+        Ok(())
+    }
+
 }
 
 /// Builds a tree from the index file.
@@ -325,7 +388,7 @@ pub fn write_tree(tree: &Tree, directory: &str) -> io::Result<(String, String)> 
     }
     subtrees.sort();
 
-    let tree_content = tree.tree_blobs_to_string_formatted();
+    let tree_content = tree.tree_blobs_to_string_formatted_for_tree();
 
     let mut subtrees_vec: Vec<(String, String, Vec<u8>)> = Vec::new();
     for subtree in subtrees {
@@ -696,11 +759,11 @@ mod tests {
     }
 
     // #[test]
-    // fn test_tree_blobs_to_string_formatted() {
+    // fn test_tree_blobs_to_string_formatted_for_tree() {
     //     let mut tree = Tree::new();
     //     tree.add_file("root", "1");
     //     tree.add_file("test", "2");
-    //     let string = tree.tree_blobs_to_string_formatted();
+    //     let string = tree.tree_blobs_to_string_formatted_for_tree();
     //     assert_eq!(string, "100644 blob 1 root\n100644 blob 2 test\n");
     // }
 

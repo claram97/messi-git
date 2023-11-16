@@ -18,6 +18,7 @@ pub mod init;
 pub mod log;
 pub mod logger;
 pub mod ls_files;
+pub mod ls_tree;
 pub mod merge;
 pub mod packfile_handler;
 pub mod parse_commands;
