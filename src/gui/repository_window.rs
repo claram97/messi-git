@@ -1822,6 +1822,11 @@ pub fn list_files_window(builder: &Builder) -> io::Result<()> {
             return Ok(());
         }
     };
+
+    let scrolled_window: gtk::ScrolledWindow = builder.get_object("scroll-files").unwrap();
+    scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+    scrolled_window.add(&text_view);
+
     apply_button_style(&list_untracked_button)
         .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
     apply_button_style(&list_index_button)
@@ -1993,7 +1998,6 @@ pub fn check_ignore_window(builder: &Builder) {
     }
     apply_entry_style(&check_ignore_entry);
 
-    // Configura el TextView y añádelo al ScrolledWindow
     scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
     scrolled_window.add(&check_ignore_view);
 
