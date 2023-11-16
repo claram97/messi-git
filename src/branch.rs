@@ -1,3 +1,5 @@
+
+
 use std::{
     fs::{self, File},
     io::{self, Read, Write},
@@ -159,6 +161,21 @@ pub fn delete_branch(git_dir: &str, branch_name: &str, output: &mut impl Write) 
     Ok(())
 }
 
+/// Creates a new branch from an existing one in a Git repository.
+///
+/// # Arguments
+///
+/// * `git_dir` - The path to the Git repository directory.
+/// * `branch_name` - The name of the new branch to be created.
+/// * `from` - The name of the existing branch to base the new branch on.
+/// * `output` - A mutable reference to a type implementing the `Write` trait where output messages
+///              will be written. This can be a file, standard output (`stdout`), etc.
+///
+/// # Errors
+///
+/// This function returns an `io::Result` indicating whether the operation was successful or
+/// encountered an error.
+///
 fn create_branch_from_existing_one(
     git_dir: &str,
     branch_name: &str,
@@ -188,6 +205,20 @@ fn create_branch_from_existing_one(
     Ok(())
 }
 
+/// Creates a new branch from the current branch in a Git repository.
+///
+/// # Arguments
+///
+/// * `git_dir` - The path to the Git repository directory.
+/// * `branch_name` - The name of the new branch to be created.
+/// * `output` - A mutable reference to a type implementing the `Write` trait where output messages
+///              will be written. This can be a file, standard output (`stdout`), etc.
+///
+/// # Errors
+///
+/// This function returns an `io::Result` indicating whether the operation was successful or
+/// encountered an error.
+///
 fn create_branch_from_current_one(
     git_dir: &str,
     branch_name: &str,
@@ -264,6 +295,21 @@ pub fn list_branches(git_dir: &str, output: &mut impl Write) -> io::Result<()> {
     Ok(())
 }
 
+/// Modifies the name of an existing branch in a Git repository.
+///
+/// # Arguments
+///
+/// * `git_dir` - The path to the Git repository directory.
+/// * `branch_name` - The name of the branch to be modified.
+/// * `new_name` - The new name for the branch.
+/// * `output` - A mutable reference to a type implementing the `Write` trait where output messages
+///              will be written. This can be a file, standard output (`stdout`), etc.
+///
+/// # Errors
+///
+/// This function returns an `io::Result` indicating whether the operation was successful or
+/// encountered an error.
+///
 pub fn modify_branch(
     git_dir: &str,
     branch_name: &str,
@@ -781,3 +827,4 @@ mod tests {
         Ok(())
     }
 }
+
