@@ -898,11 +898,22 @@ fn handle_checkout_branch_window() -> io::Result<()> {
 /// # Arguments
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
-///
+fn obtain_log_text_scrolled_window(builder: &gtk::Builder) -> Option<gtk::ScrolledWindow> {
+    builder.get_object("scroll-log")
+}
+
 fn handle_show_log_button_click(builder: &gtk::Builder) {
     let log_text_view_result: Option<gtk::TextView> = builder.get_object("log-text");
 
     if let Some(log_text_view) = log_text_view_result {
+        let log_text_scrolled_window = match obtain_log_text_scrolled_window(builder) {
+            Some(sw) => sw,
+            None => {
+                eprintln!("No se pudo obtener el ScrolledWindow.");
+                return;
+            }
+        };
+
         let text_from_function = obtain_text_from_log();
 
         match text_from_function {
@@ -915,6 +926,10 @@ fn handle_show_log_button_click(builder: &gtk::Builder) {
                 } else {
                     eprintln!("Fatal error in show repository window.");
                 }
+
+                // Añade el TextView al ScrolledWindow
+                log_text_scrolled_window.add(&log_text_view);
+                log_text_scrolled_window.show_all();
             }
             Err(err) => {
                 eprintln!("Error al obtener el texto: {}", err);

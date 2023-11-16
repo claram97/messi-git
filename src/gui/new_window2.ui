@@ -51,89 +51,6 @@
               </packing>
             </child>
             <child>
-              <object class="GtkPaned">
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="orientation">vertical</property>
-                <child>
-                  <object class="GtkTextView" id="log-text">
-                    <property name="width-request">650</property>
-                    <property name="height-request">300</property>
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="editable">False</property>
-                    <property name="justification">fill</property>
-                    <property name="cursor-visible">False</property>
-                    <property name="input-purpose">terminal</property>
-                  </object>
-                  <packing>
-                    <property name="resize">True</property>
-                    <property name="shrink">True</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkButtonBox">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="halign">center</property>
-                    <property name="valign">end</property>
-                    <property name="orientation">vertical</property>
-                    <property name="spacing">11</property>
-                    <property name="homogeneous">True</property>
-                    <property name="layout-style">start</property>
-                    <child>
-                      <object class="GtkButton" id="show-log-button">
-                        <property name="label" translatable="yes">Show Log</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="pull">
-                        <property name="label" translatable="yes">Pull</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="push">
-                        <property name="label" translatable="yes">Push</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">2</property>
-                      </packing>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="resize">False</property>
-                    <property name="shrink">True</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="name">Log</property>
-                <property name="title" translatable="yes">Log</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
               <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
@@ -302,7 +219,7 @@
               <packing>
                 <property name="name">Staging</property>
                 <property name="title" translatable="yes">Staging</property>
-                <property name="position">2</property>
+                <property name="position">1</property>
               </packing>
             </child>
             <child>
@@ -446,7 +363,7 @@
               <packing>
                 <property name="name">Commit</property>
                 <property name="title" translatable="yes">Commit</property>
-                <property name="position">3</property>
+                <property name="position">2</property>
               </packing>
             </child>
             <child>
@@ -541,7 +458,7 @@
               <packing>
                 <property name="name">page0</property>
                 <property name="title" translatable="yes">Checkout</property>
-                <property name="position">4</property>
+                <property name="position">3</property>
               </packing>
             </child>
             <child>
@@ -610,7 +527,7 @@
               <packing>
                 <property name="name">page1</property>
                 <property name="title" translatable="yes">Merge</property>
-                <property name="position">5</property>
+                <property name="position">4</property>
               </packing>
             </child>
             <child>
@@ -718,7 +635,7 @@
               <packing>
                 <property name="name">check ignore</property>
                 <property name="title" translatable="yes">Check Ignore</property>
-                <property name="position">6</property>
+                <property name="position">5</property>
               </packing>
             </child>
             <child>
@@ -809,7 +726,7 @@
               <packing>
                 <property name="name">page2</property>
                 <property name="title" translatable="yes">Ls files</property>
-                <property name="position">7</property>
+                <property name="position">6</property>
               </packing>
             </child>
             <child>
@@ -818,14 +735,19 @@
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkTextView">
-                    <property name="width-request">600</property>
-                    <property name="height-request">500</property>
+                  <object class="GtkScrolledWindow">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <property name="shadow-type">in</property>
+                    <child>
+                      <object class="GtkTextView">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                      </object>
+                    </child>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
+                    <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">0</property>
                   </packing>
@@ -869,7 +791,7 @@
               <packing>
                 <property name="name">page5</property>
                 <property name="title" translatable="yes">Tag</property>
-                <property name="position">8</property>
+                <property name="position">7</property>
               </packing>
             </child>
             <child>
@@ -1011,7 +933,7 @@
               <packing>
                 <property name="name">page4</property>
                 <property name="title" translatable="yes">Show ref</property>
-                <property name="position">9</property>
+                <property name="position">8</property>
               </packing>
             </child>
             <child>
@@ -1020,14 +942,19 @@
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkTextView">
-                    <property name="width-request">600</property>
-                    <property name="height-request">500</property>
+                  <object class="GtkScrolledWindow">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <property name="shadow-type">in</property>
+                    <child>
+                      <object class="GtkTextView">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                      </object>
+                    </child>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
+                    <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">0</property>
                   </packing>
@@ -1049,7 +976,7 @@
                     </child>
                     <child>
                       <object class="GtkButton">
-                        <property name="label" translatable="yes">button</property>
+                        <property name="label" translatable="yes">Show</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
@@ -1071,7 +998,7 @@
               <packing>
                 <property name="name">page6</property>
                 <property name="title" translatable="yes">Fetch</property>
-                <property name="position">10</property>
+                <property name="position">9</property>
               </packing>
             </child>
             <child>
@@ -1184,6 +1111,90 @@
               <packing>
                 <property name="name">page3</property>
                 <property name="title" translatable="yes">Branch</property>
+                <property name="position">10</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkScrolledWindow" id="scroll-log">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="shadow-type">in</property>
+                    <child>
+                      <object class="GtkTextView" id="log-text">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButtonBox">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">11</property>
+                    <property name="homogeneous">True</property>
+                    <property name="layout-style">start</property>
+                    <child>
+                      <object class="GtkButton" id="show-log-button">
+                        <property name="label" translatable="yes">Show Log</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="pull">
+                        <property name="label" translatable="yes">Pull</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="push">
+                        <property name="label" translatable="yes">Push</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="name">page7</property>
+                <property name="title" translatable="yes">Log</property>
                 <property name="position">11</property>
               </packing>
             </child>
