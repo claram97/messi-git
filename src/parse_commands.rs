@@ -1,3 +1,4 @@
+
 use crate::branch::{get_current_branch_path, git_branch};
 use crate::cat_file::cat_file;
 use crate::check_ignore::git_check_ignore;
@@ -31,6 +32,7 @@ use std::path::{Path, PathBuf};
 use std::{env, io};
 
 const GIT_DIR: &str = ".mgit";
+
 /// Enumeration representing Git commands.
 ///
 /// This enumeration defines Git commands that can be used.
@@ -185,6 +187,11 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
     }
 }
 
+/// Handles the "ls-files" command in a Git-like system.
+///
+/// # Arguments
+///
+/// * `args` - The arguments passed to the "ls-files" command.
 fn handle_ls_files(args: Vec<String>) {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -240,6 +247,11 @@ fn handle_ls_trees(_args: Vec<String>) {
     // Implementación para el comando "ListTrees"
 }
 
+/// Handles the "check-ignore" command in a Git-like system.
+///
+/// # Arguments
+///
+/// * `args` - The arguments passed to the "check-ignore" command.
 fn handle_check_ignore(args: Vec<String>) {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -275,6 +287,11 @@ fn handle_check_ignore(args: Vec<String>) {
     }
 }
 
+/// Handles the "show-ref" command in a Git-like system.
+///
+/// # Arguments
+///
+/// * `args` - The arguments passed to the "show-ref" command.
 fn handle_show_ref(args: Vec<String>) {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -754,6 +771,16 @@ fn handle_commit(args: Vec<String>) {
     };
 }
 
+/// Get the working directory based on the Git directory.
+///
+/// # Arguments
+///
+/// * `git_dir` - The Git directory.
+///
+/// # Returns
+///
+/// * `Ok(String)` - The working directory if successful.
+/// * `Err(io::Error)` - An error if the working directory cannot be obtained.
 fn get_working_directory(git_dir: &str) -> io::Result<String> {
     match Path::new(git_dir).parent() {
         Some(parent) => Ok(parent.to_string_lossy().to_string()),
@@ -764,6 +791,19 @@ fn get_working_directory(git_dir: &str) -> io::Result<String> {
     }
 }
 
+/// Handle different checkout options.
+///
+/// # Arguments
+///
+/// * `git_dir` - The path to the Git directory.
+/// * `working_dir` - The working directory.
+/// * `option` - The checkout option.
+/// * `args` - Additional arguments.
+///
+/// # Returns
+///
+/// * `Ok(())` - If the checkout operation is successful.
+/// * `Err(io::Error)` - If there is an error during the checkout operation.
 fn handle_checkout_option(
     git_dir: &Path,
     working_dir: &str,
@@ -1302,3 +1342,4 @@ fn extract_init_params(args: &Vec<String>) -> (String, String, Option<&str>) {
 
     (current_directory, initial_branch, template_directory)
 }
+
