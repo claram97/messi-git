@@ -1175,6 +1175,7 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
     ) {
         Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
         Err(err) => {
+
             {
                 match err.kind() {
                     std::io::ErrorKind::UnexpectedEof => {
@@ -1187,10 +1188,12 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
                         ));
                     }
                 };
+
             };
             Err(())
         }
     };
+
     Ok("Ok".to_string())
 }
 

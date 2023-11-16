@@ -1,0 +1,6 @@
+1234	refs/heads/some_ref
+
+4567	refs/tags/some_tag
+
+7891	refs/remotes/origin/branch
+

@@ -1,5 +1,6 @@
 use crate::branch::{get_current_branch_path, git_branch};
 use crate::cat_file::cat_file;
+use crate::check_ignore::git_check_ignore;
 use crate::checkout::checkout_branch;
 use crate::checkout::checkout_commit_detached;
 use crate::checkout::create_and_checkout_branch;
@@ -13,10 +14,12 @@ use crate::hash_object::store_file;
 use crate::index::Index;
 use crate::init::git_init;
 use crate::log::print_logs;
+use crate::ls_files::git_ls_files;
 use crate::merge::git_merge;
 use crate::pull::git_pull;
 use crate::remote::git_remote;
 use crate::rm::git_rm;
+use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
@@ -49,6 +52,12 @@ pub enum GitCommand {
     Pull,
     Push,
     Branch,
+    ListFiles,
+    ListTrees,
+    CheckIgnore,
+    ShowRef,
+    Rebase,
+    Tag,
 }
 
 /// Reads user input from the command line and splits it into a vector of strings.
@@ -123,6 +132,12 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
         "pull" => Some(GitCommand::Pull),
         "push" => Some(GitCommand::Push),
         "branch" => Some(GitCommand::Branch),
+        "ls-files" => Some(GitCommand::ListFiles),
+        "ls-trees" => Some(GitCommand::ListTrees),
+        "check-ignore" => Some(GitCommand::CheckIgnore),
+        "show-ref" => Some(GitCommand::ShowRef),
+        "rebase" => Some(GitCommand::Rebase),
+        "tag" => Some(GitCommand::Tag),
         _ => {
             eprintln!("Not a valid Git option.");
             None
@@ -161,7 +176,136 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
         GitCommand::Push => handle_push(),
         GitCommand::Branch => handle_branch(args),
         GitCommand::Init => handle_init(args),
+        GitCommand::ListFiles => handle_ls_files(args),
+        GitCommand::ListTrees => handle_ls_trees(args),
+        GitCommand::CheckIgnore => handle_check_ignore(args),
+        GitCommand::ShowRef => handle_show_ref(args),
+        GitCommand::Rebase => handle_rebase(args),
+        GitCommand::Tag => handle_tag(args),
     }
+}
+
+fn handle_ls_files(args: Vec<String>) {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            eprintln!("Fatal error on ls files.");
+            return;
+        }
+    };
+
+    let index_path = format!("{}/{}", git_dir, "index");
+    let gitignore_path = format!("{}/{}", working_dir, ".mgitignore");
+    let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
+        Ok(ind) => ind,
+        Err(_e) => {
+            eprintln!("Couldn't load index.");
+            return;
+        }
+    };
+
+    let current_dir = current_dir.to_string_lossy().to_string();
+    match git_ls_files(
+        &working_dir,
+        &git_dir,
+        &current_dir,
+        args,
+        &index,
+        &mut io::stdout(),
+    ) {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{:?}", e)
+        }
+    }
+}
+
+fn handle_ls_trees(_args: Vec<String>) {
+    // Implementación para el comando "ListTrees"
+}
+
+fn handle_check_ignore(args: Vec<String>) {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            eprintln!("Fatal error on ls files.");
+            return;
+        }
+    };
+
+    let gitignore_path = format!("{}/{}", working_dir, ".mgitignore");
+
+    match git_check_ignore(".mgitignore", &gitignore_path, args, &mut io::stdout()) {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{}", e)
+        }
+    }
+}
+
+fn handle_show_ref(args: Vec<String>) {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    match git_show_ref(&git_dir, args, &mut io::stdout()) {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{}", e)
+        }
+    }
+}
+
+fn handle_rebase(_args: Vec<String>) {
+    // Implementación para el comando "Rebase"
+}
+
+fn handle_tag(_args: Vec<String>) {
+    // Implementación para el comando "Tag"
 }
 
 /// Handles the 'hash-object' Git command.
