@@ -20,6 +20,8 @@ use crate::gui::style::get_entry;
 use crate::gui::style::get_text_view;
 use crate::gui::style::load_and_get_window;
 use crate::gui::style::show_message_dialog;
+use crate::remote::git_remote;
+use crate::config::Config;
 use crate::index;
 use crate::index::Index;
 use gtk::ContainerExt;
@@ -172,6 +174,12 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "checkout3",
         "checkout4",
         "checkout5",
+        "remote-add",
+        "remote-rm",
+        "remote-set-url",
+        "remote-get-url",
+        "remote-rename",
+        "remote",
         "show-fetch",
         
     ];
@@ -282,6 +290,36 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         "another-branch" => {
             button.connect_clicked(move |_| {
                 handle_create_branch_from_branch_button();
+            });
+        }
+        "remote" => {
+            button.connect_clicked(move |_| {
+                handle_remote();
+            });
+        }
+        "remote-add" => {
+            button.connect_clicked(move |_| {
+                handle_remote_add();
+            });
+        }
+        "remote-rm" => {
+            button.connect_clicked(move |_| {
+                
+            });
+        }
+        "remote-set-url" => {
+            button.connect_clicked(move |_| {
+                
+            });
+        }
+        "remote-get-url" => {
+            button.connect_clicked(move |_| {
+                
+            });
+        }
+        "remote-rename" => {
+            button.connect_clicked(move |_| {
+                
             });
         }
         "show-fetch" => {
@@ -854,6 +892,99 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
     }
     Ok(())
 }
+pub fn obtain_text_from_remote_add(text: &str) -> Result<String, io::Error> {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return Err(io::Error::new(io::ErrorKind::Other, "Error al obtener el directorio actual"));
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return Err(io::Error::new(io::ErrorKind::Other, "Error al obtener el git dir"));
+        }
+    };
+
+    let mut config = match Config::load(&git_dir) {
+        Ok(config) => config,
+        Err(_e) => {
+            eprintln!("Error al cargar el config file.");
+            return Err(io::Error::new(io::ErrorKind::Other, "Error al cargar el config file"));
+        }
+    };
+
+    let line: Vec<&str> = text.split_whitespace().collect();
+
+    match git_remote(&mut config, line, &mut io::stdout()) {
+        Ok(_config) => {}
+        Err(_e) => {
+            eprintln!("Error en git remote.");
+        }
+    }
+
+    Ok("Ok".to_string())
+}
+
+fn handle_remote_add() -> io::Result<()> {
+    let result = create_text_entry_window("Enter the path of the file", move |text| {
+        let resultado = obtain_text_from_remote_add(&text);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Éxito", "Changed correctly to branch ");
+                }
+                _ => {
+                    show_message_dialog("Error", "La rama indicada no existe.");
+                }
+            },
+        }
+    });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+fn handle_remote() -> io::Result<()> {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return Err(io::Error::new(io::ErrorKind::Other, "Error al obtener el directorio actual"));
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return Err(io::Error::new(io::ErrorKind::Other, "Error al obtener el git dir"));
+        }
+    };
+
+    let mut config = match Config::load(&git_dir) {
+        Ok(config) => config,
+        Err(_e) => {
+            eprintln!("Error al cargar el config file.");
+            return Err(io::Error::new(io::ErrorKind::Other, "Error al cargar el config file"));
+        }
+    };
+
+    match git_remote(&mut config, Vec::new(), &mut io::stdout()) {
+        Ok(_config) => {}
+        Err(_e) => {
+            eprintln!("Error en git remote.");
+        }
+    }
+
+    Ok(())
+}
 
 /// Handle the "Checkout Branch" button's click event. This function opens a text entry window for users to enter
 /// the name of the branch they want to check out. Once the branch name is entered and confirmed, it attempts to check
@@ -891,6 +1022,10 @@ fn handle_checkout_branch_window() -> io::Result<()> {
     Ok(())
 }
 
+fn obtain_log_text_scrolled_window(builder: &gtk::Builder) -> Option<gtk::ScrolledWindow> {
+    builder.get_object("scroll-log")
+}
+
 /// Handle the "Show Log" button's click event. This function retrieves a text view widget from the GTK builder
 /// and populates it with the Git log data. If the operation is successful, it displays the log data in the text view.
 /// If there is an error, it prints an error message to the standard error.
@@ -898,10 +1033,6 @@ fn handle_checkout_branch_window() -> io::Result<()> {
 /// # Arguments
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
-fn obtain_log_text_scrolled_window(builder: &gtk::Builder) -> Option<gtk::ScrolledWindow> {
-    builder.get_object("scroll-log")
-}
-
 fn handle_show_log_button_click(builder: &gtk::Builder) {
     let log_text_view_result: Option<gtk::TextView> = builder.get_object("log-text");
 
