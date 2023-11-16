@@ -159,6 +159,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "show-branches-button",
         "delete-branch-button",
         "modify-branch-button",
+        "another-branch",
         "add-path-button",
         "add-all-button",
         "remove-path-button",
@@ -170,6 +171,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "checkout4",
         "checkout5",
         "show-fetch",
+        
     ];
 
     for button_id in button_ids.iter() {
@@ -275,6 +277,11 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
     };
     match button_id {
+        "another-branch" => {
+            button.connect_clicked(move |_| {
+                handle_create_branch_from_branch_button();
+            });
+        }
         "show-fetch" => {
             button.connect_clicked(move |_| {
                 handle_fetch_button(&builder_clone);
@@ -653,6 +660,20 @@ fn handle_create_branch_button() -> io::Result<()> {
     Ok(())
 }
 
+fn handle_create_branch_from_branch_button() -> io::Result<()> {
+    let create_result = create_text_entry_window("Enter the name of the branch", |text| {
+        let result = git_branch_for_ui(Some(text)); // aca mandale la llamada a lo nuevo q vas a hacer 
+        if result.is_err() {
+            eprintln!("Error creating text entry window.");
+        }
+    });
+
+    if create_result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
 /// Handles the delete branch button action.
 ///
 /// This function prompts the user to enter the name of the branch to delete

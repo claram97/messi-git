@@ -146,7 +146,7 @@ fn create_selection_window() -> (Window, Button, FileChooserButton, Box) {
     let window = Window::new(WindowType::Toplevel);
     window.set_title("Selection Directory");
     window.set_default_size(400, 150);
-
+    add_to_open_windows(&window);
     let file_chooser =
         FileChooserButton::new("Select a directory ", FileChooserAction::SelectFolder);
 
