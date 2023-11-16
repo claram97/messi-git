@@ -653,6 +653,17 @@ fn handle_create_branch_button() -> io::Result<()> {
     Ok(())
 }
 
+/// Handles the delete branch button action.
+///
+/// This function prompts the user to enter the name of the branch to delete
+/// using a text entry window. The entered branch name is then passed to the
+/// `git_branch_for_ui` function for further processing.
+///
+/// # Errors
+///
+/// This function returns an `io::Result` indicating whether the operation
+/// was successful or resulted in an error.
+///
 fn handle_delete_branch_button() -> io::Result<()> {
     let create_result = create_text_entry_window("Enter the name of the branch", |text| {
         let result = git_branch_for_ui(Some(text)); // te dejo pa q le metas la llamdad
@@ -667,6 +678,18 @@ fn handle_delete_branch_button() -> io::Result<()> {
 
     Ok(())
 }
+
+/// Handles the modify branch button action.
+///
+/// This function prompts the user to enter the name of the branch to modify
+/// using a text entry window. The entered branch name is then passed to the
+/// `git_branch_for_ui` function for further processing.
+///
+/// # Errors
+///
+/// This function returns an `io::Result` indicating whether the operation
+/// was successful or resulted in an error.
+///
 fn handle_modify_branch_button() -> io::Result<()> {
     let create_result = create_text_entry_window("Enter the name of the branch", |text| {
         let result = git_branch_for_ui(Some(text)); // aca te dejo pa q le metas la llamada
@@ -1374,6 +1397,21 @@ pub fn set_merge_button_behavior(
     Ok(())
 }
 
+/// Shows the current Git branch on a merge window.
+///
+/// This function retrieves the current Git branch name and displays it in
+/// the provided `TextView` within a merge window. The user is prompted to
+/// enter the branch they want to merge with the current branch.
+///
+/// # Arguments
+///
+/// * `merge_text_view` - The GTK `TextView` where the merge information is displayed.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful
+/// or resulted in an error.
+///
 fn show_current_branch_on_merge_window(merge_text_view: &TextView) -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
@@ -1406,6 +1444,16 @@ fn show_current_branch_on_merge_window(merge_text_view: &TextView) -> io::Result
     Ok(())
 }
 
+/// Handles the "List Modified" button click event.
+///
+/// This function retrieves the list of modified files using Git and displays
+/// them in the provided GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK button that triggers the action when clicked.
+/// * `text_view` - The GTK `TextView` where the list of modified files will be displayed.
+///
 pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
@@ -1503,6 +1551,16 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
     });
 }
 
+/// Handles the "List Index" button click event.
+///
+/// This function retrieves the list of files in the Git index and displays
+/// them in the provided GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK button that triggers the action when clicked.
+/// * `text_view` - The GTK `TextView` where the list of index files will be displayed.
+///
 pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
@@ -1600,6 +1658,16 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
     });
 }
 
+/// Handles the "List Untracked" button click event.
+///
+/// This function retrieves the list of untracked files using Git and displays
+/// them in the provided GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK button that triggers the action when clicked.
+/// * `text_view` - The GTK `TextView` where the list of untracked files will be displayed.
+///
 pub fn list_untracked_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
@@ -1697,6 +1765,16 @@ pub fn list_untracked_button_on_clicked(button: &Button, text_view: &gtk::TextVi
     });
 }
 
+/// Opens a window that lists different types of Git-tracked files.
+///
+/// This function initializes and displays a GTK window with buttons to list
+/// untracked files, files in the Git index, and modified files. The file
+/// lists are displayed in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `builder` - The GTK `Builder` used to construct the window.
+///
 pub fn list_files_window(builder: &Builder) -> io::Result<()> {
     let list_untracked_button = get_button(builder, "list-untracked-button");
     let list_index_button = get_button(builder, "list-index-button");
@@ -1720,6 +1798,21 @@ pub fn list_files_window(builder: &Builder) -> io::Result<()> {
     Ok(())
 }
 
+
+/// Handles the "Check Ignore" button click event.
+///
+/// This function checks if a specified path is ignored by Git based on the
+/// contents of the `.mgitignore` file. The result is displayed in the provided
+/// GTK `TextView`. Optionally, it can display more detailed information if the
+/// corresponding switch is active.
+///
+/// # Arguments
+///
+/// * `button` - The GTK button that triggers the action when clicked.
+/// * `text_view` - The GTK `TextView` where the check result will be displayed.
+/// * `entry` - The GTK `Entry` containing the path to be checked.
+/// * `switch` - The GTK `Switch` that controls whether to display verbose information.
+///
 pub fn check_ignore_button_on_clicked(
     button: &Button,
     text_view: &gtk::TextView,
@@ -1817,6 +1910,18 @@ pub fn check_ignore_button_on_clicked(
     });
 }
 
+/// Sets up and displays the "Check Ignore" window.
+///
+/// This function initializes and displays a GTK window with UI elements for
+/// checking whether a specified path is ignored by Git based on the contents
+/// of the `.mgitignore` file. The user can input the path in an entry, and
+/// choose whether to display more detailed information using a switch.
+/// The result of the check is displayed in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `builder` - The GTK `Builder` used to construct the window.
+///
 pub fn check_ignore_window(builder: &Builder) {
     let check_ignore_button = get_button(builder, "check-ignore-button");
     let check_ignore_entry = match get_entry(builder, "check-ignore-entry") {
@@ -1858,6 +1963,15 @@ pub fn check_ignore_window(builder: &Builder) {
     );
 }
 
+/// Applies a custom style to a GTK button.
+///
+/// This function applies a custom style to a specified GTK button. If successful,
+/// the button will be visually updated to reflect the applied style.
+///
+/// # Arguments
+///
+/// * `button` - The GTK `Button` to which the style will be applied.
+///
 pub fn handle_apply_button_style(button: &Button) {
     match apply_button_style(button) {
         Ok(_) => {}
@@ -1867,6 +1981,17 @@ pub fn handle_apply_button_style(button: &Button) {
     }
 }
 
+/// Handles the click event of the "Show Ref" button.
+///
+/// This function is connected to the click event of a GTK button. When the button is clicked,
+/// it retrieves and displays the references in the Git repository using the `git show-ref` command.
+/// The output is presented in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK `Button` triggering the click event.
+/// * `text_view` - The GTK `TextView` where the output will be displayed.
+///
 pub fn show_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
@@ -1932,6 +2057,17 @@ pub fn show_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     });
 }
 
+/// Handles the click event of the "Show Heads" button.
+///
+/// This function is connected to the click event of a GTK button. When the button is clicked,
+/// it retrieves and displays the references in the Git repository that are heads (branches)
+/// using the `git show-ref --heads` command. The output is presented in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK `Button` triggering the click event.
+/// * `text_view` - The GTK `TextView` where the output will be displayed.
+///
 pub fn show_heads_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
@@ -2001,6 +2137,17 @@ pub fn show_heads_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
     });
 }
 
+/// Handles the click event of the "Show Tags" button.
+///
+/// This function is connected to the click event of a GTK button. When the button is clicked,
+/// it retrieves and displays the references in the Git repository that are tags
+/// using the `git show-ref --tags` command. The output is presented in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK `Button` triggering the click event.
+/// * `text_view` - The GTK `TextView` where the output will be displayed.
+///
 pub fn show_tags_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
@@ -2070,6 +2217,17 @@ pub fn show_tags_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     });
 }
 
+/// Handles the click event of the "Show Hash" button.
+///
+/// This function is connected to the click event of a GTK button. When the button is clicked,
+/// it retrieves and displays the references in the Git repository along with their hashes
+/// using the `git show-ref --hash` command. The output is presented in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK `Button` triggering the click event.
+/// * `text_view` - The GTK `TextView` where the output will be displayed.
+///
 pub fn show_hash_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
@@ -2139,6 +2297,18 @@ pub fn show_hash_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     });
 }
 
+/// Handles the click event of the "Verify Ref" button.
+///
+/// This function is connected to the click event of a GTK button. When the button is clicked,
+/// it verifies the reference pointed to by the provided path using the `git show-ref --verify`
+/// command. The result is displayed in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK `Button` triggering the click event.
+/// * `text_view` - The GTK `TextView` where the output will be displayed.
+/// * `entry` - The GTK `Entry` containing the path to the reference to be verified.
+///
 pub fn verify_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView, entry: &Entry) {
     let cloned_text_view = text_view.clone();
     let cloned_entry = entry.clone();
@@ -2215,6 +2385,16 @@ pub fn verify_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView, 
     });
 }
 
+/// Sets up the "Show Ref" window with various buttons and their corresponding actions.
+///
+/// This function initializes the components of the "Show Ref" window, such as text views,
+/// buttons, and entry fields. It also connects the buttons to their respective click
+/// event handlers to perform specific Git operations and display the results in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `builder` - The GTK `Builder` containing the UI elements for the "Show Ref" window.
+///
 pub fn show_ref_window(builder: &Builder) {
     let show_ref_view = match get_text_view(builder, "show-ref-view") {
         Some(view) => view,

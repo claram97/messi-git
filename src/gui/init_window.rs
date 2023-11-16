@@ -72,7 +72,7 @@ pub fn connect_button_clicked_init_window(
     let button_type = button_type.to_owned();
     button.connect_clicked(move |_| {
         let current_dir = std::env::current_dir();
-
+        
         if let Ok(current_dir) = current_dir {
             let dir_str = match current_dir.to_str() {
                 Some(str) => str.to_owned(),
@@ -126,7 +126,7 @@ fn handle_directory_selection(file_chooser: &FileChooserButton, current_dir: &Pa
             eprintln!("Error in git init .");
             return;
         }
-        println!("init dir: {}", &selected_directory.display());
+        
         let result = handle_git_init_result(result, current_dir, Path::new(&selected_directory));
         if result.is_err() {
             eprintln!("Error handling git init with template");
@@ -285,7 +285,6 @@ fn handle_git_init_and_change_dir(
         return Err("Error handling git init result.".to_string());
     }
 
-    // Cambiar el directorio actual
     if env::set_current_dir(dir_str).is_err() {
         return Err("Error changing current directory.".to_string());
     }
@@ -318,6 +317,7 @@ pub fn handle_git_init_result(
         Ok(_) => {
             close_all_windows();
             let result = show_repository_window(code_dir, work_dir);
+            
 
             if result.is_err() {
                 eprintln!("Couldn't show repository window");
