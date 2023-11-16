@@ -1,16 +1,13 @@
 use super::clone_window::configure_clone_window;
 use super::init_window::configure_init_window;
-use super::style::show_message_dialog;
+use crate::gui::repository_window::show_repository_window;
 use crate::gui::style::{apply_button_style, apply_window_style, get_button, load_and_get_window};
 use gtk::prelude::*;
 use gtk::Builder;
-use std::io;
-use std::sync::Mutex;
 use gtk::{self, FileChooserAction, FileChooserDialog, FileChooserExt};
-use crate::gui::init_window::handle_git_init_result;
-use crate::gui::repository_window::show_repository_window;
+use std::io;
 use std::path::Path;
-use std::env;
+use std::sync::Mutex;
 
 pub static mut OPEN_WINDOWS: Option<Mutex<Vec<gtk::Window>>> = None;
 
@@ -77,7 +74,7 @@ fn connect_button_clicked_open_new_repository(button: &gtk::Button) -> std::io::
         dialog.add_button("Open", gtk::ResponseType::Ok);
         dialog.add_button("Cancel", gtk::ResponseType::Cancel);
         let result = dialog.run();
-        if result == gtk::ResponseType::Ok.into() {
+        if result == gtk::ResponseType::Ok {
             if let Some(selected_directory) = dialog.get_filename() {
                 let mgit_folder_path = selected_directory.join(".mgit");
                 if mgit_folder_path.is_dir() {

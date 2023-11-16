@@ -72,7 +72,7 @@ pub fn connect_button_clicked_init_window(
     let button_type = button_type.to_owned();
     button.connect_clicked(move |_| {
         let current_dir = std::env::current_dir();
-        
+
         if let Ok(current_dir) = current_dir {
             let dir_str = match current_dir.to_str() {
                 Some(str) => str.to_owned(),
@@ -318,7 +318,6 @@ pub fn handle_git_init_result(
         Ok(_) => {
             close_all_windows();
             let result = show_repository_window(code_dir, work_dir);
-            
 
             if result.is_err() {
                 eprintln!("Couldn't show repository window");
