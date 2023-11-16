@@ -22,6 +22,8 @@ use crate::gui::style::load_and_get_window;
 use crate::gui::style::show_message_dialog;
 use crate::index;
 use crate::index::Index;
+use gtk::ContainerExt;
+use gtk::ScrolledWindowExt;
 use crate::log::log;
 use crate::log::Log;
 use crate::ls_files::git_ls_files;
@@ -618,19 +620,30 @@ fn handle_force_checkout_button() -> io::Result<()> {
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
 fn handle_show_branches_button(builder: &gtk::Builder) {
+    // Obtén el TextView y el ScrolledWindow desde el builder
     let branch_text_view: gtk::TextView = builder.get_object("show-branches-text").unwrap();
+    let scrolled_window: gtk::ScrolledWindow = builder.get_object("scrolled-window").unwrap();
 
+    // Llamada a la función git_branch_for_ui para obtener el texto
     let text_from_function = git_branch_for_ui(None);
+
     match text_from_function {
         Ok(texto) => {
+            // Configura el TextView con el texto obtenido
             let buffer = branch_text_view.get_buffer().unwrap();
             buffer.set_text(texto.as_str());
+
+            // Configura el ScrolledWindow para que sea scrollable
+            scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+            scrolled_window.add(&branch_text_view);
         }
         Err(err) => {
             eprintln!("Error al obtener el texto: {}", err);
         }
     }
 }
+
+
 
 /// Handle the "Create Branch" button's click event. This function opens a text entry window for users to enter
 /// the name of the branch they want to create. Once the branch name is entered and confirmed, it attempts to create
@@ -660,6 +673,12 @@ fn handle_create_branch_button() -> io::Result<()> {
     Ok(())
 }
 
+/// Handle the button click event to create a branch from an existing branch.
+///
+/// # Returns
+///
+/// * `Ok(())` - If the branch creation and UI operations are successful.
+/// * `Err(io::Error)` - If there is an error during branch creation or UI operations.
 fn handle_create_branch_from_branch_button() -> io::Result<()> {
     let create_result = create_text_entry_window("Enter the name of the branch", |text| {
         let result = git_branch_for_ui(Some(text)); // aca mandale la llamada a lo nuevo q vas a hacer 
@@ -674,6 +693,7 @@ fn handle_create_branch_from_branch_button() -> io::Result<()> {
 
     Ok(())
 }
+
 /// Handles the delete branch button action.
 ///
 /// This function prompts the user to enter the name of the branch to delete
@@ -743,7 +763,6 @@ fn handle_add_path_button(builder: &Builder) -> io::Result<()> {
     let create_result = create_text_entry_window("Enter the path of the file", move |text| {
         match obtain_text_from_add(&text) {
             Ok(_texto) => {
-                //show_message_dialog("Operación exitosa", "Agregado correctamente");
                 let result = set_staging_area_texts(&builder_clone);
                 if result.is_err() {
                     eprintln!("No se pudo actualizar la vista de staging.");
