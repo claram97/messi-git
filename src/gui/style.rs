@@ -63,6 +63,14 @@ pub fn get_text_view(builder: &Builder, text_view_id: &str) -> Option<gtk::TextV
     None
 }
 
+pub fn get_switch(builder: &gtk::Builder, switch_id: &str) -> Option<gtk::Switch> {
+    if let Some(switch) = builder.get_object::<gtk::Switch>(switch_id) {
+        return Some(switch);
+    }
+
+    None
+}
+
 /// Applies a custom button style using CSS to the provided `gtk::Button`.
 ///
 /// This function sets a custom CSS style for the provided `gtk::Button` widget to change its appearance.

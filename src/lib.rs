@@ -29,3 +29,6 @@ pub mod server_utils;
 pub mod status;
 pub mod tree_handler;
 pub mod utils;
+pub mod check_ignore;
+pub mod show_ref;
+pub mod ls_files;

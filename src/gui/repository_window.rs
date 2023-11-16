@@ -1,6 +1,7 @@
 use crate::add::add;
 use crate::branch;
 use crate::branch::git_branch_for_ui;
+use crate::check_ignore::git_check_ignore;
 use crate::checkout::checkout_branch;
 use crate::checkout::checkout_commit_detached;
 use crate::checkout::create_and_checkout_branch;
@@ -20,8 +21,10 @@ use crate::gui::style::get_text_view;
 use crate::gui::style::load_and_get_window;
 use crate::gui::style::show_message_dialog;
 use crate::index;
+use crate::index::Index;
 use crate::log::log;
 use crate::log::Log;
+use crate::ls_files::git_ls_files;
 use crate::merge;
 use crate::pull::git_pull;
 use crate::push;
@@ -31,6 +34,8 @@ use crate::tree_handler;
 use crate::tree_handler::Tree;
 use crate::utils;
 use crate::utils::find_git_directory;
+use gtk::Button;
+use gtk::SwitchExt;
 use gtk::prelude::BuilderExtManual;
 use gtk::Builder;
 use gtk::ButtonExt;
@@ -46,6 +51,9 @@ use std::env;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
+
+use super::style::apply_entry_style;
+use super::style::get_switch;
 
 /// Displays a repository window with various buttons and actions in a GTK application.
 ///
@@ -115,6 +123,12 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
 
     let builder_clone_for_merge = builder.clone();
     merge_window(&builder_clone_for_merge)?;
+
+    let builder_clone_for_ls_files = builder.clone();
+    list_files_window(&builder_clone_for_ls_files)?;
+
+    let builder_clone_for_check_ignore = builder.clone();
+    check_ignore_window(&builder_clone_for_check_ignore);
 
     setup_buttons(builder)?;
 
@@ -1383,6 +1397,354 @@ fn show_current_branch_on_merge_window(merge_text_view: &TextView) -> io::Result
     );
 
     Ok(())
+}
+
+pub fn list_modified_button_on_clicked(button : &Button, text_view: &gtk::TextView) {
+    let cloned_text_view = text_view.clone();
+    button.connect_clicked(move |_| {
+        let mut current_dir = match std::env::current_dir() {
+            Ok(dir) => dir,
+            Err(_e) => {
+                eprintln!("No se pudo obtener el directorio actual");
+                show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+                return;
+            }
+        };
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("No se pudo obtener el git dir.");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+            return;}
+    };
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            eprintln!("No se pudo obtener el working dir.");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+            return;
+        }
+    };
+    let current_dir = &current_dir.to_string_lossy().to_string();
+    let line = vec!["git".to_string(), "ls-files".to_string(), "-m".to_string()];
+    let index_path = format!("{}/{}",git_dir,"index");
+    let gitignore_path = format!("{}/{}",git_dir,".mgitignore");
+    let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
+        Ok(index) => index,
+        Err(_e) => {
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+            return;
+        }
+    };
+    let mut output : Vec<u8> = vec![];
+    let result = git_ls_files(&working_dir, &git_dir, current_dir, line, &index, &mut output);
+    if result.is_err() {
+        show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+        return;
+    }
+    let buffer = match cloned_text_view.get_buffer() {
+        Some(buf) => buf,
+        None => {
+            eprintln!("No se pudo obtener el text buffer");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+            return;
+        }
+    };
+
+    let string = match String::from_utf8(output) {
+        Ok(str) => str,
+        Err(_e) => {
+            eprintln!("No se pudo convertir el resultado a string.");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+            return;
+        }
+    };
+        buffer.set_text(string.as_str());
+    });
+
+}
+
+pub fn list_index_button_on_clicked(button : &Button, text_view: &gtk::TextView) {
+    let cloned_text_view = text_view.clone();
+    button.connect_clicked(move |_| {
+        let mut current_dir = match std::env::current_dir() {
+            Ok(dir) => dir,
+            Err(_e) => {
+                eprintln!("No se pudo obtener el directorio actual");
+                show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+                return;
+            }
+        };
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("No se pudo obtener el git dir.");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+            return;}
+    };
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            eprintln!("No se pudo obtener el working dir.");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+            return;
+        }
+    };
+    let current_dir = &current_dir.to_string_lossy().to_string();
+    let line = vec!["git".to_string(), "ls-files".to_string()];
+    let index_path = format!("{}/{}",git_dir,"index");
+    let gitignore_path = format!("{}/{}",git_dir,".mgitignore");
+    let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
+        Ok(index) => index,
+        Err(_e) => {
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+            return;
+        }
+    };
+    let mut output : Vec<u8> = vec![];
+    let result = git_ls_files(&working_dir, &git_dir, current_dir, line, &index, &mut output);
+    if result.is_err() {
+        show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+        return;
+    }
+    let buffer = match cloned_text_view.get_buffer() {
+        Some(buf) => buf,
+        None => {
+            eprintln!("No se pudo obtener el text buffer");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+            return;
+        }
+    };
+
+    let string = match String::from_utf8(output) {
+        Ok(str) => str,
+        Err(_e) => {
+            eprintln!("No se pudo convertir el resultado a string.");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+            return;
+        }
+    };
+        buffer.set_text(string.as_str());
+    });
+
+}
+
+pub fn list_untracked_button_on_clicked(button : &Button, text_view: &gtk::TextView) {
+    let cloned_text_view = text_view.clone();
+    button.connect_clicked(move |_| {
+        let mut current_dir = match std::env::current_dir() {
+            Ok(dir) => dir,
+            Err(_e) => {
+                eprintln!("No se pudo obtener el directorio actual");
+                show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+                return;
+            }
+        };
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("No se pudo obtener el git dir.");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+            return;}
+    };
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            eprintln!("No se pudo obtener el working dir.");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+            return;
+        }
+    };
+    let current_dir = &current_dir.to_string_lossy().to_string();
+    let line = vec!["git".to_string(), "ls-files".to_string(), "-o".to_string()];
+    let index_path = format!("{}/{}",git_dir,"index");
+    let gitignore_path = format!("{}/{}",git_dir,".mgitignore");
+    let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
+        Ok(index) => index,
+        Err(_e) => {
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+            return;
+        }
+    };
+    let mut output : Vec<u8> = vec![];
+    let result = git_ls_files(&working_dir, &git_dir, current_dir, line, &index, &mut output);
+    if result.is_err() {
+        show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+        return;
+    }
+    let buffer = match cloned_text_view.get_buffer() {
+        Some(buf) => buf,
+        None => {
+            eprintln!("No se pudo obtener el text buffer");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+            return;
+        }
+    };
+
+    let string = match String::from_utf8(output) {
+        Ok(str) => str,
+        Err(_e) => {
+            eprintln!("No se pudo convertir el resultado a string.");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+            return;
+        }
+    };
+        buffer.set_text(string.as_str());
+    });
+
+}
+
+pub fn list_files_window(builder: &Builder) -> io::Result<()> {
+    let list_untracked_button = get_button(builder, "list-untracked-button");
+    let list_index_button = get_button(builder, "list-index-button");
+    let list_modified_button = get_button(builder, "list-modified-button");
+    let text_view = match get_text_view(builder, "ls-files-view") {
+        Some(text_view) => text_view,
+        None => {
+            eprintln!("Error!");
+            return Ok(());
+        }
+    };
+    apply_button_style(&list_untracked_button).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    apply_button_style(&list_index_button).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    apply_button_style(&list_modified_button).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    list_untracked_button_on_clicked(&list_untracked_button, &text_view);
+    list_index_button_on_clicked(&list_index_button, &text_view);
+    list_modified_button_on_clicked(&list_modified_button, &text_view);
+    Ok(())
+}
+
+pub fn check_ignore_button_on_clicked(button : &Button, text_view: &gtk::TextView, entry : &gtk::Entry, switch : &gtk::Switch) {
+    let cloned_text_view = text_view.clone();
+    let cloned_entry = entry.clone();
+    let cloned_siwtch = switch.clone();
+    button.connect_clicked(move |_| {
+        let mut current_dir = match std::env::current_dir() {
+            Ok(dir) => dir,
+            Err(_e) => {
+                eprintln!("No se pudo obtener el directorio actual");
+                show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+                return;
+            }
+        };
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("No se pudo obtener el git dir.");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+            return;}
+    };
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            eprintln!("No se pudo obtener el working dir.");
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+            return;
+        }
+    };
+    let current_dir = &current_dir.to_string_lossy().to_string();
+    let index_path = format!("{}/{}",git_dir,"index");
+    let gitignore_path = format!("{}/{}",git_dir,".mgitignore");
+    let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
+        Ok(index) => index,
+        Err(_e) => {
+            show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+
+            return;
+        }
+    };
+
+    let path = cloned_entry.get_text();
+    if path.is_empty() {
+        show_message_dialog("Error", "Debe ingresar un path");
+    }
+    else {
+        let mut line : Vec<String> = vec![];
+        if cloned_siwtch.get_active() {
+            line = vec!["git".to_string(), "check-ignore".to_string(), "-v".to_string(), path.to_string()];
+        }
+        else {
+            line = vec!["git".to_string(), "check-ignore".to_string(), path.to_string()];
+        }
+        let mut output : Vec<u8> = vec![];
+
+        match git_check_ignore(".mgitignore", &gitignore_path, line, &mut output) {
+            Ok(_) => {
+                let buffer = match cloned_text_view.get_buffer() {
+                    Some(buf) => buf,
+                    None => {
+                        eprintln!("No se pudo obtener el text buffer");
+                        show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+                        return;
+                    }
+                };
+        
+                let string = match String::from_utf8(output) {
+                    Ok(str) => str,
+                    Err(_e) => {
+                        eprintln!("No se pudo convertir el resultado a string.");
+                        show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+                        return;
+                    }
+                };
+                    buffer.set_text(string.as_str());
+            },
+            Err(e) => {
+                eprintln!("{}",e); 
+                show_message_dialog("Fatal error", "Algo sucedió mientras intentábamos obtener los datos :(");
+                return;
+                //no sé, personalizar esto jiji
+            }
+        }
+        
+}});
+    
+}
+
+pub fn check_ignore_window(builder : &Builder) {
+    let check_ignore_button = get_button(builder, "check-ignore-button");
+    let check_ignore_entry = match get_entry(builder, "check-ignore-entry") {
+        Some(entry) => entry,
+        None => {
+            eprintln!("No se pudo obtener el entry.");
+            return;
+        }
+    };
+    let check_ignore_view = match get_text_view(builder, "check-ignore-view") {
+        Some(view) => view,
+        None => {
+            eprintln!("No se pudo obtener el text view.");
+            return;
+        }
+    };
+
+    let check_ignore_switch = match get_switch(builder, "check-ignore-switch") {
+        Some(view) => view,
+        None => {
+            eprintln!("No se pudo obtener el switch.");
+            return;
+        }
+    };
+
+    apply_button_style(&check_ignore_button);
+    apply_entry_style(&check_ignore_entry);
+
+    check_ignore_button_on_clicked(&check_ignore_button, &check_ignore_view, &check_ignore_entry, &check_ignore_switch);
 }
 
 /// ## `merge_window`
