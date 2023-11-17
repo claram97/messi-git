@@ -1,5 +1,5 @@
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     fs::File,
     io::{self, BufReader, Cursor, Error, Read, Seek, Write},
     str::from_utf8,
@@ -317,14 +317,50 @@ fn append_objects(
     objects: HashSet<(ObjectType, String)>,
     git_dir: &str,
 ) -> io::Result<()> {
-    for object in objects {
-        append_object(packfile, object, git_dir)?
+    let mut objects_in_packfile = Vec::new();
+    for (obj_type, hash) in objects {
+        let entry = PackfileEntry::from_hash(&hash, git_dir)?;
+        let offset = packfile.len();
+        
+        if let Some(index) = find_base_object_index(&entry, &objects_in_packfile) {
+            let base_obj = &objects_in_packfile[index];
+            // append_delta_object(packfile, base_obj, &entry, git_dir)?;
+        } else {
+            append_object(packfile, &entry, git_dir)?
+        }
+        objects_in_packfile.push((entry, offset)); // initial position of the object in the packfile
     }
     let mut hasher = Sha1::new();
     hasher.update(&packfile);
     let checksum = hasher.finalize();
     packfile.extend(checksum);
     Ok(())
+}
+
+fn find_base_object_index(object: &PackfileEntry, objects: &Vec<(PackfileEntry, usize)>) -> Option<usize> {
+    let toleration = 20;
+    // si encuentra un obj con una diferencia del tamaño menor al 20% del tamaño del obj
+    if let Some(index) = objects.iter().position(|(obj, _)| (1 as usize).abs_diff(object.size/obj.size) * 100 < toleration) {
+        let mut long = 0;
+        let mut max_long = 0;
+        let candidate = &objects[index];
+        let total_size = std::cmp::min(object.size, candidate.0.size);
+        for i in 0..total_size {
+            if object.content[i] == candidate.0.content[i] {
+                long += 1;
+            } else {
+                if long > max_long {
+                    max_long = long;
+                }
+                long = 0;
+            }
+        }
+        // si la longitud de la secuencia de bytes iguales es mayor al 80% del tamaño del obj
+        if (1 - total_size / max_long) > (100 - toleration) {
+            return Some(index);
+        }
+    }
+    None
 }
 
 /// Appends a single object to the given `packfile` vector.
@@ -339,19 +375,16 @@ fn append_objects(
 ///
 fn append_object(
     packfile: &mut Vec<u8>,
-    object: (ObjectType, String),
+    object: &PackfileEntry,
     git_dir: &str,
 ) -> io::Result<()> {
-    let (obj_type, hash) = object;
-
-    let object = PackfileEntry::from_hash(&hash, git_dir)?;
     let obj_size = object.size;
     let mut compressor = ZlibEncoder::new(Vec::<u8>::new(), Compression::default());
     compressor.write_all(&object.content)?;
     let compressed_content = compressor.finish()?;
 
     let mut encoded_header: Vec<u8> = Vec::new();
-    let mut c = (obj_type.as_byte() << 4) | ((obj_size & 0x0F) as u8);
+    let mut c = (object.obj_type.as_byte() << 4) | ((obj_size & 0x0F) as u8);
     let mut size = obj_size >> 4;
     while size > 0 {
         encoded_header.push(c | 0x80);
