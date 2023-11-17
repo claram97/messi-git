@@ -56,13 +56,9 @@ fn report_error(output: &mut impl Write, error_message: &str) -> io::Result<()> 
     Err(io::Error::new(io::ErrorKind::InvalidInput, error_message))
 }
 
-fn handle_list_command(
-    config: &mut Config,
-    output: &mut impl Write,
-)  -> io::Result<()> {
+fn handle_list_command(config: &mut Config, output: &mut impl Write) -> io::Result<()> {
     config.list_remotes(output)?;
     Ok(())
-
 }
 /// Handles the "add" subcommand for Git remotes.
 ///

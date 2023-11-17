@@ -436,7 +436,6 @@ impl Config {
         Ok(())
     }
 
-
     pub fn list_remotes(&self, output: &mut impl Write) -> io::Result<()> {
         for remote in &self.remotes {
             writeln!(output, "{}", remote.name)?;

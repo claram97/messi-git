@@ -9,6 +9,7 @@ use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
+use std::str;
 //use crate::fetch::git_fetch_for_gui;
 use crate::config::Config;
 use crate::gui::main_window::add_to_open_windows;
@@ -293,7 +294,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "remote" => {
             button.connect_clicked(move |_| {
-                handle_remote();
+                handle_remote(&builder_clone);
             });
         }
         "remote-add" => {
@@ -302,16 +303,24 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
             });
         }
         "remote-rm" => {
-            button.connect_clicked(move |_| {});
+            button.connect_clicked(move |_| {
+                handle_remote_rm();
+            });
         }
         "remote-set-url" => {
-            button.connect_clicked(move |_| {});
+            button.connect_clicked(move |_| {
+                handle_remote_set_url();
+            });
         }
         "remote-get-url" => {
-            button.connect_clicked(move |_| {});
+            button.connect_clicked(move |_| {
+                handle_remote_get_url();
+            });
         }
         "remote-rename" => {
-            button.connect_clicked(move |_| {});
+            button.connect_clicked(move |_| {
+                handle_remote_rename();
+            });
         }
         "show-fetch" => {
             button.connect_clicked(move |_| {
@@ -881,7 +890,189 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
     }
     Ok(())
 }
+
 pub fn obtain_text_from_remote_add(text: &str) -> Result<String, io::Error> {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al obtener el directorio actual",
+            ));
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al obtener el git dir",
+            ));
+        }
+    };
+
+    let mut config = match Config::load(&git_dir) {
+        Ok(config) => config,
+        Err(_e) => {
+            eprintln!("Error al cargar el config file.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al cargar el config file",
+            ));
+        }
+    };
+
+    let line: Vec<&str> = text.split_whitespace().collect();
+
+    match git_remote(&mut config, line, &mut io::stdout()) {
+        Ok(_config) => {}
+        Err(_e) => {
+            eprintln!("Error en git remote.");
+        }
+    }
+
+    Ok("Ok".to_string())
+}
+pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al obtener el directorio actual",
+            ));
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al obtener el git dir",
+            ));
+        }
+    };
+
+    let mut config = match Config::load(&git_dir) {
+        Ok(config) => config,
+        Err(_e) => {
+            eprintln!("Error al cargar el config file.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al cargar el config file",
+            ));
+        }
+    };
+
+    let line: Vec<&str> = text.split_whitespace().collect();
+
+    match git_remote(&mut config, line, &mut io::stdout()) {
+        Ok(_config) => {}
+        Err(_e) => {
+            eprintln!("Error en git remote.");
+        }
+    }
+
+    Ok("Ok".to_string())
+}
+pub fn obtain_text_from_remote_set_url(text: &str) -> Result<String, io::Error> {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al obtener el directorio actual",
+            ));
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al obtener el git dir",
+            ));
+        }
+    };
+
+    let mut config = match Config::load(&git_dir) {
+        Ok(config) => config,
+        Err(_e) => {
+            eprintln!("Error al cargar el config file.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al cargar el config file",
+            ));
+        }
+    };
+
+    let line: Vec<&str> = text.split_whitespace().collect();
+
+    match git_remote(&mut config, line, &mut io::stdout()) {
+        Ok(_config) => {}
+        Err(_e) => {
+            eprintln!("Error en git remote.");
+        }
+    }
+
+    Ok("Ok".to_string())
+}
+pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al obtener el directorio actual",
+            ));
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al obtener el git dir",
+            ));
+        }
+    };
+
+    let mut config = match Config::load(&git_dir) {
+        Ok(config) => config,
+        Err(_e) => {
+            eprintln!("Error al cargar el config file.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al cargar el config file",
+            ));
+        }
+    };
+
+    let line: Vec<&str> = text.split_whitespace().collect();
+
+    match git_remote(&mut config, line, &mut io::stdout()) {
+        Ok(_config) => {}
+        Err(_e) => {
+            eprintln!("Error en git remote.");
+        }
+    }
+
+    Ok("Ok".to_string())
+}
+
+pub fn obtain_text_from_remote_rename(text: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -949,7 +1140,98 @@ fn handle_remote_add() -> io::Result<()> {
     }
     Ok(())
 }
-fn handle_remote() -> io::Result<()> {
+
+fn handle_remote_rm() -> io::Result<()> {
+    let result = create_text_entry_window("Enter the path of the file", move |text| {
+        let resultado = obtain_text_from_remote_rm(&text);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Éxito", "Changed correctly to branch ");
+                }
+                _ => {
+                    show_message_dialog("Error", "La rama indicada no existe.");
+                }
+            },
+        }
+    });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+fn handle_remote_set_url() -> io::Result<()> {
+    let result = create_text_entry_window("Enter the path of the file", move |text| {
+        let resultado = obtain_text_from_remote_set_url(&text);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Éxito", "Changed correctly to branch ");
+                }
+                _ => {
+                    show_message_dialog("Error", "La rama indicada no existe.");
+                }
+            },
+        }
+    });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+fn handle_remote_get_url() -> io::Result<()> {
+    let result = create_text_entry_window("Enter the path of the file", move |text| {
+        let resultado = obtain_text_from_remote_get_url(&text);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Éxito", "Changed correctly to branch ");
+                }
+                _ => {
+                    show_message_dialog("Error", "La rama indicada no existe.");
+                }
+            },
+        }
+    });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+
+fn handle_remote_rename() -> io::Result<()> {
+    let result = create_text_entry_window("Enter the path of the file", move |text| {
+        let resultado = obtain_text_from_remote_rename(&text);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Éxito", "Changed correctly to branch ");
+                }
+                _ => {
+                    show_message_dialog("Error", "La rama indicada no existe.");
+                }
+            },
+        }
+    });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+
+fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -983,11 +1265,36 @@ fn handle_remote() -> io::Result<()> {
         }
     };
 
-    match git_remote(&mut config, Vec::new(), &mut io::stdout()) {
+    let mut output: Vec<u8> = vec![];
+    match git_remote(&mut config, vec!["remote"], &mut output) {
         Ok(_config) => {}
         Err(_e) => {
             eprintln!("Error en git remote.");
         }
+    }
+
+    let remote_text_view: gtk::TextView = builder.get_object("remote-text").unwrap();
+
+    let text = match str::from_utf8(&output) {
+        Ok(s) => s.to_string(),
+        Err(_) => {
+            eprintln!("Error al convertir el resultado a una cadena.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al convertir el resultado a una cadena",
+            ));
+        }
+    };
+    println!("{}", text);
+
+    if let Some(buffer) = remote_text_view.get_buffer() {
+        buffer.set_text(&text);
+    } else {
+        eprintln!("Error al obtener el buffer del TextView.");
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Error al obtener el buffer del TextView",
+        ));
     }
 
     Ok(())
