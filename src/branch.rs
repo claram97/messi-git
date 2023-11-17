@@ -1,5 +1,3 @@
-
-
 use std::{
     fs::{self, File},
     io::{self, Read, Write},
@@ -827,4 +825,3 @@ mod tests {
         Ok(())
     }
 }
-

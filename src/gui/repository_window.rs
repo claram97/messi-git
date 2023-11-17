@@ -10,6 +10,7 @@ use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
 //use crate::fetch::git_fetch_for_gui;
+use crate::config::Config;
 use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
@@ -20,18 +21,15 @@ use crate::gui::style::get_entry;
 use crate::gui::style::get_text_view;
 use crate::gui::style::load_and_get_window;
 use crate::gui::style::show_message_dialog;
-use crate::remote::git_remote;
-use crate::config::Config;
 use crate::index;
 use crate::index::Index;
-use gtk::ContainerExt;
-use gtk::ScrolledWindowExt;
 use crate::log::log;
 use crate::log::Log;
 use crate::ls_files::git_ls_files;
 use crate::merge;
 use crate::pull::git_pull;
 use crate::push;
+use crate::remote::git_remote;
 use crate::rm::git_rm;
 use crate::show_ref::git_show_ref;
 use crate::status;
@@ -43,11 +41,13 @@ use gtk::prelude::BuilderExtManual;
 use gtk::Builder;
 use gtk::Button;
 use gtk::ButtonExt;
+use gtk::ContainerExt;
 use gtk::DialogExt;
 use gtk::Entry;
 use gtk::EntryExt;
 use gtk::GtkWindowExt;
 use gtk::LabelExt;
+use gtk::ScrolledWindowExt;
 use gtk::SwitchExt;
 use gtk::TextBufferExt;
 use gtk::TextView;
@@ -181,7 +181,6 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "remote-rename",
         "remote",
         "show-fetch",
-        
     ];
 
     for button_id in button_ids.iter() {
@@ -303,24 +302,16 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
             });
         }
         "remote-rm" => {
-            button.connect_clicked(move |_| {
-                
-            });
+            button.connect_clicked(move |_| {});
         }
         "remote-set-url" => {
-            button.connect_clicked(move |_| {
-                
-            });
+            button.connect_clicked(move |_| {});
         }
         "remote-get-url" => {
-            button.connect_clicked(move |_| {
-                
-            });
+            button.connect_clicked(move |_| {});
         }
         "remote-rename" => {
-            button.connect_clicked(move |_| {
-                
-            });
+            button.connect_clicked(move |_| {});
         }
         "show-fetch" => {
             button.connect_clicked(move |_| {
@@ -677,8 +668,6 @@ fn handle_show_branches_button(builder: &gtk::Builder) {
     }
 }
 
-
-
 /// Handle the "Create Branch" button's click event. This function opens a text entry window for users to enter
 /// the name of the branch they want to create. Once the branch name is entered and confirmed, it attempts to create
 /// the new branch and updates the repository window. If the operation is successful, it closes all windows.
@@ -715,7 +704,7 @@ fn handle_create_branch_button() -> io::Result<()> {
 /// * `Err(io::Error)` - If there is an error during branch creation or UI operations.
 fn handle_create_branch_from_branch_button() -> io::Result<()> {
     let create_result = create_text_entry_window("Enter the name of the branch", |text| {
-        let result = git_branch_for_ui(Some(text)); // aca mandale la llamada a lo nuevo q vas a hacer 
+        let result = git_branch_for_ui(Some(text)); // aca mandale la llamada a lo nuevo q vas a hacer
         if result.is_err() {
             eprintln!("Error creating text entry window.");
         }
@@ -897,7 +886,10 @@ pub fn obtain_text_from_remote_add(text: &str) -> Result<String, io::Error> {
         Ok(dir) => dir,
         Err(err) => {
             eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return Err(io::Error::new(io::ErrorKind::Other, "Error al obtener el directorio actual"));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al obtener el directorio actual",
+            ));
         }
     };
 
@@ -905,7 +897,10 @@ pub fn obtain_text_from_remote_add(text: &str) -> Result<String, io::Error> {
         Some(dir) => dir,
         None => {
             eprintln!("Error al obtener el git dir");
-            return Err(io::Error::new(io::ErrorKind::Other, "Error al obtener el git dir"));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al obtener el git dir",
+            ));
         }
     };
 
@@ -913,7 +908,10 @@ pub fn obtain_text_from_remote_add(text: &str) -> Result<String, io::Error> {
         Ok(config) => config,
         Err(_e) => {
             eprintln!("Error al cargar el config file.");
-            return Err(io::Error::new(io::ErrorKind::Other, "Error al cargar el config file"));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al cargar el config file",
+            ));
         }
     };
 
@@ -956,7 +954,10 @@ fn handle_remote() -> io::Result<()> {
         Ok(dir) => dir,
         Err(err) => {
             eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return Err(io::Error::new(io::ErrorKind::Other, "Error al obtener el directorio actual"));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al obtener el directorio actual",
+            ));
         }
     };
 
@@ -964,7 +965,10 @@ fn handle_remote() -> io::Result<()> {
         Some(dir) => dir,
         None => {
             eprintln!("Error al obtener el git dir");
-            return Err(io::Error::new(io::ErrorKind::Other, "Error al obtener el git dir"));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al obtener el git dir",
+            ));
         }
     };
 
@@ -972,7 +976,10 @@ fn handle_remote() -> io::Result<()> {
         Ok(config) => config,
         Err(_e) => {
             eprintln!("Error al cargar el config file.");
-            return Err(io::Error::new(io::ErrorKind::Other, "Error al cargar el config file"));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error al cargar el config file",
+            ));
         }
     };
 
@@ -1380,7 +1387,6 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
     ) {
         Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
         Err(err) => {
-
             {
                 match err.kind() {
                     std::io::ErrorKind::UnexpectedEof => {
@@ -1393,7 +1399,6 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
                         ));
                     }
                 };
-
             };
             Err(())
         }
@@ -1984,7 +1989,6 @@ pub fn list_files_window(builder: &Builder) -> io::Result<()> {
     list_modified_button_on_clicked(&list_modified_button, &text_view);
     Ok(())
 }
-
 
 /// Handles the "Check Ignore" button click event.
 ///
@@ -2596,8 +2600,7 @@ pub fn show_ref_window(builder: &Builder) {
         }
     };
 
-    let show_ref_scrolled_window: gtk::ScrolledWindow =
-        builder.get_object("scroll-ref").unwrap();
+    let show_ref_scrolled_window: gtk::ScrolledWindow = builder.get_object("scroll-ref").unwrap();
     show_ref_scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
     show_ref_scrolled_window.add(&show_ref_view);
 

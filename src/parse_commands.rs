@@ -1,4 +1,3 @@
-
 use crate::branch::{get_current_branch_path, git_branch};
 use crate::cat_file::cat_file;
 use crate::check_ignore::git_check_ignore;
@@ -1342,4 +1341,3 @@ fn extract_init_params(args: &Vec<String>) -> (String, String, Option<&str>) {
 
     (current_directory, initial_branch, template_directory)
 }
-
