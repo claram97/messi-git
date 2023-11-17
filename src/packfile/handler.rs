@@ -321,10 +321,10 @@ fn append_objects(
     for (obj_type, hash) in objects {
         let entry = PackfileEntry::from_hash(&hash, git_dir)?;
         let offset = packfile.len();
-        
+
         if let Some(index) = find_base_object_index(&entry, &objects_in_packfile) {
             let base_obj = &objects_in_packfile[index];
-            // append_delta_object(packfile, base_obj, &entry, git_dir)?;
+            append_delta_object(packfile, base_obj, &entry, git_dir)?;
         } else {
             append_object(packfile, &entry, git_dir)?
         }
@@ -337,32 +337,53 @@ fn append_objects(
     Ok(())
 }
 
-fn find_base_object_index(object: &PackfileEntry, objects: &Vec<(PackfileEntry, usize)>) -> Option<usize> {
+fn find_base_object_index(
+    object: &PackfileEntry,
+    objects: &Vec<(PackfileEntry, usize)>,
+) -> Option<usize> {
     let toleration = 20;
     // si encuentra un obj con una diferencia del tamaño menor al 20% del tamaño del obj
-    if let Some(index) = objects.iter().position(|(obj, _)| (1 as usize).abs_diff(object.size/obj.size) * 100 < toleration) {
-        let mut long = 0;
-        let mut max_long = 0;
+    if let Some(index) = objects
+        .iter()
+        .position(|(obj, _)| (1 as usize).abs_diff(object.size / obj.size) * 100 < toleration)
+    {
+        let mut coincidences = 0;
         let candidate = &objects[index];
         let total_size = std::cmp::min(object.size, candidate.0.size);
-        for i in 0..total_size {
-            if object.content[i] == candidate.0.content[i] {
-                long += 1;
+
+        let mut offset = 0;
+        let mut i = 0;
+        while offset + i < total_size {
+            if object.content[offset + i] == candidate.0.content[i] {
+                coincidences += 1;
+                i += 1;
             } else {
-                if long > max_long {
-                    max_long = long;
+                // avanzo el offset hasta encontrar el primer byte igual
+                while object.content[offset] != candidate.0.content[i] {
+                    offset += 1;
                 }
-                long = 0;
             }
         }
-        // si la longitud de la secuencia de bytes iguales es mayor al 80% del tamaño del obj
-        if (1 - total_size / max_long) > (100 - toleration) {
+        // si la cantidad de coincidencias es mayor al 80% del tamaño del obj
+        if (1 - total_size / coincidences) > (100 - toleration) {
             return Some(index);
         }
     }
     None
 }
 
+fn append_delta_object(
+    packfile: &mut Vec<u8>,
+    base_object: &(PackfileEntry, usize),
+    object: &PackfileEntry,
+    git_dir: &str,
+) -> io::Result<()> {
+    // encodeo header con tamaño del objeto y el offset a moverse
+    let offset = packfile.len() - base_object.1;
+    // mientras los bytes del base sean iguales al obj, copio bytes
+    // cuando arrancan distintos,
+    Ok(())
+}
 /// Appends a single object to the given `packfile` vector.
 ///
 /// The `object` parameter is a tuple containing an `ObjectType` and the hash of the object.
@@ -373,11 +394,7 @@ fn find_base_object_index(object: &PackfileEntry, objects: &Vec<(PackfileEntry, 
 ///
 /// Returns an `io::Error` if there is an issue reading, compressing, or appending the object.
 ///
-fn append_object(
-    packfile: &mut Vec<u8>,
-    object: &PackfileEntry,
-    git_dir: &str,
-) -> io::Result<()> {
+fn append_object(packfile: &mut Vec<u8>, object: &PackfileEntry, git_dir: &str) -> io::Result<()> {
     let obj_size = object.size;
     let mut compressor = ZlibEncoder::new(Vec::<u8>::new(), Compression::default());
     compressor.write_all(&object.content)?;
