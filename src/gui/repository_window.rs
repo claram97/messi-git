@@ -186,6 +186,10 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "add-normal-tag",
         "remove-tag",
         "add-annotated-tag",
+        "trees-button",
+        "r-trees",
+        "d-trees",
+        "rt-trees",
         "show-fetch",
     ];
 
@@ -292,6 +296,26 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
     };
     match button_id {
+        "trees-button" => {
+            button.connect_clicked(move |_| {
+                handle_ls_trees();
+            });
+        }
+        "r-trees" => {
+            button.connect_clicked(move |_| {
+                handle_ls_trees_r();
+            });
+        }
+        "d-trees" => {
+            button.connect_clicked(move |_| {
+                handle_ls_trees_d();
+            });
+        }
+        "rt-trees" => {
+            button.connect_clicked(move |_| {
+                handle_ls_trees_rt();
+            });
+        }
         "list-tags" => {
             button.connect_clicked(move |_| {
                 handle_list_tags(&builder_clone);
@@ -1311,6 +1335,114 @@ fn handle_tag_add_normal() -> io::Result<()> {
         eprintln!("Error creating text entry window.");
     }
     Ok(())
+}
+fn handle_ls_trees() -> io::Result<()> {
+    let result = create_text_entry_window("Enter hash", move |hash| {
+        let resultado = obtain_text_from_ls_trees(&hash);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Success", &format!("Result for hash '{}': {}", hash, texto));
+            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Success", "Operation completed successfully");
+                }
+                _ => {
+                    show_message_dialog("Error", "Failed to perform operation.");
+                }
+            },
+        }
+    });
+
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+fn handle_ls_trees_r() -> io::Result<()> {
+    let result = create_text_entry_window("Enter hash", move |hash| {
+        let resultado = obtain_text_from_ls_trees_r(&hash);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Success", &format!("Result for hash '{}': {}", hash, texto));
+            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Success", "Operation completed successfully");
+                }
+                _ => {
+                    show_message_dialog("Error", "Failed to perform operation.");
+                }
+            },
+        }
+    });
+
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+fn handle_ls_trees_d() -> io::Result<()> {
+    let result = create_text_entry_window("Enter hash", move |hash| {
+        let resultado = obtain_text_from_ls_trees_d(&hash);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Success", &format!("Result for hash '{}': {}", hash, texto));
+            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Success", "Operation completed successfully");
+                }
+                _ => {
+                    show_message_dialog("Error", "Failed to perform operation.");
+                }
+            },
+        }
+    });
+
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+fn handle_ls_trees_rt() -> io::Result<()> {
+    let result = create_text_entry_window("Enter hash", move |hash| {
+        let resultado = obtain_text_from_ls_trees_rt(&hash);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Success", &format!("Result for hash '{}': {}", hash, texto));
+            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Success", "Operation completed successfully");
+                }
+                _ => {
+                    show_message_dialog("Error", "Failed to perform operation.");
+                }
+            },
+        }
+    });
+
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+fn obtain_text_from_ls_trees(hash: &str) -> Result<String, io::Error> {
+    Ok(format!("Placeholder result for hash: {}", hash))
+}
+fn obtain_text_from_ls_trees_r(hash: &str) -> Result<String, io::Error> {
+    Ok(format!("Placeholder result for hash: {}", hash))
+}
+fn obtain_text_from_ls_trees_d(hash: &str) -> Result<String, io::Error> {
+    Ok(format!("Placeholder result for hash: {}", hash))
+}
+fn obtain_text_from_ls_trees_rt(hash: &str) -> Result<String, io::Error> {
+    Ok(format!("Placeholder result for hash: {}", hash))
 }
 fn handle_tag_remove() -> io::Result<()> {
     let result = create_text_entry_window("Enter tag name", move |name| {
