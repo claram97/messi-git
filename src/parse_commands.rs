@@ -133,7 +133,7 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
         "push" => Some(GitCommand::Push),
         "branch" => Some(GitCommand::Branch),
         "ls-files" => Some(GitCommand::ListFiles),
-        "ls-trees" => Some(GitCommand::ListTrees),
+        "ls-tree" => Some(GitCommand::ListTrees),
         "check-ignore" => Some(GitCommand::CheckIgnore),
         "show-ref" => Some(GitCommand::ShowRef),
         "rebase" => Some(GitCommand::Rebase),
@@ -238,7 +238,7 @@ fn handle_ls_files(args: Vec<String>) {
 
 fn handle_ls_trees(args: Vec<String>) {
     if args.len() < 3 {
-        eprintln!("Usage: git ls-trees <tree-ish>");
+        eprintln!("Usage: git ls-tree <tree-ish>");
         return;
     }
 
@@ -267,7 +267,7 @@ fn handle_ls_trees(args: Vec<String>) {
                 eprintln!("{:?}", result);
             }
         } else {
-            eprintln!("Usage: git ls-trees <tree-ish>");
+            eprintln!("Usage: git ls-tree <tree-ish>");
         }
     } else if args.len() == 5 {
         if args[2] == "-r" && args[3] == "-t" {
@@ -276,10 +276,10 @@ fn handle_ls_trees(args: Vec<String>) {
                 eprintln!("{:?}", result);
             }
         } else {
-            eprintln!("Usage: git ls-trees <tree-ish>");
+            eprintln!("Usage: git ls-tree <tree-ish>");
         }
     } else {
-        eprintln!("Usage: git ls-trees <tree-ish>");
+        eprintln!("Usage: git ls-tree <tree-ish>");
     }
 
 }
