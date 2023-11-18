@@ -13,6 +13,7 @@ use std::str;
 //use crate::fetch::git_fetch_for_gui;
 use crate::config::Config;
 use crate::gui::main_window::add_to_open_windows;
+use crate::gui::style::create_text_entry_window2;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
 use crate::gui::style::create_text_entry_window;
@@ -891,7 +892,7 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
-pub fn obtain_text_from_remote_add(text: &str) -> Result<String, io::Error> {
+pub fn obtain_text_from_remote_add(name: &str, url: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -925,7 +926,7 @@ pub fn obtain_text_from_remote_add(text: &str) -> Result<String, io::Error> {
         }
     };
 
-    let line: Vec<&str> = text.split_whitespace().collect();
+    let line: Vec<&str> = vec!["add", name, url];
 
     match git_remote(&mut config, line, &mut io::stdout()) {
         Ok(_config) => {}
@@ -936,6 +937,7 @@ pub fn obtain_text_from_remote_add(text: &str) -> Result<String, io::Error> {
 
     Ok("Ok".to_string())
 }
+
 pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -970,7 +972,7 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
         }
     };
 
-    let line: Vec<&str> = text.split_whitespace().collect();
+    let line: Vec<&str> = vec!["remove", text];
 
     match git_remote(&mut config, line, &mut io::stdout()) {
         Ok(_config) => {}
@@ -981,6 +983,7 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
 
     Ok("Ok".to_string())
 }
+
 pub fn obtain_text_from_remote_set_url(text: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -1119,8 +1122,9 @@ pub fn obtain_text_from_remote_rename(text: &str) -> Result<String, io::Error> {
 }
 
 fn handle_remote_add() -> io::Result<()> {
-    let result = create_text_entry_window("Enter the path of the file", move |text| {
-        let resultado = obtain_text_from_remote_add(&text);
+    
+    let result = create_text_entry_window2("Enter repo name", "Enter repo URL", |name, url| {
+        let resultado = obtain_text_from_remote_add(&name , &url);
         match resultado {
             Ok(texto) => {
                 show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
@@ -1142,7 +1146,7 @@ fn handle_remote_add() -> io::Result<()> {
 }
 
 fn handle_remote_rm() -> io::Result<()> {
-    let result = create_text_entry_window("Enter the path of the file", move |text| {
+    let result = create_text_entry_window("Enter repository name", move |text| {
         let resultado = obtain_text_from_remote_rm(&text);
         match resultado {
             Ok(texto) => {
