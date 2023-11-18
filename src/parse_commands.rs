@@ -251,18 +251,18 @@ fn handle_ls_trees(args: Vec<String>) {
     };
 
     if args.len() == 3 {
-        let result = ls_tree::ls_tree_no_args(&args[2], &git_dir);
+        let result = ls_tree::ls_tree(&args[2], &git_dir, "");
         if result.is_err() {
             eprintln!("{:?}", result);
         }
     } else if args.len() == 4 {
         if args[2] == "-r" {
-            let result = ls_tree::ls_tree_recursive(&args[3], &git_dir);
+            let result = ls_tree::ls_tree(&args[3], &git_dir, "-r");
             if result.is_err() {
                 eprintln!("{:?}", result);
             }
         } else if args[2] == "-d" {
-            let result = ls_tree::ls_tree_subtrees(&args[3], &git_dir);
+            let result = ls_tree::ls_tree(&args[3], &git_dir, "-d");
             if result.is_err() {
                 eprintln!("{:?}", result);
             }
@@ -271,7 +271,7 @@ fn handle_ls_trees(args: Vec<String>) {
         }
     } else if args.len() == 5 {
         if args[2] == "-r" && args[3] == "-t" {
-            let result = ls_tree::ls_tree_recursive_and_subtrees(&args[4], &git_dir);
+            let result = ls_tree::ls_tree(&args[4], &git_dir, "-r-t");
             if result.is_err() {
                 eprintln!("{:?}", result);
             }
