@@ -299,22 +299,22 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "add-normal-tag" => {
             button.connect_clicked(move |_| {
-               
+                handle_tag_add_normal();
             });
         }
         "add-annotated-tag" => {
             button.connect_clicked(move |_| {
-               
+                handle_tag_add_annotated();
             });
         }
         "remove-tag" => {
             button.connect_clicked(move |_| {
-               
+                handle_tag_remove();
             });
         }
         "another-branch" => {
             button.connect_clicked(move |_| {
-                let _ =  handle_create_branch_from_branch_button();
+                let _ = handle_create_branch_from_branch_button();
             });
         }
         "remote" => {
@@ -334,7 +334,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "remote-set-url" => {
             button.connect_clicked(move |_| {
-                let _ =  handle_remote_set_url();
+                let _ = handle_remote_set_url();
             });
         }
         "remote-get-url" => {
@@ -349,12 +349,12 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "show-fetch" => {
             button.connect_clicked(move |_| {
-                 handle_fetch_button(&builder_clone);
+                handle_fetch_button(&builder_clone);
             });
         }
         "show-log-button" => {
             button.connect_clicked(move |_| {
-                  handle_show_log_button_click(&builder_clone);
+                handle_show_log_button_click(&builder_clone);
             });
         }
         "checkout1" => {
@@ -1036,6 +1036,9 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
 
     Ok("Ok".to_string())
 }
+pub fn obtain_text_from_tag_add_normal(tag_name: &str) -> Result<String, io::Error> {
+    Ok("Ok".to_string())
+}
 
 /// Sets the URL of a remote repository in the Git configuration.
 ///
@@ -1286,6 +1289,80 @@ fn handle_remote_rm() -> io::Result<()> {
         eprintln!("Error creating text entry window.");
     }
     Ok(())
+}
+fn handle_tag_add_normal() -> io::Result<()> {
+    let result = create_text_entry_window("Enter tag name", move |name| {
+        let resultado = obtain_text_from_tag_add_normal(&name);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Success", &format!("Tag '{}' added successfully", texto));
+            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Success", "Tag added successfully");
+                }
+                _ => {
+                    show_message_dialog("Error", "Failed to add tag.");
+                }
+            },
+        }
+    });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+fn handle_tag_remove() -> io::Result<()> {
+    let result = create_text_entry_window("Enter tag name", move |name| {
+        let resultado = obtain_text_from_tag_remove(&name);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
+            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Success", "Tag removed successfully");
+                }
+                _ => {
+                    show_message_dialog("Error", "Failed to remove tag.");
+                }
+            },
+        }
+    });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+pub fn obtain_text_from_tag_remove(name: &str) -> Result<String, io::Error> {
+    Ok("Ok".to_string())
+}
+
+fn handle_tag_add_annotated() -> io::Result<()> {
+    let result =
+        create_text_entry_window2("Enter tag name", "Enter tag message", |name, message| {
+            let resultado = obtain_text_from_tag_add_annotated(&name, &message);
+            match resultado {
+                Ok(texto) => {
+                    show_message_dialog("Success", &format!("Tag '{}' added successfully", texto));
+                }
+                Err(_err) => match _err.kind() {
+                    std::io::ErrorKind::UnexpectedEof => {
+                        show_message_dialog("Success", "Tag added successfully");
+                    }
+                    _ => {
+                        show_message_dialog("Error", "Failed to add tag.");
+                    }
+                },
+            }
+        });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+pub fn obtain_text_from_tag_add_annotated(name: &str, message: &str) -> Result<String, io::Error> {
+    Ok("Ok".to_string())
 }
 
 /// Handles setting the URL for a remote repository.
