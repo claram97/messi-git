@@ -317,6 +317,31 @@ impl Tree {
         Ok(())
     }
 
+    /// Lists all the subtrees in the tree.
+    /// It does not print the subtrees content, only its name and hash.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `output` - Anything that implements the Write interface, the result will be returned there
+    /// 
+    /// # Errors
+    /// 
+    /// This function will fail if there is any error during a file operation.
+    /// It will also fail if any of its subtrees is not found in the objects folder.
+    pub fn print_subtrees(&self, output: &mut impl Write) -> io::Result<()> {
+        let mut trees: Vec<(String, String, String, String)> = Vec::new();
+        for entry in self.directories.iter() {
+            let (hash, name) = entry.hash_tree();
+            trees.push((TREE_MODE_0.to_string(), "tree".to_string(), hash, name));
+        }
+        trees.sort_by(|a, b| a.3.cmp(&b.3));
+        for (mode, object_type, hash, name) in trees {
+            let string = format!("{} {} {}\t{}\n", mode, object_type, hash, name);
+            output.write(string.as_bytes())?;
+        }
+        Ok(())
+    }
+
     /// Lists all the blobs contained in the tree and its subtrees.
     /// Blobs will be listed in the following format:
     ///     mode type hash  name
@@ -337,6 +362,40 @@ impl Tree {
         Ok(())
     }
 
+    /// Lists all the blobs and subtrees in alphabetical order, when it finds a tree, it lists itself and then lists its content.
+    /// # Arguments
+    /// 
+    /// * `output` - Anything that implements the Write interface, the result will be returned there
+    /// * `git_dir` - The path to the git directory
+    /// * `parent` - The name of the parent directory, it is used to print the full path of the tree. Normally it should be an empty string.
+    /// 
+    /// # Errors
+    /// 
+    /// This function will fail if there is any error during a file operation.
+    pub fn print_tree_recursive(&self, output: &mut impl Write, git_dir: &str, parent: &str) -> io::Result<()> {
+        let mut blobs: Vec<(String, String, String, String)> = self.tree_blobs_formatted_pretty();
+        let mut trees = Vec::new();
+        for entry in self.directories.iter() {
+            let (hash, name) = entry.hash_tree();
+            trees.push((TREE_MODE_0.to_string(), "tree".to_string(), hash, name));
+        }
+        blobs.append(&mut trees);
+        blobs.sort_by(|a, b| a.3.cmp(&b.3));
+        for (mode, object_type, hash, name) in blobs {
+            let name = if parent.is_empty() {
+                name
+            } else {
+                parent.to_string() + "/" + &name
+            };
+            let string = format!("{} {} {}\t{}\n", mode, object_type, hash, name);
+            output.write(string.as_bytes())?;
+            if object_type == "tree" {
+                let tree = load_tree_from_file(&hash, git_dir)?;
+                tree.print_tree_recursive(output, git_dir, &name)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// Builds a tree from the index file.

@@ -7,8 +7,6 @@ use std::{
 use flate2::{write::ZlibEncoder, Compression};
 use sha1::{Digest, Sha1};
 
-use crate::tree_handler::Tree;
-
 /// Returns the sha1 hash of the given content.
 /// It does not add any type information to the content.
 /// Do not use for git objects search. Use hash_file_content instead !!!!!

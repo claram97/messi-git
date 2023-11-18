@@ -255,17 +255,31 @@ fn handle_ls_trees(args: Vec<String>) {
         if result.is_err() {
             eprintln!("{:?}", result);
         }
-    }
-
-    if args.len() == 4 {
+    } else if args.len() == 4 {
         if args[2] == "-r" {
             let result = ls_tree::ls_tree_recursive(&args[3], &git_dir);
+            if result.is_err() {
+                eprintln!("{:?}", result);
+            }
+        } else if args[2] == "-d" {
+            let result = ls_tree::ls_tree_subtrees(&args[3], &git_dir);
             if result.is_err() {
                 eprintln!("{:?}", result);
             }
         } else {
             eprintln!("Usage: git ls-trees <tree-ish>");
         }
+    } else if args.len() == 5 {
+        if args[2] == "-r" && args[3] == "-t" {
+            let result = ls_tree::ls_tree_recursive_and_subtrees(&args[4], &git_dir);
+            if result.is_err() {
+                eprintln!("{:?}", result);
+            }
+        } else {
+            eprintln!("Usage: git ls-trees <tree-ish>");
+        }
+    } else {
+        eprintln!("Usage: git ls-trees <tree-ish>");
     }
 
 }
