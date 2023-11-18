@@ -232,8 +232,12 @@ impl Tree {
             parent_dir.to_string() + "/" + &self.name
         };
         for file in &self.files {
-            let path = dir_path.to_string() + "/" + &file.0;
-            result.push((path, file.1.to_string()));
+            if dir_path.is_empty() {
+                result.push((file.0.to_string(), file.1.to_string()));
+            } else {
+                let path = dir_path.to_string() + "/" + &file.0;
+                result.push((path, file.1.to_string()));
+            }
         }
         for subdirs in &self.directories {
             let mut subdirs_vec = subdirs.squash_tree_into_vec(&dir_path);
@@ -261,6 +265,7 @@ impl Tree {
         Ok(index)
     }
 
+    /// Returns the hash of the tree and its name.
     fn hash_tree(&self) -> (String, String) {
         let mut subtrees: Vec<(String, String)> = Vec::new();
         for sub_dir in &self.directories {
@@ -285,7 +290,16 @@ impl Tree {
         (hash, self.name.clone())
     }
 
-
+    /// Lists all the blobs and subtrees listed in the tree.
+    /// It does not print the subtrees content, only its name and hash.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `output` - Anything that implements the Write interface, the result will be returned there
+    /// 
+    /// # Errors
+    /// 
+    /// This function will fail if there is any error during a file operation.
     pub fn print_tree(&self, output: &mut impl Write) -> io::Result<()> {
         let blobs = self.tree_blobs_formatted_pretty();
         let mut trees = Vec::new();
@@ -297,12 +311,23 @@ impl Tree {
         result.append(&mut trees);
         result.sort_by(|a, b| a.3.cmp(&b.3));
         for (mode, object_type, hash, name) in result {
-            let string = format!("{} {} {} {}\n", mode, object_type, hash, name);
+            let string = format!("{} {} {}\t{}\n", mode, object_type, hash, name);
             output.write(string.as_bytes())?;
         }
         Ok(())
     }
 
+    /// Lists all the blobs contained in the tree and its subtrees.
+    /// Blobs will be listed in the following format:
+    ///     mode type hash  name
+    /// 
+    /// # Arguments
+    /// 
+    /// * `output` - Anything that implements the Write interface, the result will be returned there
+    /// 
+    /// # Errors
+    /// 
+    /// This function will fail if any of its subtrees is not found in the objects folder or if there is any error during a file operation
     pub fn print_tree_recursive_no_trees(&self, output: &mut impl Write) -> io::Result<()> {
         let paths = self.squash_tree_into_vec("");
         for (name, hash) in paths {

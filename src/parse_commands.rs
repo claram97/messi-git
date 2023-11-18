@@ -251,12 +251,18 @@ fn handle_ls_trees(args: Vec<String>) {
     };
 
     if args.len() == 3 {
-        ls_tree::ls_tree_no_args(&args[2], &git_dir);
+        let result = ls_tree::ls_tree_no_args(&args[2], &git_dir);
+        if result.is_err() {
+            eprintln!("{:?}", result);
+        }
     }
 
     if args.len() == 4 {
         if args[2] == "-r" {
-            ls_tree::ls_tree_recursive(&args[3], &git_dir);
+            let result = ls_tree::ls_tree_recursive(&args[3], &git_dir);
+            if result.is_err() {
+                eprintln!("{:?}", result);
+            }
         } else {
             eprintln!("Usage: git ls-trees <tree-ish>");
         }
