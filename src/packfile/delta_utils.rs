@@ -100,3 +100,18 @@ pub fn read_size_encoding<R: Read>(stream: &mut R) -> io::Result<usize> {
         length += 7;
     }
 }
+
+pub fn encode_size(n: usize) -> Vec<u8> {
+    let mut n = n;
+    let mut encoded_size = Vec::new();
+    while n > 0 {
+        let m = (n as u8) & 0x7f;
+        n >>= 7;
+        if n > 0 {
+            encoded_size.push(0x80 | m)
+        } else {
+            encoded_size.push(m)
+        }
+    }
+    return encoded_size;
+}

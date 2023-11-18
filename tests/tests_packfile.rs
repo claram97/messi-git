@@ -1,6 +1,6 @@
-use std::{io, fs, str::from_utf8};
+use std::{io, fs, str::from_utf8, hash::Hash, collections::HashSet};
 
-use messi::packfile::{self, entry::PackfileEntry};
+use messi::{packfile::{self, entry::PackfileEntry, handler::create_packfile_from_set}, server_utils};
 
 #[test]
 fn test_ofs_delta() -> io::Result<()> {
@@ -30,5 +30,14 @@ fn test_load_object() -> io::Result<()> {
     let git_dir = "tests/packfiles/.mgit";
     let entry = PackfileEntry::from_hash(hash, git_dir)?;
     assert!(from_utf8(&entry.content).is_ok());
+    Ok(())
+}
+
+#[test]
+fn test_create_deltas() -> io::Result<()> {
+    let haves = HashSet::new();
+    let git_dir = "tests/packfiles/.mgit";
+    let missing = server_utils::get_missing_objects_from("86135720c1283d83f2744781a915aba3d74da37b", &haves, git_dir)?;
+    create_packfile_from_set(missing, git_dir)?;
     Ok(())
 }

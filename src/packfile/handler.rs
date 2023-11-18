@@ -266,6 +266,7 @@ pub fn create_packfile_from_set(
     objects: HashSet<(ObjectType, String)>,
     git_dir: &str,
 ) -> io::Result<Vec<u8>> {
+    dbg!("Creating packfile");
     let mut packfile = vec![];
     packfile.extend(b"PACK");
     let version: [u8; 4] = [0, 0, 0, 2];
@@ -323,10 +324,13 @@ fn append_objects(
         let offset = packfile.len();
 
         if let Some(index) = find_base_object_index(&entry, &objects_in_packfile) {
+            dbg!("Base object found");
+            panic!("Not implemented");
             let base_obj = &objects_in_packfile[index];
             append_delta_object(packfile, base_obj, &entry, git_dir)?;
         } else {
-            append_object(packfile, &entry, git_dir)?
+            dbg!("Base object not found");
+            append_object(packfile, &entry, git_dir)?;
         }
         objects_in_packfile.push((entry, offset)); // initial position of the object in the packfile
     }
@@ -334,6 +338,7 @@ fn append_objects(
     hasher.update(&packfile);
     let checksum = hasher.finalize();
     packfile.extend(checksum);
+    dbg!(packfile.len());
     Ok(())
 }
 
@@ -342,34 +347,49 @@ fn find_base_object_index(
     objects: &Vec<(PackfileEntry, usize)>,
 ) -> Option<usize> {
     let toleration = 20;
+    // usar LCS para encontrar la subsecuencia mas larga
+    // si la subsecuencia mas larga es mayor al 80% del tamaño del obj
+    // lo retorno como candidato
+
     // si encuentra un obj con una diferencia del tamaño menor al 20% del tamaño del obj
     if let Some(index) = objects
         .iter()
         .position(|(obj, _)| (1 as usize).abs_diff(object.size / obj.size) * 100 < toleration)
     {
-        let mut coincidences = 0;
         let candidate = &objects[index];
-        let total_size = std::cmp::min(object.size, candidate.0.size);
-
-        let mut offset = 0;
-        let mut i = 0;
-        while offset + i < total_size {
-            if object.content[offset + i] == candidate.0.content[i] {
-                coincidences += 1;
-                i += 1;
-            } else {
-                // avanzo el offset hasta encontrar el primer byte igual
-                while object.content[offset] != candidate.0.content[i] {
-                    offset += 1;
-                }
-            }
-        }
+        let lcs = lcs_bytes(
+            &object.content,
+            &candidate.0.content
+        );
+        let min_size = std::cmp::min(object.size, candidate.0.size);
+        dbg!(object.size, candidate.0.size, lcs);
         // si la cantidad de coincidencias es mayor al 80% del tamaño del obj
-        if (1 - total_size / coincidences) > (100 - toleration) {
+        if (lcs / min_size) * 100 > (100 - toleration) {
             return Some(index);
         }
     }
     None
+}
+
+fn lcs_bytes(content_1: &[u8], content_2: &[u8]) -> usize {
+    let n = content_1.len();
+    let m = content_2.len();
+
+    let mut prev = vec![0; m + 1];
+    let mut cur = vec![0; m + 1];
+
+    for idx1 in 1..=n {
+        for idx2 in 1..=m {
+            if content_1[idx1 - 1] == content_2[idx2 - 1] {
+                cur[idx2] = 1 + prev[idx2 - 1];
+            } else {
+                cur[idx2] = cur[idx2 - 1].max(prev[idx2]);
+            }
+        }
+        prev.copy_from_slice(&cur);
+    }
+
+    cur[m]
 }
 
 fn append_delta_object(
@@ -378,10 +398,15 @@ fn append_delta_object(
     object: &PackfileEntry,
     git_dir: &str,
 ) -> io::Result<()> {
-    // encodeo header con tamaño del objeto y el offset a moverse
+    
+    let encoded_header = object_header(object.obj_type, object.size);
+    packfile.extend(encoded_header);
     let offset = packfile.len() - base_object.1;
-    // mientras los bytes del base sean iguales al obj, copio bytes
-    // cuando arrancan distintos,
+    // escribo el offset encodeado
+
+    // escribo los comandos necesarios para formar el nuevo obj a partir del base
+    // Command::Copy(offset, size)
+    // Command::Data(Vec<u8>)
     Ok(())
 }
 /// Appends a single object to the given `packfile` vector.
@@ -396,12 +421,19 @@ fn append_delta_object(
 ///
 fn append_object(packfile: &mut Vec<u8>, object: &PackfileEntry, git_dir: &str) -> io::Result<()> {
     let obj_size = object.size;
+    let encoded_header = object_header(object.obj_type, obj_size);
+    packfile.extend(encoded_header);
+
     let mut compressor = ZlibEncoder::new(Vec::<u8>::new(), Compression::default());
     compressor.write_all(&object.content)?;
     let compressed_content = compressor.finish()?;
+    packfile.extend(compressed_content);
+    Ok(())
+}
 
+fn object_header(obj_type: ObjectType, obj_size: usize) -> Vec<u8> {
     let mut encoded_header: Vec<u8> = Vec::new();
-    let mut c = (object.obj_type.as_byte() << 4) | ((obj_size & 0x0F) as u8);
+    let mut c = (obj_type.as_byte() << 4) | ((obj_size & 0x0F) as u8);
     let mut size = obj_size >> 4;
     while size > 0 {
         encoded_header.push(c | 0x80);
@@ -410,8 +442,5 @@ fn append_object(packfile: &mut Vec<u8>, object: &PackfileEntry, git_dir: &str) 
         size >>= 7;
     }
     encoded_header.push(c);
-
-    packfile.extend(encoded_header);
-    packfile.extend(compressed_content);
-    Ok(())
+    return encoded_header;
 }
