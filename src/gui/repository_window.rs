@@ -182,6 +182,10 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "remote-get-url",
         "remote-rename",
         "remote",
+        "list-tags",
+        "add-normal-tag",
+        "remove-tag",
+        "add-annotated-tag",
         "show-fetch",
     ];
 
@@ -288,6 +292,26 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
     };
     match button_id {
+        "list-tags" => {
+            button.connect_clicked(move |_| {
+                handle_list_tags(&builder_clone);
+            });
+        }
+        "add-normal-tag" => {
+            button.connect_clicked(move |_| {
+               
+            });
+        }
+        "add-annotated-tag" => {
+            button.connect_clicked(move |_| {
+               
+            });
+        }
+        "remove-tag" => {
+            button.connect_clicked(move |_| {
+               
+            });
+        }
         "another-branch" => {
             button.connect_clicked(move |_| {
                 let _ =  handle_create_branch_from_branch_button();
@@ -1453,6 +1477,73 @@ fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
             "Error obtaining TextView",
         ));
     }
+
+    Ok(())
+}
+fn handle_list_tags(builder: &gtk::Builder) -> io::Result<()> {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error obtaining actual directory: {:?}", err);
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining actual directory",
+            ));
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error obtaining git dir");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining git dir",
+            ));
+        }
+    };
+
+    let mut config = match Config::load(&git_dir) {
+        Ok(config) => config,
+        Err(_e) => {
+            eprintln!("Error with config file.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error with config file",
+            ));
+        }
+    };
+
+    // let mut output: Vec<u8> = vec![];
+    // match git_tag(&mut config, vec!["tag", "-l"], &mut output) {
+    //     Ok(_config) => {}
+    //     Err(_e) => {
+    //         eprintln!("Error in git tag.");
+    //     }
+    // }
+
+    // let tags_text_view: gtk::TextView = builder.get_object("tags-text").unwrap();
+
+    // let text = match str::from_utf8(&output) {
+    //     Ok(s) => s.to_string(),
+    //     Err(_) => {
+    //         eprintln!("Error turning result into string.");
+    //         return Err(io::Error::new(
+    //             io::ErrorKind::Other,
+    //             "Error turning result into string",
+    //         ));
+    //     }
+    // };
+
+    // if let Some(buffer) = tags_text_view.get_buffer() {
+    //     buffer.set_text(&text);
+    // } else {
+    //     eprintln!("Error obtaining TextView.");
+    //     return Err(io::Error::new(
+    //         io::ErrorKind::Other,
+    //         "Error obtaining TextView",
+    //     ));
+    // }
 
     Ok(())
 }
