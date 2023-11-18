@@ -349,11 +349,11 @@ pub fn create_text_entry_window2(
     entry_window.add(&main_box);
 
     let entry1 = gtk::Entry::new();
-    entry1.set_text("Repository Name");
+    entry1.set_text(message1);
     main_box.add(&entry1);
 
     let entry2 = gtk::Entry::new();
-    entry2.set_text("Repository URL");
+    entry2.set_text(message2);
     main_box.add(&entry2);
 
     let ok_button = gtk::Button::with_label("OK");

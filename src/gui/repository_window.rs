@@ -984,7 +984,7 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
     Ok("Ok".to_string())
 }
 
-pub fn obtain_text_from_remote_set_url(text: &str) -> Result<String, io::Error> {
+pub fn obtain_text_from_remote_set_url(name: &str, url: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -1018,7 +1018,7 @@ pub fn obtain_text_from_remote_set_url(text: &str) -> Result<String, io::Error> 
         }
     };
 
-    let line: Vec<&str> = text.split_whitespace().collect();
+    let line: Vec<&str> = vec!["set-url", name, url];
 
     match git_remote(&mut config, line, &mut io::stdout()) {
         Ok(_config) => {}
@@ -1029,6 +1029,7 @@ pub fn obtain_text_from_remote_set_url(text: &str) -> Result<String, io::Error> 
 
     Ok("Ok".to_string())
 }
+
 pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -1063,7 +1064,7 @@ pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> 
         }
     };
 
-    let line: Vec<&str> = text.split_whitespace().collect();
+    let line: Vec<&str> = vec!["get-url", text];
 
     match git_remote(&mut config, line, &mut io::stdout()) {
         Ok(_config) => {}
@@ -1075,7 +1076,7 @@ pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> 
     Ok("Ok".to_string())
 }
 
-pub fn obtain_text_from_remote_rename(text: &str) -> Result<String, io::Error> {
+pub fn obtain_text_from_remote_rename(old_name: &str, new_name: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -1109,7 +1110,7 @@ pub fn obtain_text_from_remote_rename(text: &str) -> Result<String, io::Error> {
         }
     };
 
-    let line: Vec<&str> = text.split_whitespace().collect();
+    let line: Vec<&str> = vec!["rename", old_name, new_name];
 
     match git_remote(&mut config, line, &mut io::stdout()) {
         Ok(_config) => {}
@@ -1168,18 +1169,18 @@ fn handle_remote_rm() -> io::Result<()> {
     Ok(())
 }
 fn handle_remote_set_url() -> io::Result<()> {
-    let result = create_text_entry_window("Enter the path of the file", move |text| {
-        let resultado = obtain_text_from_remote_set_url(&text);
+    let result = create_text_entry_window2("Enter repo name", "Enter new URL", |name, url| {
+        let resultado = obtain_text_from_remote_set_url( &name, &url);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+                show_message_dialog("Success", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => match _err.kind() {
                 std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Éxito", "Changed correctly to branch ");
+                    show_message_dialog("Success", "Changed correctly to branch ");
                 }
                 _ => {
-                    show_message_dialog("Error", "La rama indicada no existe.");
+                    show_message_dialog("Error", "The specified branch does not exist.");
                 }
             },
         }
@@ -1189,8 +1190,9 @@ fn handle_remote_set_url() -> io::Result<()> {
     }
     Ok(())
 }
+
 fn handle_remote_get_url() -> io::Result<()> {
-    let result = create_text_entry_window("Enter the path of the file", move |text| {
+    let result = create_text_entry_window("Enter the name of the repository", move |text| {
         let resultado = obtain_text_from_remote_get_url(&text);
         match resultado {
             Ok(texto) => {
@@ -1213,18 +1215,18 @@ fn handle_remote_get_url() -> io::Result<()> {
 }
 
 fn handle_remote_rename() -> io::Result<()> {
-    let result = create_text_entry_window("Enter the path of the file", move |text| {
-        let resultado = obtain_text_from_remote_rename(&text);
+    let result = create_text_entry_window2("Enter old repo name", "Enter new repo name", |old_name, new_name| {
+        let resultado = obtain_text_from_remote_rename(&old_name, &new_name);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+                show_message_dialog("Success", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => match _err.kind() {
                 std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Éxito", "Changed correctly to branch ");
+                    show_message_dialog("Success", "Changed correctly to branch ");
                 }
                 _ => {
-                    show_message_dialog("Error", "La rama indicada no existe.");
+                    show_message_dialog("Error", "The specified branch does not exist.");
                 }
             },
         }
@@ -1234,7 +1236,6 @@ fn handle_remote_rename() -> io::Result<()> {
     }
     Ok(())
 }
-
 fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
