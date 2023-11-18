@@ -333,6 +333,23 @@ pub fn create_text_entry_window(
     Ok(())
 }
 
+/// Creates a text entry window with two input fields.
+///
+/// This function creates a GTK window with two text entry fields and an "OK" button.
+/// It takes two messages as input to set as default text in each entry field. When the
+/// user clicks "OK," the provided closure `on_text_entered` is called with the entered
+/// text from both fields.
+///
+/// # Arguments
+///
+/// * `message1` - The initial text for the first entry field.
+/// * `message2` - The initial text for the second entry field.
+/// * `on_text_entered` - A closure that will be called with the entered text from both fields.
+///
+/// # Returns
+///
+/// An `io::Result` indicating whether the operation was successful or resulted in an error.
+///
 pub fn create_text_entry_window2(
     message1: &str,
     message2: &str,

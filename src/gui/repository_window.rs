@@ -13,10 +13,10 @@ use std::str;
 //use crate::fetch::git_fetch_for_gui;
 use crate::config::Config;
 use crate::gui::main_window::add_to_open_windows;
-use crate::gui::style::create_text_entry_window2;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
 use crate::gui::style::create_text_entry_window;
+use crate::gui::style::create_text_entry_window2;
 use crate::gui::style::filter_color_code;
 use crate::gui::style::get_button;
 use crate::gui::style::get_entry;
@@ -290,47 +290,47 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     match button_id {
         "another-branch" => {
             button.connect_clicked(move |_| {
-                handle_create_branch_from_branch_button();
+                let _ =  handle_create_branch_from_branch_button();
             });
         }
         "remote" => {
             button.connect_clicked(move |_| {
-                handle_remote(&builder_clone);
+                let _ = handle_remote(&builder_clone);
             });
         }
         "remote-add" => {
             button.connect_clicked(move |_| {
-                handle_remote_add();
+                let _ = handle_remote_add();
             });
         }
         "remote-rm" => {
             button.connect_clicked(move |_| {
-                handle_remote_rm();
+                let _ = handle_remote_rm();
             });
         }
         "remote-set-url" => {
             button.connect_clicked(move |_| {
-                handle_remote_set_url();
+                let _ =  handle_remote_set_url();
             });
         }
         "remote-get-url" => {
             button.connect_clicked(move |_| {
-                handle_remote_get_url();
+                let _ = handle_remote_get_url();
             });
         }
         "remote-rename" => {
             button.connect_clicked(move |_| {
-                handle_remote_rename();
+                let _ = handle_remote_rename();
             });
         }
         "show-fetch" => {
             button.connect_clicked(move |_| {
-                handle_fetch_button(&builder_clone);
+                 handle_fetch_button(&builder_clone);
             });
         }
         "show-log-button" => {
             button.connect_clicked(move |_| {
-                handle_show_log_button_click(&builder_clone);
+                  handle_show_log_button_click(&builder_clone);
             });
         }
         "checkout1" => {
@@ -892,14 +892,29 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Adds a new remote to the Git configuration.
+///
+/// This function adds a new remote to the Git configuration using the provided
+/// name and URL. It interacts with the `git_remote` function to perform the
+/// necessary Git commands.
+///
+/// # Arguments
+///
+/// * `name` - The name of the remote to be added.
+/// * `url` - The URL of the remote repository.
+///
+/// # Returns
+///
+/// A `Result` indicating whether the operation was successful or resulted in an error.
+///
 pub fn obtain_text_from_remote_add(name: &str, url: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            eprintln!("Error obtaining actual directory: {:?}", err);
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al obtener el directorio actual",
+                "Error obtaining actual directory",
             ));
         }
     };
@@ -907,10 +922,10 @@ pub fn obtain_text_from_remote_add(name: &str, url: &str) -> Result<String, io::
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
         Some(dir) => dir,
         None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error obtaining git dir");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al obtener el git dir",
+                "Error obtaining git dir",
             ));
         }
     };
@@ -918,10 +933,10 @@ pub fn obtain_text_from_remote_add(name: &str, url: &str) -> Result<String, io::
     let mut config = match Config::load(&git_dir) {
         Ok(config) => config,
         Err(_e) => {
-            eprintln!("Error al cargar el config file.");
+            eprintln!("Error with config file.");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al cargar el config file",
+                "Error with config file",
             ));
         }
     };
@@ -931,21 +946,35 @@ pub fn obtain_text_from_remote_add(name: &str, url: &str) -> Result<String, io::
     match git_remote(&mut config, line, &mut io::stdout()) {
         Ok(_config) => {}
         Err(_e) => {
-            eprintln!("Error en git remote.");
+            eprintln!("Error in git remote.");
         }
     }
 
     Ok("Ok".to_string())
 }
 
+/// Removes a remote from the Git configuration.
+///
+/// This function removes a remote from the Git configuration using the provided
+/// remote name. It interacts with the `git_remote` function to perform the
+/// necessary Git commands.
+///
+/// # Arguments
+///
+/// * `text` - The name of the remote to be removed.
+///
+/// # Returns
+///
+/// A `Result` indicating whether the operation was successful or resulted in an error.
+///
 pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            eprintln!("Error obtaining actual directory: {:?}", err);
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al obtener el directorio actual",
+                "Error obtaining actual directory",
             ));
         }
     };
@@ -953,10 +982,10 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
         Some(dir) => dir,
         None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error obtaining git dir");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al obtener el git dir",
+                "Error obtaining git dir",
             ));
         }
     };
@@ -964,10 +993,10 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
     let mut config = match Config::load(&git_dir) {
         Ok(config) => config,
         Err(_e) => {
-            eprintln!("Error al cargar el config file.");
+            eprintln!("Error with config file.");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al cargar el config file",
+                "Error with config file",
             ));
         }
     };
@@ -977,21 +1006,36 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
     match git_remote(&mut config, line, &mut io::stdout()) {
         Ok(_config) => {}
         Err(_e) => {
-            eprintln!("Error en git remote.");
+            eprintln!("Error in git remote.");
         }
     }
 
     Ok("Ok".to_string())
 }
 
+/// Sets the URL of a remote repository in the Git configuration.
+///
+/// This function sets the URL of a remote repository in the Git configuration using the
+/// provided remote name, and the new URL. It interacts with the `git_remote` function to
+/// perform the necessary Git commands.
+///
+/// # Arguments
+///
+/// * `name` - The name of the remote repository.
+/// * `url` - The new URL to set for the remote repository.
+///
+/// # Returns
+///
+/// A `Result` indicating whether the operation was successful or resulted in an error.
+///
 pub fn obtain_text_from_remote_set_url(name: &str, url: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            eprintln!("Error obtaining actual directory: {:?}", err);
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al obtener el directorio actual",
+                "Error obtaining actual directory",
             ));
         }
     };
@@ -999,10 +1043,10 @@ pub fn obtain_text_from_remote_set_url(name: &str, url: &str) -> Result<String, 
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
         Some(dir) => dir,
         None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error obtaining git dir");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al obtener el git dir",
+                "Error obtaining git dir",
             ));
         }
     };
@@ -1010,10 +1054,10 @@ pub fn obtain_text_from_remote_set_url(name: &str, url: &str) -> Result<String, 
     let mut config = match Config::load(&git_dir) {
         Ok(config) => config,
         Err(_e) => {
-            eprintln!("Error al cargar el config file.");
+            eprintln!("Error with config file.");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al cargar el config file",
+                "Error with config file",
             ));
         }
     };
@@ -1023,21 +1067,36 @@ pub fn obtain_text_from_remote_set_url(name: &str, url: &str) -> Result<String, 
     match git_remote(&mut config, line, &mut io::stdout()) {
         Ok(_config) => {}
         Err(_e) => {
-            eprintln!("Error en git remote.");
+            eprintln!("Error in git remote.");
         }
     }
 
     Ok("Ok".to_string())
 }
 
+/// Obtains the URL of a remote repository from the Git configuration.
+///
+/// This function retrieves the URL of a remote repository from the Git configuration using the
+/// provided remote name. It interacts with the `git_remote` function to perform the necessary
+/// Git commands.
+///
+/// # Arguments
+///
+/// * `text` - The name of the remote repository.
+///
+/// # Returns
+///
+/// A `Result` containing the URL of the remote repository if the operation was successful,
+/// otherwise an error indicating the failure.
+///
 pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            eprintln!("Error obtaining actual directory: {:?}", err);
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al obtener el directorio actual",
+                "Error obtaining actual directory",
             ));
         }
     };
@@ -1045,10 +1104,10 @@ pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> 
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
         Some(dir) => dir,
         None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error obtaining git dir");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al obtener el git dir",
+                "Error obtaining git dir",
             ));
         }
     };
@@ -1056,10 +1115,10 @@ pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> 
     let mut config = match Config::load(&git_dir) {
         Ok(config) => config,
         Err(_e) => {
-            eprintln!("Error al cargar el config file.");
+            eprintln!("Error with config file.");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al cargar el config file",
+                "Error with config file",
             ));
         }
     };
@@ -1069,21 +1128,36 @@ pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> 
     match git_remote(&mut config, line, &mut io::stdout()) {
         Ok(_config) => {}
         Err(_e) => {
-            eprintln!("Error en git remote.");
+            eprintln!("Error in git remote.");
         }
     }
 
     Ok("Ok".to_string())
 }
 
+/// Renames a remote repository in the Git configuration.
+///
+/// This function renames a remote repository in the Git configuration from the old name to the new
+/// name. It interacts with the `git_remote` function to perform the necessary Git commands.
+///
+/// # Arguments
+///
+/// * `old_name` - The current name of the remote repository.
+/// * `new_name` - The new name to be assigned to the remote repository.
+///
+/// # Returns
+///
+/// A `Result` containing a success message if the operation was successful, otherwise an error
+/// indicating the failure.
+///
 pub fn obtain_text_from_remote_rename(old_name: &str, new_name: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            eprintln!("Error obtaining actual directory: {:?}", err);
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al obtener el directorio actual",
+                "Error obtaining actual directory",
             ));
         }
     };
@@ -1091,10 +1165,10 @@ pub fn obtain_text_from_remote_rename(old_name: &str, new_name: &str) -> Result<
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
         Some(dir) => dir,
         None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error obtaining git dir");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al obtener el git dir",
+                "Error obtaining git dir",
             ));
         }
     };
@@ -1102,10 +1176,10 @@ pub fn obtain_text_from_remote_rename(old_name: &str, new_name: &str) -> Result<
     let mut config = match Config::load(&git_dir) {
         Ok(config) => config,
         Err(_e) => {
-            eprintln!("Error al cargar el config file.");
+            eprintln!("Error with config file.");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al cargar el config file",
+                "Error with config file",
             ));
         }
     };
@@ -1115,17 +1189,27 @@ pub fn obtain_text_from_remote_rename(old_name: &str, new_name: &str) -> Result<
     match git_remote(&mut config, line, &mut io::stdout()) {
         Ok(_config) => {}
         Err(_e) => {
-            eprintln!("Error en git remote.");
+            eprintln!("Error in git remote.");
         }
     }
 
     Ok("Ok".to_string())
 }
 
+/// Handles the addition of a remote repository.
+///
+/// This function displays a text entry window with fields for the name and URL of a remote repository.
+/// It then calls `obtain_text_from_remote_add` to perform the necessary Git commands based on the
+/// provided name and URL.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, a message is displayed; otherwise, an
+/// error message is shown.
+///
 fn handle_remote_add() -> io::Result<()> {
-    
     let result = create_text_entry_window2("Enter repo name", "Enter repo URL", |name, url| {
-        let resultado = obtain_text_from_remote_add(&name , &url);
+        let resultado = obtain_text_from_remote_add(&name, &url);
         match resultado {
             Ok(texto) => {
                 show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
@@ -1146,6 +1230,17 @@ fn handle_remote_add() -> io::Result<()> {
     Ok(())
 }
 
+/// Handles the removal of a remote repository.
+///
+/// This function displays a text entry window for the user to enter the name of the remote repository
+/// to be removed. It then calls `obtain_text_from_remote_rm` to perform the necessary Git commands
+/// based on the provided repository name.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, a message is displayed; otherwise, an
+/// error message is shown.
+///
 fn handle_remote_rm() -> io::Result<()> {
     let result = create_text_entry_window("Enter repository name", move |text| {
         let resultado = obtain_text_from_remote_rm(&text);
@@ -1168,12 +1263,27 @@ fn handle_remote_rm() -> io::Result<()> {
     }
     Ok(())
 }
+
+/// Handles setting the URL for a remote repository.
+///
+/// This function displays a text entry window for the user to enter the name of the remote repository
+/// and the new URL. It then calls `obtain_text_from_remote_set_url` to perform the necessary Git
+/// commands based on the provided repository name and URL.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, a message is displayed; otherwise, an
+/// error message is shown.
+///
 fn handle_remote_set_url() -> io::Result<()> {
     let result = create_text_entry_window2("Enter repo name", "Enter new URL", |name, url| {
-        let resultado = obtain_text_from_remote_set_url( &name, &url);
+        let resultado = obtain_text_from_remote_set_url(&name, &url);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Success", &format!("Changed correctly to branch '{}'", texto));
+                show_message_dialog(
+                    "Success",
+                    &format!("Changed correctly to branch '{}'", texto),
+                );
             }
             Err(_err) => match _err.kind() {
                 std::io::ErrorKind::UnexpectedEof => {
@@ -1191,6 +1301,17 @@ fn handle_remote_set_url() -> io::Result<()> {
     Ok(())
 }
 
+/// Handles getting the URL for a remote repository.
+///
+/// This function displays a text entry window for the user to enter the name of the remote repository.
+/// It then calls `obtain_text_from_remote_get_url` to perform the necessary Git commands based on the
+/// provided repository name and obtain the URL.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, a message is displayed with the obtained URL;
+/// otherwise, an error message is shown.
+///
 fn handle_remote_get_url() -> io::Result<()> {
     let result = create_text_entry_window("Enter the name of the repository", move |text| {
         let resultado = obtain_text_from_remote_get_url(&text);
@@ -1214,36 +1335,68 @@ fn handle_remote_get_url() -> io::Result<()> {
     Ok(())
 }
 
+/// Handles renaming a remote repository.
+///
+/// This function displays a text entry window for the user to enter the old and new names of the remote repository.
+/// It then calls `obtain_text_from_remote_rename` to perform the necessary Git commands based on the provided
+/// old and new repository names and renames the remote repository.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, a message is displayed with the result;
+/// otherwise, an error message is shown.
+///
 fn handle_remote_rename() -> io::Result<()> {
-    let result = create_text_entry_window2("Enter old repo name", "Enter new repo name", |old_name, new_name| {
-        let resultado = obtain_text_from_remote_rename(&old_name, &new_name);
-        match resultado {
-            Ok(texto) => {
-                show_message_dialog("Success", &format!("Changed correctly to branch '{}'", texto));
+    let result = create_text_entry_window2(
+        "Enter old repo name",
+        "Enter new repo name",
+        |old_name, new_name| {
+            let resultado = obtain_text_from_remote_rename(&old_name, &new_name);
+            match resultado {
+                Ok(texto) => {
+                    show_message_dialog(
+                        "Success",
+                        &format!("Changed correctly to branch '{}'", texto),
+                    );
+                }
+                Err(_err) => match _err.kind() {
+                    std::io::ErrorKind::UnexpectedEof => {
+                        show_message_dialog("Success", "Changed correctly to branch ");
+                    }
+                    _ => {
+                        show_message_dialog("Error", "The specified branch does not exist.");
+                    }
+                },
             }
-            Err(_err) => match _err.kind() {
-                std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Success", "Changed correctly to branch ");
-                }
-                _ => {
-                    show_message_dialog("Error", "The specified branch does not exist.");
-                }
-            },
-        }
-    });
+        },
+    );
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
     Ok(())
 }
+
+/// Handles the display of remote repositories in a TextView.
+///
+/// This function retrieves the list of remote repositories using Git commands and displays the result in a TextView.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to the GTK builder containing the TextView widget.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, the list of remote repositories is displayed in the TextView;
+/// otherwise, an error message is shown.
+///
 fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            eprintln!("Error obtaining actual directory: {:?}", err);
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al obtener el directorio actual",
+                "Error obtaining actual directory",
             ));
         }
     };
@@ -1251,10 +1404,10 @@ fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
         Some(dir) => dir,
         None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error obtaining git dir");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al obtener el git dir",
+                "Error obtaining git dir",
             ));
         }
     };
@@ -1262,10 +1415,10 @@ fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
     let mut config = match Config::load(&git_dir) {
         Ok(config) => config,
         Err(_e) => {
-            eprintln!("Error al cargar el config file.");
+            eprintln!("Error with config file.");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al cargar el config file",
+                "Error with config file",
             ));
         }
     };
@@ -1274,7 +1427,7 @@ fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
     match git_remote(&mut config, vec!["remote"], &mut output) {
         Ok(_config) => {}
         Err(_e) => {
-            eprintln!("Error en git remote.");
+            eprintln!("Error in git remote.");
         }
     }
 
@@ -1283,22 +1436,21 @@ fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
     let text = match str::from_utf8(&output) {
         Ok(s) => s.to_string(),
         Err(_) => {
-            eprintln!("Error al convertir el resultado a una cadena.");
+            eprintln!("Error turning result into string.");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error al convertir el resultado a una cadena",
+                "Error turning result into string",
             ));
         }
     };
-    println!("{}", text);
 
     if let Some(buffer) = remote_text_view.get_buffer() {
         buffer.set_text(&text);
     } else {
-        eprintln!("Error al obtener el buffer del TextView.");
+        eprintln!("Error obtaining TextView.");
         return Err(io::Error::new(
             io::ErrorKind::Other,
-            "Error al obtener el buffer del TextView",
+            "Error obtaining TextView",
         ));
     }
 
@@ -1341,6 +1493,18 @@ fn handle_checkout_branch_window() -> io::Result<()> {
     Ok(())
 }
 
+/// Obtains the ScrolledWindow widget for displaying log text.
+///
+/// This function retrieves the ScrolledWindow widget from the GTK builder based on its identifier.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to the GTK builder containing the ScrolledWindow widget.
+///
+/// # Returns
+///
+/// An `Option` containing the ScrolledWindow widget if found; otherwise, `None`.
+///
 fn obtain_log_text_scrolled_window(builder: &gtk::Builder) -> Option<gtk::ScrolledWindow> {
     builder.get_object("scroll-log")
 }
