@@ -12,6 +12,7 @@ use crate::commit::get_branch_name;
 use std::str;
 //use crate::fetch::git_fetch_for_gui;
 use crate::config::Config;
+use crate::ls_tree::ls_tree;
 use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
@@ -1471,6 +1472,28 @@ fn handle_ls_trees_rt() -> io::Result<()> {
     Ok(())
 }
 fn obtain_text_from_ls_trees(hash: &str) -> Result<String, io::Error> {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error obtaining actual directory: {:?}", err);
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining actual directory",
+            ));
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error obtaining git dir");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining git dir",
+            ));
+        }
+    };
+    ls_tree(hash, &git_dir, "") ;
     Ok(format!("Placeholder result for hash: {}", hash))
 }
 fn obtain_text_from_ls_trees_r(hash: &str) -> Result<String, io::Error> {
