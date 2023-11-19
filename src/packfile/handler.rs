@@ -383,7 +383,7 @@ fn lcs_bytes(content_1: &[u8], content_2: &[u8]) -> usize {
             if content_1[idx1 - 1] == content_2[idx2 - 1] {
                 cur[idx2] = 1 + prev[idx2 - 1];
             } else {
-                cur[idx2] = cur[idx2 - 1].max(prev[idx2]);
+                cur[idx2] = std::cmp::max(cur[idx2 - 1], prev[idx2]);
             }
         }
         prev.copy_from_slice(&cur);
@@ -443,4 +443,33 @@ fn object_header(obj_type: ObjectType, obj_size: usize) -> Vec<u8> {
     }
     encoded_header.push(c);
     return encoded_header;
+}
+
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_lcs_short() {
+        let content_1 = "abcdef".as_bytes();
+        let content_2 = "acfbde".as_bytes();
+        let lcs = lcs_bytes(content_1, content_2);
+        assert_eq!(lcs, 4);
+    }
+
+    #[test]
+    fn test_lcs_medium() {
+        let content_1 = "El gato está en el tejado".as_bytes();
+        let content_2 = "El perro está bajo la mesa".as_bytes();
+        let lcs = lcs_bytes(content_1, content_2);
+        assert_eq!(lcs, 16);
+    }
+
+    #[test]
+    fn test_lcs_long() {
+        let content_1 = "Este es un texto largo para probar el algoritmo de LCS en español. Espero que funcione correctamente y encuentre la subsecuencia común más larga entre estos dos textos.".as_bytes();
+        let content_2 = "Este es otro texto bastante extenso que se utilizará para verificar la longitud de la subsecuencia común más larga. Espero que el algoritmo lo identifique correctamente.".as_bytes();
+        let lcs = lcs_bytes(content_1, content_2);
+        assert_eq!(lcs, 91);
+    }
 }
