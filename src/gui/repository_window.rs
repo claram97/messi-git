@@ -186,6 +186,8 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "add-normal-tag",
         "remove-tag",
         "add-annotated-tag",
+        "verify-tag",
+        "tag-from-tag",
         "trees-button",
         "r-trees",
         "d-trees",
@@ -314,6 +316,16 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         "rt-trees" => {
             button.connect_clicked(move |_| {
                 handle_ls_trees_rt();
+            });
+        }
+        "verify-tag" => {
+            button.connect_clicked(move |_| {
+                handle_tag_verify();
+            });
+        }
+        "tag-from-tag" => {
+            button.connect_clicked(move |_| {
+                handle_tag_from_tag();
             });
         }
         "list-tags" => {
@@ -1063,6 +1075,9 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
 pub fn obtain_text_from_tag_add_normal(tag_name: &str) -> Result<String, io::Error> {
     Ok("Ok".to_string())
 }
+pub fn obtain_text_from_tag_verify(tag_name: &str) -> Result<String, io::Error> {
+    Ok("Ok".to_string())
+}
 
 /// Sets the URL of a remote repository in the Git configuration.
 ///
@@ -1336,6 +1351,29 @@ fn handle_tag_add_normal() -> io::Result<()> {
     }
     Ok(())
 }
+fn handle_tag_verify() -> io::Result<()> {
+    let result = create_text_entry_window("Enter tag name", move |name| {
+        let resultado = obtain_text_from_tag_verify(&name);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Success", &format!("Tag '{}' added successfully", texto));
+            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Success", "Tag added successfully");
+                }
+                _ => {
+                    show_message_dialog("Error", "Failed to add tag.");
+                }
+            },
+        }
+    });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+
 fn handle_ls_trees() -> io::Result<()> {
     let result = create_text_entry_window("Enter hash", move |hash| {
         let resultado = obtain_text_from_ls_trees(&hash);
@@ -1493,7 +1531,37 @@ fn handle_tag_add_annotated() -> io::Result<()> {
     }
     Ok(())
 }
+fn handle_tag_from_tag() -> io::Result<()> {
+    let result = create_text_entry_window2(
+        "Enter tag new name",
+        "Enter tag old name",
+        |new_name, old_name| {
+            let resultado = obtain_text_from_tag_from_tag(&new_name, &old_name);
+            match resultado {
+                Ok(texto) => {
+                    show_message_dialog("Success", &format!("Tag '{}' added successfully", texto));
+                }
+                Err(_err) => match _err.kind() {
+                    std::io::ErrorKind::UnexpectedEof => {
+                        show_message_dialog("Success", "Tag added successfully");
+                    }
+                    _ => {
+                        show_message_dialog("Error", "Failed to add tag.");
+                    }
+                },
+            }
+        },
+    );
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+
 pub fn obtain_text_from_tag_add_annotated(name: &str, message: &str) -> Result<String, io::Error> {
+    Ok("Ok".to_string())
+}
+pub fn obtain_text_from_tag_from_tag(name: &str, message: &str) -> Result<String, io::Error> {
     Ok("Ok".to_string())
 }
 
