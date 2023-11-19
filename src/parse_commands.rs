@@ -23,7 +23,7 @@ use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
-use crate::{add, log, push, tree_handler};
+use crate::{add, log, push, tree_handler, ls_tree};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -133,7 +133,7 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
         "push" => Some(GitCommand::Push),
         "branch" => Some(GitCommand::Branch),
         "ls-files" => Some(GitCommand::ListFiles),
-        "ls-trees" => Some(GitCommand::ListTrees),
+        "ls-tree" => Some(GitCommand::ListTrees),
         "check-ignore" => Some(GitCommand::CheckIgnore),
         "show-ref" => Some(GitCommand::ShowRef),
         "rebase" => Some(GitCommand::Rebase),
@@ -236,8 +236,52 @@ fn handle_ls_files(args: Vec<String>) {
     }
 }
 
-fn handle_ls_trees(_args: Vec<String>) {
-    // Implementación para el comando "ListTrees"
+fn handle_ls_trees(args: Vec<String>) {
+    if args.len() < 3 {
+        eprintln!("Usage: git ls-tree <tree-ish>");
+        return;
+    }
+
+    let git_dir = match find_git_directory(&mut PathBuf::from("."), ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    if args.len() == 3 {
+        let result = ls_tree::ls_tree(&args[2], &git_dir, "");
+        if result.is_err() {
+            eprintln!("{:?}", result);
+        }
+    } else if args.len() == 4 {
+        if args[2] == "-r" {
+            let result = ls_tree::ls_tree(&args[3], &git_dir, "-r");
+            if result.is_err() {
+                eprintln!("{:?}", result);
+            }
+        } else if args[2] == "-d" {
+            let result = ls_tree::ls_tree(&args[3], &git_dir, "-d");
+            if result.is_err() {
+                eprintln!("{:?}", result);
+            }
+        } else {
+            eprintln!("Usage: git ls-tree <tree-ish>");
+        }
+    } else if args.len() == 5 {
+        if args[2] == "-r" && args[3] == "-t" {
+            let result = ls_tree::ls_tree(&args[4], &git_dir, "-r-t");
+            if result.is_err() {
+                eprintln!("{:?}", result);
+            }
+        } else {
+            eprintln!("Usage: git ls-tree <tree-ish>");
+        }
+    } else {
+        eprintln!("Usage: git ls-tree <tree-ish>");
+    }
+
 }
 
 fn handle_check_ignore(args: Vec<String>) {

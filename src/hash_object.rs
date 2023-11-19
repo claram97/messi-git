@@ -241,6 +241,24 @@ pub fn store_tree_to_file(
     Ok(tree_hash)
 }
 
+pub fn get_tree_hash(blobs: Vec<(String, String, Vec<u8>)>, trees: Vec<(String, String, Vec<u8>)>) -> String {
+    let mut blobs = blobs;
+    blobs.append(&mut trees.clone());
+    blobs.sort_by(|a, b| a.1.cmp(&b.1));
+    let mut size = 0;
+    for (mode, name, hash) in blobs.clone() {
+        size += mode.len() + name.len() + hash.len() + 2;
+    }
+    let mut data: Vec<u8> = Vec::new();
+    let header = format!("tree {}\0", size);
+    data.write_all(header.as_bytes()).unwrap();
+    for (mode, name, hash) in blobs {
+        data.write_all(format!("{} {}\0", mode, name).as_bytes()).unwrap();
+        data.write_all(&hash).unwrap();
+    }
+    hash_byte_array(&data)
+}
+
 /// Compresses a given vector of bytes representing a Git tree object and writes it to a file.
 ///
 /// This function takes a vector of bytes (`tree_vec`) representing the content of a Git tree object
