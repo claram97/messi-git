@@ -25,6 +25,7 @@ pub fn git_remote(config: &mut Config, line: Vec<&str>, output: &mut impl Write)
     }
 
     match line[0] {
+        "remote" => handle_list_command(config, output),
         "add" => handle_add_command(config, &line, output),
         "remove" => handle_remove_command(config, &line, output),
         "set-url" => handle_set_url_command(config, &line, output),
@@ -55,6 +56,10 @@ fn report_error(output: &mut impl Write, error_message: &str) -> io::Result<()> 
     Err(io::Error::new(io::ErrorKind::InvalidInput, error_message))
 }
 
+fn handle_list_command(config: &mut Config, output: &mut impl Write) -> io::Result<()> {
+    config.list_remotes(output)?;
+    Ok(())
+}
 /// Handles the "add" subcommand for Git remotes.
 ///
 /// This function processes the "add" subcommand for Git remotes, validates the arguments, and

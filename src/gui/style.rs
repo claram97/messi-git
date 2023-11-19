@@ -333,6 +333,63 @@ pub fn create_text_entry_window(
     Ok(())
 }
 
+/// Creates a text entry window with two input fields.
+///
+/// This function creates a GTK window with two text entry fields and an "OK" button.
+/// It takes two messages as input to set as default text in each entry field. When the
+/// user clicks "OK," the provided closure `on_text_entered` is called with the entered
+/// text from both fields.
+///
+/// # Arguments
+///
+/// * `message1` - The initial text for the first entry field.
+/// * `message2` - The initial text for the second entry field.
+/// * `on_text_entered` - A closure that will be called with the entered text from both fields.
+///
+/// # Returns
+///
+/// An `io::Result` indicating whether the operation was successful or resulted in an error.
+///
+pub fn create_text_entry_window2(
+    message1: &str,
+    message2: &str,
+    on_text_entered: impl Fn(String, String) + 'static,
+) -> io::Result<()> {
+    let entry_window = gtk::Window::new(gtk::WindowType::Toplevel);
+    add_to_open_windows(&entry_window);
+    apply_window_style(&entry_window)
+        .map_err(|_err| io::Error::new(io::ErrorKind::Other, "Error applying window stlye.\n"))?;
+    entry_window.set_title(&format!("{} {}", message1, message2));
+    entry_window.set_default_size(400, 150);
+
+    let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    entry_window.add(&main_box);
+
+    let entry1 = gtk::Entry::new();
+    entry1.set_text(message1);
+    main_box.add(&entry1);
+
+    let entry2 = gtk::Entry::new();
+    entry2.set_text(message2);
+    main_box.add(&entry2);
+
+    let ok_button = gtk::Button::with_label("OK");
+    apply_button_style(&ok_button)
+        .map_err(|_err| io::Error::new(io::ErrorKind::Other, "Error applying button stlye.\n"))?;
+    main_box.add(&ok_button);
+
+    let entry_window_clone = entry_window.clone();
+    ok_button.connect_clicked(move |_| {
+        let text1 = entry1.get_text().to_string();
+        let text2 = entry2.get_text().to_string();
+        entry_window.close();
+        on_text_entered(text1, text2);
+    });
+
+    entry_window_clone.show_all();
+    Ok(())
+}
+
 /// Retrieve a GTK TextView widget from a GTK Builder.
 ///
 /// This function takes a reference to a GTK Builder and an ID string, and attempts to find a GTK TextView widget

@@ -97,6 +97,7 @@ fn connect_button_clicked_open_new_repository(button: &gtk::Button) -> std::io::
     });
     Ok(())
 }
+
 /// Connects a GTK button to a specific action.
 ///
 /// This function takes a GTK button and a button type as input and sets an event handler for the "clicked" event of the button.

@@ -436,6 +436,13 @@ impl Config {
         Ok(())
     }
 
+    pub fn list_remotes(&self, output: &mut impl Write) -> io::Result<()> {
+        for remote in &self.remotes {
+            writeln!(output, "{}", remote.name)?;
+        }
+        Ok(())
+    }
+
     /// Retrieves and writes the URL of a remote repository to the specified output.
     ///
     /// This function retrieves the URL of a remote repository with the specified name and writes it
