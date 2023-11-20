@@ -23,7 +23,7 @@ use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
-use crate::{add, log, push, tree_handler, ls_tree};
+use crate::{add, log, ls_tree, push, tree_handler};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -263,12 +263,12 @@ fn handle_ls_trees(args: Vec<String>) {
         }
     } else if args.len() == 4 {
         if args[2] == "-r" {
-            let result = ls_tree::ls_tree(&args[3], &git_dir, "-r",  &mut io::stdout());
+            let result = ls_tree::ls_tree(&args[3], &git_dir, "-r", &mut io::stdout());
             if result.is_err() {
                 eprintln!("{:?}", result);
             }
         } else if args[2] == "-d" {
-            let result = ls_tree::ls_tree(&args[3], &git_dir, "-d",  &mut io::stdout());
+            let result = ls_tree::ls_tree(&args[3], &git_dir, "-d", &mut io::stdout());
             if result.is_err() {
                 eprintln!("{:?}", result);
             }
@@ -277,7 +277,7 @@ fn handle_ls_trees(args: Vec<String>) {
         }
     } else if args.len() == 5 {
         if args[2] == "-r" && args[3] == "-t" {
-            let result = ls_tree::ls_tree(&args[4], &git_dir, "-r-t",  &mut io::stdout());
+            let result = ls_tree::ls_tree(&args[4], &git_dir, "-r-t", &mut io::stdout());
             if result.is_err() {
                 eprintln!("{:?}", result);
             }
@@ -287,7 +287,6 @@ fn handle_ls_trees(args: Vec<String>) {
     } else {
         eprintln!("Usage: git ls-tree <tree-ish>");
     }
-
 }
 
 /// Handles the "check-ignore" command in a Git-like system.

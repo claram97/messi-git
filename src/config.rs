@@ -744,7 +744,7 @@ impl Config {
         }
 
         if found_user {
-            return Self::extract_user_info(name, email);
+            Self::extract_user_info(name, email)
         } else {
             Err(io::Error::new(
                 ErrorKind::NotFound,
