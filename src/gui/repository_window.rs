@@ -12,7 +12,6 @@ use crate::commit::get_branch_name;
 use std::str;
 //use crate::fetch::git_fetch_for_gui;
 use crate::config::Config;
-use crate::ls_tree::ls_tree;
 use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
@@ -29,6 +28,7 @@ use crate::index::Index;
 use crate::log::log;
 use crate::log::Log;
 use crate::ls_files::git_ls_files;
+use crate::ls_tree::ls_tree;
 use crate::merge;
 use crate::pull::git_pull;
 use crate::push;
@@ -1073,10 +1073,10 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
 
     Ok("Ok".to_string())
 }
-pub fn obtain_text_from_tag_add_normal(tag_name: &str) -> Result<String, io::Error> {
+pub fn obtain_text_from_tag_add_normal(_tag_name: &str) -> Result<String, io::Error> {
     Ok("Ok".to_string())
 }
-pub fn obtain_text_from_tag_verify(tag_name: &str) -> Result<String, io::Error> {
+pub fn obtain_text_from_tag_verify(_tag_name: &str) -> Result<String, io::Error> {
     Ok("Ok".to_string())
 }
 
@@ -1493,7 +1493,7 @@ fn obtain_text_from_ls_trees(hash: &str) -> Result<String, io::Error> {
             ));
         }
     };
-    ls_tree(hash, &git_dir, "") ;
+    ls_tree(hash, &git_dir, "");
     Ok(format!("Placeholder result for hash: {}", hash))
 }
 fn obtain_text_from_ls_trees_r(hash: &str) -> Result<String, io::Error> {
@@ -1527,7 +1527,7 @@ fn handle_tag_remove() -> io::Result<()> {
     }
     Ok(())
 }
-pub fn obtain_text_from_tag_remove(name: &str) -> Result<String, io::Error> {
+pub fn obtain_text_from_tag_remove(_name: &str) -> Result<String, io::Error> {
     Ok("Ok".to_string())
 }
 
@@ -1581,10 +1581,13 @@ fn handle_tag_from_tag() -> io::Result<()> {
     Ok(())
 }
 
-pub fn obtain_text_from_tag_add_annotated(name: &str, message: &str) -> Result<String, io::Error> {
+pub fn obtain_text_from_tag_add_annotated(
+    _name: &str,
+    _message: &str,
+) -> Result<String, io::Error> {
     Ok("Ok".to_string())
 }
-pub fn obtain_text_from_tag_from_tag(name: &str, message: &str) -> Result<String, io::Error> {
+pub fn obtain_text_from_tag_from_tag(_name: &str, _message: &str) -> Result<String, io::Error> {
     Ok("Ok".to_string())
 }
 
@@ -1780,7 +1783,7 @@ fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
 
     Ok(())
 }
-fn handle_list_tags(builder: &gtk::Builder) -> io::Result<()> {
+fn handle_list_tags(_builder: &gtk::Builder) -> io::Result<()> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -1803,7 +1806,7 @@ fn handle_list_tags(builder: &gtk::Builder) -> io::Result<()> {
         }
     };
 
-    let mut config = match Config::load(&git_dir) {
+    let _config = match Config::load(&git_dir) {
         Ok(config) => config,
         Err(_e) => {
             eprintln!("Error with config file.");

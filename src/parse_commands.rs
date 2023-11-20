@@ -25,7 +25,7 @@ use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untrack
 use crate::tag::git_tag;
 use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
-use crate::{add, log, push, tree_handler, ls_tree};
+use crate::{add, log, ls_tree, push, tree_handler};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -187,7 +187,7 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
         GitCommand::ShowRef => handle_show_ref(args),
         GitCommand::Rebase => handle_rebase(args),
         GitCommand::Tag => handle_tag(args),
-        GitCommand::Config => handle_config(args)
+        GitCommand::Config => handle_config(args),
     }
 }
 
@@ -330,7 +330,6 @@ fn handle_ls_trees(args: Vec<String>) {
     } else {
         eprintln!("Usage: git ls-tree <tree-ish>");
     }
-
 }
 
 /// Handles the "check-ignore" command in a Git-like system.
@@ -441,7 +440,6 @@ fn handle_tag(args: Vec<String>) {
         }
     };
 }
-
 
 /// Handles the 'hash-object' Git command.
 ///

@@ -13,7 +13,7 @@ use crate::{
 const BLOB_NORMAL_MODE: &str = "100644";
 const TREE_MODE: &str = "40000";
 //For pretty printing
-const TREE_MODE_0: &str = "040000"; 
+const TREE_MODE_0: &str = "040000";
 
 //Tree structure
 //files is a vector of tuples (file_name, hash)
@@ -128,7 +128,12 @@ impl Tree {
     fn tree_blobs_formatted_pretty(&self) -> Vec<(String, String, String, String)> {
         let mut result: Vec<(String, String, String, String)> = Vec::new();
         for (file_name, hash) in &self.files {
-            result.push((BLOB_NORMAL_MODE.to_string(), "blob".to_string(), hash.to_string(), file_name.to_string()));
+            result.push((
+                BLOB_NORMAL_MODE.to_string(),
+                "blob".to_string(),
+                hash.to_string(),
+                file_name.to_string(),
+            ));
         }
         result
     }
@@ -292,13 +297,13 @@ impl Tree {
 
     /// Lists all the blobs and subtrees listed in the tree.
     /// It does not print the subtrees content, only its name and hash.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `output` - Anything that implements the Write interface, the result will be returned there
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// This function will fail if there is any error during a file operation.
     pub fn print_tree(&self, output: &mut impl Write) -> io::Result<()> {
         let blobs = self.tree_blobs_formatted_pretty();
@@ -319,13 +324,13 @@ impl Tree {
 
     /// Lists all the subtrees in the tree.
     /// It does not print the subtrees content, only its name and hash.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `output` - Anything that implements the Write interface, the result will be returned there
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// This function will fail if there is any error during a file operation.
     /// It will also fail if any of its subtrees is not found in the objects folder.
     pub fn print_subtrees(&self, output: &mut impl Write) -> io::Result<()> {
@@ -345,13 +350,13 @@ impl Tree {
     /// Lists all the blobs contained in the tree and its subtrees.
     /// Blobs will be listed in the following format:
     ///     mode type hash  name
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `output` - Anything that implements the Write interface, the result will be returned there
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// This function will fail if any of its subtrees is not found in the objects folder or if there is any error during a file operation
     pub fn print_tree_recursive_no_trees(&self, output: &mut impl Write) -> io::Result<()> {
         let paths = self.squash_tree_into_vec("");
@@ -364,15 +369,20 @@ impl Tree {
 
     /// Lists all the blobs and subtrees in alphabetical order, when it finds a tree, it lists itself and then lists its content.
     /// # Arguments
-    /// 
+    ///
     /// * `output` - Anything that implements the Write interface, the result will be returned there
     /// * `git_dir` - The path to the git directory
     /// * `parent` - The name of the parent directory, it is used to print the full path of the tree. Normally it should be an empty string.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// This function will fail if there is any error during a file operation.
-    pub fn print_tree_recursive(&self, output: &mut impl Write, git_dir: &str, parent: &str) -> io::Result<()> {
+    pub fn print_tree_recursive(
+        &self,
+        output: &mut impl Write,
+        git_dir: &str,
+        parent: &str,
+    ) -> io::Result<()> {
         let mut blobs: Vec<(String, String, String, String)> = self.tree_blobs_formatted_pretty();
         let mut trees = Vec::new();
         for entry in self.directories.iter() {

@@ -1,6 +1,6 @@
 use std::{collections::HashSet, io, path::PathBuf};
 
-use chrono::{DateTime, Utc, FixedOffset, Offset};
+use chrono::{DateTime, FixedOffset, Offset, Utc};
 
 use crate::commit;
 

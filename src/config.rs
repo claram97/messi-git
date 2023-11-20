@@ -1,7 +1,8 @@
 use crate::{branch_handler::Branch, remote_handler::Remote};
 use std::{
-    fs::{File, OpenOptions, self},
-    io::{self, BufRead, BufReader, Write, ErrorKind}, path::Path,
+    fs::{self, File, OpenOptions},
+    io::{self, BufRead, BufReader, ErrorKind, Write},
+    path::Path,
 };
 
 #[derive(Default)]
@@ -579,7 +580,7 @@ impl Config {
         Ok(())
     }
 
-     /// Sets the user name and email in a configuration file.
+    /// Sets the user name and email in a configuration file.
     ///
     /// This function takes a reference to `self` (an instance of some struct) along with
     /// the `name` and `email` parameters, and attempts to update or create a user section
