@@ -196,27 +196,11 @@ pub fn get_timestamp() -> io::Result<(i64, String)> {
 
     let timestamp = local_time.timestamp();
 
-    // let offset_formatted_for_date_time = format!(
-    //     "{:+03}:{:02}",
-    //     offset.fix().local_minus_utc() / 3600,
-    //     (offset.fix().local_minus_utc() % 3600) / 60
-    // );
-
     let offset_formatted_for_timestamp = format!(
         "{:+03}{:02}",
         offset.fix().local_minus_utc() / 3600,
         (offset.fix().local_minus_utc() % 3600) / 60
     );
-
-    // println!(
-    //     "Fecha y hora en UTC-3: {} {}",
-    //     local_time, offset_formatted_for_date_time
-    // );
-
-    // println!(
-    //     "Timestamp en UTC-3: {} {}",
-    //     timestamp, offset_formatted_for_timestamp
-    // );
 
     Ok((timestamp, offset_formatted_for_timestamp))
 }
@@ -347,5 +331,26 @@ mod tests {
         );
 
         let _ = fs::remove_dir_all("tests/utils/parents3");
+    }
+
+    #[test]
+    fn test_get_timestamp() -> io::Result<()> {
+        let result = get_timestamp()?;
+
+        let utc_now: DateTime<Utc> = Utc::now();
+
+        let offset = FixedOffset::west_opt(3 * 3600).unwrap();
+        let expected_local_time = utc_now.with_timezone(&offset);
+        let expected_timestamp = expected_local_time.timestamp();
+
+        let expected_offset_formatted = format!(
+            "{:+03}{:02}",
+            offset.fix().local_minus_utc() / 3600,
+            (offset.fix().local_minus_utc() % 3600) / 60
+        );
+
+        assert_eq!(result.0, expected_timestamp);
+        assert_eq!(result.1, expected_offset_formatted);
+        Ok(())
     }
 }
