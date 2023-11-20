@@ -10,7 +10,7 @@ use flate2::{bufread::ZlibDecoder, write::ZlibEncoder, Compression};
 use sha1::Digest;
 use sha1::Sha1;
 
-use crate::hash_object;
+use crate::{hash_object, packfile::delta_utils::recreate_from_commands};
 
 use super::{delta_utils, entry::PackfileEntry, object_type::ObjectType};
 
@@ -355,14 +355,21 @@ fn find_base_object_index(
 
         let mut total_lines = 0;
         let mut coincidences = 0;
+        let mut skip_lines = 0;
         for line in object.content.split(|&c| c == b'\n') {
+            let mut lines_read = 0;
             total_lines += 1;
             if candidate
                 .0
                 .content
                 .split(|&c| c == b'\n')
-                .any(|line2| line == line2)
+                .skip(skip_lines)
+                .any(|line2| {
+                    lines_read += 1;
+                    line == line2
+                })
             {
+                skip_lines += lines_read;
                 coincidences += 1;
             }
         }
@@ -386,6 +393,9 @@ fn append_delta_object(
     // escribo el offset encodeado
     let commands =
         delta_utils::delta_commands_from_objects(&base_object.0.content, &object.content);
+
+    let res = delta_utils::recreate_from_commands(&base_object.0.content, &commands);
+    assert_eq!(&object.content, &res);
     // let mut commands = delta_utils::encode_commands(commands);
 
     Ok(())

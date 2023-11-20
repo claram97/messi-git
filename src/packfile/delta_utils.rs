@@ -1,4 +1,4 @@
-use std::io::{self, Read};
+use std::{io::{self, Read}, str::from_utf8};
 
 const COPY_INSTRUCTION_FLAG: u8 = 1 << 7;
 const COPY_OFFSET_BYTES: u8 = 4;
@@ -127,18 +127,23 @@ pub fn delta_commands_from_objects(base: &[u8], object: &[u8]) -> Vec<Command> {
     let olines = object.split_inclusive(|&c| c == b'\n').collect::<Vec<_>>();
     let mut commands = Vec::new();
 
+    let mut base_lines_read = 0;
+    let mut last_offset = 0;
+
     for oline in olines {
         let mut offset = 0;
-
-        let copy = blines.iter().any(|&bline| {
+        let mut lines_read = 0;
+        let copy = blines.iter().skip(base_lines_read).any(|&bline| {
+            lines_read += 1;
             offset += bline.len();
             bline == oline
         });
-
         let size = oline.len();
         if copy {
+            base_lines_read += lines_read;
+            last_offset += offset;
             commands.push(Command::Copy {
-                offset: offset - size,
+                offset: last_offset - size,
                 size,
             });
         } else {
@@ -190,6 +195,7 @@ mod tests {
     ".as_bytes();
         let commands = delta_commands_from_objects(base, object);
         let recreated = recreate_from_commands(base, &commands);
+        assert_eq!(recreated.len(), object.len());
         assert_eq!(recreated, object);
         Ok(())
     }
