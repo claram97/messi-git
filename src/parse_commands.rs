@@ -23,7 +23,7 @@ use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
-use crate::{add, log, ls_tree, push, tree_handler};
+use crate::{add, log, ls_tree, push, tree_handler, git_config};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -59,6 +59,7 @@ pub enum GitCommand {
     ShowRef,
     Rebase,
     Tag,
+    Config
 }
 
 /// Reads user input from the command line and splits it into a vector of strings.
@@ -139,6 +140,7 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
         "show-ref" => Some(GitCommand::ShowRef),
         "rebase" => Some(GitCommand::Rebase),
         "tag" => Some(GitCommand::Tag),
+        "config" => Some(GitCommand::Config),
         _ => {
             eprintln!("Not a valid Git option.");
             None
@@ -183,8 +185,38 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
         GitCommand::ShowRef => handle_show_ref(args),
         GitCommand::Rebase => handle_rebase(args),
         GitCommand::Tag => handle_tag(args),
+        GitCommand::Config => handle_config(args)
     }
 }
+
+fn handle_config(args: Vec<String>) {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    let git_config_path = format!("{}/{}", git_dir, "config");
+    match git_config::git_config(&git_config_path, args) {
+        Ok(_) => {
+            println!("Successfully changed");
+        }
+        Err(e) => {
+            eprintln!("error: {}", e);
+        }
+    }
+}
+
 
 /// Handles the "ls-files" command in a Git-like system.
 ///
