@@ -325,7 +325,6 @@ fn append_objects(
 
         if let Some(index) = find_base_object_index(&entry, &objects_in_packfile) {
             dbg!("Base object found");
-            panic!("Not implemented");
             let base_obj = &objects_in_packfile[index];
             append_delta_object(packfile, base_obj, &entry, git_dir)?;
         } else {
@@ -347,49 +346,32 @@ fn find_base_object_index(
     objects: &Vec<(PackfileEntry, usize)>,
 ) -> Option<usize> {
     let toleration = 20;
-    // usar LCS para encontrar la subsecuencia mas larga
-    // si la subsecuencia mas larga es mayor al 80% del tamaño del obj
-    // lo retorno como candidato
 
-    // si encuentra un obj con una diferencia del tamaño menor al 20% del tamaño del obj
     if let Some(index) = objects
         .iter()
         .position(|(obj, _)| (1 as usize).abs_diff(object.size / obj.size) * 100 < toleration)
     {
         let candidate = &objects[index];
-        let lcs = lcs_bytes(
-            &object.content,
-            &candidate.0.content
-        );
-        let min_size = std::cmp::min(object.size, candidate.0.size);
-        dbg!(object.size, candidate.0.size, lcs);
-        // si la cantidad de coincidencias es mayor al 80% del tamaño del obj
-        if (lcs / min_size) * 100 > (100 - toleration) {
+
+        let mut total_lines = 0;
+        let mut coincidences = 0;
+        for line in object.content.split(|&c| c == b'\n') {
+            total_lines += 1;
+            if candidate
+                .0
+                .content
+                .split(|&c| c == b'\n')
+                .any(|line2| line == line2)
+            {
+                coincidences += 1;
+            }
+        }
+
+        if coincidences > total_lines * ((100 - toleration) / 100) {
             return Some(index);
         }
     }
     None
-}
-
-fn lcs_bytes(content_1: &[u8], content_2: &[u8]) -> usize {
-    let n = content_1.len();
-    let m = content_2.len();
-
-    let mut prev = vec![0; m + 1];
-    let mut cur = vec![0; m + 1];
-
-    for idx1 in 1..=n {
-        for idx2 in 1..=m {
-            if content_1[idx1 - 1] == content_2[idx2 - 1] {
-                cur[idx2] = 1 + prev[idx2 - 1];
-            } else {
-                cur[idx2] = std::cmp::max(cur[idx2 - 1], prev[idx2]);
-            }
-        }
-        prev.copy_from_slice(&cur);
-    }
-
-    cur[m]
 }
 
 fn append_delta_object(
@@ -398,15 +380,14 @@ fn append_delta_object(
     object: &PackfileEntry,
     git_dir: &str,
 ) -> io::Result<()> {
-    
     let encoded_header = object_header(object.obj_type, object.size);
     packfile.extend(encoded_header);
     let offset = packfile.len() - base_object.1;
     // escribo el offset encodeado
+    let commands =
+        delta_utils::delta_commands_from_objects(&base_object.0.content, &object.content);
+    // let mut commands = delta_utils::encode_commands(commands);
 
-    // escribo los comandos necesarios para formar el nuevo obj a partir del base
-    // Command::Copy(offset, size)
-    // Command::Data(Vec<u8>)
     Ok(())
 }
 /// Appends a single object to the given `packfile` vector.
@@ -443,33 +424,4 @@ fn object_header(obj_type: ObjectType, obj_size: usize) -> Vec<u8> {
     }
     encoded_header.push(c);
     return encoded_header;
-}
-
-
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_lcs_short() {
-        let content_1 = "abcdef".as_bytes();
-        let content_2 = "acfbde".as_bytes();
-        let lcs = lcs_bytes(content_1, content_2);
-        assert_eq!(lcs, 4);
-    }
-
-    #[test]
-    fn test_lcs_medium() {
-        let content_1 = "El gato está en el tejado".as_bytes();
-        let content_2 = "El perro está bajo la mesa".as_bytes();
-        let lcs = lcs_bytes(content_1, content_2);
-        assert_eq!(lcs, 16);
-    }
-
-    #[test]
-    fn test_lcs_long() {
-        let content_1 = "Este es un texto largo para probar el algoritmo de LCS en español. Espero que funcione correctamente y encuentre la subsecuencia común más larga entre estos dos textos.".as_bytes();
-        let content_2 = "Este es otro texto bastante extenso que se utilizará para verificar la longitud de la subsecuencia común más larga. Espero que el algoritmo lo identifique correctamente.".as_bytes();
-        let lcs = lcs_bytes(content_1, content_2);
-        assert_eq!(lcs, 91);
-    }
 }
