@@ -33,3 +33,4 @@ pub fn git_config(config_path: &str, line: Vec<String>) -> io::Result<()> {
     config.set_user_name_and_email(&line[3], &line[4])?;
     Ok(())
 }
+//Usage: git config set-user-info name email
