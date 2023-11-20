@@ -10,7 +10,6 @@ use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
 use crate::fetch::git_fetch;
-use crate::git_config::git_config;
 use crate::hash_object::store_file;
 use crate::index::Index;
 use crate::init::git_init;
@@ -22,10 +21,9 @@ use crate::remote::git_remote;
 use crate::rm::git_rm;
 use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
-use crate::tag::git_tag;
 use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
-use crate::{add, log, ls_tree, push, tree_handler};
+use crate::{add, log, push, tree_handler, ls_tree};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -61,7 +59,6 @@ pub enum GitCommand {
     ShowRef,
     Rebase,
     Tag,
-    Config,
 }
 
 /// Reads user input from the command line and splits it into a vector of strings.
@@ -142,7 +139,6 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
         "show-ref" => Some(GitCommand::ShowRef),
         "rebase" => Some(GitCommand::Rebase),
         "tag" => Some(GitCommand::Tag),
-        "config" => Some(GitCommand::Config),
         _ => {
             eprintln!("Not a valid Git option.");
             None
@@ -187,45 +183,6 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
         GitCommand::ShowRef => handle_show_ref(args),
         GitCommand::Rebase => handle_rebase(args),
         GitCommand::Tag => handle_tag(args),
-        GitCommand::Config => handle_config(args),
-    }
-}
-
-/// Handle Git configuration based on the provided command line arguments.
-///
-/// # Arguments
-///
-/// * `args` - A vector of strings representing the command line arguments.
-///
-/// # Errors
-///
-/// The function prints an error message to stderr if there is an issue obtaining the current directory,
-/// finding the Git directory, or if there is an error while changing the Git configuration using `git_config::git_config`.
-fn handle_config(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
-            return;
-        }
-    };
-
-    let git_config_path = format!("{}/{}", git_dir, "config");
-    match git_config(&git_config_path, args) {
-        Ok(_) => {
-            println!("Successfully changed");
-        }
-        Err(e) => {
-            eprintln!("error: {}", e);
-        }
     }
 }
 
@@ -300,18 +257,18 @@ fn handle_ls_trees(args: Vec<String>) {
     };
 
     if args.len() == 3 {
-        let result = ls_tree::ls_tree(&args[2], &git_dir, "");
+        let result = ls_tree::ls_tree(&args[2], &git_dir, "", &mut io::stdout());
         if result.is_err() {
             eprintln!("{:?}", result);
         }
     } else if args.len() == 4 {
         if args[2] == "-r" {
-            let result = ls_tree::ls_tree(&args[3], &git_dir, "-r");
+            let result = ls_tree::ls_tree(&args[3], &git_dir, "-r",  &mut io::stdout());
             if result.is_err() {
                 eprintln!("{:?}", result);
             }
         } else if args[2] == "-d" {
-            let result = ls_tree::ls_tree(&args[3], &git_dir, "-d");
+            let result = ls_tree::ls_tree(&args[3], &git_dir, "-d",  &mut io::stdout());
             if result.is_err() {
                 eprintln!("{:?}", result);
             }
@@ -320,7 +277,7 @@ fn handle_ls_trees(args: Vec<String>) {
         }
     } else if args.len() == 5 {
         if args[2] == "-r" && args[3] == "-t" {
-            let result = ls_tree::ls_tree(&args[4], &git_dir, "-r-t");
+            let result = ls_tree::ls_tree(&args[4], &git_dir, "-r-t",  &mut io::stdout());
             if result.is_err() {
                 eprintln!("{:?}", result);
             }
@@ -330,6 +287,7 @@ fn handle_ls_trees(args: Vec<String>) {
     } else {
         eprintln!("Usage: git ls-tree <tree-ish>");
     }
+
 }
 
 /// Handles the "check-ignore" command in a Git-like system.
@@ -406,39 +364,8 @@ fn handle_rebase(_args: Vec<String>) {
     // Implementación para el comando "Rebase"
 }
 
-/// Handle Git tag operations based on the provided command line arguments.
-///
-/// # Arguments
-///
-/// * `args` - A vector of strings representing the command line arguments.
-///
-/// # Errors
-///
-/// The function prints an error message to stderr if there is an issue obtaining the current directory,
-/// finding the Git directory, or if there is an error while performing Git tag operations using `git_tag`.
-fn handle_tag(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
-            return;
-        }
-    };
-
-    match git_tag(&git_dir, args, &mut io::stdout()) {
-        Ok(_) => {}
-        Err(e) => {
-            eprintln!("error {}", e)
-        }
-    };
+fn handle_tag(_args: Vec<String>) {
+    // Implementación para el comando "Tag"
 }
 
 /// Handles the 'hash-object' Git command.

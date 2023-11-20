@@ -301,12 +301,12 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     match button_id {
         "trees-button" => {
             button.connect_clicked(move |_| {
-                let _ = handle_ls_trees();
+                let _ = handle_ls_trees(&builder_clone);
             });
         }
         "r-trees" => {
             button.connect_clicked(move |_| {
-                let _ = handle_ls_trees_r();
+                let _ = handle_ls_trees_r(&builder_clone);
             });
         }
         "d-trees" => {
@@ -1375,9 +1375,11 @@ fn handle_tag_verify() -> io::Result<()> {
     Ok(())
 }
 
-fn handle_ls_trees() -> io::Result<()> {
+fn handle_ls_trees(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone(); 
+
     let result = create_text_entry_window("Enter hash", move |hash| {
-        let resultado = obtain_text_from_ls_trees(&hash);
+        let resultado = obtain_text_from_ls_trees(&builder_clone, &hash);
         match resultado {
             Ok(texto) => {
                 show_message_dialog("Success", &format!("Result for hash '{}': {}", hash, texto));
@@ -1399,9 +1401,12 @@ fn handle_ls_trees() -> io::Result<()> {
 
     Ok(())
 }
-fn handle_ls_trees_r() -> io::Result<()> {
+
+fn handle_ls_trees_r(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone(); 
+
     let result = create_text_entry_window("Enter hash", move |hash| {
-        let resultado = obtain_text_from_ls_trees_r(&hash);
+        let resultado = obtain_text_from_ls_trees_r(&builder_clone, &hash);
         match resultado {
             Ok(texto) => {
                 show_message_dialog("Success", &format!("Result for hash '{}': {}", hash, texto));
@@ -1471,7 +1476,7 @@ fn handle_ls_trees_rt() -> io::Result<()> {
 
     Ok(())
 }
-fn obtain_text_from_ls_trees(hash: &str) -> Result<String, io::Error> {
+fn obtain_text_from_ls_trees(builder: &gtk::Builder, hash: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -1493,12 +1498,90 @@ fn obtain_text_from_ls_trees(hash: &str) -> Result<String, io::Error> {
             ));
         }
     };
-    let _ = ls_tree(hash, &git_dir, "");
-    Ok(format!("Placeholder result for hash: {}", hash))
+
+    let mut output: Vec<u8> = vec![];
+    let _ = ls_tree(hash, &git_dir, "", &mut output);
+
+    let tree_text_view: gtk::TextView = builder.get_object("trees-text").unwrap();
+
+    let text = match String::from_utf8(output) {
+        Ok(s) => s,
+        Err(_) => {
+            eprintln!("Error turning result into string.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error turning result into string",
+            ));
+        }
+    };
+
+    if let Some(buffer) = tree_text_view.get_buffer() {
+        buffer.set_text(&text);
+    } else {
+        eprintln!("Error obtaining TextView.");
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Error obtaining TextView",
+        ));
+    }
+
+    Ok(text)
 }
-fn obtain_text_from_ls_trees_r(hash: &str) -> Result<String, io::Error> {
-    Ok(format!("Placeholder result for hash: {}", hash))
+
+fn obtain_text_from_ls_trees_r(builder: &gtk::Builder, hash: &str) -> Result<String, io::Error> {
+    let builder_clone = builder.clone(); // Clonar el builder
+
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error obtaining actual directory: {:?}", err);
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining actual directory",
+            ));
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error obtaining git dir");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining git dir",
+            ));
+        }
+    };
+
+    let mut output: Vec<u8> = vec![];
+    let _ = ls_tree(hash, &git_dir, "-r", &mut output);
+
+    let tree_text_view: gtk::TextView = builder_clone.get_object("trees-text").unwrap(); 
+
+    let text = match String::from_utf8(output) {
+        Ok(s) => s,
+        Err(_) => {
+            eprintln!("Error turning result into string.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error turning result into string",
+            ));
+        }
+    };
+
+    if let Some(buffer) = tree_text_view.get_buffer() {
+        buffer.set_text(&text);
+    } else {
+        eprintln!("Error obtaining TextView.");
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Error obtaining TextView",
+        ));
+    }
+
+    Ok(text)
 }
+
 fn obtain_text_from_ls_trees_d(hash: &str) -> Result<String, io::Error> {
     Ok(format!("Placeholder result for hash: {}", hash))
 }
