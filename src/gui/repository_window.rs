@@ -301,52 +301,52 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     match button_id {
         "trees-button" => {
             button.connect_clicked(move |_| {
-                handle_ls_trees();
+                let _ =   handle_ls_trees();
             });
         }
         "r-trees" => {
             button.connect_clicked(move |_| {
-                handle_ls_trees_r();
+                let _ =   handle_ls_trees_r();
             });
         }
         "d-trees" => {
             button.connect_clicked(move |_| {
-                handle_ls_trees_d();
+                let _ =  handle_ls_trees_d();
             });
         }
         "rt-trees" => {
             button.connect_clicked(move |_| {
-                handle_ls_trees_rt();
+                let _ =  handle_ls_trees_rt();
             });
         }
         "verify-tag" => {
             button.connect_clicked(move |_| {
-                handle_tag_verify();
+                let _ =  handle_tag_verify();
             });
         }
         "tag-from-tag" => {
             button.connect_clicked(move |_| {
-                handle_tag_from_tag();
+                let _ =  handle_tag_from_tag();
             });
         }
         "list-tags" => {
             button.connect_clicked(move |_| {
-                handle_list_tags(&builder_clone);
+                let _ =  handle_list_tags(&builder_clone);
             });
         }
         "add-normal-tag" => {
             button.connect_clicked(move |_| {
-                handle_tag_add_normal();
+                let _ =  handle_tag_add_normal();
             });
         }
         "add-annotated-tag" => {
             button.connect_clicked(move |_| {
-                handle_tag_add_annotated();
+                let _ =  handle_tag_add_annotated();
             });
         }
         "remove-tag" => {
             button.connect_clicked(move |_| {
-                handle_tag_remove();
+                let _ =  handle_tag_remove();
             });
         }
         "another-branch" => {
@@ -1493,7 +1493,7 @@ fn obtain_text_from_ls_trees(hash: &str) -> Result<String, io::Error> {
             ));
         }
     };
-    ls_tree(hash, &git_dir, "");
+    let _ = ls_tree(hash, &git_dir, "");
     Ok(format!("Placeholder result for hash: {}", hash))
 }
 fn obtain_text_from_ls_trees_r(hash: &str) -> Result<String, io::Error> {
