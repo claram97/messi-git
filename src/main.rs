@@ -140,48 +140,6 @@ fn process_user_input() -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
-    // let args = env::args();
-    // let line: Vec<String> = args.skip(1).collect();
-    // let index = Index::load(
-    //     "/home/claram97/taller/23C2-messi/.mgit/index",
-    //     "/home/claram97/taller/23C2-messi/.mgit",
-    //     "/home/claram97/taller/23C2-messi/.mgitignore",
-    // )?;
-    // git_ls_files(
-    //     "/home/claram97/taller/23C2-messi",
-    //     "/home/claram97/taller/23C2-messi/.mgit",
-    //     "/home/claram97/taller/23C2-messi",
-    //     line,
-    //     &index,
-    //     &mut stdout(),
-    // )?;
-
-    //let args: Vec<String> = env::args().collect();
-
-    //Esto iría al parse commands
-    // let args = env::args();
-    // let ignorer = Ignorer::load("/home/claram97/taller/23C2-messi/.mgitignore");
-    // let line = args.skip(1).collect();
-    // git_check_ignore(".mgitignore", &ignorer, line, &mut io::stdout())?;
-
-    /*let args: Vec<String> = env::args().collect();
-
-    if args.len() != 1 && args.len() != 2 && args.len() != 5 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "Cantidad inválida de parámetros\n",
-        ));
-    }*/
-
-    //Esto iría en parse commands
-    /*let args = env::args();
-    let line: Vec<String> = args.skip(1).collect();
-    git_show_ref(
-        "/home/claram97/taller/23C2-messi/.mgit",
-        line,
-        &mut io::stdout(),
-    )?;*/
-
     let args: Vec<String> = env::args().collect();
     if args.len() != 1 && args.len() != 2 && args.len() != 5 {
         return Err(io::Error::new(

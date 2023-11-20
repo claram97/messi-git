@@ -1,5 +1,7 @@
 use std::{collections::HashSet, io, path::PathBuf};
 
+use chrono::{DateTime, Utc, FixedOffset, Offset};
+
 use crate::commit;
 
 /// Recursively searches for a directory named "name_of_git_directory" in the file system
@@ -163,6 +165,60 @@ pub fn get_git_ignore_path(git_dir: &str) -> String {
     let mut git_ignore_file = PathBuf::from(git_dir);
     git_ignore_file.push(".gitignore");
     git_ignore_file.display().to_string()
+}
+
+/// Get the current timestamp and offset for the local time zone.
+///
+/// # Errors
+///
+/// The function returns an `io::Result` indicating whether obtaining the timestamp was successful or
+/// if there was an error during the process. Possible error scenarios include:
+///
+/// * Unable to calculate the offset for the local time zone, resulting in an `Interrupted` error.
+///
+/// # Panics
+///
+/// This function does not panic under normal circumstances. Panics may occur in case of unexpected errors.
+pub fn get_timestamp() -> io::Result<(i64, String)> {
+    let utc_now: DateTime<Utc> = Utc::now();
+
+    let offset = match FixedOffset::west_opt(3 * 3600) {
+        Some(off) => off,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "Error getting timestamp.\n",
+            ))
+        }
+    };
+
+    let local_time = utc_now.with_timezone(&offset);
+
+    let timestamp = local_time.timestamp();
+
+    // let offset_formatted_for_date_time = format!(
+    //     "{:+03}:{:02}",
+    //     offset.fix().local_minus_utc() / 3600,
+    //     (offset.fix().local_minus_utc() % 3600) / 60
+    // );
+
+    let offset_formatted_for_timestamp = format!(
+        "{:+03}{:02}",
+        offset.fix().local_minus_utc() / 3600,
+        (offset.fix().local_minus_utc() % 3600) / 60
+    );
+
+    // println!(
+    //     "Fecha y hora en UTC-3: {} {}",
+    //     local_time, offset_formatted_for_date_time
+    // );
+
+    // println!(
+    //     "Timestamp en UTC-3: {} {}",
+    //     timestamp, offset_formatted_for_timestamp
+    // );
+
+    Ok((timestamp, offset_formatted_for_timestamp))
 }
 
 #[cfg(test)]

@@ -33,3 +33,5 @@ pub mod show_ref;
 pub mod status;
 pub mod tree_handler;
 pub mod utils;
+pub mod git_config;
+pub mod tag;

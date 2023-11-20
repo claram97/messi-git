@@ -1,7 +1,7 @@
 use crate::{branch_handler::Branch, remote_handler::Remote};
 use std::{
-    fs::{File, OpenOptions},
-    io::{self, BufRead, BufReader, Write},
+    fs::{File, OpenOptions, self},
+    io::{self, BufRead, BufReader, Write, ErrorKind}, path::Path,
 };
 
 #[derive(Default)]
@@ -577,6 +577,125 @@ impl Config {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
         }
         Ok(())
+    }
+
+     /// Sets the user name and email in a configuration file.
+    ///
+    /// This function takes a reference to `self` (an instance of some struct) along with
+    /// the `name` and `email` parameters, and attempts to update or create a user section
+    /// in the configuration file located at the path specified in the `config_file_path`.
+    ///
+    /// # Arguments
+    ///
+    /// * `self` - An immutable reference to the struct containing configuration information.
+    /// * `name` - A string slice representing the new user name to be set.
+    /// * `email` - A string slice representing the new user email to be set.
+    ///
+    /// # Returns
+    ///
+    /// Returns an `io::Result<()>` indicating success or an `io::Error` if an I/O operation fails.
+    ///
+    /// # Errors
+    ///
+    /// This function may return an error if it encounters issues during file operations,
+    /// such as opening, reading, creating, or renaming files. If the parent directory of the
+    /// configuration file cannot be determined, an error with `ErrorKind::Other` is returned.
+    ///
+    /// The function reads the existing configuration file, looks for existing user information,
+    /// and updates it with the provided `name` and `email`. If no user information is found,
+    /// a new user section is created at the end of the file.
+    ///
+    /// The updated configuration is then written to a temporary file, and upon success, the
+    /// temporary file is renamed to replace the original configuration file.
+    pub fn set_user_name_and_email(&self, name: &str, email: &str) -> io::Result<()> {
+        let input_file = File::open(&self.config_file_path)?;
+        let reader = BufReader::new(input_file);
+        let parent = match Path::new(&self.config_file_path).parent() {
+            Some(parent) => parent.to_string_lossy().to_string(),
+            None => {
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "No se pudo obtener el directorio padre",
+                ));
+            }
+        };
+        let output_file_path = format!("{}/{}", parent, "config_2.txt");
+        let mut output_file = File::create(&output_file_path)?;
+        let mut found_user = false;
+        for line in reader.lines() {
+            let line = line?;
+
+            if line.contains("name") {
+                writeln!(output_file, "\tname = {}", name)?;
+                found_user = true;
+            } else if line.contains("email") {
+                writeln!(output_file, "\temail = {}", email)?;
+            } else {
+                writeln!(output_file, "{}", line)?;
+            }
+        }
+
+        if !found_user {
+            writeln!(
+                output_file,
+                "[user]\n\tname = {}\n\temail = {}",
+                name, email
+            )?;
+        }
+        fs::rename(output_file_path, &self.config_file_path)?;
+        Ok(())
+    }
+
+    /// Retrieves the user name and email from a configuration file.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok((name, email))` if the user name and email are successfully obtained,
+    /// otherwise returns an `io::Error` with `ErrorKind::NotFound`.
+    ///
+    pub fn get_user_name_and_email(&self) -> io::Result<(String, String)> {
+        let input_file = File::open(&self.config_file_path)?;
+        let reader = BufReader::new(input_file);
+
+        let mut found_user = false;
+        let mut name = String::new();
+        let mut email = String::new();
+
+        for line in reader.lines() {
+            let line = line?;
+
+            if line.contains("name") {
+                name = line;
+                found_user = true;
+            } else if line.contains("email") {
+                email = line;
+            }
+        }
+
+        if found_user {
+            let name_parts: Vec<&str> = name.split('=').map(|s| s.trim()).collect();
+            let name = name_parts.get(1).map(|s| s.to_string()).ok_or_else(|| {
+                io::Error::new(
+                    ErrorKind::InvalidData,
+                    "Failed to extract user name from configuration file.",
+                )
+            })?;
+
+            let email_parts: Vec<&str> = email.split('=').map(|s| s.trim()).collect();
+            let email = email_parts.get(1).map(|s| s.to_string()).ok_or_else(|| {
+                io::Error::new(
+                    ErrorKind::InvalidData,
+                    "Failed to extract user email from configuration file.",
+                )
+            })?;
+
+            Ok((name, email))
+        } else {
+            Err(io::Error::new(
+                ErrorKind::NotFound,
+                "Please use git config to set user and email configuration.\n",
+            ))
+        }
     }
 }
 

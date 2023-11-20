@@ -312,7 +312,7 @@ impl Tree {
         result.sort_by(|a, b| a.3.cmp(&b.3));
         for (mode, object_type, hash, name) in result {
             let string = format!("{} {} {}\t{}\n", mode, object_type, hash, name);
-            output.write(string.as_bytes())?;
+            output.write_all(string.as_bytes())?;
         }
         Ok(())
     }
@@ -337,7 +337,7 @@ impl Tree {
         trees.sort_by(|a, b| a.3.cmp(&b.3));
         for (mode, object_type, hash, name) in trees {
             let string = format!("{} {} {}\t{}\n", mode, object_type, hash, name);
-            output.write(string.as_bytes())?;
+            output.write_all(string.as_bytes())?;
         }
         Ok(())
     }
@@ -357,7 +357,7 @@ impl Tree {
         let paths = self.squash_tree_into_vec("");
         for (name, hash) in paths {
             let string = format!("{} {} {} {}\n", BLOB_NORMAL_MODE, "blob", hash, name);
-            output.write(string.as_bytes())?;
+            output.write_all(string.as_bytes())?;
         }
         Ok(())
     }
@@ -388,7 +388,7 @@ impl Tree {
                 parent.to_string() + "/" + &name
             };
             let string = format!("{} {} {}\t{}\n", mode, object_type, hash, name);
-            output.write(string.as_bytes())?;
+            output.write_all(string.as_bytes())?;
             if object_type == "tree" {
                 let tree = load_tree_from_file(&hash, git_dir)?;
                 tree.print_tree_recursive(output, git_dir, &name)?;
