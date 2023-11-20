@@ -72,7 +72,7 @@ fn test_removing_file() -> io::Result<()> {
     assert!(index_before_removal.contains(path));
 
     // And after it is deleted
-    rm::git_rm(path, index_path, GIT_DIR, "");
+    rm::git_rm(path, index_path, GIT_DIR, "")?;
     // Then the file is no longer in the index
     let index_after_removal = index::Index::load(index_path, GIT_DIR, "")?;
     assert!(!index_after_removal.contains(path));
