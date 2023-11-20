@@ -744,6 +744,34 @@ pub fn merge_trees(
     Ok(tuple)
 }
 
+pub fn get_diffs_between_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> Vec<(String, String, String)> {
+    let our_tree_entries = our_tree.squash_tree_into_vec("");
+    let result = our_tree_entries
+        .iter()
+        .filter_map(|(path, hash)| {
+            let their_hash = their_tree.get_hash_from_path(path);
+            match their_hash {
+                Some(their_hash) => {
+                    if &their_hash != hash {
+                        let diff = diff::return_object_diff_string(&their_hash, hash, git_dir).ok()?;
+                        Some((hash.clone(), path.to_string(), diff))
+                    } else {
+                        None
+                    }
+                }
+                None => {
+                    let file_content = match cat_file::cat_file_return_content(hash, git_dir) {
+                        Ok(content) => content,
+                        Err(_) => "The diff could not be calculated.".to_string(),
+                    };
+                    Some((hash.clone(), path.to_string(), file_content))
+                }
+            }
+        })
+        .collect::<Vec<(String, String, String)>>();
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

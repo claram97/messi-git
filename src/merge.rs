@@ -28,7 +28,7 @@ pub fn is_fast_forward(our_branch_commit: &str, common_commit: &str) -> bool {
 
 //Given two commits, finds the first common ancestor between them.
 //Returns an error if no common ancestor is found. (Thing that should never happen)
-fn find_common_ancestor(
+pub fn find_common_ancestor(
     our_branch_commit: &str,
     their_branch_commit: &str,
     git_dir: &str,
