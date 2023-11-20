@@ -55,15 +55,29 @@ impl Tree {
     }
 
     /// Adds the hash and name of a file to the tree
-    /// It keeps an alphabetical order.
     fn add_file(&mut self, name: &str, hash: &str) {
-        let insert_idx = self
-            .files
-            .binary_search_by(|(existing_name, _)| existing_name.cmp(&name.to_owned()));
+        self.files.push((name.to_string(), hash.to_string()));
+    }
 
-        match insert_idx {
-            Ok(idx) | Err(idx) => {
-                self.files.insert(idx, (name.to_string(), hash.to_string()));
+    /// Given a hash and a path, it updates the tree with the new hash. If the path does not exist, it creates it. If the path exists, it updates the hash.
+    pub fn update_tree(&mut self, path: &str, hash: &str) {
+        let mut path = path.split('/').collect::<Vec<&str>>();
+        let file_name = match path.pop() {
+            Some(file_name) => file_name,
+            None => return,
+        };
+        let mut current_tree = self;
+        while !path.is_empty() {
+            current_tree = current_tree.get_or_create_dir(path.remove(0));
+        }
+        
+        match current_tree.files.iter().position(|(p, h)| p == file_name) {
+            Some(index) => {
+                current_tree.files.remove(index);
+                current_tree.add_file(file_name, hash)
+            },
+            None => {
+                current_tree.add_file(file_name, hash)
             }
         }
     }
@@ -744,7 +758,7 @@ pub fn merge_trees(
     Ok(tuple)
 }
 
-pub fn get_diffs_between_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str) -> Vec<(String, String, String)> {
+pub fn get_files_with_changes(our_tree: &Tree, their_tree: &Tree) -> Vec<(String, String)> {
     let our_tree_entries = our_tree.squash_tree_into_vec("");
     let result = our_tree_entries
         .iter()
@@ -753,22 +767,36 @@ pub fn get_diffs_between_trees(our_tree: &Tree, their_tree: &Tree, git_dir: &str
             match their_hash {
                 Some(their_hash) => {
                     if &their_hash != hash {
-                        let diff = diff::return_object_diff_string(&their_hash, hash, git_dir).ok()?;
-                        Some((hash.clone(), path.to_string(), diff))
+                        Some((path.to_string(), hash.clone()))
                     } else {
                         None
                     }
                 }
-                None => {
-                    let file_content = match cat_file::cat_file_return_content(hash, git_dir) {
-                        Ok(content) => content,
-                        Err(_) => "The diff could not be calculated.".to_string(),
-                    };
-                    Some((hash.clone(), path.to_string(), file_content))
-                }
+                None => None,
             }
         })
-        .collect::<Vec<(String, String, String)>>();
+        .collect::<Vec<(String, String)>>();
+    result
+}
+
+pub fn get_files_without_changes(our_tree: &Tree, their_tree: &Tree) -> Vec<(String, String)> {
+    let our_tree_entries = our_tree.squash_tree_into_vec("");
+    let result = our_tree_entries
+        .iter()
+        .filter_map(|(path, hash)| {
+            let their_hash = their_tree.get_hash_from_path(path);
+            match their_hash {
+                Some(their_hash) => {
+                    if &their_hash == hash {
+                        Some((path.to_string(), hash.clone()))
+                    } else {
+                        None
+                    }
+                }
+                None => None,
+            }
+        })
+        .collect::<Vec<(String, String)>>();
     result
 }
 

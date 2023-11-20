@@ -1,6 +1,7 @@
 use crate::cat_file;
 use crate::hash_object;
 use crate::tree_handler;
+use crate::tree_handler::Tree;
 use crate::tree_handler::has_tree_changed_since_last_commit;
 use std::fs;
 use std::io;
@@ -143,6 +144,18 @@ pub fn new_merge_commit(
     let branch_path = git_dir_path.to_string() + "/refs/heads/" + &branch_name;
     let mut branch_file = std::fs::File::create(branch_path)?;
     branch_file.write_all(commit_hash.as_bytes())?;
+    Ok(commit_hash)
+}
+
+pub fn new_rebase_commit(git_dir_path: &str, message: &str, parent_commit: &str, tree: &Tree) -> io::Result<String> {
+    let (tree_hash, _) = tree_handler::write_tree(tree, git_dir_path)?;
+    
+    let time = chrono::Local::now();
+    let commit_content = format!(
+        "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0","user", "email@email", "user", "email@email"
+    );
+
+    let commit_hash = hash_object::store_string_to_file(&commit_content, git_dir_path, "commit")?;
     Ok(commit_hash)
 }
 
