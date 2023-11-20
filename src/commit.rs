@@ -2,6 +2,7 @@ use crate::cat_file;
 use crate::hash_object;
 use crate::tree_handler;
 use crate::tree_handler::has_tree_changed_since_last_commit;
+use crate::utils;
 use std::fs;
 use std::io;
 use std::io::Read;
@@ -30,9 +31,10 @@ fn create_new_commit_file(
         return Err(io::Error::new(io::ErrorKind::Other, "No changes were made"));
     }
 
-    let time = chrono::Local::now();
+    // let time = chrono::Local::now();
+    let (timestamp, offset) = utils::get_timestamp()?;
     let commit_content = format!(
-        "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0","user", "email@email", "user", "email@email"
+        "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {timestamp}\ncommitter {} {} {offset}\n\n{message}\0","user", "email@email", "user", "email@email"
     );
 
     let commit_hash = hash_object::store_string_to_file(&commit_content, directory, "commit")?;
