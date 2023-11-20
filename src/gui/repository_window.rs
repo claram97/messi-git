@@ -62,6 +62,8 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use super::style::apply_entry_style;
+use super::style::apply_label_style;
+use super::style::get_label;
 use super::style::get_switch;
 
 /// Displays a repository window with various buttons and actions in a GTK application.
@@ -141,6 +143,9 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
 
     let builder_clone_for_show_ref = builder.clone();
     show_ref_window(&builder_clone_for_show_ref);
+
+    let builder_clone_for_git_config = builder.clone();
+    config_window(&builder_clone_for_git_config);
 
     setup_buttons(builder)?;
 
@@ -3686,6 +3691,61 @@ pub fn show_ref_window(builder: &Builder) {
     show_tags_button_on_clicked(&show_tags_button, &show_ref_view);
     show_hash_button_on_clicked(&show_hash_button, &show_ref_view);
     verify_ref_button_on_clicked(&verify_ref_button, &show_ref_view, &show_ref_entry);
+}
+
+fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entry: &gtk::Entry) {
+    button.connect_clicked(move |_| {});
+}
+
+fn config_window(builder: &gtk::Builder) {
+    let config_button = get_button(builder, "config-button");
+    let name_entry = match get_entry(builder, "set-user-name-entry") {
+        Some(name_entry) => name_entry,
+        None => {
+            eprintln!("Entry not found");
+            return;
+        }
+    };
+    let email_entry = match get_entry(builder, "set-user-email-entry") {
+        Some(email_entry) => email_entry,
+        None => {
+            eprintln!("Entry not found");
+            return;
+        }
+    };
+    let name_label = match get_label(builder, "set-user-name-label", 13.0) {
+        Some(name_label) => name_label,
+        None => {
+            eprintln!("Label not found");
+            return;
+        }
+    };
+    let email_label = match get_label(builder, "set-user-email-label", 13.0) {
+        Some(email_label) => email_label,
+        None => {
+            eprintln!("Label not found");
+            return;
+        }
+    };
+    let config_title = match get_label(builder, "config-title-label", 17.0) {
+        Some(name_entry) => name_entry,
+        None => {
+            eprintln!("Label not found");
+            return;
+        }
+    };
+
+    match apply_button_style(&config_button) {
+        Ok(_) => {}
+        Err(_e) => {
+            eprintln!("Couldn't apply button style");
+        }
+    }
+    apply_entry_style(&name_entry);
+    apply_entry_style(&email_entry);
+    apply_label_style(&name_label);
+    apply_label_style(&email_label);
+    apply_label_style(&config_title);
 }
 
 /// ## `merge_window`
