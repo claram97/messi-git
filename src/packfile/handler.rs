@@ -147,6 +147,7 @@ impl<R: Read + Seek> Packfile<R> {
     fn get_ofs_delta_object(&mut self, initial_position: u64) -> io::Result<PackfileEntry> {
         dbg!("Desempaqetando ofs delta");
         let delta_offset = self.read_offset_encoding()?;
+        dbg!(delta_offset);
         let position = self.bufreader.stream_position()?;
         self.bufreader
             .seek(io::SeekFrom::Start(initial_position - delta_offset))?;
@@ -156,6 +157,7 @@ impl<R: Read + Seek> Packfile<R> {
     }
 
     fn get_ref_delta_object(&mut self) -> io::Result<PackfileEntry> {
+        todo!("Desempaquetar ref delta not implemented");
         let mut hash = [0; 20];
         self.bufreader.read_exact(&mut hash)?;
         let hash: Vec<String> = hash.iter().map(|byte| format!("{:02x}", byte)).collect(); // convierto los bytes del hash a string
@@ -323,7 +325,7 @@ fn append_objects(
     for (_obj_type, hash) in objects {
         let entry = PackfileEntry::from_hash(&hash, git_dir)?;
         let offset = packfile.len();
-
+        println!("Appending object in position: {}", offset);
         if let Some(base_obj) = find_base_object_index(&entry, &objects_in_packfile) {
             append_delta_object(packfile, &base_obj, &entry, git_dir)?;
         } else {
@@ -386,11 +388,12 @@ fn append_delta_object(
     object: &PackfileEntry,
     _git_dir: &str,
 ) -> io::Result<()> {
-    dbg!("Append delta object");
-    let encoded_header = object_header(ObjectType::OfsDelta, base_object.0.size);
+    let offset = packfile.len() - base_object.1;
+    println!("Append delta object. Offset: {}", offset);
+    
+    let encoded_header = object_header(ObjectType::OfsDelta, 7);
     packfile.extend(encoded_header);
 
-    let offset = packfile.len() - base_object.1;
     let encoded_offset = delta_utils::encode_size(offset);
     packfile.extend(encoded_offset);
 
