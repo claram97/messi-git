@@ -3,7 +3,8 @@ use std::{
     io::{self, Read, Write},
     path::{Path, PathBuf},
 };
-
+use std::fs::OpenOptions;
+use crate::logger::Logger;
 use crate::{
     commit::{self, get_branch_name},
     utils,
@@ -398,9 +399,24 @@ pub fn git_branch(
     } else {
         list_branches(&git_dir, output)?;
     }
+    log_command("git_branch", option.unwrap_or_default(), &PathBuf::from(&git_dir))?;
     Ok(())
 }
 
+fn log_command(command: &str, option: &str, git_dir: &Path) -> io::Result<()> {
+    let log_file_path = "logger_comands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!("Command '{}': {} {}", command, option, get_current_time());
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
+fn get_current_time() -> String {
+    use chrono::Local;
+    Local::now().to_string()
+}
 /// Removes ANSI escape codes from the input string.
 ///
 /// This function takes an input string and removes ANSI escape codes used for color formatting.
