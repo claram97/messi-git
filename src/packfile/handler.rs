@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashSet,
     fs::File,
     io::{self, BufReader, Cursor, Error, Read, Seek, Write},
     str::from_utf8,
@@ -10,7 +10,7 @@ use flate2::{bufread::ZlibDecoder, write::ZlibEncoder, Compression};
 use sha1::Digest;
 use sha1::Sha1;
 
-use crate::{hash_object, packfile::delta_utils::recreate_from_commands};
+use crate::hash_object;
 
 use super::{delta_utils, entry::PackfileEntry, object_type::ObjectType};
 
@@ -145,6 +145,7 @@ impl<R: Read + Seek> Packfile<R> {
     }
 
     fn get_ofs_delta_object(&mut self, initial_position: u64) -> io::Result<PackfileEntry> {
+        dbg!("Desempaqetando ofs delta");
         let delta_offset = self.read_offset_encoding()?;
         let position = self.bufreader.stream_position()?;
         self.bufreader
@@ -319,16 +320,13 @@ fn append_objects(
     git_dir: &str,
 ) -> io::Result<()> {
     let mut objects_in_packfile = Vec::new();
-    for (obj_type, hash) in objects {
+    for (_obj_type, hash) in objects {
         let entry = PackfileEntry::from_hash(&hash, git_dir)?;
         let offset = packfile.len();
 
-        if let Some(index) = find_base_object_index(&entry, &objects_in_packfile) {
-            dbg!("Base object found");
-            let base_obj = &objects_in_packfile[index];
-            append_delta_object(packfile, base_obj, &entry, git_dir)?;
+        if let Some(base_obj) = find_base_object_index(&entry, &objects_in_packfile) {
+            append_delta_object(packfile, &base_obj, &entry, git_dir)?;
         } else {
-            dbg!("Base object not found");
             append_object(packfile, &entry, git_dir)?;
         }
         objects_in_packfile.push((entry, offset)); // initial position of the object in the packfile
@@ -341,18 +339,17 @@ fn append_objects(
     Ok(())
 }
 
-fn find_base_object_index(
-    object: &PackfileEntry,
-    objects: &Vec<(PackfileEntry, usize)>,
-) -> Option<usize> {
+fn find_base_object_index<'a>(
+    object: &'a PackfileEntry,
+    objects: &'a Vec<(PackfileEntry, usize)>,
+) -> Option<&'a (PackfileEntry, usize)> {
     let toleration = 20;
 
-    if let Some(index) = objects
+    if let Some(candidate) = objects
         .iter()
-        .position(|(obj, _)| (1 as usize).abs_diff(object.size / obj.size) * 100 < toleration)
+        .filter(|(obj, _)| (1 as usize).abs_diff(object.size / obj.size) * 100 < toleration)
+        .max_by_key(|(obj, _)| object.size.abs_diff(obj.size))
     {
-        let candidate = &objects[index];
-
         let mut total_lines = 0;
         let mut coincidences = 0;
         let mut skip_lines = 0;
@@ -375,7 +372,7 @@ fn find_base_object_index(
         }
 
         if coincidences > total_lines * ((100 - toleration) / 100) {
-            return Some(index);
+            return Some(candidate);
         }
     }
     None
@@ -385,19 +382,21 @@ fn append_delta_object(
     packfile: &mut Vec<u8>,
     base_object: &(PackfileEntry, usize),
     object: &PackfileEntry,
-    git_dir: &str,
+    _git_dir: &str,
 ) -> io::Result<()> {
-    let encoded_header = object_header(object.obj_type, object.size);
+    dbg!("Append delta object");
+    let encoded_header = object_header(ObjectType::OfsDelta, base_object.0.size);
     packfile.extend(encoded_header);
+
     let offset = packfile.len() - base_object.1;
-    // escribo el offset encodeado
+    let encoded_offset = delta_utils::encode_size(offset);
+    packfile.extend(encoded_offset);
+
     let commands =
         delta_utils::delta_commands_from_objects(&base_object.0.content, &object.content);
-
-    let res = delta_utils::recreate_from_commands(&base_object.0.content, &commands);
-    assert_eq!(&object.content, &res);
-    // let mut commands = delta_utils::encode_commands(commands);
-
+    for command in commands {
+        packfile.extend(command.encode());
+    }
     Ok(())
 }
 /// Appends a single object to the given `packfile` vector.
@@ -410,7 +409,7 @@ fn append_delta_object(
 ///
 /// Returns an `io::Error` if there is an issue reading, compressing, or appending the object.
 ///
-fn append_object(packfile: &mut Vec<u8>, object: &PackfileEntry, git_dir: &str) -> io::Result<()> {
+fn append_object(packfile: &mut Vec<u8>, object: &PackfileEntry, _git_dir: &str) -> io::Result<()> {
     let obj_size = object.size;
     let encoded_header = object_header(object.obj_type, obj_size);
     packfile.extend(encoded_header);

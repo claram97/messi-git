@@ -1,9 +1,10 @@
-use std::{io::{self, Read}, str::from_utf8};
+use std::io::{self, Read};
 
 const COPY_INSTRUCTION_FLAG: u8 = 1 << 7;
 const COPY_OFFSET_BYTES: u8 = 4;
 const COPY_SIZE_BYTES: u8 = 3;
 const COPY_ZERO_SIZE: usize = 0x10000;
+const MAX_COPY_SIZE: usize = 0x7F;
 
 // Read an integer of up to `bytes` bytes.
 // `present_bytes` indicates which bytes are provided. The others are 0.
@@ -122,6 +123,28 @@ pub enum Command {
     Insert(Vec<u8>),
 }
 
+impl Command {
+    pub fn encode(&self) -> Vec<u8> {
+        match self {
+            Command::Copy { offset, size } => {
+                let mut encoded = Vec::new();
+                let offset = encode_size(*offset);
+                let size = encode_size(*size);
+                encoded.extend_from_slice(&offset);
+                encoded.extend_from_slice(&size);
+                encoded
+            }
+            Command::Insert(bytes) => {
+                let mut encoded = Vec::new();
+                let header = 0x7F & bytes.len() as u8;
+                encoded.push(header);
+                encoded.extend_from_slice(bytes);
+                encoded
+            }
+        }
+    }
+}
+
 pub fn delta_commands_from_objects(base: &[u8], object: &[u8]) -> Vec<Command> {
     let blines = base.split_inclusive(|&c| c == b'\n').collect::<Vec<_>>();
     let olines = object.split_inclusive(|&c| c == b'\n').collect::<Vec<_>>();
@@ -147,7 +170,9 @@ pub fn delta_commands_from_objects(base: &[u8], object: &[u8]) -> Vec<Command> {
                 size,
             });
         } else {
-            commands.push(Command::Insert(oline.to_vec()));
+            oline.chunks(MAX_COPY_SIZE).for_each(|chunk| {
+                commands.push(Command::Insert(chunk.to_vec()));
+            });
         }
     }
     commands
