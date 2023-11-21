@@ -80,15 +80,17 @@ fn read_bytes<R: Read, const N: usize>(stream: &mut R) -> io::Result<[u8; N]> {
     Ok(bytes)
 }
 
-// Read 7 bits of data and a flag indicating whether there are more
-fn read_varint_byte<R: Read>(stream: &mut R) -> io::Result<(u8, bool)> {
-    let [byte] = read_bytes(stream)?;
-    let value = byte & 0x7f;
-    let more_bytes = byte & 0x80 != 0;
-    Ok((value, more_bytes))
+pub fn read_size_encoding<R: Read>(stream: &mut R) -> io::Result<usize> {
+    let size_bytes = read_encoding_bytes(stream)?;
+    Ok(decode_size(&size_bytes))
 }
 
-pub fn read_size_encoding<R: Read>(stream: &mut R) -> io::Result<usize> {
+pub fn read_offset_encoding<R: Read>(stream: &mut R) -> io::Result<u64> {
+    let offset_bytes = read_encoding_bytes(stream)?;
+    Ok(decode_offset(&offset_bytes))
+}
+
+fn read_encoding_bytes<R: Read>(stream: &mut R) -> io::Result<Vec<u8>> {
     let mut size_bytes = Vec::new();
     loop {
         let [byte] = read_bytes(stream)?;
@@ -97,34 +99,43 @@ pub fn read_size_encoding<R: Read>(stream: &mut R) -> io::Result<usize> {
             break;
         }
     }
-    Ok(decode_size(&size_bytes))
+    Ok(size_bytes)
 }
 
-pub fn encode_size(n: usize) -> Vec<u8> {
-    let mut n = n;
-    let mut encoded_size = Vec::new();
-    while n > 0 {
-        let m = (n as u8) & 0x7f;
-        n >>= 7;
-        if n > 0 {
-            encoded_size.push(0x80 | m)
-        } else {
-            encoded_size.push(m)
-        }
+fn decode_offset(bytes: &[u8]) -> u64 {
+    let mut value = 0;
+    for byte in bytes {
+        value = value << 7 | (byte & 0x7F) as u64;
+        value += 1;
     }
-    return encoded_size;
+    value - 1
 }
 
 // pub fn encode_size(n: usize) -> Vec<u8> {
 //     let mut n = n;
 //     let mut encoded_size = Vec::new();
-//     while n >= 128 {
-//         encoded_size.push(((n as u8) & 0x7F) | 0x80);
+//     while n > 0 {
+//         let m = (n as u8) & 0x7f;
 //         n >>= 7;
+//         if n > 0 {
+//             encoded_size.push(0x80 | m)
+//         } else {
+//             encoded_size.push(m)
+//         }
 //     }
-//     encoded_size.push(n as u8);
-//     encoded_size
+//     return encoded_size;
 // }
+
+pub fn encode_size(n: usize) -> Vec<u8> {
+    let mut n = n;
+    let mut encoded_size = Vec::new();
+    while n >= 128 {
+        encoded_size.push(((n as u8) & 0x7F) | 0x80);
+        n >>= 7;
+    }
+    encoded_size.push(n as u8);
+    encoded_size
+}
 
 fn decode_size(bytes: &[u8]) -> usize {
     let mut n = 0;

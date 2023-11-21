@@ -116,6 +116,7 @@ impl<R: Read + Seek> Packfile<R> {
     ///
     fn get_next(&mut self) -> io::Result<PackfileEntry> {
         let initial_position = self.bufreader.stream_position()?;
+        println!("Initial position: {}", initial_position);
         let (obj_type, obj_size) = self.get_obj_type_size()?;
 
         dbg!(obj_type, obj_size);
@@ -146,8 +147,10 @@ impl<R: Read + Seek> Packfile<R> {
 
     fn get_ofs_delta_object(&mut self, initial_position: u64) -> io::Result<PackfileEntry> {
         dbg!("Desempaqetando ofs delta");
-        let delta_offset = self.read_offset_encoding()?;
-        dbg!(delta_offset);
+        // let delta_offset = self.read_offset_encoding()?;
+        let delta_offset = delta_utils::read_offset_encoding(&mut self.bufreader)?;
+        println!("Desempaqetando ofs delta. Delta offset: {}", delta_offset);
+        println!("Base obj pos: {}", initial_position - delta_offset);
         let position = self.bufreader.stream_position()?;
         self.bufreader
             .seek(io::SeekFrom::Start(initial_position - delta_offset))?;
@@ -177,23 +180,6 @@ impl<R: Read + Seek> Packfile<R> {
             bshift += 7;
         }
         Ok((obj_type, obj_size))
-    }
-
-    fn read_varint_byte(&mut self) -> io::Result<(u8, bool)> {
-        let byte = self.read_byte()?;
-        Ok((byte & 0x7f, byte & 0x80 != 0))
-    }
-
-    fn read_offset_encoding(&mut self) -> io::Result<u64> {
-        let mut value = 0;
-        loop {
-            let (byte_value, more_bytes) = self.read_varint_byte()?;
-            value = (value << 7) | byte_value as u64;
-            if !more_bytes {
-                return Ok(value);
-            }
-            value += 1;
-        }
     }
 
     /// Reads a single byte from the packfile.
@@ -389,8 +375,8 @@ fn append_delta_object(
     _git_dir: &str,
 ) -> io::Result<()> {
     let offset = packfile.len() - base_object.1;
-    println!("Append delta object. Offset: {}", offset);
-    
+    println!("Append delta object. Offset: {}. Base obj in: {}", offset, base_object.1);
+
     let encoded_header = object_header(ObjectType::OfsDelta, 7);
     packfile.extend(encoded_header);
 
@@ -399,9 +385,13 @@ fn append_delta_object(
 
     let commands =
         delta_utils::delta_commands_from_objects(&base_object.0.content, &object.content);
+    
+    let mut encoder = ZlibEncoder::new(packfile, Compression::default());
     for command in commands {
-        packfile.extend(command.encode());
+        let encoded = command.encode();
+        encoder.write_all(&encoded)?;
     }
+    encoder.finish()?;
     Ok(())
 }
 /// Appends a single object to the given `packfile` vector.
