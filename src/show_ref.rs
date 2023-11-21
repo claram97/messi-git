@@ -394,10 +394,16 @@ mod tests {
     }
 
     #[test]
-    fn test_show_ref_shows_both_heads_and_tags() -> io::Result<()> {
+    fn test_show_ref_shows_all_heads_remotes_and_tags() -> io::Result<()> {
         let path = "tests/show_ref_fake_repo_4";
         let git_dir = format!("{}/{}", path, ".mgit");
         let tags = format!("{}/{}", git_dir, "refs/tags");
+        let remotes = format!("{}/{}", git_dir, "refs/remotes");
+        let remote_origin = format!("{}/{}", git_dir, "refs/remotes/origin");
+        let remote_base = format!("{}/{}", git_dir, "refs/remotes/base");
+        let remote_origin_ref1 = format!("{}/{}", git_dir, "refs/remotes/origin/ref1");
+        let remote_origin_ref2 = format!("{}/{}", git_dir, "refs/remotes/origin/ref2");
+        let remote_base_ref = format!("{}/{}", git_dir, "refs/remotes/base/ref");
         let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
         let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
         create_if_not_exists(path, true)?;
@@ -405,11 +411,20 @@ mod tests {
         create_if_not_exists(&tags, true)?;
         create_if_not_exists(&head_ref, false)?;
         create_if_not_exists(&tag_ref, false)?;
+        create_if_not_exists(&remotes, true)?;
+        create_if_not_exists(&remote_origin, true)?;
+        create_if_not_exists(&remote_base, true)?;
+        create_if_not_exists(&remote_origin_ref1, false)?;
+        create_if_not_exists(&remote_origin_ref2, false)?;
+        create_if_not_exists(&remote_base_ref, false)?;
         let mut output: Vec<u8> = vec![];
         show_ref(&git_dir, &mut output)?;
         let output_string = String::from_utf8(output).unwrap();
         assert!(output_string.contains("refs/heads/some_ref"));
         assert!(output_string.contains("refs/tags/some_tag"));
+        assert!(output_string.contains("refs/remotes/origin/ref1"));
+        assert!(output_string.contains("refs/remotes/origin/ref2"));
+        assert!(output_string.contains("refs/remotes/base/ref"));
         std::fs::remove_dir_all(path)?;
         Ok(())
     }

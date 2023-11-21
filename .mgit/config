@@ -3,3 +3,6 @@
 	filemode = true
 	bare = false
 	logallrefupdates = true
+[user]
+	name = Raquela
+	email = rraquel@fi.uba.ar
