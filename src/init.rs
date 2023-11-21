@@ -66,6 +66,7 @@ pub fn git_init(
 
     create_directory_if_not_exists(&format!("{}/objects", &git_dir))?;
     create_directory_if_not_exists(&format!("{}/refs/heads", &git_dir))?;
+    create_directory_if_not_exists(&format!("{}/refs/tags", &git_dir))?; // Create 'refs/tags' directory
 
     // HEAD file
     let head_content = format!("ref: refs/heads/{}\n", initial_branch);
