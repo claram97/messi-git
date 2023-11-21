@@ -38,7 +38,7 @@ pub fn ls_tree(hash: &str, git_dir: &str, option: &str, output: &mut impl Write)
 #[cfg(test)]
 mod tests {
     use super::*;
-       fn create_git_dir(git_dir_path: &str) {
+    fn create_git_dir(git_dir_path: &str) {
         let _ = std::fs::remove_dir_all(git_dir_path);
         let _ = std::fs::create_dir_all(git_dir_path);
         let _ = std::fs::create_dir_all(git_dir_path.to_string() + "/objects");
@@ -52,7 +52,12 @@ mod tests {
         let index_file_content = "00000855bce90795f20fffff5242cc9235000000 a.txt\n00000c0a42c61e70f66bfffff38fa653b7200000 b.c\n000008afba902111fffffa8ebcc70522a3e00000 d.c\n00000128d8c22fc69fffff0d9620ab896b500000 e.c";
         index_file.write_all(index_file_content.as_bytes()).unwrap();
         let mut output = Vec::new();
-        let tree = tree_handler::build_tree_from_index("tests/ls-tree/test_ls_tree_no_option/index", git_dir_path, "").unwrap();
+        let tree = tree_handler::build_tree_from_index(
+            "tests/ls-tree/test_ls_tree_no_option/index",
+            git_dir_path,
+            "",
+        )
+        .unwrap();
         tree.print_tree(&mut output).unwrap();
         let output_string = String::from_utf8(output).unwrap();
         let expected_output = "100644 blob 00000855bce90795f20fffff5242cc9235000000\ta.txt\n100644 blob 00000c0a42c61e70f66bfffff38fa653b7200000\tb.c\n100644 blob 000008afba902111fffffa8ebcc70522a3e00000\td.c\n100644 blob 00000128d8c22fc69fffff0d9620ab896b500000\te.c\n";
@@ -69,7 +74,12 @@ mod tests {
         let index_file_content = "00000855bce90795f20fffff5242cc9235000000 a.txt\n00000c0a42c61e70f66bfffff38fa653b7200000 b.c\n000008afba902111fffffa8ebcc70522a3e00000 d.c\n00000128d8c22fc69fffff0d9620ab896b500000 e.c\n00000855bce90795f20fffff5242cc9235000000 subdir/a.txt\n00000c0a42c61e70f66bfffff38fa653b7200000 subdir/b.c\n000008afba902111fffffa8ebcc70522a3e00000 subdir/d.c\n00000128d8c22fc69fffff0d9620ab896b500000 subdir/e.c";
         index_file.write_all(index_file_content.as_bytes()).unwrap();
         let mut output = Vec::new();
-        let tree = tree_handler::build_tree_from_index("tests/ls-tree/test_ls_tree_r_option/index", git_dir_path, "").unwrap();
+        let tree = tree_handler::build_tree_from_index(
+            "tests/ls-tree/test_ls_tree_r_option/index",
+            git_dir_path,
+            "",
+        )
+        .unwrap();
         tree.print_tree_recursive_no_trees(&mut output).unwrap();
         let output_string = String::from_utf8(output).unwrap();
         // The output should be the same as the previous test, but with the subdirectory files as well
@@ -86,7 +96,12 @@ mod tests {
         let index_file_content = "00000855bce90795f20fffff5242cc9235000000 a.txt\n00000c0a42c61e70f66bfffff38fa653b7200000 b.c\n000008afba902111fffffa8ebcc70522a3e00000 d.c\n00000128d8c22fc69fffff0d9620ab896b500000 e.c\n00000855bce90795f20fffff5242cc9235000000 subdir/a.txt\n00000c0a42c61e70f66bfffff38fa653b7200000 subdir/b.c\n000008afba902111fffffa8ebcc70522a3e00000 subdir/d.c\n00000128d8c22fc69fffff0d9620ab896b500000 subdir/e.c";
         index_file.write_all(index_file_content.as_bytes()).unwrap();
         let mut output = Vec::new();
-        let tree = tree_handler::build_tree_from_index("tests/ls-tree/test_ls_tree_d_option/index", git_dir_path, "").unwrap();
+        let tree = tree_handler::build_tree_from_index(
+            "tests/ls-tree/test_ls_tree_d_option/index",
+            git_dir_path,
+            "",
+        )
+        .unwrap();
         tree.print_subtrees(&mut output).unwrap();
         let output_string = String::from_utf8(output).unwrap();
         let expected_output = "040000 tree 3aa73f36ac480cc7ad4393cc02851c4e5a2224e0\tsubdir\n";
