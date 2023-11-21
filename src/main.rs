@@ -73,6 +73,17 @@ fn run_without_gui() -> io::Result<()> {
     process_user_input()
 }
 
+/// Logs a command and its associated message to a file.
+///
+/// # Arguments
+///
+/// * `command` - A string representing the command being logged.
+/// * `message` - A string containing the message to be logged along with the command.
+///
+/// # Returns
+///
+/// Returns a `Result` indicating the success or failure of the logging operation.
+///
 fn log_to_file(command: &str, message: &str) -> Result<(), std::io::Error> {
     let mut logger = messi::logger::Logger::new("logger_comands.txt")?;
 
