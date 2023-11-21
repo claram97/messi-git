@@ -3,3 +3,6 @@
 	filemode = true
 	bare = false
 	logallrefupdates = true
+[user]
+	name = claram97
+	email = day6@teamo.com

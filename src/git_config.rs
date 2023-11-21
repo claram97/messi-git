@@ -22,15 +22,22 @@ use crate::config::Config;
 /// # Panics
 ///
 /// This function does not panic under normal circumstances. Panics may occur in case of unexpected errors.
-pub fn git_config(config_path: &str, line: Vec<String>) -> io::Result<()> {
-    if line.len() != 5 {
+pub fn git_config(git_dir: &str, line: Vec<String>) -> io::Result<()> {
+    if line.len() != 5 && line.len() != 3 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
-            "Correct usage: git config set-user-info \"name\" \"email\"".to_string(),
+            "Correct usage: git config set-user-info \"name\" \"email\" or git config get-user-info".to_string(),
         ));
     }
-    let config = Config::load(config_path)?;
-    config.set_user_name_and_email(&line[3], &line[4])?;
+    let config = Config::load(git_dir)?;
+    if line.len() == 5 {
+        config.set_user_name_and_email(&line[3], &line[4])?;
+    }
+    else if line.len() == 3 {
+        let (name, email) = config.get_user_name_and_email()?;
+        println!("Name = {name}\nEmail = {email}")
+    }    
+    
     Ok(())
 }
 //Usage: git config set-user-info name email

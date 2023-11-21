@@ -23,11 +23,12 @@ use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
-use crate::{add, log, ls_tree, push, tree_handler, git_config};
+use crate::{add, git_config, log, ls_tree, push, tree_handler};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
+use std::thread::current;
 use std::{env, io};
 
 const GIT_DIR: &str = ".mgit";
@@ -59,7 +60,7 @@ pub enum GitCommand {
     ShowRef,
     Rebase,
     Tag,
-    Config
+    Config,
 }
 
 /// Reads user input from the command line and splits it into a vector of strings.
@@ -185,7 +186,7 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
         GitCommand::ShowRef => handle_show_ref(args),
         GitCommand::Rebase => handle_rebase(args),
         GitCommand::Tag => handle_tag(args),
-        GitCommand::Config => handle_config(args)
+        GitCommand::Config => handle_config(args),
     }
 }
 
@@ -205,18 +206,18 @@ fn handle_config(args: Vec<String>) {
             return;
         }
     };
-
-    let git_config_path = format!("{}/{}", git_dir, "config");
-    match git_config::git_config(&git_config_path, args) {
+    let change = args.len() == 5;
+    match git_config::git_config(&git_dir, args) {
         Ok(_) => {
-            println!("Successfully changed");
+            if change {
+                println!("Successfully changed");
+            }
         }
         Err(e) => {
             eprintln!("error: {}", e);
         }
     }
 }
-
 
 /// Handles the "ls-files" command in a Git-like system.
 ///

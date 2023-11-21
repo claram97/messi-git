@@ -9,8 +9,8 @@ use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
+use crate::git_config::git_config;
 use std::str;
-use crate::tag::git_tag;
 //use crate::fetch::git_fetch_for_gui;
 use crate::config::Config;
 use crate::gui::main_window::add_to_open_windows;
@@ -147,7 +147,7 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
 
     let builder_clone_for_git_config = builder.clone();
     config_window(&builder_clone_for_git_config);
-
+    
     setup_buttons(builder)?;
 
     Ok(())
@@ -327,7 +327,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "verify-tag" => {
             button.connect_clicked(move |_| {
-                let _ = handle_tag_verify(&builder_clone);
+                let _ = handle_tag_verify();
             });
         }
         "tag-from-tag" => {
@@ -342,7 +342,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "add-normal-tag" => {
             button.connect_clicked(move |_| {
-                let _ = handle_tag_add_normal(&builder_clone);
+                let _ = handle_tag_add_normal();
             });
         }
         "add-annotated-tag" => {
@@ -1079,128 +1079,13 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
 
     Ok("Ok".to_string())
 }
-pub fn obtain_text_from_tag_add_normal(_builder: &gtk::Builder, _tag_name: &str) -> Result<String, io::Error> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
-
-    let line = vec![String::from("git"), String::from("tag"), _tag_name.to_string()];
-
-    let mut output: Vec<u8> = vec![];
-    match git_tag(&git_dir, line, &mut output) {
-        Ok(_config) => {}
-        Err(_e) => {
-            eprintln!("Error in git tag.");
-        }
-    }
-
-    let tags_text_view: gtk::TextView = _builder.get_object("tag-text").unwrap();
-
-    let text = match str::from_utf8(&output) {
-        Ok(s) => s.to_string(),
-        Err(_) => {
-            eprintln!("Error turning result into string.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error turning result into string",
-            ));
-        }
-    };
-
-    if let Some(buffer) = tags_text_view.get_buffer() {
-        buffer.set_text(&text);
-    } else {
-        eprintln!("Error obtaining TextView.");
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Error obtaining TextView",
-        ));
-    }
-
-    Ok(text)
+pub fn obtain_text_from_tag_add_normal(tag_name: &str) -> Result<String, io::Error> {
+    Ok("Ok".to_string())
 }
-pub fn obtain_text_from_tag_verify(builder: &Builder, tag_name: &str) -> Result<String, io::Error> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
-
-    let line = vec![
-    String::from("git"),
-    String::from("tag"),
-    String::from("-v"),
-   _tag_name.to_string(),
-    ];
-
-
-    let mut output: Vec<u8> = vec![];
-    match git_tag(&git_dir, line, &mut output) {
-        Ok(_config) => {}
-        Err(_e) => {
-            eprintln!("Error in git tag.");
-        }
-    }
-
-    let tags_text_view: gtk::TextView = builder.get_object("tag-text").unwrap();
-
-    let text = match str::from_utf8(&output) {
-        Ok(s) => s.to_string(),
-        Err(_) => {
-            eprintln!("Error turning result into string.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error turning result into string",
-            ));
-        }
-    };
-
-    if let Some(buffer) = tags_text_view.get_buffer() {
-        buffer.set_text(&text);
-    } else {
-        eprintln!("Error obtaining TextView.");
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Error obtaining TextView",
-        ));
-    }
-
-    Ok(text)
+pub fn obtain_text_from_tag_verify(tag_name: &str) -> Result<String, io::Error> {
+    Ok("Ok".to_string())
 }
+
 /// Sets the URL of a remote repository in the Git configuration.
 ///
 /// This function sets the URL of a remote repository in the Git configuration using the
@@ -1451,58 +1336,48 @@ fn handle_remote_rm() -> io::Result<()> {
     }
     Ok(())
 }
-
-fn handle_tag_add_normal(_builder: &gtk::Builder) -> io::Result<()> {
-    let builder_clone = _builder.clone();
-
-    let result = create_text_entry_window("Enter tag name", move |tag_name| {
-        let resultado = obtain_text_from_tag_add_normal(&builder_clone, &tag_name);
+fn handle_tag_add_normal() -> io::Result<()> {
+    let result = create_text_entry_window("Enter tag name", move |name| {
+        let resultado = obtain_text_from_tag_add_normal(&name);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Success", &format!("Tag : {} added successfully", texto));
+                show_message_dialog("Success", &format!("Tag '{}' added successfully", texto));
             }
             Err(_err) => match _err.kind() {
                 std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Success", "Operation completed successfully");
+                    show_message_dialog("Success", "Tag added successfully");
                 }
                 _ => {
-                    show_message_dialog("Error", "Failed to perform operation.");
+                    show_message_dialog("Error", "Failed to add tag.");
                 }
             },
         }
     });
-
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
-
     Ok(())
 }
-
-fn handle_tag_verify(builder: &gtk::Builder) -> io::Result<()> {
-    let builder_clone = builder.clone(); 
-
+fn handle_tag_verify() -> io::Result<()> {
     let result = create_text_entry_window("Enter tag name", move |name| {
-        let resultado = obtain_text_from_tag_verify(&builder_clone, &name);
+        let resultado = obtain_text_from_tag_verify(&name);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Success", &format!("Tag '{}' verified successfully", texto));
+                show_message_dialog("Success", &format!("Tag '{}' added successfully", texto));
             }
             Err(_err) => match _err.kind() {
                 std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Success", "Tag verified successfully");
+                    show_message_dialog("Success", "Tag added successfully");
                 }
                 _ => {
-                    show_message_dialog("Error", "Failed to verify tag.");
+                    show_message_dialog("Error", "Failed to add tag.");
                 }
             },
         }
     });
-
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
-
     Ok(())
 }
 
@@ -2122,38 +1997,47 @@ fn handle_list_tags(_builder: &gtk::Builder) -> io::Result<()> {
         }
     };
 
-    let line = vec![String::from("git"), String::from("tag"), String::from("-l")];
-
-     let mut output: Vec<u8> = vec![];
-    match git_tag(&git_dir, line, &mut output) {
-        Ok(_config) => {}
+    let _config = match Config::load(&git_dir) {
+        Ok(config) => config,
         Err(_e) => {
-            eprintln!("Error in git tag.");
-        }
-    }
-
-    let tags_text_view: gtk::TextView = _builder.get_object("tag-text").unwrap();
-
-    let text = match str::from_utf8(&output) {
-        Ok(s) => s.to_string(),
-        Err(_) => {
-            eprintln!("Error turning result into string.");
+            eprintln!("Error with config file.");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
-                "Error turning result into string",
+                "Error with config file",
             ));
         }
     };
 
-    if let Some(buffer) = tags_text_view.get_buffer() {
-        buffer.set_text(&text);
-    } else {
-        eprintln!("Error obtaining TextView.");
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Error obtaining TextView",
-        ));
-    }
+    // let mut output: Vec<u8> = vec![];
+    // match git_tag(&mut config, vec!["tag", "-l"], &mut output) {
+    //     Ok(_config) => {}
+    //     Err(_e) => {
+    //         eprintln!("Error in git tag.");
+    //     }
+    // }
+
+    // let tags_text_view: gtk::TextView = builder.get_object("tags-text").unwrap();
+
+    // let text = match str::from_utf8(&output) {
+    //     Ok(s) => s.to_string(),
+    //     Err(_) => {
+    //         eprintln!("Error turning result into string.");
+    //         return Err(io::Error::new(
+    //             io::ErrorKind::Other,
+    //             "Error turning result into string",
+    //         ));
+    //     }
+    // };
+
+    // if let Some(buffer) = tags_text_view.get_buffer() {
+    //     buffer.set_text(&text);
+    // } else {
+    //     eprintln!("Error obtaining TextView.");
+    //     return Err(io::Error::new(
+    //         io::ErrorKind::Other,
+    //         "Error obtaining TextView",
+    //     ));
+    // }
 
     Ok(())
 }
@@ -3810,11 +3694,55 @@ pub fn show_ref_window(builder: &Builder) {
     verify_ref_button_on_clicked(&verify_ref_button, &show_ref_view, &show_ref_entry);
 }
 
-fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entry: &gtk::Entry) {
-    button.connect_clicked(move |_| {});
+fn config_button_on_clicked(button: &Button, name_entry : &gtk::Entry, email_entry : &gtk::Entry) {
+    let cloned_name_entry = name_entry.clone();
+    let cloned_email_entry = email_entry.clone();
+    button.connect_clicked(move |_| {
+        println!("Click click! Config button was clicked.");
+        // let name = cloned_name_entry.get_text().map(|s| s.to_string()).unwrap_or_default();
+        // let email = cloned_email_entry.get_text().map(|s| s.to_string()).unwrap_or_default();
+
+        // // Si alguno de los cloned entry, aunque sea uno, está vacío:
+        // if name.is_empty() || email.is_empty() {
+        //     show_message_dialog("Warning", "Debe completar ambos campos para continuar");
+        // } else {
+        //     // Obtener el directorio actual
+        //     let mut current_dir = match std::env::current_dir() {
+        //         Ok(dir) => dir,
+        //         Err(err) => {
+        //             eprintln!("Error al obtener el directorio actual: {:?}", err);
+        //             return;
+        //         }
+        //     };
+
+        //     // Encontrar el directorio de git
+        //     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        //         Some(dir) => dir,
+        //         None => {
+        //             eprintln!("Error al obtener el git dir");
+        //             return;
+        //         }
+        //     };
+
+        //     // Construir la ruta del archivo de configuración
+        //     let config_path = format!("{}/{}", git_dir, "config");
+
+        //     // Construir el comando para la configuración de git
+        //     let line = vec![
+        //         "git".to_string(),
+        //         "config".to_string(),
+        //         "set-user-info".to_string(),
+        //         name.clone(), // Clonar para pasar la propiedad a la closure
+        //         email.clone(), // Clonar para pasar la propiedad a la closure
+        //     ];
+
+            // Llamar a la función git_config con la ruta y el comando
+            // git_config(&config_path, line);
+        // }
+    });
 }
 
-fn config_window(builder: &gtk::Builder) {
+fn config_window(builder : &gtk::Builder) {
     let config_button = get_button(builder, "config-button");
     let name_entry = match get_entry(builder, "set-user-name-entry") {
         Some(name_entry) => name_entry,
@@ -3853,7 +3781,7 @@ fn config_window(builder: &gtk::Builder) {
     };
 
     match apply_button_style(&config_button) {
-        Ok(_) => {}
+        Ok(_) => {},
         Err(_e) => {
             eprintln!("Couldn't apply button style");
         }
@@ -3863,6 +3791,8 @@ fn config_window(builder: &gtk::Builder) {
     apply_label_style(&name_label);
     apply_label_style(&email_label);
     apply_label_style(&config_title);
+
+    config_button_on_clicked(&config_button, &name_entry, &email_entry);
 }
 
 /// ## `merge_window`
