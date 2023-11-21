@@ -3,8 +3,9 @@ use std::{
     io::{self, Read, Write},
     path::{Path, PathBuf},
 };
-use std::fs::OpenOptions;
+use crate::utils::get_current_time;
 use crate::logger::Logger;
+
 use crate::{
     commit::{self, get_branch_name},
     utils,
@@ -413,10 +414,7 @@ fn log_command(command: &str, option: &str, git_dir: &Path) -> io::Result<()> {
     Ok(())
 }
 
-fn get_current_time() -> String {
-    use chrono::Local;
-    Local::now().to_string()
-}
+
 /// Removes ANSI escape codes from the input string.
 ///
 /// This function takes an input string and removes ANSI escape codes used for color formatting.
