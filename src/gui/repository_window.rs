@@ -1028,38 +1028,9 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
 /// A `Result` indicating whether the operation was successful or resulted in an error.
 ///
 pub fn obtain_text_from_remote_add(name: &str, url: &str) -> Result<String, io::Error> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
+    let git_dir = utils::obtain_git_dir(".mgit")?;
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
-
-    let mut config = match Config::load(&git_dir) {
-        Ok(config) => config,
-        Err(_e) => {
-            eprintln!("Error with config file.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error with config file",
-            ));
-        }
-    };
+    let mut config = Config::load(&git_dir)?;
 
     let line: Vec<&str> = vec!["add", name, url];
 
@@ -1534,7 +1505,10 @@ fn handle_tag_add_normal(builder: &gtk::Builder) -> io::Result<()> {
                 match handle_list_tags(&builder_clone) {
                     Ok(_) => {}
                     Err(_e) => {
-                        show_message_dialog("Error", "We had a problem trying to refresh the view.");
+                        show_message_dialog(
+                            "Error",
+                            "We had a problem trying to refresh the view.",
+                        );
                     }
                 }
                 //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
@@ -1559,10 +1533,10 @@ fn handle_tag_verify(builder: &gtk::Builder) -> io::Result<()> {
     let result = create_text_entry_window("Enter tag name", move |name| {
         let resultado = obtain_text_from_tag_verify(&builder_clone, &name);
         match resultado {
-            Ok(_texto) => {
-                            }
+            Ok(_texto) => {}
             Err(_err) => {
-                let error_message = format!("error: {name}: cannot verify a non-tag object of type commit.");
+                let error_message =
+                    format!("error: {name}: cannot verify a non-tag object of type commit.");
                 show_message_dialog("Error", &error_message);
             }
         }
@@ -1901,7 +1875,10 @@ fn handle_tag_remove(builder: &gtk::Builder) -> io::Result<()> {
                 match handle_list_tags(&builder_clone) {
                     Ok(_) => {}
                     Err(_e) => {
-                        show_message_dialog("Error", "We had a problem trying to refresh the view.");
+                        show_message_dialog(
+                            "Error",
+                            "We had a problem trying to refresh the view.",
+                        );
                     }
                 }
                 //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
@@ -1998,7 +1975,10 @@ fn handle_tag_add_annotated(builder: &gtk::Builder) -> io::Result<()> {
                     match handle_list_tags(&builder_clone) {
                         Ok(_) => {}
                         Err(_e) => {
-                            show_message_dialog("Error", "We had a problem trying to refresh the view.");
+                            show_message_dialog(
+                                "Error",
+                                "We had a problem trying to refresh the view.",
+                            );
                         }
                     }
                     //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
@@ -2030,7 +2010,10 @@ fn handle_tag_from_tag(builder: &gtk::Builder) -> io::Result<()> {
                     match handle_list_tags(&builder_clone) {
                         Ok(_) => {}
                         Err(_e) => {
-                            show_message_dialog("Error", "We had a problem trying to refresh the view.");
+                            show_message_dialog(
+                                "Error",
+                                "We had a problem trying to refresh the view.",
+                            );
                         }
                     }
                     //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));

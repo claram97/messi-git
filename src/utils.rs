@@ -4,6 +4,31 @@ use chrono::{DateTime, FixedOffset, Offset, Utc};
 
 use crate::commit;
 
+pub fn obtain_git_dir(name: &str) -> Result<String, io::Error> {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error obtaining actual directory: {:?}", err);
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining actual directory",
+            ));
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, name) {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error obtaining git dir");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining git dir",
+            ));
+        }
+    };
+    Ok(git_dir)
+}
+
 /// Recursively searches for a directory named "name_of_git_directory" in the file system
 /// starting from the location specified by "current_dir."
 ///
