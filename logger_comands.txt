@@ -5,3 +5,4 @@ Command 'branch': Command executed
 Command 'init': Command executed
 Command 'git_branch':  2023-11-21 22:02:35.039776112 +00:00
 Command 'branch': Command executed
+Command 'git init': Initialized repository at '/home/pau/Downloads/23C2-messi/.mgit'2023-11-21 22:43:21.147395062 +00:00

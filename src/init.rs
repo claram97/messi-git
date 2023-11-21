@@ -1,8 +1,24 @@
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
-
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 const GIT_DIR: &str = ".mgit";
+
+pub fn log_init(git_dir: &Path) -> io::Result<()> {
+    let log_file_path = "logger_comands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git init': Initialized repository at '{}'{}",
+        git_dir.display(),
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
 
 /// `create_directory_if_not_exists` is a utility function that creates a directory if it doesn't exist.
 ///
@@ -99,6 +115,7 @@ pub fn git_init(
         "Git repository initialized successfully in '{}'.",
         directory
     );
+    log_init(&Path::new(&git_dir))?;
     Ok(())
 }
 
