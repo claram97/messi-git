@@ -2366,7 +2366,7 @@ fn handle_list_tags(_builder: &gtk::Builder) -> io::Result<()> {
 
     let line = vec![String::from("git"), String::from("tag"), String::from("-l")];
 
-     let mut output: Vec<u8> = vec![];
+    let mut output: Vec<u8> = vec![];
     match git_tag(&git_dir, line, &mut output) {
         Ok(_config) => {}
         Err(_e) => {
@@ -2374,7 +2374,16 @@ fn handle_list_tags(_builder: &gtk::Builder) -> io::Result<()> {
         }
     }
 
-    let tags_text_view: gtk::TextView = _builder.get_object("tag-text").unwrap();
+    let tags_text_view: gtk::TextView = match _builder.get_object("tag-text") {
+        Some(view) => view,
+        None => {
+            eprintln!("No se pudo obtener el text view");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining text view",
+            ));
+        }
+    };
 
     let text = match str::from_utf8(&output) {
         Ok(s) => s.to_string(),

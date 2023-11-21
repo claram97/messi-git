@@ -1529,7 +1529,7 @@
                     <property name="receives-default">True</property>
                   </object>
                   <packing>
-                    <property name="x">550</property>
+                    <property name="x">500</property>
                     <property name="y">500</property>
                   </packing>
                 </child>
