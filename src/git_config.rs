@@ -32,12 +32,11 @@ pub fn git_config(git_dir: &str, line: Vec<String>) -> io::Result<()> {
     let config = Config::load(git_dir)?;
     if line.len() == 5 {
         config.set_user_name_and_email(&line[3], &line[4])?;
-    }
-    else if line.len() == 3 {
+    } else if line.len() == 3 {
         let (name, email) = config.get_user_name_and_email()?;
         println!("Name = {name}\nEmail = {email}")
-    }    
-    
+    }
+
     Ok(())
 }
 //Usage: git config set-user-info name email

@@ -147,7 +147,7 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
 
     let builder_clone_for_git_config = builder.clone();
     config_window(&builder_clone_for_git_config);
-    
+
     setup_buttons(builder)?;
 
     Ok(())
@@ -3694,55 +3694,52 @@ pub fn show_ref_window(builder: &Builder) {
     verify_ref_button_on_clicked(&verify_ref_button, &show_ref_view, &show_ref_entry);
 }
 
-fn config_button_on_clicked(button: &Button, name_entry : &gtk::Entry, email_entry : &gtk::Entry) {
+fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entry: &gtk::Entry) {
     let cloned_name_entry = name_entry.clone();
     let cloned_email_entry = email_entry.clone();
     button.connect_clicked(move |_| {
-        println!("Click click! Config button was clicked.");
-        // let name = cloned_name_entry.get_text().map(|s| s.to_string()).unwrap_or_default();
-        // let email = cloned_email_entry.get_text().map(|s| s.to_string()).unwrap_or_default();
+        let name = cloned_name_entry.get_text().to_string();
+        let email = cloned_email_entry.get_text().to_string();
 
-        // // Si alguno de los cloned entry, aunque sea uno, está vacío:
-        // if name.is_empty() || email.is_empty() {
-        //     show_message_dialog("Warning", "Debe completar ambos campos para continuar");
-        // } else {
-        //     // Obtener el directorio actual
-        //     let mut current_dir = match std::env::current_dir() {
-        //         Ok(dir) => dir,
-        //         Err(err) => {
-        //             eprintln!("Error al obtener el directorio actual: {:?}", err);
-        //             return;
-        //         }
-        //     };
+        if name.is_empty() || email.is_empty() {
+            show_message_dialog("Warning", "Debe completar ambos campos para continuar");
+        } else {
+            let mut current_dir = match std::env::current_dir() {
+                Ok(dir) => dir,
+                Err(err) => {
+                    eprintln!("Error al obtener el directorio actual: {:?}", err);
+                    return;
+                }
+            };
+            let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+                Some(dir) => dir,
+                None => {
+                    eprintln!("Error al obtener el git dir");
+                    return;
+                }
+            };
 
-        //     // Encontrar el directorio de git
-        //     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        //         Some(dir) => dir,
-        //         None => {
-        //             eprintln!("Error al obtener el git dir");
-        //             return;
-        //         }
-        //     };
+            let line = vec![
+                "git".to_string(),
+                "config".to_string(),
+                "set-user-info".to_string(),
+                name,
+                email,
+            ];
 
-        //     // Construir la ruta del archivo de configuración
-        //     let config_path = format!("{}/{}", git_dir, "config");
-
-        //     // Construir el comando para la configuración de git
-        //     let line = vec![
-        //         "git".to_string(),
-        //         "config".to_string(),
-        //         "set-user-info".to_string(),
-        //         name.clone(), // Clonar para pasar la propiedad a la closure
-        //         email.clone(), // Clonar para pasar la propiedad a la closure
-        //     ];
-
-            // Llamar a la función git_config con la ruta y el comando
-            // git_config(&config_path, line);
-        // }
+            match git_config(&git_dir, line) {
+                Ok(_) => {
+                    show_message_dialog("Éxito", "Información actualizada con éxito");
+                }
+                Err(_e) => {
+                    show_message_dialog("Error", &_e.to_string());
+                }
+            }
+        }
     });
 }
 
-fn config_window(builder : &gtk::Builder) {
+fn config_window(builder: &gtk::Builder) {
     let config_button = get_button(builder, "config-button");
     let name_entry = match get_entry(builder, "set-user-name-entry") {
         Some(name_entry) => name_entry,
@@ -3781,7 +3778,7 @@ fn config_window(builder : &gtk::Builder) {
     };
 
     match apply_button_style(&config_button) {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(_e) => {
             eprintln!("Couldn't apply button style");
         }
