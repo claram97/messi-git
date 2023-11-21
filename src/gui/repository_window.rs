@@ -14,6 +14,7 @@ use crate::tag::git_tag;
 use std::str;
 //use crate::fetch::git_fetch_for_gui;
 use crate::config::Config;
+use crate::branch::git_branch;
 use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
@@ -358,7 +359,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "another-branch" => {
             button.connect_clicked(move |_| {
-                let _ = handle_create_branch_from_branch_button();
+                let _ = handle_create_branch_from_branch_button(&builder_clone);
             });
         }
         "remote" => {
@@ -507,7 +508,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "delete-branch-button" => {
             button.connect_clicked(move |_| {
-                let result = handle_delete_branch_button();
+                let result = handle_delete_branch_button(&builder_clone);
                 if result.is_err() {
                     eprintln!("Error handling create branch button.")
                 }
@@ -515,7 +516,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "modify-branch-button" => {
             button.connect_clicked(move |_| {
-                let result = handle_modify_branch_button();
+                let result = handle_modify_branch_button(&builder_clone);
                 if result.is_err() {
                     eprintln!("Error handling create branch button.")
                 }
@@ -780,16 +781,32 @@ fn handle_create_branch_button() -> io::Result<()> {
 ///
 /// * `Ok(())` - If the branch creation and UI operations are successful.
 /// * `Err(io::Error)` - If there is an error during branch creation or UI operations.
-fn handle_create_branch_from_branch_button() -> io::Result<()> {
-    let create_result = create_text_entry_window("Enter the name of the branch", |text| {
-        let result = git_branch_for_ui(Some(text)); // aca mandale la llamada a lo nuevo q vas a hacer
-        if result.is_err() {
-            eprintln!("Error creating text entry window.");
+fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+
+    let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
+        let mut output: Vec<u8> = Vec::new();
+        git_branch(Some(text.to_string()), Some("-c"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
+
+        let branch_text_view: gtk::TextView = builder_clone.get_object("show-branches-text").unwrap();
+
+        let texto = match str::from_utf8(&output) {
+            Ok(s) => s,
+            Err(_) => {
+                eprintln!("Error turning result into string.");
+                "Error obtaining TextView"
+            }
+        };
+
+        if let Some(buffer) = branch_text_view.get_buffer() {
+            buffer.set_text(texto);
+        } else {
+            eprintln!("Error obtaining TextView.");
         }
     });
 
-    if create_result.is_err() {
-        eprintln!("Error creating text entry window.");
+    if let Err(err) = create_result {
+        eprintln!("Error creating text entry window: {}", err);
     }
 
     Ok(())
@@ -806,16 +823,32 @@ fn handle_create_branch_from_branch_button() -> io::Result<()> {
 /// This function returns an `io::Result` indicating whether the operation
 /// was successful or resulted in an error.
 ///
-fn handle_delete_branch_button() -> io::Result<()> {
-    let create_result = create_text_entry_window("Enter the name of the branch", |text| {
-        let result = git_branch_for_ui(Some(text)); // te dejo pa q le metas la llamdad
-        if result.is_err() {
-            eprintln!("Error creating text entry window.");
+fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+
+    let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
+        let mut output: Vec<u8> = Vec::new();
+        git_branch(Some(text.to_string()), Some("-d"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
+
+        let branch_text_view: gtk::TextView = builder_clone.get_object("show-branches-text").unwrap();
+
+        let texto = match str::from_utf8(&output) {
+            Ok(s) => s,
+            Err(_) => {
+                eprintln!("Error turning result into string.");
+                "Error obtaining TextView"
+            }
+        };
+
+        if let Some(buffer) = branch_text_view.get_buffer() {
+            buffer.set_text(texto);
+        } else {
+            eprintln!("Error obtaining TextView.");
         }
     });
 
-    if create_result.is_err() {
-        eprintln!("Error creating text entry window.");
+    if let Err(err) = create_result {
+        eprintln!("Error creating text entry window: {}", err);
     }
 
     Ok(())
@@ -832,20 +865,37 @@ fn handle_delete_branch_button() -> io::Result<()> {
 /// This function returns an `io::Result` indicating whether the operation
 /// was successful or resulted in an error.
 ///
-fn handle_modify_branch_button() -> io::Result<()> {
-    let create_result = create_text_entry_window("Enter the name of the branch", |text| {
-        let result = git_branch_for_ui(Some(text)); // aca te dejo pa q le metas la llamada
-        if result.is_err() {
-            eprintln!("Error creating text entry window.");
+fn handle_modify_branch_button(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+
+    let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
+        let mut output: Vec<u8> = Vec::new();
+        git_branch(Some(text.to_string()), Some("-m"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
+
+        let branch_text_view: gtk::TextView = builder_clone.get_object("show-branches-text").unwrap();
+
+        let texto = match str::from_utf8(&output) {
+            Ok(s) => s,
+            Err(_) => {
+                eprintln!("Error turning result into string.");
+                "Error obtaining TextView"
+            }
+        };
+
+        if let Some(buffer) = branch_text_view.get_buffer() {
+            buffer.set_text(texto);
+        } else {
+            eprintln!("Error obtaining TextView.");
         }
     });
 
-    if create_result.is_err() {
-        eprintln!("Error creating text entry window.");
+    if let Err(err) = create_result {
+        eprintln!("Error creating text entry window: {}", err);
     }
 
     Ok(())
 }
+
 
 /// Handle the "Add Path" button's click event. This function opens a text entry window for users to enter the path of
 /// the file they want to add to the staging area. Once the path is entered and confirmed, it attempts to add the file
