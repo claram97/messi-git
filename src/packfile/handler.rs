@@ -347,9 +347,11 @@ fn find_base_object_index<'a>(
 
     if let Some(candidate) = objects
         .iter()
-        .filter(|(obj, _)| (1 as usize).abs_diff(object.size / obj.size) * 100 < toleration)
-        .max_by_key(|(obj, _)| object.size.abs_diff(obj.size))
+        .min_by_key(|(obj, _)| object.size.abs_diff(obj.size))
     {
+        if (object.size.abs_diff(candidate.0.size) / object.size) > toleration / 100 {
+            return None;
+        }
         let mut total_lines = 0;
         let mut coincidences = 0;
         let mut skip_lines = 0;
