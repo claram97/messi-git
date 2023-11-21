@@ -285,7 +285,7 @@ impl Config {
         for line in reader.lines() {
             let line = line?;
             if line.starts_with(&format!("[{} \"{}\"]", type_, name)) {
-                skip_lines = 3;
+                skip_lines = 2;
             } else if skip_lines > 0 {
                 skip_lines -= 1;
             } else {
@@ -419,7 +419,7 @@ impl Config {
             if skip_lines > 0 {
                 skip_lines -= 1;
             } else if line.starts_with(&format!("[remote \"{}\"]", initial_name)) {
-                skip_lines = 3;
+                skip_lines = 2;
                 buffer.push(format!("[remote \"{}\"]", remote.name));
                 buffer.push(format!("\turl = {}", remote.url));
                 buffer.push(format!("\tfetch = {}", &remote.fetch));

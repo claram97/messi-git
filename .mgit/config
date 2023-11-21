@@ -3,6 +3,15 @@
 	filemode = true
 	bare = false
 	logallrefupdates = true
-[user]
-	name = Raquela
-	email = rraquel@fi.uba.ar
+[remote "1"]
+	url = Enter remote URL
+	fetch = +refs/heads/*:refs/remotes/1/name/*
+[remote "5"]
+	url = url
+	fetch = +refs/heads/*:refs/remotes/2/name/*
+[remote "3"]
+	url = Enter remote URL
+	fetch = +refs/heads/*:refs/remotes/3/name/*
+[remote "4"]
+	url = Enter
+	fetch = +refs/heads/*:refs/remotes/5/name/*

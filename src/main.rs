@@ -88,7 +88,7 @@ fn log_to_file(command: &str, message: &str) -> Result<(), std::io::Error> {
     let mut logger = messi::logger::Logger::new("logger_comands.txt")?;
 
     let full_message = format!("Command '{}': {}", command, message);
-    logger.write(full_message.as_bytes())?;
+    logger.write_all(full_message.as_bytes())?;
 
     logger.flush()?;
 

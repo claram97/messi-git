@@ -11,6 +11,7 @@ use crate::commit;
 use crate::commit::get_branch_name;
 use crate::git_config::git_config;
 use crate::tag::git_tag;
+use crate::utils::obtain_git_dir;
 use std::str;
 //use crate::fetch::git_fetch_for_gui;
 use crate::branch::git_branch;
@@ -369,12 +370,12 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "remote-add" => {
             button.connect_clicked(move |_| {
-                let _ = handle_remote_add();
+                let _ = handle_remote_add(&builder_clone);
             });
         }
         "remote-rm" => {
             button.connect_clicked(move |_| {
-                let _ = handle_remote_rm();
+                let _ = handle_remote_rm(&builder_clone);
             });
         }
         "remote-set-url" => {
@@ -389,7 +390,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "remote-rename" => {
             button.connect_clicked(move |_| {
-                let _ = handle_remote_rename();
+                let _ = handle_remote_rename(&builder_clone);
             });
         }
         "show-fetch" => {
@@ -1034,14 +1035,18 @@ pub fn obtain_text_from_remote_add(name: &str, url: &str) -> Result<String, io::
 
     let line: Vec<&str> = vec!["add", name, url];
 
-    match git_remote(&mut config, line, &mut io::stdout()) {
-        Ok(_config) => {}
-        Err(_e) => {
-            eprintln!("Error in git remote.");
-        }
+    let mut output : Vec<u8> = vec![];
+    let result = git_remote(&mut config, line, &mut output);
+    let string = String::from_utf8(output) .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    drop(config);
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            string,
+        ));
     }
 
-    Ok("Ok".to_string())
+    Ok(string)
 }
 
 /// Removes a remote from the Git configuration.
@@ -1059,49 +1064,23 @@ pub fn obtain_text_from_remote_add(name: &str, url: &str) -> Result<String, io::
 /// A `Result` indicating whether the operation was successful or resulted in an error.
 ///
 pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
-
-    let mut config = match Config::load(&git_dir) {
-        Ok(config) => config,
-        Err(_e) => {
-            eprintln!("Error with config file.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error with config file",
-            ));
-        }
-    };
-
+    let mut config = Config::load(&git_dir)?;
+    
     let line: Vec<&str> = vec!["remove", text];
-
-    match git_remote(&mut config, line, &mut io::stdout()) {
-        Ok(_config) => {}
-        Err(_e) => {
-            eprintln!("Error in git remote.");
-        }
+    let mut output : Vec<u8> = vec![];
+    let result = git_remote(&mut config, line, &mut output);
+    drop(config);
+    let string = String::from_utf8(output) .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            string,
+        ));
     }
 
-    Ok("Ok".to_string())
+    Ok(string)
 }
 
 pub fn obtain_text_from_tag_add_normal(
@@ -1260,49 +1239,24 @@ pub fn obtain_text_from_tag_verify(builder: &Builder, tag_name: &str) -> Result<
 /// A `Result` indicating whether the operation was successful or resulted in an error.
 ///
 pub fn obtain_text_from_remote_set_url(name: &str, url: &str) -> Result<String, io::Error> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
-
-    let mut config = match Config::load(&git_dir) {
-        Ok(config) => config,
-        Err(_e) => {
-            eprintln!("Error with config file.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error with config file",
-            ));
-        }
-    };
-
+    let mut config = Config::load(&git_dir)?;
+    
     let line: Vec<&str> = vec!["set-url", name, url];
 
-    match git_remote(&mut config, line, &mut io::stdout()) {
-        Ok(_config) => {}
-        Err(_e) => {
-            eprintln!("Error in git remote.");
-        }
+    let mut output : Vec<u8> = vec![];
+    let result = git_remote(&mut config, line, &mut output);
+    drop(config);
+    let string = String::from_utf8(output) .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            string,
+        ));
     }
 
-    Ok("Ok".to_string())
+    Ok(string)
 }
 
 /// Obtains the URL of a remote repository from the Git configuration.
@@ -1321,49 +1275,24 @@ pub fn obtain_text_from_remote_set_url(name: &str, url: &str) -> Result<String, 
 /// otherwise an error indicating the failure.
 ///
 pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
+    let git_dir = utils::obtain_git_dir(".mgit")?;
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
-
-    let mut config = match Config::load(&git_dir) {
-        Ok(config) => config,
-        Err(_e) => {
-            eprintln!("Error with config file.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error with config file",
-            ));
-        }
-    };
+    let mut config = Config::load(&git_dir)?;
 
     let line: Vec<&str> = vec!["get-url", text];
 
-    match git_remote(&mut config, line, &mut io::stdout()) {
-        Ok(_config) => {}
-        Err(_e) => {
-            eprintln!("Error in git remote.");
-        }
+    let mut output : Vec<u8> = vec![];
+    let result = git_remote(&mut config, line, &mut output);
+    drop(config);
+    let string = String::from_utf8(output) .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            string,
+        ));
     }
 
-    Ok("Ok".to_string())
+    Ok(string)
 }
 
 /// Renames a remote repository in the Git configuration.
@@ -1382,49 +1311,24 @@ pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> 
 /// indicating the failure.
 ///
 pub fn obtain_text_from_remote_rename(old_name: &str, new_name: &str) -> Result<String, io::Error> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
-
-    let mut config = match Config::load(&git_dir) {
-        Ok(config) => config,
-        Err(_e) => {
-            eprintln!("Error with config file.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error with config file",
-            ));
-        }
-    };
+    let mut config = Config::load(&git_dir)?;
 
     let line: Vec<&str> = vec!["rename", old_name, new_name];
 
-    match git_remote(&mut config, line, &mut io::stdout()) {
-        Ok(_config) => {}
-        Err(_e) => {
-            eprintln!("Error in git remote.");
-        }
+    let mut output : Vec<u8> = vec![];
+    let result = git_remote(&mut config, line, &mut output);
+    drop(config);
+    let string = String::from_utf8(output) .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    if result.is_err() {
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            string,
+        ));
     }
 
-    Ok("Ok".to_string())
+    Ok(string)
 }
 
 /// Handles the addition of a remote repository.
@@ -1438,20 +1342,22 @@ pub fn obtain_text_from_remote_rename(old_name: &str, new_name: &str) -> Result<
 /// A `Result` indicating success or failure. If successful, a message is displayed; otherwise, an
 /// error message is shown.
 ///
-fn handle_remote_add() -> io::Result<()> {
-    let result = create_text_entry_window2("Enter repo name", "Enter repo URL", |name, url| {
+fn handle_remote_add(builder : &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+    let result = create_text_entry_window2("Enter remote name", "Enter remote URL", move |name, url| {
         let resultado = obtain_text_from_remote_add(&name, &url);
         match resultado {
-            Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+            Ok(_texto) => {
+                match handle_remote(&builder_clone) {
+                    Ok(_) => {},
+                    Err(_e) => {
+                        show_message_dialog("Error", "Couldn't update the view!");
+                    }
+                }
             }
-            Err(_err) => match _err.kind() {
-                std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Éxito", "Changed correctly to branch ");
-                }
-                _ => {
-                    show_message_dialog("Error", "La rama indicada no existe.");
-                }
+            Err(_err) => {
+                let error_mesage = _err.to_string();
+                show_message_dialog("Error", &error_mesage)
             },
         }
     });
@@ -1472,20 +1378,22 @@ fn handle_remote_add() -> io::Result<()> {
 /// A `Result` indicating success or failure. If successful, a message is displayed; otherwise, an
 /// error message is shown.
 ///
-fn handle_remote_rm() -> io::Result<()> {
+fn handle_remote_rm(builder : &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter repository name", move |text| {
         let resultado = obtain_text_from_remote_rm(&text);
         match resultado {
-            Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+            Ok(_texto) => {
+                match handle_remote(&builder_clone) {
+                    Ok(_) => {},
+                    Err(_e) => {
+                        show_message_dialog("Error", "Couldn't update the view!");
+                    }
+                }
             }
-            Err(_err) => match _err.kind() {
-                std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Éxito", "Changed correctly to branch ");
-                }
-                _ => {
-                    show_message_dialog("Error", "La rama indicada no existe.");
-                }
+            Err(_err) => {
+                let error_mesage = _err.to_string();
+                show_message_dialog("Error", &error_mesage)
             },
         }
     });
@@ -1505,10 +1413,7 @@ fn handle_tag_add_normal(builder: &gtk::Builder) -> io::Result<()> {
                 match handle_list_tags(&builder_clone) {
                     Ok(_) => {}
                     Err(_e) => {
-                        show_message_dialog(
-                            "Error",
-                            "We had a problem trying to refresh the view.",
-                        );
+                        show_message_dialog("Error", "We had a problem trying to refresh the view.");
                     }
                 }
                 //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
@@ -1533,10 +1438,10 @@ fn handle_tag_verify(builder: &gtk::Builder) -> io::Result<()> {
     let result = create_text_entry_window("Enter tag name", move |name| {
         let resultado = obtain_text_from_tag_verify(&builder_clone, &name);
         match resultado {
-            Ok(_texto) => {}
+            Ok(_texto) => {
+                            }
             Err(_err) => {
-                let error_message =
-                    format!("error: {name}: cannot verify a non-tag object of type commit.");
+                let error_message = format!("error: {name}: cannot verify a non-tag object of type commit.");
                 show_message_dialog("Error", &error_message);
             }
         }
@@ -1875,10 +1780,7 @@ fn handle_tag_remove(builder: &gtk::Builder) -> io::Result<()> {
                 match handle_list_tags(&builder_clone) {
                     Ok(_) => {}
                     Err(_e) => {
-                        show_message_dialog(
-                            "Error",
-                            "We had a problem trying to refresh the view.",
-                        );
+                        show_message_dialog("Error", "We had a problem trying to refresh the view.");
                     }
                 }
                 //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
@@ -1975,10 +1877,7 @@ fn handle_tag_add_annotated(builder: &gtk::Builder) -> io::Result<()> {
                     match handle_list_tags(&builder_clone) {
                         Ok(_) => {}
                         Err(_e) => {
-                            show_message_dialog(
-                                "Error",
-                                "We had a problem trying to refresh the view.",
-                            );
+                            show_message_dialog("Error", "We had a problem trying to refresh the view.");
                         }
                     }
                     //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
@@ -2010,10 +1909,7 @@ fn handle_tag_from_tag(builder: &gtk::Builder) -> io::Result<()> {
                     match handle_list_tags(&builder_clone) {
                         Ok(_) => {}
                         Err(_e) => {
-                            show_message_dialog(
-                                "Error",
-                                "We had a problem trying to refresh the view.",
-                            );
+                            show_message_dialog("Error", "We had a problem trying to refresh the view.");
                         }
                     }
                     //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
@@ -2185,19 +2081,12 @@ fn handle_remote_set_url() -> io::Result<()> {
     let result = create_text_entry_window2("Enter repo name", "Enter new URL", |name, url| {
         let resultado = obtain_text_from_remote_set_url(&name, &url);
         match resultado {
-            Ok(texto) => {
-                show_message_dialog(
-                    "Success",
-                    &format!("Changed correctly to branch '{}'", texto),
-                );
+            Ok(_texto) => {
+                show_message_dialog("Éxito", &format!("La URL se actualizó correctamente."));
             }
-            Err(_err) => match _err.kind() {
-                std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Success", "Changed correctly to branch ");
-                }
-                _ => {
-                    show_message_dialog("Error", "The specified branch does not exist.");
-                }
+            Err(_err) => {
+                let error_mesage = _err.to_string();
+                show_message_dialog("Error", &error_mesage)
             },
         }
     });
@@ -2223,15 +2112,11 @@ fn handle_remote_get_url() -> io::Result<()> {
         let resultado = obtain_text_from_remote_get_url(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+                show_message_dialog("Éxito", &format!("{}'", texto));
             }
-            Err(_err) => match _err.kind() {
-                std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Éxito", "Changed correctly to branch ");
-                }
-                _ => {
-                    show_message_dialog("Error", "La rama indicada no existe.");
-                }
+            Err(_err) => {
+                let error_mesage = _err.to_string();
+                show_message_dialog("Error", &error_mesage)
             },
         }
     });
@@ -2252,26 +2137,25 @@ fn handle_remote_get_url() -> io::Result<()> {
 /// A `Result` indicating success or failure. If successful, a message is displayed with the result;
 /// otherwise, an error message is shown.
 ///
-fn handle_remote_rename() -> io::Result<()> {
+fn handle_remote_rename(builder : &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
     let result = create_text_entry_window2(
         "Enter old repo name",
         "Enter new repo name",
-        |old_name, new_name| {
+        move |old_name, new_name| {
             let resultado = obtain_text_from_remote_rename(&old_name, &new_name);
             match resultado {
-                Ok(texto) => {
-                    show_message_dialog(
-                        "Success",
-                        &format!("Changed correctly to branch '{}'", texto),
-                    );
+                Ok(_texto) => {
+                    match handle_remote(&builder_clone) {
+                        Ok(_) => {},
+                        Err(_e) => {
+                            show_message_dialog("Error", "Couldn't update the view!");
+                        }
+                    }
                 }
-                Err(_err) => match _err.kind() {
-                    std::io::ErrorKind::UnexpectedEof => {
-                        show_message_dialog("Success", "Changed correctly to branch ");
-                    }
-                    _ => {
-                        show_message_dialog("Error", "The specified branch does not exist.");
-                    }
+                Err(_err) => {
+                    let error_mesage = _err.to_string();
+                    show_message_dialog("Error", &error_mesage)
                 },
             }
         },
@@ -2296,48 +2180,35 @@ fn handle_remote_rename() -> io::Result<()> {
 /// otherwise, an error message is shown.
 ///
 fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
-
-    let mut config = match Config::load(&git_dir) {
-        Ok(config) => config,
-        Err(_e) => {
-            eprintln!("Error with config file.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error with config file",
-            ));
-        }
-    };
+    let mut config = Config::load(&git_dir)?;
 
     let mut output: Vec<u8> = vec![];
     match git_remote(&mut config, vec!["remote"], &mut output) {
-        Ok(_config) => {}
+        Ok(_) => {}
         Err(_e) => {
-            eprintln!("Error in git remote.");
+            let error = _e.to_string();
+            eprintln!("{}", error);
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "&error",
+            ));
         }
     }
 
-    let remote_text_view: gtk::TextView = builder.get_object("remote-text").unwrap();
+    drop(config);
+
+    let remote_text_view: gtk::TextView = match builder.get_object("remote-text") {
+        Some(text_view) => text_view,
+        None => {
+            eprintln!("Couldn't get remote text view.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Couldn't get remote text view.",
+            ));
+        }
+    };
 
     let text = match str::from_utf8(&output) {
         Ok(s) => s.to_string(),
@@ -2364,27 +2235,7 @@ fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
 }
 
 fn handle_list_tags(_builder: &gtk::Builder) -> io::Result<()> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
 
     let line = vec![String::from("git"), String::from("tag"), String::from("-l")];
 
