@@ -1,5 +1,7 @@
 use std::io::{self, Read};
 
+use flate2::bufread::ZlibEncoder;
+
 const COPY_INSTRUCTION_FLAG: u8 = 1 << 7;
 const COPY_OFFSET_BYTES: u8 = 4;
 const COPY_SIZE_BYTES: u8 = 3;
@@ -87,19 +89,15 @@ fn read_varint_byte<R: Read>(stream: &mut R) -> io::Result<(u8, bool)> {
 }
 
 pub fn read_size_encoding<R: Read>(stream: &mut R) -> io::Result<usize> {
-    let mut value = 0;
-    let mut length = 0; // the number of bits of data read so far
+    let mut size_bytes = Vec::new();
     loop {
-        let (byte_value, more_bytes) = read_varint_byte(stream)?;
-        // Add in the data bits
-        value |= (byte_value as usize) << length;
-        // Stop if this is the last byte
-        if !more_bytes {
-            return Ok(value);
+        let [byte] = read_bytes(stream)?;
+        size_bytes.push(byte);
+        if byte & 0x80 == 0 {
+            break;
         }
-
-        length += 7;
     }
+    Ok(decode_size(&size_bytes))
 }
 
 pub fn encode_size(n: usize) -> Vec<u8> {
@@ -115,6 +113,25 @@ pub fn encode_size(n: usize) -> Vec<u8> {
         }
     }
     return encoded_size;
+}
+
+// pub fn encode_size(n: usize) -> Vec<u8> {
+//     let mut n = n;
+//     let mut encoded_size = Vec::new();
+//     while n >= 128 {
+//         encoded_size.push(((n as u8) & 0x7F) | 0x80);
+//         n >>= 7;
+//     }
+//     encoded_size.push(n as u8);
+//     encoded_size
+// }
+
+fn decode_size(bytes: &[u8]) -> usize {
+    let mut n = 0;
+    for (i, byte) in bytes.iter().enumerate() {
+        n |= ((byte & 0x7F) as usize) << (i * 7);
+    }
+    n
 }
 
 #[derive(Debug)]
@@ -136,9 +153,11 @@ impl Command {
             }
             Command::Insert(bytes) => {
                 let mut encoded = Vec::new();
-                let header = 0x7F & bytes.len() as u8;
-                encoded.push(header);
-                encoded.extend_from_slice(bytes);
+                bytes.chunks(MAX_COPY_SIZE).for_each(|chunk| {
+                    let header = 0x7F & chunk.len() as u8;
+                    encoded.push(header);
+                    encoded.extend_from_slice(bytes);
+                });
                 encoded
             }
         }
@@ -170,9 +189,7 @@ pub fn delta_commands_from_objects(base: &[u8], object: &[u8]) -> Vec<Command> {
                 size,
             });
         } else {
-            oline.chunks(MAX_COPY_SIZE).for_each(|chunk| {
-                commands.push(Command::Insert(chunk.to_vec()));
-            });
+            commands.push(Command::Insert(oline.to_vec()));
         }
     }
     commands
@@ -197,6 +214,46 @@ pub fn recreate_from_commands(base: &[u8], commands: &[Command]) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_encode_size() {
+        assert_eq!(encode_size(0), vec![0]);
+        assert_eq!(encode_size(1), vec![0x81]);
+        assert_eq!(encode_size(127), vec![127]);
+        assert_eq!(encode_size(128), vec![128, 1]);
+        assert_eq!(encode_size(129), vec![129, 1]);
+        assert_eq!(encode_size(206), vec![206, 1]);
+        assert_eq!(encode_size(255), vec![255, 1]);
+        assert_eq!(encode_size(256), vec![128, 2]);
+        assert_eq!(encode_size(257), vec![129, 2]);
+        assert_eq!(encode_size(16383), vec![255, 127]);
+        assert_eq!(encode_size(16384), vec![128, 128, 1]);
+        assert_eq!(encode_size(16385), vec![129, 128, 1]);
+        assert_eq!(encode_size(2097151), vec![255, 255, 127]);
+        assert_eq!(encode_size(2097152), vec![128, 128, 128, 1]);
+        assert_eq!(encode_size(2097153), vec![129, 128, 128, 1]);
+        assert_eq!(encode_size(268435455), vec![255, 255, 255, 127]);
+    }
+
+    #[test]
+    fn test_decode_size() {
+        assert_eq!(decode_size(&[0]), 0);
+        assert_eq!(decode_size(&[1]), 1);
+        assert_eq!(decode_size(&[127]), 127);
+        assert_eq!(decode_size(&[128, 1]), 128);
+        assert_eq!(decode_size(&[129, 1]), 129);
+        assert_eq!(decode_size(&[206, 1]), 206);
+        assert_eq!(decode_size(&[255, 1]), 255);
+        assert_eq!(decode_size(&[128, 2]), 256);
+        assert_eq!(decode_size(&[129, 2]), 257);
+        assert_eq!(decode_size(&[255, 127]), 16383);
+        assert_eq!(decode_size(&[128, 128, 1]), 16384);
+        assert_eq!(decode_size(&[129, 128, 1]), 16385);
+        assert_eq!(decode_size(&[255, 255, 127]), 2097151);
+        assert_eq!(decode_size(&[128, 128, 128, 1]), 2097152);
+        assert_eq!(decode_size(&[129, 128, 128, 1]), 2097153);
+        assert_eq!(decode_size(&[255, 255, 255, 127]), 268435455);
+    }
 
     #[test]
     fn test_recreate_from_commands() -> io::Result<()> {
