@@ -24,7 +24,9 @@ use crate::{branch, cat_file, config::Config, hash_object, utils};
 /// This function panics if it encounters an error while writing the error message to the output.
 fn list_tags(tags_path: &str, output: &mut impl Write) -> io::Result<()> {
     if let Ok(entries) = fs::read_dir(tags_path) {
+        println!("Entries: {:?}", entries);
         for entry in entries.flatten() {
+            println!("Entry {:?}", entry);
             let file_name = entry.file_name();
             if let Some(name) = file_name.to_str() {
                 output.write_all(format!("{}\n", name).as_bytes())?;
@@ -122,8 +124,10 @@ fn create_annotated_tag(
     output: &mut impl Write,
 ) -> io::Result<()> {
     let file_path = format!("{}/{}", tags_path, tag_name);
+    println!("File path {:?}", file_path);
     let path = Path::new(&file_path);
     if path.exists() {
+        println!("Existe");
         output.write_all(format!("fatal: tag '{}' already exists\n", tag_name).as_bytes())?;
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
@@ -132,9 +136,12 @@ fn create_annotated_tag(
     }
 
     let (timestamp, offset) = utils::get_timestamp()?;
+    println!("Timestamp {timestamp}, offset {offset}");
     let config = Config::load(git_dir)?;
+    println!("Config loaded");
     let result = config.get_user_name_and_email();
     if result.is_err() {
+        println!("Nombre y mail?");
         output.write_all(format!("{:?}", result.unwrap_err()).as_bytes())?;
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
@@ -142,17 +149,19 @@ fn create_annotated_tag(
         ));
     }
     let (name, email) = result?;
+    println!("Name {name}, email {email}");
     let commit = branch::get_current_branch_commit(git_dir)?;
+    println!("Commit is {:?}", commit);
     let tag_content = format!(
         "object {}\ntype commit\ntag {}\ntagger {} {} {} {}\n\n{}\n",
         commit, tag_name, name, email, timestamp, offset, mensaje
     );
     let hash = hash_object::store_string_to_file(&tag_content, git_dir, "tag")?;
-
+    println!("Hash is {:?}", hash);
     let mut new_file = File::create(&file_path)?;
     new_file.write_all(hash.as_bytes())?;
     new_file.flush()?;
-
+    println!("File written");
     Ok(())
 }
 
@@ -187,6 +196,7 @@ fn copy_tag(
     output: &mut impl Write,
 ) -> io::Result<()> {
     let old_tag_path = format!("{}/{}", tags_path, old_tag);
+    println!("Old tag path {old_tag_path}");
     let old_tag_path = Path::new(&old_tag_path);
     if !old_tag_path.exists() {
         output.write_all(
@@ -198,6 +208,7 @@ fn copy_tag(
         ));
     }
     let new_tag_path = format!("{}/{}", tags_path, new_tag);
+    println!("New tag path {new_tag_path}");
     let new_tag_path = Path::new(&new_tag_path);
     if new_tag_path.exists() {
         output.write_all(format!("fatal: tag '{}' already exists\n", new_tag).as_bytes())?;
@@ -207,8 +218,11 @@ fn copy_tag(
         ));
     }
     let content = fs::read_to_string(old_tag_path)?;
+    println!("content {content}");
     let mut new_tag_file = File::create(new_tag_path)?;
     new_tag_file.write_all(content.as_bytes())?;
+    new_tag_file.flush()?;
+    println!("Correctly written");
     Ok(())
 }
 
@@ -238,8 +252,10 @@ fn copy_tag(
 /// while writing to the output.
 fn delete_tag(tag_name: &str, tags_path: &str, output: &mut impl Write) -> io::Result<()> {
     let tag_to_delete_path = format!("{}/{}", tags_path, tag_name);
+    println!("Tag to delete {:?}", tag_to_delete_path);
     let path = Path::new(&tag_to_delete_path);
     if !path.exists() {
+        println!("No existe");
         output.write_all(format!("error: tag {} not found\n", tag_name).as_bytes())?;
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
