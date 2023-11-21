@@ -345,31 +345,41 @@ fn verify_tag(
 /// This function does not panic under normal circumstances. Panics may occur in case of unexpected errors
 /// while writing to the output or when calling tag-related functions.
 pub fn git_tag(git_dir: &str, line: Vec<String>, output: &mut impl Write) -> io::Result<()> {
+    println!("Git dir is {:?}\n", git_dir);
+    println!("Command received is {:?}\n", line);
     let tags_path = format!("{}/{}", git_dir, "refs/tags");
+    println!("Tags path is {:?}\n", tags_path);
     if line.len() == 2 {
+        println!("Listing tags!\n");
         list_tags(&tags_path, output)?;
     } else if line.len() == 3 {
         if line[2] == "-l" {
+            println!("Listing tags!\n");
             list_tags(&tags_path, output)?;
         } else {
+            println!("Creating tag...\n");
             create_tag(git_dir, &tags_path, &line[2], output)?;
         }
     } else if line.len() == 6 {
         if line[2] == "-a" {
+            println!("Creating annotated tag...\n");
             create_annotated_tag(git_dir, &tags_path, &line[3], &line[5], output)?;
         }
     } else if line.len() >= 4 {
         if line[2] == "-d" {
+            println!("Deleting tag...\n");
             let tags_to_delete: Vec<&String> = line.iter().skip(3).collect();
             for tag in tags_to_delete {
                 delete_tag(tag, &tags_path, output)?;
             }
         } else if line[2] == "-v" {
+            println!("Verifying tag...\n");
             let tags_to_verify: Vec<&String> = line.iter().skip(3).collect();
             for tag in tags_to_verify {
                 verify_tag(git_dir, tag, &tags_path, output)?;
             }
         } else {
+            println!("Copying tag");
             copy_tag(&line[2], &line[3], &tags_path, output)?;
         }
     }

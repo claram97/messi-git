@@ -1189,6 +1189,7 @@ pub fn obtain_text_from_tag_add_normal(_builder: &gtk::Builder, _tag_name: &str)
 
     Ok(text)
 }
+
 pub fn obtain_text_from_tag_verify(builder: &Builder, tag_name: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -1922,6 +1923,7 @@ pub fn obtain_text_from_tag_remove(builder: &gtk::Builder, name: &str) -> Result
     let line = vec![
         String::from("git"),
         String::from("tag"),
+        String::from("-d"),
         name.to_string(),
     ];
 
@@ -2042,7 +2044,9 @@ pub fn obtain_text_from_tag_add_annotated(
     let line = vec![
         String::from("git"),
         String::from("tag"),
+        String::from("-a"),
         name.to_string(),
+        String::from("-m"),
         message.to_string(),
     ];
 
@@ -2110,7 +2114,6 @@ pub fn obtain_text_from_tag_from_tag(
     let line = vec![
     String::from("git"),
     String::from("tag"),
-    String::from("-v"),
     new_name.to_string(),
     old_name.to_string(),
     ];
