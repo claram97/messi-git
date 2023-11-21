@@ -4,6 +4,7 @@ use messi::gui::main_window::run_main_window;
 use messi::parse_commands::get_user_input;
 use messi::parse_commands::{handle_git_command, parse_git_command};
 use messi::server;
+use std::io::Write;
 
 /// Runs the application with a graphical user interface (GUI) using GTK.
 ///
@@ -59,13 +60,28 @@ fn run_without_gui() -> io::Result<()> {
             break;
         }
         if second_argument == "init" {
-            handle_init_command(args)?;
+            let args_clone = args.clone();
+            handle_init_command(args_clone)?;
+            log_to_file(second_argument, "Command executed")?;
         } else if let Some(git_command) = parse_git_command(second_argument) {
-            handle_git_command(git_command, args);
+            let args_clone = args.clone();
+            handle_git_command(git_command, args_clone);
+            log_to_file(second_argument, "Command executed")?;
         }
     }
 
     process_user_input()
+}
+
+fn log_to_file(command: &str, message: &str) -> Result<(), std::io::Error> {
+    let mut logger = messi::logger::Logger::new("logger_comands.txt")?;
+
+    let full_message = format!("Command '{}': {}", command, message);
+    logger.write(full_message.as_bytes())?;
+
+    logger.flush()?;
+
+    Ok(())
 }
 
 /// Handles the "init" command, initializing a new Git repository.
