@@ -2,7 +2,6 @@ use crate::cat_file;
 use crate::hash_object;
 use crate::tree_handler;
 use crate::tree_handler::has_tree_changed_since_last_commit;
-use crate::utils;
 use std::fs;
 use std::io;
 use std::io::Read;
@@ -31,10 +30,9 @@ fn create_new_commit_file(
         return Err(io::Error::new(io::ErrorKind::Other, "No changes were made"));
     }
 
-    // let time = chrono::Local::now();
-    let (timestamp, offset) = utils::get_timestamp()?;
+    let time = chrono::Local::now();
     let commit_content = format!(
-        "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {timestamp}\ncommitter {} {} {offset}\n\n{message}\0","user", "email@email", "user", "email@email"
+        "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0","user", "email@email", "user", "email@email"
     );
 
     let commit_hash = hash_object::store_string_to_file(&commit_content, directory, "commit")?;
@@ -179,18 +177,6 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
     Ok(parent_hash.to_string())
 }
 
-/// Retrieves the commit message associated with a given commit hash in a Git repository.
-///
-/// # Arguments
-///
-/// * `commit_hash` - A string representing the hash of the commit.
-/// * `git_dir_path` - A string specifying the path to the Git directory.
-///
-/// # Returns
-///
-/// Returns a `Result` containing the commit message as a `String` if successful,
-/// otherwise returns an `io::Error`.
-///
 pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
     let message: &str = match commit_file.split('\n').nth(5) {
@@ -199,7 +185,6 @@ pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<S
     };
     Ok(message.to_string())
 }
-
 /// Reads and returns the commit hash referred to by the HEAD reference in a Git repository.
 ///
 /// This function reads the contents of the Git repository's "HEAD" file to determine the commit hash
