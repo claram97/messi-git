@@ -27,6 +27,8 @@ use crate::{add, git_config, log, ls_tree, push, tree_handler};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+
+use std::thread::current;
 use std::{env, io};
 
 const GIT_DIR: &str = ".mgit";
@@ -188,6 +190,12 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
     }
 }
 
+/// Handles the configuration based on the provided arguments.
+///
+/// # Arguments
+///
+/// * `args` - A vector of strings containing the command-line arguments.
+///
 fn handle_config(args: Vec<String>) {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -282,43 +290,45 @@ fn handle_ls_trees(args: Vec<String>) {
     let git_dir = match find_git_directory(&mut PathBuf::from("."), ".mgit") {
         Some(dir) => dir,
         None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error obtaining the git directory");
             return;
         }
     };
 
-    if args.len() == 3 {
-        let result = ls_tree::ls_tree(&args[2], &git_dir, "", &mut io::stdout());
-        if result.is_err() {
-            eprintln!("{:?}", result);
-        }
-    } else if args.len() == 4 {
-        if args[2] == "-r" {
-            let result = ls_tree::ls_tree(&args[3], &git_dir, "-r", &mut io::stdout());
-            if result.is_err() {
-                eprintln!("{:?}", result);
-            }
-        } else if args[2] == "-d" {
-            let result = ls_tree::ls_tree(&args[3], &git_dir, "-d", &mut io::stdout());
-            if result.is_err() {
-                eprintln!("{:?}", result);
-            }
-        } else {
+    match args.len() {
+        3 => handle_ls_tree_default(&args[2], PathBuf::from(&git_dir)),
+        4 => handle_ls_tree_with_options(&args[2..], PathBuf::from(&git_dir)),
+        5 => handle_ls_tree_with_option(&args[2], PathBuf::from(&git_dir), &args[3]),
+        _ => {
             eprintln!("Usage: git ls-tree <tree-ish>");
         }
-    } else if args.len() == 5 {
-        if args[2] == "-r" && args[3] == "-t" {
-            let result = ls_tree::ls_tree(&args[4], &git_dir, "-r-t", &mut io::stdout());
-            if result.is_err() {
-                eprintln!("{:?}", result);
-            }
-        } else {
-            eprintln!("Usage: git ls-tree <tree-ish>");
-        }
-    } else {
-        eprintln!("Usage: git ls-tree <tree-ish>");
     }
 }
+
+fn handle_ls_tree_default(tree_ish: &str, git_dir: PathBuf) {
+    let result = ls_tree::ls_tree(tree_ish, git_dir.to_str().expect("Invalid git_dir path"), "", &mut io::stdout());
+    if let Err(err) = result {
+        eprintln!("{:?}", err);
+    }
+}
+
+fn handle_ls_tree_with_options(args: &[String], git_dir: PathBuf) {
+    let git_dir_str = git_dir.to_str().expect("Invalid git_dir path");
+    match args {
+        [arg1, tree_ish] if arg1 == "-r" => handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-r"),
+        [arg1, tree_ish] if arg1 == "-d" => handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-d"),
+        [arg1, arg2, tree_ish] if arg1 == "-r" && arg2 == "-t" => handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-r-t"),
+        _ => eprintln!("Usage: git ls-tree <tree-ish>"),
+    }
+}
+
+fn handle_ls_tree_with_option(tree_ish: &str, git_dir: PathBuf, option: &str) {
+    let result = ls_tree::ls_tree(tree_ish, git_dir.to_str().expect("Invalid git_dir path"), option, &mut io::stdout());
+    if let Err(err) = result {
+        eprintln!("{:?}", err);
+    }
+}
+
 
 /// Handles the "check-ignore" command in a Git-like system.
 ///
