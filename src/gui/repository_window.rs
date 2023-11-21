@@ -1130,6 +1130,7 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
 
     Ok("Ok".to_string())
 }
+
 pub fn obtain_text_from_tag_add_normal(_builder: &gtk::Builder, _tag_name: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -1154,7 +1155,7 @@ pub fn obtain_text_from_tag_add_normal(_builder: &gtk::Builder, _tag_name: &str)
     };
 
     let line = vec![String::from("git"), String::from("tag"), _tag_name.to_string()];
-
+    println!("tag name is {:?}", _tag_name);
     let mut output: Vec<u8> = vec![];
     match git_tag(&git_dir, line, &mut output) {
         Ok(_config) => {}
@@ -2341,6 +2342,7 @@ fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
 
     Ok(())
 }
+
 fn handle_list_tags(_builder: &gtk::Builder) -> io::Result<()> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
