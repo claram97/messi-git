@@ -1035,15 +1035,13 @@ pub fn obtain_text_from_remote_add(name: &str, url: &str) -> Result<String, io::
 
     let line: Vec<&str> = vec!["add", name, url];
 
-    let mut output : Vec<u8> = vec![];
+    let mut output: Vec<u8> = vec![];
     let result = git_remote(&mut config, line, &mut output);
-    let string = String::from_utf8(output) .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    let string =
+        String::from_utf8(output).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     drop(config);
     if result.is_err() {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            string,
-        ));
+        return Err(io::Error::new(io::ErrorKind::Other, string));
     }
 
     Ok(string)
@@ -1067,17 +1065,15 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
     let git_dir = obtain_git_dir(".mgit")?;
 
     let mut config = Config::load(&git_dir)?;
-    
+
     let line: Vec<&str> = vec!["remove", text];
-    let mut output : Vec<u8> = vec![];
+    let mut output: Vec<u8> = vec![];
     let result = git_remote(&mut config, line, &mut output);
     drop(config);
-    let string = String::from_utf8(output) .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    let string =
+        String::from_utf8(output).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     if result.is_err() {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            string,
-        ));
+        return Err(io::Error::new(io::ErrorKind::Other, string));
     }
 
     Ok(string)
@@ -1242,18 +1238,16 @@ pub fn obtain_text_from_remote_set_url(name: &str, url: &str) -> Result<String, 
     let git_dir = obtain_git_dir(".mgit")?;
 
     let mut config = Config::load(&git_dir)?;
-    
+
     let line: Vec<&str> = vec!["set-url", name, url];
 
-    let mut output : Vec<u8> = vec![];
+    let mut output: Vec<u8> = vec![];
     let result = git_remote(&mut config, line, &mut output);
     drop(config);
-    let string = String::from_utf8(output) .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    let string =
+        String::from_utf8(output).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     if result.is_err() {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            string,
-        ));
+        return Err(io::Error::new(io::ErrorKind::Other, string));
     }
 
     Ok(string)
@@ -1281,15 +1275,13 @@ pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> 
 
     let line: Vec<&str> = vec!["get-url", text];
 
-    let mut output : Vec<u8> = vec![];
+    let mut output: Vec<u8> = vec![];
     let result = git_remote(&mut config, line, &mut output);
     drop(config);
-    let string = String::from_utf8(output) .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    let string =
+        String::from_utf8(output).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     if result.is_err() {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            string,
-        ));
+        return Err(io::Error::new(io::ErrorKind::Other, string));
     }
 
     Ok(string)
@@ -1317,15 +1309,13 @@ pub fn obtain_text_from_remote_rename(old_name: &str, new_name: &str) -> Result<
 
     let line: Vec<&str> = vec!["rename", old_name, new_name];
 
-    let mut output : Vec<u8> = vec![];
+    let mut output: Vec<u8> = vec![];
     let result = git_remote(&mut config, line, &mut output);
     drop(config);
-    let string = String::from_utf8(output) .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    let string =
+        String::from_utf8(output).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     if result.is_err() {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            string,
-        ));
+        return Err(io::Error::new(io::ErrorKind::Other, string));
     }
 
     Ok(string)
@@ -1342,25 +1332,24 @@ pub fn obtain_text_from_remote_rename(old_name: &str, new_name: &str) -> Result<
 /// A `Result` indicating success or failure. If successful, a message is displayed; otherwise, an
 /// error message is shown.
 ///
-fn handle_remote_add(builder : &gtk::Builder) -> io::Result<()> {
+fn handle_remote_add(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
-    let result = create_text_entry_window2("Enter remote name", "Enter remote URL", move |name, url| {
-        let resultado = obtain_text_from_remote_add(&name, &url);
-        match resultado {
-            Ok(_texto) => {
-                match handle_remote(&builder_clone) {
-                    Ok(_) => {},
+    let result =
+        create_text_entry_window2("Enter remote name", "Enter remote URL", move |name, url| {
+            let resultado = obtain_text_from_remote_add(&name, &url);
+            match resultado {
+                Ok(_texto) => match handle_remote(&builder_clone) {
+                    Ok(_) => {}
                     Err(_e) => {
                         show_message_dialog("Error", "Couldn't update the view!");
                     }
+                },
+                Err(_err) => {
+                    let error_mesage = _err.to_string();
+                    show_message_dialog("Error", &error_mesage)
                 }
             }
-            Err(_err) => {
-                let error_mesage = _err.to_string();
-                show_message_dialog("Error", &error_mesage)
-            },
-        }
-    });
+        });
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
@@ -1378,23 +1367,21 @@ fn handle_remote_add(builder : &gtk::Builder) -> io::Result<()> {
 /// A `Result` indicating success or failure. If successful, a message is displayed; otherwise, an
 /// error message is shown.
 ///
-fn handle_remote_rm(builder : &gtk::Builder) -> io::Result<()> {
+fn handle_remote_rm(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter repository name", move |text| {
         let resultado = obtain_text_from_remote_rm(&text);
         match resultado {
-            Ok(_texto) => {
-                match handle_remote(&builder_clone) {
-                    Ok(_) => {},
-                    Err(_e) => {
-                        show_message_dialog("Error", "Couldn't update the view!");
-                    }
+            Ok(_texto) => match handle_remote(&builder_clone) {
+                Ok(_) => {}
+                Err(_e) => {
+                    show_message_dialog("Error", "Couldn't update the view!");
                 }
-            }
+            },
             Err(_err) => {
                 let error_mesage = _err.to_string();
                 show_message_dialog("Error", &error_mesage)
-            },
+            }
         }
     });
     if result.is_err() {
@@ -1413,7 +1400,10 @@ fn handle_tag_add_normal(builder: &gtk::Builder) -> io::Result<()> {
                 match handle_list_tags(&builder_clone) {
                     Ok(_) => {}
                     Err(_e) => {
-                        show_message_dialog("Error", "We had a problem trying to refresh the view.");
+                        show_message_dialog(
+                            "Error",
+                            "We had a problem trying to refresh the view.",
+                        );
                     }
                 }
                 //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
@@ -1438,10 +1428,10 @@ fn handle_tag_verify(builder: &gtk::Builder) -> io::Result<()> {
     let result = create_text_entry_window("Enter tag name", move |name| {
         let resultado = obtain_text_from_tag_verify(&builder_clone, &name);
         match resultado {
-            Ok(_texto) => {
-                            }
+            Ok(_texto) => {}
             Err(_err) => {
-                let error_message = format!("error: {name}: cannot verify a non-tag object of type commit.");
+                let error_message =
+                    format!("error: {name}: cannot verify a non-tag object of type commit.");
                 show_message_dialog("Error", &error_message);
             }
         }
@@ -1780,7 +1770,10 @@ fn handle_tag_remove(builder: &gtk::Builder) -> io::Result<()> {
                 match handle_list_tags(&builder_clone) {
                     Ok(_) => {}
                     Err(_e) => {
-                        show_message_dialog("Error", "We had a problem trying to refresh the view.");
+                        show_message_dialog(
+                            "Error",
+                            "We had a problem trying to refresh the view.",
+                        );
                     }
                 }
                 //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
@@ -1877,7 +1870,10 @@ fn handle_tag_add_annotated(builder: &gtk::Builder) -> io::Result<()> {
                     match handle_list_tags(&builder_clone) {
                         Ok(_) => {}
                         Err(_e) => {
-                            show_message_dialog("Error", "We had a problem trying to refresh the view.");
+                            show_message_dialog(
+                                "Error",
+                                "We had a problem trying to refresh the view.",
+                            );
                         }
                     }
                     //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
@@ -1909,7 +1905,10 @@ fn handle_tag_from_tag(builder: &gtk::Builder) -> io::Result<()> {
                     match handle_list_tags(&builder_clone) {
                         Ok(_) => {}
                         Err(_e) => {
-                            show_message_dialog("Error", "We had a problem trying to refresh the view.");
+                            show_message_dialog(
+                                "Error",
+                                "We had a problem trying to refresh the view.",
+                            );
                         }
                     }
                     //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
@@ -2082,12 +2081,12 @@ fn handle_remote_set_url() -> io::Result<()> {
         let resultado = obtain_text_from_remote_set_url(&name, &url);
         match resultado {
             Ok(_texto) => {
-                show_message_dialog("Éxito", &format!("La URL se actualizó correctamente."));
+                show_message_dialog("Éxito", "La URL se actualizó correctamente.");
             }
             Err(_err) => {
                 let error_mesage = _err.to_string();
                 show_message_dialog("Error", &error_mesage)
-            },
+            }
         }
     });
     if result.is_err() {
@@ -2117,7 +2116,7 @@ fn handle_remote_get_url() -> io::Result<()> {
             Err(_err) => {
                 let error_mesage = _err.to_string();
                 show_message_dialog("Error", &error_mesage)
-            },
+            }
         }
     });
     if result.is_err() {
@@ -2137,7 +2136,7 @@ fn handle_remote_get_url() -> io::Result<()> {
 /// A `Result` indicating success or failure. If successful, a message is displayed with the result;
 /// otherwise, an error message is shown.
 ///
-fn handle_remote_rename(builder : &gtk::Builder) -> io::Result<()> {
+fn handle_remote_rename(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
     let result = create_text_entry_window2(
         "Enter old repo name",
@@ -2145,18 +2144,16 @@ fn handle_remote_rename(builder : &gtk::Builder) -> io::Result<()> {
         move |old_name, new_name| {
             let resultado = obtain_text_from_remote_rename(&old_name, &new_name);
             match resultado {
-                Ok(_texto) => {
-                    match handle_remote(&builder_clone) {
-                        Ok(_) => {},
-                        Err(_e) => {
-                            show_message_dialog("Error", "Couldn't update the view!");
-                        }
+                Ok(_texto) => match handle_remote(&builder_clone) {
+                    Ok(_) => {}
+                    Err(_e) => {
+                        show_message_dialog("Error", "Couldn't update the view!");
                     }
-                }
+                },
                 Err(_err) => {
                     let error_mesage = _err.to_string();
                     show_message_dialog("Error", &error_mesage)
-                },
+                }
             }
         },
     );
@@ -2190,10 +2187,7 @@ fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
         Err(_e) => {
             let error = _e.to_string();
             eprintln!("{}", error);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "&error",
-            ));
+            return Err(io::Error::new(io::ErrorKind::Other, "&error"));
         }
     }
 
