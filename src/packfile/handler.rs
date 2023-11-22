@@ -147,13 +147,18 @@ impl<R: Read + Seek> Packfile<R> {
 
     fn get_ofs_delta_object(&mut self, initial_position: u64) -> io::Result<PackfileEntry> {
         dbg!("Desempaqetando ofs delta");
-        // let delta_offset = self.read_offset_encoding()?;
         let delta_offset = delta_utils::read_offset_encoding(&mut self.bufreader)?;
+        let base_obj_pos = initial_position
+            .checked_sub(delta_offset)
+            .ok_or(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Invalid delta offset",
+            ))?;
         println!("Desempaqetando ofs delta. Delta offset: {}", delta_offset);
-        println!("Base obj pos: {}", initial_position - delta_offset);
+        println!("Base obj pos: {}", base_obj_pos);
         let position = self.bufreader.stream_position()?;
         self.bufreader
-            .seek(io::SeekFrom::Start(initial_position - delta_offset))?;
+            .seek(io::SeekFrom::Start(base_obj_pos))?;
         let base_object = self.get_next()?;
         self.bufreader.seek(io::SeekFrom::Start(position))?;
         self.apply_delta(&base_object)
@@ -375,18 +380,27 @@ fn append_delta_object(
     _git_dir: &str,
 ) -> io::Result<()> {
     let offset = packfile.len() - base_object.1;
-    println!("Append delta object. Offset: {}. Base obj in: {}", offset, base_object.1);
+    println!(
+        "Append delta object. Offset: {}. Base obj in: {}",
+        offset, base_object.1
+    );
 
     let encoded_header = object_header(ObjectType::OfsDelta, 7);
     packfile.extend(encoded_header);
 
-    let encoded_offset = delta_utils::encode_size(offset);
+    let encoded_offset = delta_utils::encode_offset(offset);
     packfile.extend(encoded_offset);
 
+
+    let encoded_base_size = delta_utils::encode_size(base_object.0.size);
+    let encoded_result_size = delta_utils::encode_size(object.size);    
     let commands =
-        delta_utils::delta_commands_from_objects(&base_object.0.content, &object.content);
+    delta_utils::delta_commands_from_objects(&base_object.0.content, &object.content);
     
     let mut encoder = ZlibEncoder::new(packfile, Compression::default());
+    encoder.write_all(&encoded_base_size)?;
+    encoder.write_all(&encoded_result_size)?;
+
     for command in commands {
         let encoded = command.encode();
         encoder.write_all(&encoded)?;

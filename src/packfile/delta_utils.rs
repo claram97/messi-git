@@ -1,7 +1,5 @@
 use std::io::{self, Read};
 
-use flate2::bufread::ZlibEncoder;
-
 const COPY_INSTRUCTION_FLAG: u8 = 1 << 7;
 const COPY_OFFSET_BYTES: u8 = 4;
 const COPY_SIZE_BYTES: u8 = 3;
@@ -102,7 +100,7 @@ fn read_encoding_bytes<R: Read>(stream: &mut R) -> io::Result<Vec<u8>> {
     Ok(size_bytes)
 }
 
-pub fn encode_offset(n: u64) -> Vec<u8> {
+pub fn encode_offset(n: usize) -> Vec<u8> {
     let mut encoded = Vec::new();
     let mut n = n + 1;
     while n > 0 {
