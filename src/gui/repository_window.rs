@@ -1,6 +1,6 @@
 use crate::add::add;
 use crate::branch;
-use crate::branch::git_branch_for_ui;
+// use crate::branch::git_branch_for_ui;
 use crate::check_ignore::git_check_ignore;
 use crate::checkout::checkout_branch;
 use crate::checkout::checkout_commit_detached;
@@ -501,7 +501,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "new-branch-button" => {
             button.connect_clicked(move |_| {
-                let result = handle_create_branch_button();
+                let result = handle_create_branch_button(&builder_clone);
                 if result.is_err() {
                     eprintln!("Error handling create branch button.")
                 }
@@ -728,24 +728,64 @@ fn handle_force_checkout_button() -> io::Result<()> {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_show_branches_button(builder: &gtk::Builder) {
-    let branch_text_view: gtk::TextView = builder.get_object("show-branches-text").unwrap();
-    let scrolled_window: gtk::ScrolledWindow = builder.get_object("scrolled-window").unwrap();
+fn handle_show_branches_button(builder: &gtk::Builder) -> io::Result<()> {
+    let branch_text_view: gtk::TextView = match builder.get_object("show-branches-text") {
+        Some(text_view) => text_view,
+        None => {
+            eprintln!("Couldn't get show branches text view");
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Couldn't get show branches text view\n",
+            ));
+        }
+    };
 
-    let text_from_function = git_branch_for_ui(None);
+    let scrolled_window: gtk::ScrolledWindow = match builder.get_object("scrolled-window") {
+        Some(scrolled) => scrolled,
+        None => {
+            eprintln!("Couldn't get show branches scrolled window");
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Couldn't get show branches scrolled window\n",
+            ));
+        }
+    };
 
-    match text_from_function {
-        Ok(texto) => {
-            let buffer = branch_text_view.get_buffer().unwrap();
-            buffer.set_text(texto.as_str());
+    let mut output: Vec<u8> = vec![];
+    let result = git_branch(None, None, None, &mut output);
+    let output_string = match String::from_utf8(output) {
+        Ok(string) => string,
+        Err(_e) => {
+            show_message_dialog("Fatal error", "Something unexpected happened.");
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "Couldn't get the output\n",
+            ));
+        }
+    };
 
+    let buffer = match branch_text_view.get_buffer() {
+        Some(buf) => buf,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "Couldn't get the text view\n",
+            ));
+        }
+    };
+
+    match result {
+        Ok(_) => {
+            let clean_output = branch::remove_ansi_escape_codes(&output_string);
+            buffer.set_text(&clean_output);
             scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
             scrolled_window.add(&branch_text_view);
         }
-        Err(err) => {
-            eprintln!("Error al obtener el texto: {}", err);
+        Err(_e) => {
+            show_message_dialog("Error", &_e.to_string());
         }
     }
+    Ok(())
 }
 
 /// Handle the "Create Branch" button's click event. This function opens a text entry window for users to enter
@@ -761,11 +801,27 @@ fn handle_show_branches_button(builder: &gtk::Builder) {
 ///
 /// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
 ///
-fn handle_create_branch_button() -> io::Result<()> {
-    let create_result = create_text_entry_window("Enter the name of the branch", |text| {
-        let result = git_branch_for_ui(Some(text));
-        if result.is_err() {
-            eprintln!("Error creating text entry window.");
+fn handle_create_branch_button(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+    let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
+        let mut output: Vec<u8> = vec![];
+        match git_branch(Some(text), Some("-c"), None, &mut output) {
+            Ok(_) => match handle_show_branches_button(&builder_clone) {
+                Ok(_) => {}
+                Err(_) => {
+                    show_message_dialog("Error", "We couldn't update the view");
+                }
+            },
+            Err(_) => {
+                let output_string = match String::from_utf8(output) {
+                    Ok(string) => string,
+                    Err(_e) => {
+                        show_message_dialog("Fatal error", "Something unexpected happened.");
+                        return;
+                    }
+                };
+                show_message_dialog("Error", &output_string);
+            }
         }
     });
 
@@ -830,23 +886,28 @@ fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
 
     let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
         let mut output: Vec<u8> = Vec::new();
-        git_branch(Some(text.to_string()), Some("-d"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
+        //git_branch(Some(text.to_string()), Some("-d"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
+        match git_branch(Some(text.to_string()), Some("-d"), None, &mut output) {
+            Ok(_) => {
+                match handle_show_branches_button(&builder_clone) {
+                    Ok(_) => {}
+                    Err(_e) => {
+                        show_message_dialog("Error", "No se pudo actualizar la vista");
+                    }
+                }
+                let texto = match str::from_utf8(&output) {
+                    Ok(s) => s,
+                    Err(_) => {
+                        eprintln!("Error turning result into string.");
+                        "Error obtaining TextView"
+                    }
+                };
 
-        let branch_text_view: gtk::TextView =
-            builder_clone.get_object("show-branches-text").unwrap();
-
-        let texto = match str::from_utf8(&output) {
-            Ok(s) => s,
-            Err(_) => {
-                eprintln!("Error turning result into string.");
-                "Error obtaining TextView"
+                show_message_dialog("Éxito", texto);
             }
-        };
-
-        if let Some(buffer) = branch_text_view.get_buffer() {
-            buffer.set_text(texto);
-        } else {
-            eprintln!("Error obtaining TextView.");
+            Err(error) => {
+                show_message_dialog("Error", &error.to_string());
+            }
         }
     });
 
