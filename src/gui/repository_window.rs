@@ -1,6 +1,5 @@
 use crate::add::add;
 use crate::branch;
-// use crate::branch::git_branch_for_ui;
 use crate::check_ignore::git_check_ignore;
 use crate::checkout::checkout_branch;
 use crate::checkout::checkout_commit_detached;
@@ -495,8 +494,11 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
             });
         }
         "show-branches-button" => {
-            button.connect_clicked(move |_| {
-                handle_show_branches_button(&builder_clone);
+            button.connect_clicked(move |_| match handle_show_branches_button(&builder_clone) {
+                Ok(_) => {}
+                Err(err) => {
+                    show_message_dialog("Error", &err.to_string());
+                }
             });
         }
         "new-branch-button" => {

@@ -431,44 +431,6 @@ pub fn remove_ansi_escape_codes(input: &str) -> String {
     output
 }
 
-/// Retrieves a Git branch for a user interface (UI).
-///
-/// This function provides the Git branch information in a format suitable for a user interface.
-///
-/// # Arguments
-///
-/// * `name` - An optional branch name to create. If `None`, retrieves the list of branches.
-///
-/// # Returns
-///
-/// An `io::Result` containing the branch information as a `String`.
-// pub fn git_branch_for_ui(name: Option<String>) -> io::Result<String> {
-//     let mut current_dir = std::env::current_dir()?;
-//     let git_dir = match utils::find_git_directory(&mut current_dir, ".mgit") {
-//         Some(git_dir) => git_dir,
-//         None => {
-//             return Err(io::Error::new(
-//                 io::ErrorKind::NotFound,
-//                 "Git directory not found\n",
-//             ))
-//         }
-//     };
-
-//     if let Some(branch_name) = name {
-//         create_new_branch(&git_dir, &branch_name, None, &mut io::stdout())?;
-//         Ok("Branch created successfully".to_string())
-//     } else {
-//         let mut output: Vec<u8> = vec![];
-//         list_branches(&git_dir, &mut output)?;
-//         let output_string =
-//             remove_ansi_escape_codes(&String::from_utf8(output).unwrap_or_else(|e| {
-//                 eprintln!("Error converting bytes to string: {}", e);
-//                 String::new()
-//             }));
-//         Ok(output_string)
-//     }
-// }
-
 pub fn is_an_existing_branch(branch: &str, git_dir: &str) -> bool {
     let path = format!("{}/refs/heads/{}", git_dir, branch);
 
@@ -511,23 +473,6 @@ mod tests {
         let output = remove_ansi_escape_codes(input);
         assert_eq!(output, expected_output);
     }
-
-    // #[test]
-    // fn test_git_branch_for_ui_create_branch() -> io::Result<()> {
-    //     let path = "tests/branch_test_repo";
-    //     let git_dir = format!("{}/{}", path, ".mgit");
-    //     init::git_init(path, "current_branch", None)?;
-    //     let current_branch_path = format!("{}/{}", git_dir, "/refs/heads/current_branch");
-    //     let mut current_branch_file = File::create(current_branch_path)?;
-    //     current_branch_file.write_all("12345678910".as_bytes())?;
-    //     let branch_name = "new_branch".to_string();
-    //     let output = git_branch_for_ui(Some(branch_name));
-    //     assert!(output.is_ok());
-    //     let expected_output = "Branch created successfully".to_string();
-    //     assert_eq!(output.unwrap(), expected_output);
-    //     std::fs::remove_dir_all(path)?;
-    //     Ok(())
-    // }
 
     #[test]
     fn test_list_branches() -> Result<(), io::Error> {
