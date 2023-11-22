@@ -1,11 +1,11 @@
 use crate::cat_file;
+use chrono::{TimeZone, Utc};
 use std::{
     fmt::Display,
     fs,
     io::{self, Error},
     path::Path,
 };
-use chrono::{TimeZone, Utc};
 
 const DATE_ZERO: &str = "Thu Jan 1 00:00:00 1970 +0000";
 /// LogIter is a structure that will help to iterate
@@ -262,15 +262,15 @@ impl Log {
     }
 
     fn get_formatted_date(&self) -> String {
-        let (secs, offset) = &self.date.split_once(' ').unwrap_or(("0","0"));
+        let (secs, offset) = &self.date.split_once(' ').unwrap_or(("0", "0"));
         let secs = secs.parse::<i64>().unwrap_or(0);
         let offset_int = offset.parse::<i64>().unwrap_or(0) * 36;
         match Utc.timestamp_opt(secs + offset_int, 0) {
             chrono::LocalResult::Single(date) => {
                 let date = date.format("%a %b %e %T %Y");
                 format!("{} {}", date, offset)
-            },
-            _ => DATE_ZERO.to_string()
+            }
+            _ => DATE_ZERO.to_string(),
         }
     }
 
@@ -366,7 +366,7 @@ pub fn accumulate_logs(log_iter: impl Iterator<Item = Log>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::{init, commit, add};
+    use crate::{add, commit, init};
 
     use super::*;
 
@@ -429,7 +429,7 @@ mod tests {
 
         let message = "test commit 2";
         commit::new_commit(git_dir_path, message, "")?;
-        
+
         let log_iter = log(None, git_dir_path, 2, 0, false)?;
 
         let logs = accumulate_logs(log_iter);

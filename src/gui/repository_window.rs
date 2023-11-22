@@ -13,8 +13,8 @@ use crate::git_config::git_config;
 use crate::tag::git_tag;
 use std::str;
 //use crate::fetch::git_fetch_for_gui;
-use crate::config::Config;
 use crate::branch::git_branch;
+use crate::config::Config;
 use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
@@ -788,7 +788,8 @@ fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result
         let mut output: Vec<u8> = Vec::new();
         git_branch(Some(text.to_string()), Some("-c"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
 
-        let branch_text_view: gtk::TextView = builder_clone.get_object("show-branches-text").unwrap();
+        let branch_text_view: gtk::TextView =
+            builder_clone.get_object("show-branches-text").unwrap();
 
         let texto = match str::from_utf8(&output) {
             Ok(s) => s,
@@ -830,7 +831,8 @@ fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
         let mut output: Vec<u8> = Vec::new();
         git_branch(Some(text.to_string()), Some("-d"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
 
-        let branch_text_view: gtk::TextView = builder_clone.get_object("show-branches-text").unwrap();
+        let branch_text_view: gtk::TextView =
+            builder_clone.get_object("show-branches-text").unwrap();
 
         let texto = match str::from_utf8(&output) {
             Ok(s) => s,
@@ -872,7 +874,8 @@ fn handle_modify_branch_button(builder: &gtk::Builder) -> io::Result<()> {
         let mut output: Vec<u8> = Vec::new();
         git_branch(Some(text.to_string()), Some("-m"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
 
-        let branch_text_view: gtk::TextView = builder_clone.get_object("show-branches-text").unwrap();
+        let branch_text_view: gtk::TextView =
+            builder_clone.get_object("show-branches-text").unwrap();
 
         let texto = match str::from_utf8(&output) {
             Ok(s) => s,
@@ -895,7 +898,6 @@ fn handle_modify_branch_button(builder: &gtk::Builder) -> io::Result<()> {
 
     Ok(())
 }
-
 
 /// Handle the "Add Path" button's click event. This function opens a text entry window for users to enter the path of
 /// the file they want to add to the staging area. Once the path is entered and confirmed, it attempts to add the file
@@ -1131,7 +1133,10 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
     Ok("Ok".to_string())
 }
 
-pub fn obtain_text_from_tag_add_normal(_builder: &gtk::Builder, _tag_name: &str) -> Result<String, io::Error> {
+pub fn obtain_text_from_tag_add_normal(
+    _builder: &gtk::Builder,
+    _tag_name: &str,
+) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -1154,7 +1159,11 @@ pub fn obtain_text_from_tag_add_normal(_builder: &gtk::Builder, _tag_name: &str)
         }
     };
 
-    let line = vec![String::from("git"), String::from("tag"), _tag_name.to_string()];
+    let line = vec![
+        String::from("git"),
+        String::from("tag"),
+        _tag_name.to_string(),
+    ];
     println!("tag name is {:?}", _tag_name);
     let mut output: Vec<u8> = vec![];
     match git_tag(&git_dir, line, &mut output) {
@@ -1213,12 +1222,11 @@ pub fn obtain_text_from_tag_verify(builder: &Builder, tag_name: &str) -> Result<
     };
 
     let line = vec![
-    String::from("git"),
-    String::from("tag"),
-    String::from("-v"),
-   tag_name.to_string(),
+        String::from("git"),
+        String::from("tag"),
+        String::from("-v"),
+        tag_name.to_string(),
     ];
-
 
     let mut output: Vec<u8> = vec![];
     match git_tag(&git_dir, line, &mut output) {
@@ -1531,7 +1539,7 @@ fn handle_tag_add_normal(_builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 fn handle_tag_verify(builder: &gtk::Builder) -> io::Result<()> {
-    let builder_clone = builder.clone(); 
+    let builder_clone = builder.clone();
 
     let result = create_text_entry_window("Enter tag name", move |name| {
         let resultado = obtain_text_from_tag_verify(&builder_clone, &name);
@@ -1895,8 +1903,10 @@ fn handle_tag_remove(builder: &gtk::Builder) -> io::Result<()> {
     }
     Ok(())
 }
-pub fn obtain_text_from_tag_remove(builder: &gtk::Builder, name: &str) -> Result<String, io::Error> {
-
+pub fn obtain_text_from_tag_remove(
+    builder: &gtk::Builder,
+    name: &str,
+) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -1919,11 +1929,7 @@ pub fn obtain_text_from_tag_remove(builder: &gtk::Builder, name: &str) -> Result
         }
     };
 
-    let line = vec![
-        String::from("git"),
-        String::from("tag"),
-        name.to_string(),
-    ];
+    let line = vec![String::from("git"), String::from("tag"), name.to_string()];
 
     let mut output: Vec<u8> = vec![];
     match git_tag(&git_dir, line, &mut output) {
@@ -1961,22 +1967,26 @@ pub fn obtain_text_from_tag_remove(builder: &gtk::Builder, name: &str) -> Result
 
 fn handle_tag_add_annotated(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
-    let result = create_text_entry_window2("Enter tag name", "Enter tag message", move |name, message| {
-        let resultado = obtain_text_from_tag_add_annotated(&builder_clone, &name, &message);
-        match resultado {
-            Ok(texto) => {
-                show_message_dialog("Success", &format!("Tag '{}' added successfully", texto));
+    let result = create_text_entry_window2(
+        "Enter tag name",
+        "Enter tag message",
+        move |name, message| {
+            let resultado = obtain_text_from_tag_add_annotated(&builder_clone, &name, &message);
+            match resultado {
+                Ok(texto) => {
+                    show_message_dialog("Success", &format!("Tag '{}' added successfully", texto));
+                }
+                Err(_err) => match _err.kind() {
+                    std::io::ErrorKind::UnexpectedEof => {
+                        show_message_dialog("Success", "Tag added successfully");
+                    }
+                    _ => {
+                        show_message_dialog("Error", "Failed to add tag.");
+                    }
+                },
             }
-            Err(_err) => match _err.kind() {
-                std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Success", "Tag added successfully");
-                }
-                _ => {
-                    show_message_dialog("Error", "Failed to add tag.");
-                }
-            },
-        }
-    });
+        },
+    );
 
     if result.is_err() {
         eprintln!("Error creating text entry window.");
@@ -2108,13 +2118,12 @@ pub fn obtain_text_from_tag_from_tag(
     };
 
     let line = vec![
-    String::from("git"),
-    String::from("tag"),
-    String::from("-v"),
-    new_name.to_string(),
-    old_name.to_string(),
+        String::from("git"),
+        String::from("tag"),
+        String::from("-v"),
+        new_name.to_string(),
+        old_name.to_string(),
     ];
-
 
     let mut output: Vec<u8> = vec![];
     match git_tag(&git_dir, line, &mut output) {
@@ -2148,7 +2157,6 @@ pub fn obtain_text_from_tag_from_tag(
     }
 
     Ok(text)
-
 }
 /// Handles setting the URL for a remote repository.
 ///
@@ -2410,7 +2418,6 @@ fn handle_list_tags(_builder: &gtk::Builder) -> io::Result<()> {
 
     Ok(())
 }
-
 
 /// Handle the "Checkout Branch" button's click event. This function opens a text entry window for users to enter
 /// the name of the branch they want to check out. Once the branch name is entered and confirmed, it attempts to check
