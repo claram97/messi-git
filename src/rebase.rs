@@ -23,7 +23,7 @@ pub fn create_rebasing_commit(our_commit: &str, rebased_commit: &str, common_anc
         }
     }
 
-    let message = format!("Rebasing commit");
+    let message = format!("Rebasing commit: {our_commit}");
     let new_commit_hash = commit::new_rebase_commit(git_dir, &message, parent_hash, &rebased_tree)?;
     
     Ok(new_commit_hash)

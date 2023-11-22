@@ -156,6 +156,10 @@ pub fn new_rebase_commit(git_dir_path: &str, message: &str, parent_commit: &str,
     );
 
     let commit_hash = hash_object::store_string_to_file(&commit_content, git_dir_path, "commit")?;
+    let branch_name = get_branch_name(git_dir_path)?;
+    let branch_path = git_dir_path.to_string() + "/refs/heads/" + &branch_name;
+    let mut branch_file = std::fs::File::create(branch_path)?;
+    branch_file.write_all(commit_hash.as_bytes())?;
     Ok(commit_hash)
 }
 

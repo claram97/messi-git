@@ -23,7 +23,7 @@ use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
-use crate::{add, log, push, tree_handler, ls_tree};
+use crate::{add, log, push, tree_handler, ls_tree, rebase};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -360,8 +360,44 @@ fn handle_show_ref(args: Vec<String>) {
     }
 }
 
-fn handle_rebase(_args: Vec<String>) {
-    // Implementación para el comando "Rebase"
+fn handle_rebase(args: Vec<String>) {
+    if args.len() < 3 {
+        eprintln!("Usage: git rebase <branch>");
+        return;
+    }
+
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    let current_branch = match get_branch_name(&git_dir) {
+        Ok(name) => name,
+        Err(_) => {
+            eprintln!("No se pudo obtener la rama actual");
+            return;
+        }
+    };
+
+    if args.len() == 3 {
+        let result = rebase::rebase(&current_branch, &args[2], &git_dir);
+        if result.is_err() {
+            eprintln!("{:?}", result);
+        }
+    } else {
+        eprintln!("Usage: git rebase <branch>");
+    }
 }
 
 fn handle_tag(_args: Vec<String>) {
