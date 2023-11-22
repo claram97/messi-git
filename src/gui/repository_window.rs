@@ -66,6 +66,7 @@ use std::path::PathBuf;
 
 use super::style::apply_entry_style;
 use super::style::apply_label_style;
+use super::style::create_text_entry_window_with_switch;
 use super::style::get_label;
 use super::style::get_switch;
 
@@ -920,6 +921,27 @@ fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+fn handle_modify_branch_button(builder: &gtk::Builder) -> io::Result<()> {
+    let message1 = "Nombre actual";
+    let message2 = "Nombre nuevo";
+
+    create_text_entry_window_with_switch(message1, message2, |text1, text2, switch_value| {
+        // Aquí puedes agregar la lógica que desees con los valores de entrada
+        println!("Text 1: {}", text1);
+        println!("Text 2: {}", text2);
+        println!("Switch Value: {}", switch_value);
+
+        if switch_value {
+            println!("La opción está activada");
+            // Realiza acciones adicionales si el switch está activado
+        } else {
+            println!("La opción está desactivada");
+            // Realiza acciones adicionales si el switch está desactivado
+        }
+    })?;
+    
+    Ok(())
+}
 /// Handles the modify branch button action.
 ///
 /// This function prompts the user to enter the name of the branch to modify
@@ -930,38 +952,38 @@ fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
 ///
 /// This function returns an `io::Result` indicating whether the operation
 /// was successful or resulted in an error.
-///
-fn handle_modify_branch_button(builder: &gtk::Builder) -> io::Result<()> {
-    let builder_clone = builder.clone();
+// ///
+// fn handle_modify_branch_button(builder: &gtk::Builder) -> io::Result<()> {
+//     let builder_clone = builder.clone();
 
-    let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
-        let mut output: Vec<u8> = Vec::new();
-        git_branch(Some(text.to_string()), Some("-m"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
+//     let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
+//         let mut output: Vec<u8> = Vec::new();
+//         git_branch(Some(text.to_string()), Some("-m"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
 
-        let branch_text_view: gtk::TextView =
-            builder_clone.get_object("show-branches-text").unwrap();
+//         let branch_text_view: gtk::TextView =
+//             builder_clone.get_object("show-branches-text").unwrap();
 
-        let texto = match str::from_utf8(&output) {
-            Ok(s) => s,
-            Err(_) => {
-                eprintln!("Error turning result into string.");
-                "Error obtaining TextView"
-            }
-        };
+//         let texto = match str::from_utf8(&output) {
+//             Ok(s) => s,
+//             Err(_) => {
+//                 eprintln!("Error turning result into string.");
+//                 "Error obtaining TextView"
+//             }
+//         };
 
-        if let Some(buffer) = branch_text_view.get_buffer() {
-            buffer.set_text(texto);
-        } else {
-            eprintln!("Error obtaining TextView.");
-        }
-    });
+//         if let Some(buffer) = branch_text_view.get_buffer() {
+//             buffer.set_text(texto);
+//         } else {
+//             eprintln!("Error obtaining TextView.");
+//         }
+//     });
 
-    if let Err(err) = create_result {
-        eprintln!("Error creating text entry window: {}", err);
-    }
+//     if let Err(err) = create_result {
+//         eprintln!("Error creating text entry window: {}", err);
+//     }
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 /// Handle the "Add Path" button's click event. This function opens a text entry window for users to enter the path of
 /// the file they want to add to the staging area. Once the path is entered and confirmed, it attempts to add the file
