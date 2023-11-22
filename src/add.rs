@@ -5,6 +5,12 @@ use std::io;
 
 use crate::ignorer::is_subpath;
 use crate::index::Index;
+use std::path::PathBuf;
+use crate::utils::get_current_time;
+use crate::logger::Logger;
+use std::path::Path;
+
+use std::io::Write;
 
 /// Process a file or directory specified by `file_name` and update the index accordingly.
 ///
@@ -31,6 +37,29 @@ pub fn process_file_name(index: &mut Index, file_name: &str) -> io::Result<()> {
 
     Ok(())
 }
+
+fn log_add(
+    add_type: &str,
+    file: &str,
+    git_dir: &Path,
+) -> io::Result<()> {
+    let log_file_path = "logger_comands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git add': Add type: {}, File: {}, Time: {}",
+        add_type,
+        file,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
+
+
+
 
 /// Add files to the Git index.
 ///
@@ -67,12 +96,20 @@ pub fn add(
                 let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
                 process_file_name(&mut index, &file_name)?;
                 index.write_file()?;
+
+                // Log the added file and current time
+                log_add("all", &file_name, &PathBuf::from(&path));
             }
         }
     } else {
         let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
         process_file_name(&mut index, path)?;
         index.write_file()?;
+
+        // Log the added file and current time
+       
+        log_add("single", path, &PathBuf::from(&path));
     }
+
     Ok(())
 }
