@@ -102,6 +102,19 @@ fn read_encoding_bytes<R: Read>(stream: &mut R) -> io::Result<Vec<u8>> {
     Ok(size_bytes)
 }
 
+pub fn encode_offset(n: u64) -> Vec<u8> {
+    let mut encoded = Vec::new();
+    let mut n = n + 1;
+    while n > 0 {
+        n -= 1;
+        encoded.push(((n as u8) & 0x7F) | 0x80);
+        n >>= 7;
+    }
+    encoded[0] = encoded[0] & 0x7F;
+    encoded.reverse();
+    encoded
+}
+
 fn decode_offset(bytes: &[u8]) -> u64 {
     let mut value = 0;
     for byte in bytes {
@@ -110,21 +123,6 @@ fn decode_offset(bytes: &[u8]) -> u64 {
     }
     value - 1
 }
-
-// pub fn encode_size(n: usize) -> Vec<u8> {
-//     let mut n = n;
-//     let mut encoded_size = Vec::new();
-//     while n > 0 {
-//         let m = (n as u8) & 0x7f;
-//         n >>= 7;
-//         if n > 0 {
-//             encoded_size.push(0x80 | m)
-//         } else {
-//             encoded_size.push(m)
-//         }
-//     }
-//     return encoded_size;
-// }
 
 pub fn encode_size(n: usize) -> Vec<u8> {
     let mut n = n;
@@ -227,43 +225,95 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_encode_size() {
+    fn test_encode_decode_size() {
         assert_eq!(encode_size(0), vec![0]);
-        assert_eq!(encode_size(1), vec![0x81]);
+        assert_eq!(decode_size(&[0]), 0);
+
+        assert_eq!(encode_size(1), vec![1]);
+        assert_eq!(decode_size(&[1]), 1);
+
         assert_eq!(encode_size(127), vec![127]);
+        assert_eq!(decode_size(&[127]), 127);
+
         assert_eq!(encode_size(128), vec![128, 1]);
+        assert_eq!(decode_size(&[128, 1]), 128);
+
         assert_eq!(encode_size(129), vec![129, 1]);
+        assert_eq!(decode_size(&[129, 1]), 129);
+
         assert_eq!(encode_size(206), vec![206, 1]);
+        assert_eq!(decode_size(&[206, 1]), 206);
+
         assert_eq!(encode_size(255), vec![255, 1]);
+        assert_eq!(decode_size(&[255, 1]), 255);
+
         assert_eq!(encode_size(256), vec![128, 2]);
+        assert_eq!(decode_size(&[128, 2]), 256);
+
         assert_eq!(encode_size(257), vec![129, 2]);
+        assert_eq!(decode_size(&[129, 2]), 257);
+
         assert_eq!(encode_size(16383), vec![255, 127]);
+        assert_eq!(decode_size(&[255, 127]), 16383);
+
         assert_eq!(encode_size(16384), vec![128, 128, 1]);
+        assert_eq!(decode_size(&[128, 128, 1]), 16384);
+
         assert_eq!(encode_size(16385), vec![129, 128, 1]);
+        assert_eq!(decode_size(&[129, 128, 1]), 16385);
+
         assert_eq!(encode_size(2097151), vec![255, 255, 127]);
+        assert_eq!(decode_size(&[255, 255, 127]), 2097151);
+
         assert_eq!(encode_size(2097152), vec![128, 128, 128, 1]);
+        assert_eq!(decode_size(&[128, 128, 128, 1]), 2097152);
+
         assert_eq!(encode_size(2097153), vec![129, 128, 128, 1]);
+        assert_eq!(decode_size(&[129, 128, 128, 1]), 2097153);
+
         assert_eq!(encode_size(268435455), vec![255, 255, 255, 127]);
+        assert_eq!(decode_size(&[255, 255, 255, 127]), 268435455);
     }
 
+
     #[test]
-    fn test_decode_size() {
-        assert_eq!(decode_size(&[0]), 0);
-        assert_eq!(decode_size(&[1]), 1);
-        assert_eq!(decode_size(&[127]), 127);
-        assert_eq!(decode_size(&[128, 1]), 128);
-        assert_eq!(decode_size(&[129, 1]), 129);
-        assert_eq!(decode_size(&[206, 1]), 206);
-        assert_eq!(decode_size(&[255, 1]), 255);
-        assert_eq!(decode_size(&[128, 2]), 256);
-        assert_eq!(decode_size(&[129, 2]), 257);
-        assert_eq!(decode_size(&[255, 127]), 16383);
-        assert_eq!(decode_size(&[128, 128, 1]), 16384);
-        assert_eq!(decode_size(&[129, 128, 1]), 16385);
-        assert_eq!(decode_size(&[255, 255, 127]), 2097151);
-        assert_eq!(decode_size(&[128, 128, 128, 1]), 2097152);
-        assert_eq!(decode_size(&[129, 128, 128, 1]), 2097153);
-        assert_eq!(decode_size(&[255, 255, 255, 127]), 268435455);
+    fn test_encode_decode_offset() {
+        assert_eq!(encode_offset(53), vec![53]);
+        assert_eq!(decode_offset(&[53]), 53);
+
+        assert_eq!(encode_offset(79), vec![79]);
+        assert_eq!(decode_offset(&[79]), 79);
+
+        assert_eq!(encode_offset(111), vec![111]);
+        assert_eq!(decode_offset(&[111]), 111);
+        
+        assert_eq!(encode_offset(479), vec![130,95]);
+        assert_eq!(decode_offset(&[130,95]), 479);
+        
+        assert_eq!(encode_offset(499), vec![130,115]);
+        assert_eq!(decode_offset(&[130,115]), 499);
+        
+        assert_eq!(encode_offset(446), vec![130,62]);
+        assert_eq!(decode_offset(&[130,62]), 446);
+        
+        assert_eq!(encode_offset(566), vec![131,54]);
+        assert_eq!(decode_offset(&[131,54]), 566);
+        
+        assert_eq!(encode_offset(584), vec![131,72]);
+        assert_eq!(decode_offset(&[131,72]), 584);
+        
+        assert_eq!(encode_offset(138), vec![128,10]);
+        assert_eq!(decode_offset(&[128,10]), 138);
+        
+        assert_eq!(encode_offset(717), vec![132,77]);
+        assert_eq!(decode_offset(&[132,77]), 717);
+        
+        assert_eq!(encode_offset(812), vec![133,44]);
+        assert_eq!(decode_offset(&[133,44]), 812);
+        
+        assert_eq!(encode_offset(1187), vec![136,35]);
+        assert_eq!(decode_offset(&[136,35]), 1187);
+        
     }
 
     #[test]
