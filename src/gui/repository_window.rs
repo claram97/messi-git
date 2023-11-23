@@ -1355,51 +1355,6 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
     Ok(string)
 }
 
-pub fn obtain_text_from_tag_add_normal(
-    _builder: &gtk::Builder,
-    _tag_name: &str,
-) -> Result<String, io::Error> {
-    let git_dir = obtain_git_dir(".mgit")?;
-
-    let line = vec![
-        String::from("git"),
-        String::from("tag"),
-        _tag_name.to_string(),
-    ];
-    let mut output: Vec<u8> = vec![];
-    match git_tag(&git_dir, line, &mut output) {
-        Ok(_config) => {}
-        Err(_e) => {
-            eprintln!("Error in git tag.");
-        }
-    }
-
-    let tags_text_view: gtk::TextView = _builder.get_object("tag-text").unwrap();
-
-    let text = match str::from_utf8(&output) {
-        Ok(s) => s.to_string(),
-        Err(_) => {
-            eprintln!("Error turning result into string.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error turning result into string",
-            ));
-        }
-    };
-
-    if let Some(buffer) = tags_text_view.get_buffer() {
-        buffer.set_text(&text);
-    } else {
-        eprintln!("Error obtaining TextView.");
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Error obtaining TextView",
-        ));
-    }
-
-    Ok(text)
-}
-
 pub fn obtain_text_from_tag_verify(builder: &Builder, tag_name: &str) -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -1645,27 +1600,69 @@ fn handle_remote_rm(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Adds a normal Git tag with the specified name.
+///
+/// This function utilizes the `git_tag` operation to add a normal Git tag with the provided name.
+/// If successful, it updates the Git tag view by calling `handle_list_tags`.
+/// Displays error messages using GTK message dialogs accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `git_dir`: The path to the Git directory.
+/// - `tag_name`: The name of the normal Git tag to be added.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation.
+///
+pub fn add_normal_tag(builder: &gtk::Builder, git_dir: &str, tag_name: &str) -> io::Result<()> {
+    let line = vec![
+        String::from("git"),
+        String::from("tag"),
+        tag_name.to_string(),
+    ];
+    let mut output: Vec<u8> = vec![];
+
+    match git_tag(git_dir, line, &mut output) {
+        Ok(_texto) => match handle_list_tags(builder) {
+            Ok(_) => {}
+            Err(_e) => {
+                show_message_dialog("Error", "We had a problem trying to refresh the view.");
+            }
+        },
+        Err(_err) => {
+            let error_message = _err.to_string();
+            show_message_dialog("Error", &error_message);
+        }
+    }
+
+    Ok(())
+}
+
+/// Handles the action triggered by the "Add Normal Tag" button in a GTK application.
+///
+/// This function prompts the user to enter a tag name via a text entry window
+/// and then attempts to add a normal Git tag using the entered name.
+/// Displays an error message in the console if there are issues with the Git operation.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
+///
 fn handle_tag_add_normal(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
+    let git_dir = obtain_git_dir(".mgit")?;
 
     let result = create_text_entry_window("Enter tag name", move |tag_name| {
-        let resultado = obtain_text_from_tag_add_normal(&builder_clone, &tag_name);
-        match resultado {
-            Ok(_texto) => {
-                match handle_list_tags(&builder_clone) {
-                    Ok(_) => {}
-                    Err(_e) => {
-                        show_message_dialog(
-                            "Error",
-                            "We had a problem trying to refresh the view.",
-                        );
-                    }
-                }
-                //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
-            }
-            Err(_err) => {
-                let error_message = _err.to_string();
-                show_message_dialog("Error", &error_message);
+        match add_normal_tag(&builder_clone, &git_dir, &tag_name) {
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!("{}", error.to_string());
             }
         }
     });
@@ -3898,30 +3895,14 @@ pub fn show_heads_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
 pub fn show_tags_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
-        let mut current_dir = match std::env::current_dir() {
+        let git_dir = match obtain_git_dir(".mgit") {
             Ok(dir) => dir,
-            Err(_e) => {
-                eprintln!("No se pudo obtener el directorio actual");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-
+            Err(_) => {
+                eprintln!("Git dir not found.");
                 return;
             }
         };
-        let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-            Some(dir) => dir,
-            None => {
-                eprintln!("No se pudo obtener el git dir.");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
 
-                return;
-            }
-        };
         let line = vec![
             "git".to_string(),
             "show-ref".to_string(),
