@@ -1,6 +1,23 @@
 use crate::index::Index;
 use std::fs;
 use std::io;
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use std::io::Write;
+
+pub fn log_rm(file_name: &str, git_dir_path: &str, git_ignore_path: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git rm': File '{}', {}",
+        file_name, get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
 
 /// Remove a file from both the index and the working directory.
 ///
@@ -61,7 +78,7 @@ pub fn git_rm(
     } else {
         eprintln!("Failed to load the index.");
     }
-
+    log_rm(file_name, git_dir_path, git_ignore_path)?;
     Ok(())
 }
 

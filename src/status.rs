@@ -5,6 +5,19 @@ use crate::tree_handler::Tree;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+
+pub fn log_status() -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!("Command 'git status': {}", get_current_time());
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
 /// Recursively find and write information about untracked files in a Git repository.
 ///
 /// This function traverses the directory structure starting from the `current_directory`, compares
@@ -86,6 +99,7 @@ pub fn changes_to_be_committed(
             }
         }
     }
+    log_status()?;
     Ok(())
 }
 
