@@ -1,6 +1,25 @@
 use std::io::{self, Write};
 
 use crate::ignorer::Ignorer;
+use crate::utils::get_current_time;
+use crate::logger::Logger;
+
+pub fn log_check_ignore(name_of_ignorer: &str, git_ignore_path: &str, option: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git check-ignore': Name of Ignorer '{}', Git Ignore Path '{}', Option '{}', {}",
+        name_of_ignorer,
+        git_ignore_path,
+        option,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
 
 /// Checks if specified paths should be ignored based on the provided `Ignorer`.
 ///
@@ -26,7 +45,11 @@ pub fn git_check_ignore(
     line: Vec<String>,
     output: &mut impl Write,
 ) -> io::Result<()> {
+    // Log the check-ignore command
+    log_check_ignore(ignorer_name, git_ignore_path, "check-ignore")?;
+
     let ignorer = Ignorer::load(git_ignore_path);
+
     if line.len() == 2 || (line.len() == 3 && line[2].eq("-v")) {
         writeln!(output, "fatal: no path specified")?;
         return Err(io::Error::new(
