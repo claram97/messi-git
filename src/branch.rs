@@ -149,7 +149,7 @@ pub fn delete_branch(git_dir: &str, branch_name: &str, output: &mut impl Write) 
             let content = content.chars().take(7).collect::<String>();
 
             fs::remove_file(path)?;
-            output.write_all(format!("Deleted {} (was {})", branch_name, content).as_bytes())?;
+            output.write_all(format!("Deleted {} (was {}\n)", branch_name, content).as_bytes())?;
         }
     } else {
         let buffer = format!("error: branch '{}' not found\n", branch_name);
@@ -185,15 +185,21 @@ fn create_branch_from_existing_one(
     if refs_path.exists() {
         let buffer = format!("fatal: A branch named '{}' already exists\n", branch_name);
         output.write_all(buffer.as_bytes())?;
-        return Ok(());
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            format!("fatal: A branch named '{}' already exists\n", branch_name),
+        ))
     }
 
     let from_refs = (&git_dir).to_string() + "/refs/heads/" + from;
     let from_path = Path::new(&from_refs);
     if !from_path.exists() {
-        let buffer = format!("fatal: Not a valid object name: '{}'.", from);
+        let buffer = format!("fatal: Not a valid object name: '{}'.\n", from);
         output.write_all(buffer.as_bytes())?;
-        return Ok(());
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("fatal: Not a valid object name: '{}'.\n", from),
+        ))
     }
 
     let commit_hash = fs::read_to_string(from_path)?;
@@ -227,7 +233,10 @@ fn create_branch_from_current_one(
     if entries.count() == 0 {
         let buffer = "fatal: Please commit something to create a branch\n".to_string();
         output.write_all(buffer.as_bytes())?;
-        return Ok(());
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "fatal: Please commit something to create a branch\n".to_string(),
+        ))
     }
 
     let new_refs = (&git_dir).to_string() + "/refs/heads/" + branch_name;
@@ -235,7 +244,10 @@ fn create_branch_from_current_one(
     if refs_path.exists() {
         let buffer = format!("fatal: A branch named '{}' already exists\n", branch_name);
         output.write_all(buffer.as_bytes())?;
-        return Ok(());
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("fatal: A branch named '{}' already exists\n", branch_name)
+        ))
     }
     let current_commit = get_current_branch_commit(git_dir)?;
     let mut file = File::create(&new_refs)?;
@@ -320,8 +332,12 @@ pub fn modify_branch(
     if branch_path.exists() {
         if new_branch_path.exists() {
             output.write_all(
-                format!("fatal: A branch named {} already exists.", new_name).as_bytes(),
+                format!("fatal: A branch named {} already exists.\n", new_name).as_bytes(),
             )?;
+            return Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                format!("fatal: A branch named {} already exists.\n", new_name)
+            ))
         } else {
             let current_branch = get_branch_name(git_dir)?;
             if current_branch.eq(branch_name) {
@@ -338,11 +354,14 @@ pub fn modify_branch(
             branch_name
         );
         output.write_all(error_message.as_bytes())?;
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            error_message
+        ))
     }
 
     Ok(())
 }
-
 /// Lists all the branches in the repo or creates a new branch depending on the argument.
 ///
 /// ## Arguments
@@ -385,10 +404,16 @@ pub fn git_branch(
                 }
                 _ => {
                     output.write_all(b"fatal: Invalid option.\n")?;
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "Invalid option\n",
+                    ))
                 }
             }
+        } else if let Some(new_name) = new_name {
+            create_new_branch(&git_dir, &name, Some(new_name), output)?;
         } else {
-            create_new_branch(&git_dir, &name, None, &mut io::stdout())?;
+            create_new_branch(&git_dir, &name, None, output)?;
         }
     } else if let Some(new_name) = new_name {
         if name.is_none() {

@@ -841,30 +841,67 @@ fn handle_create_branch_button(builder: &gtk::Builder) -> io::Result<()> {
 ///
 /// * `Ok(())` - If the branch creation and UI operations are successful.
 /// * `Err(io::Error)` - If there is an error during branch creation or UI operations.
+// fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result<()> {
+//     let builder_clone = builder.clone();
+
+//     let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
+//         let mut output: Vec<u8> = Vec::new();
+//         git_branch(Some(text.to_string()), Some("-c"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
+
+//         let branch_text_view: gtk::TextView =
+//             builder_clone.get_object("show-branches-text").unwrap();
+
+//         let texto = match str::from_utf8(&output) {
+//             Ok(s) => s,
+//             Err(_) => {
+//                 eprintln!("Error turning result into string.");
+//                 "Error obtaining TextView"
+//             }
+//         };
+
+//         if let Some(buffer) = branch_text_view.get_buffer() {
+//             buffer.set_text(texto);
+//         } else {
+//             eprintln!("Error obtaining TextView.");
+//         }
+//     });
+
+//     if let Err(err) = create_result {
+//         eprintln!("Error creating text entry window: {}", err);
+//     }
+
+//     Ok(())
+// }
+
 fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
 
-    let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
-        let mut output: Vec<u8> = Vec::new();
-        git_branch(Some(text.to_string()), Some("-c"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
-
-        let branch_text_view: gtk::TextView =
-            builder_clone.get_object("show-branches-text").unwrap();
-
-        let texto = match str::from_utf8(&output) {
-            Ok(s) => s,
-            Err(_) => {
-                eprintln!("Error turning result into string.");
-                "Error obtaining TextView"
+    let create_result = create_text_entry_window2(
+        "Nombre de la nueva branch",
+        "Nombre de la branch de base",
+        move |new_branch_name, existing_branch_name| {
+            let mut output: Vec<u8> = Vec::new();
+            match git_branch(Some(new_branch_name), None, Some(&existing_branch_name), &mut output) {
+                Ok(_) => match handle_show_branches_button(&builder_clone) {
+                    Ok(_) => {}
+                    Err(_) => {
+                        show_message_dialog("Error", "We couldn't update the view");
+                    }
+                },
+                Err(_) => {
+                    let output_string = match String::from_utf8(output) {
+                        Ok(string) => string,
+                        Err(_e) => {
+                            show_message_dialog("Fatal error", "Something unexpected happened.");
+                            return;
+                        }
+                    };
+                    show_message_dialog("Error", &output_string);
+                }
             }
-        };
-
-        if let Some(buffer) = branch_text_view.get_buffer() {
-            buffer.set_text(texto);
-        } else {
-            eprintln!("Error obtaining TextView.");
-        }
-    });
+            
+        },
+    );
 
     if let Err(err) = create_result {
         eprintln!("Error creating text entry window: {}", err);
@@ -921,69 +958,70 @@ fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+fn modify_current_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
+    if !text1.is_empty() {
+        show_message_dialog("Error", "La opción 'rama actual' está activada. Por favor desactive esta opción si desea cambiar el nombre de otra rama o deje el primer campo vacío para cambiar el nombre de la rama actual.");
+    } else {
+        if text2.is_empty() {
+            show_message_dialog("Error", "Por favor, indique el nuevo nombre para la rama.");
+        } else {
+            let mut output: Vec<u8> = vec![];
+            match git_branch(None, Some("-m"), Some(&text2), &mut output) {
+                Ok(_) => match handle_show_branches_button(&builder) {
+                    Ok(_) => {}
+                    Err(_error) => {
+                        show_message_dialog("Error", "No se pudo actualizar la vista");
+                    }
+                },
+                Err(error) => {
+                    show_message_dialog("Error", &error.to_string());
+                }
+            }
+        }
+    }
+}
+
+fn modify_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
+    if text1.is_empty() || text2.is_empty() {
+        show_message_dialog(
+            "Error",
+            "Debe ingresar el nombre de la rama a modificar y el nuevo nombre.",
+        );
+    } else {
+        let mut output: Vec<u8> = vec![];
+        match git_branch(
+            Some(text1.to_string()),
+            Some("-m"),
+            Some(&text2),
+            &mut output,
+        ) {
+            Ok(_) => match handle_show_branches_button(&builder) {
+                Ok(_) => {}
+                Err(_error) => {
+                    show_message_dialog("Error", "No se pudo actualizar la vista");
+                }
+            },
+            Err(error) => {
+                show_message_dialog("Error", &error.to_string());
+            }
+        }
+    }
+}
+
 fn handle_modify_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     let message1 = "Nombre actual";
     let message2 = "Nombre nuevo";
-
-    create_text_entry_window_with_switch(message1, message2, |text1, text2, switch_value| {
-        // Aquí puedes agregar la lógica que desees con los valores de entrada
-        println!("Text 1: {}", text1);
-        println!("Text 2: {}", text2);
-        println!("Switch Value: {}", switch_value);
-
+    let builder_clone = builder.clone();
+    create_text_entry_window_with_switch(message1, message2, move |text1, text2, switch_value| {
         if switch_value {
-            println!("La opción está activada");
-            // Realiza acciones adicionales si el switch está activado
+            modify_current_branch(&builder_clone, &text1, &text2);
         } else {
-            println!("La opción está desactivada");
-            // Realiza acciones adicionales si el switch está desactivado
+            modify_branch(&builder_clone, &text1, &text2);
         }
     })?;
-    
+
     Ok(())
 }
-/// Handles the modify branch button action.
-///
-/// This function prompts the user to enter the name of the branch to modify
-/// using a text entry window. The entered branch name is then passed to the
-/// `git_branch_for_ui` function for further processing.
-///
-/// # Errors
-///
-/// This function returns an `io::Result` indicating whether the operation
-/// was successful or resulted in an error.
-// ///
-// fn handle_modify_branch_button(builder: &gtk::Builder) -> io::Result<()> {
-//     let builder_clone = builder.clone();
-
-//     let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
-//         let mut output: Vec<u8> = Vec::new();
-//         git_branch(Some(text.to_string()), Some("-m"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
-
-//         let branch_text_view: gtk::TextView =
-//             builder_clone.get_object("show-branches-text").unwrap();
-
-//         let texto = match str::from_utf8(&output) {
-//             Ok(s) => s,
-//             Err(_) => {
-//                 eprintln!("Error turning result into string.");
-//                 "Error obtaining TextView"
-//             }
-//         };
-
-//         if let Some(buffer) = branch_text_view.get_buffer() {
-//             buffer.set_text(texto);
-//         } else {
-//             eprintln!("Error obtaining TextView.");
-//         }
-//     });
-
-//     if let Err(err) = create_result {
-//         eprintln!("Error creating text entry window: {}", err);
-//     }
-
-//     Ok(())
-// }
 
 /// Handle the "Add Path" button's click event. This function opens a text entry window for users to enter the path of
 /// the file they want to add to the staging area. Once the path is entered and confirmed, it attempts to add the file
