@@ -2,7 +2,8 @@ use std::{
     collections::HashMap,
     io::{self, BufRead, Write},
 };
-
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use crate::{client::Client, config};
 
 /// Represents a single entry in the "FETCH_HEAD" file, typically created during Git fetch operations.
@@ -170,6 +171,24 @@ fn get_clean_refs(refs: &HashMap<String, String>) -> Vec<String> {
     clean_refs
 }
 
+pub fn log_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let repo_name = remote_repo_name.unwrap_or("origin");
+
+    let full_message = format!(
+        "Command 'git fetch': Remote Repo Name '{}', Host '{}', Local Dir '{}', {}",
+        repo_name,
+        host,
+        local_dir,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
 /// Perform a Git fetch operation to update the local repository with remote changes.
 ///
 /// This function carries out a Git fetch operation, which retrieves the most recent commit of each branch
@@ -225,6 +244,7 @@ pub fn git_fetch(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) 
         }
     }
     fetch_head_file.write_file(&fetch_head_path)?;
+    log_fetch(_remote_repo_name, _host, local_dir)?;
     Ok(())
 }
 pub fn git_fetch_for_gui(
