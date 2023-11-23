@@ -997,45 +997,61 @@ fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result
     Ok(())
 }
 
-/// Handles the delete branch button action.
+/// Deletes a Git branch with the specified name.
 ///
-/// This function prompts the user to enter the name of the branch to delete
-/// using a text entry window. The entered branch name is then passed to the
-/// `git_branch_for_ui` function for further processing.
+/// This function utilizes the `git_branch` operation to delete a Git branch with the provided name.
+/// If successful, it updates the Git branch view by calling `handle_show_branches_button`.
+/// Displays success or error messages using GTK message dialogs accordingly.
 ///
-/// # Errors
+/// # Arguments
 ///
-/// This function returns an `io::Result` indicating whether the operation
-/// was successful or resulted in an error.
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `name`: The name of the branch to be deleted.
+///
+fn delete_branch(builder: &Builder, name: String) {
+    let mut output: Vec<u8> = Vec::new();
+    match git_branch(Some(name), Some("-d"), None, &mut output) {
+        Ok(_) => {
+            match handle_show_branches_button(builder) {
+                Ok(_) => {}
+                Err(_e) => {
+                    show_message_dialog("Error", "No se pudo actualizar la vista");
+                }
+            }
+            let texto = match str::from_utf8(&output) {
+                Ok(s) => s,
+                Err(_) => {
+                    eprintln!("Error turning result into string.");
+                    "Error obtaining TextView"
+                }
+            };
+
+            show_message_dialog("Éxito", texto);
+        }
+        Err(error) => {
+            show_message_dialog("Error", &error.to_string());
+        }
+    }
+}
+
+/// Handles the action triggered by the "Delete Branch" button in a GTK application.
+///
+/// This function prompts the user to enter the name of the branch via a text entry window.
+/// It then deletes the specified Git branch using the entered name and updates the Git branch view.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
 ///
 fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
 
-    let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
-        let mut output: Vec<u8> = Vec::new();
-        //git_branch(Some(text.to_string()), Some("-d"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
-        match git_branch(Some(text.to_string()), Some("-d"), None, &mut output) {
-            Ok(_) => {
-                match handle_show_branches_button(&builder_clone) {
-                    Ok(_) => {}
-                    Err(_e) => {
-                        show_message_dialog("Error", "No se pudo actualizar la vista");
-                    }
-                }
-                let texto = match str::from_utf8(&output) {
-                    Ok(s) => s,
-                    Err(_) => {
-                        eprintln!("Error turning result into string.");
-                        "Error obtaining TextView"
-                    }
-                };
-
-                show_message_dialog("Éxito", texto);
-            }
-            Err(error) => {
-                show_message_dialog("Error", &error.to_string());
-            }
-        }
+    let create_result = create_text_entry_window("Enter the name of the branch", move |name| {
+        delete_branch(&builder_clone, name);
     });
 
     if let Err(err) = create_result {
@@ -1045,6 +1061,18 @@ fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Modifies the name of the current Git branch.
+///
+/// This function attempts to modify the name of the current Git branch using the provided text parameters.
+/// If successful, it updates the Git branch view by calling `handle_show_branches_button`.
+/// Displays error messages using GTK message dialogs accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `text1`: The first text parameter, indicating the current branch name. If not empty, an error is displayed.
+/// - `text2`: The second text parameter, representing the new name for the current branch.
+///
 fn modify_current_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
     if !text1.is_empty() {
         show_message_dialog("Error", "La opción 'rama actual' está activada. Por favor desactive esta opción si desea cambiar el nombre de otra rama o deje el primer campo vacío para cambiar el nombre de la rama actual.");
@@ -1068,6 +1096,45 @@ fn modify_current_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
     }
 }
 
+/// Updates the name of a specified Git branch.
+///
+/// This function attempts to update the name of a specified Git branch using the provided text parameters.
+/// If successful, it updates the Git branch view by calling `handle_show_branches_button`.
+/// Displays error messages using GTK message dialogs accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `text1`: The current name of the branch to be updated.
+/// - `text2`: The new name for the specified branch.
+///
+fn update_git_branch(builder: &Builder, text1: String, text2: &str) {
+    let mut output: Vec<u8> = vec![];
+    match git_branch(Some(text1), Some("-m"), Some(text2), &mut output) {
+        Ok(_) => match handle_show_branches_button(builder) {
+            Ok(_) => {}
+            Err(_error) => {
+                show_message_dialog("Error", "No se pudo actualizar la vista");
+            }
+        },
+        Err(error) => {
+            show_message_dialog("Error", &error.to_string());
+        }
+    }
+}
+
+/// Modifies the name of a specific Git branch.
+///
+/// This function attempts to modify the name of a specified Git branch using the provided text parameters.
+/// If successful, it updates the Git branch view by calling `update_git_branch`.
+/// Displays an error message using GTK message dialog if either of the text parameters is empty.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `text1`: The first text parameter, representing the current name of the branch to be modified.
+/// - `text2`: The second text parameter, indicating the new name for the specified branch.
+///
 fn modify_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
     if text1.is_empty() || text2.is_empty() {
         show_message_dialog(
@@ -1075,26 +1142,25 @@ fn modify_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
             "Debe ingresar el nombre de la rama a modificar y el nuevo nombre.",
         );
     } else {
-        let mut output: Vec<u8> = vec![];
-        match git_branch(
-            Some(text1.to_string()),
-            Some("-m"),
-            Some(&text2),
-            &mut output,
-        ) {
-            Ok(_) => match handle_show_branches_button(&builder) {
-                Ok(_) => {}
-                Err(_error) => {
-                    show_message_dialog("Error", "No se pudo actualizar la vista");
-                }
-            },
-            Err(error) => {
-                show_message_dialog("Error", &error.to_string());
-            }
-        }
+        update_git_branch(builder, text1.to_string(), text2);
     }
 }
 
+/// Handles the action triggered by the "Modify Branch" button in a GTK application.
+///
+/// This function prompts the user to enter the current and new names of the branch via a text entry window,
+/// along with an option to specify if the modification applies to the current branch.
+/// It then either modifies the name of the current Git branch or another specified branch
+/// and updates the Git branch view accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components.
+///
 fn handle_modify_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     let message1 = "Nombre actual";
     let message2 = "Nombre nuevo";
@@ -1293,34 +1359,13 @@ pub fn obtain_text_from_tag_add_normal(
     _builder: &gtk::Builder,
     _tag_name: &str,
 ) -> Result<String, io::Error> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
 
     let line = vec![
         String::from("git"),
         String::from("tag"),
         _tag_name.to_string(),
     ];
-    println!("tag name is {:?}", _tag_name);
     let mut output: Vec<u8> = vec![];
     match git_tag(&git_dir, line, &mut output) {
         Ok(_config) => {}
