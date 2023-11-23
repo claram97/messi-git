@@ -405,7 +405,7 @@ pub fn git_branch(
 }
 
 fn log_command(command: &str, option: &str, git_dir: &Path) -> io::Result<()> {
-    let log_file_path = "logger_comands.txt";
+    let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!("Command '{}': {} {}", command, option, get_current_time());

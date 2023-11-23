@@ -6,7 +6,7 @@ use crate::utils::get_current_time;
 const GIT_DIR: &str = ".mgit";
 
 pub fn log_init(git_dir: &Path) -> io::Result<()> {
-    let log_file_path = "logger_comands.txt";
+    let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

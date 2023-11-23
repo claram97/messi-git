@@ -43,7 +43,7 @@ fn log_add(
     file: &str,
     git_dir: &Path,
 ) -> io::Result<()> {
-    let log_file_path = "logger_comands.txt";
+    let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(
