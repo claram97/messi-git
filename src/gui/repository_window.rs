@@ -873,6 +873,17 @@ fn handle_show_branches_button(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Creates a new Git branch with the specified name and updates the branch view.
+///
+/// This function utilizes the `git_branch` operation with the `-c` option to create a new Git branch
+/// with the provided name. If successful, it updates the branch view by calling `handle_show_branches_button`.
+/// Displays error messages using GTK message dialogs and the console if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `name`: The name of the new Git branch to be created.
+///
 fn create_branch(builder: &Builder, name: String) {
     let mut output: Vec<u8> = vec![];
     match git_branch(Some(name), Some("-c"), None, &mut output) {
@@ -894,6 +905,7 @@ fn create_branch(builder: &Builder, name: String) {
         }
     }
 }
+
 /// Handles the action triggered by the "Create Branch" button in a GTK application.
 ///
 /// This function prompts the user to enter the name of the branch via a text entry window.
@@ -1887,6 +1899,23 @@ fn handle_tag_add_annotated(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Creates a new Git tag with a specified name based on an existing Git tag.
+///
+/// This function utilizes the `git_tag` operation to create a new Git tag with the provided name (`new_name`)
+/// based on an existing Git tag with the name (`old_name`). If successful, it updates the Git tag view
+/// by calling `handle_list_tags`. Displays error messages using GTK message dialogs and the console
+/// if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `new_name`: The name of the new Git tag to be created.
+/// - `old_name`: The name of the existing Git tag to base the new tag on.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation.
+///
 pub fn create_tag_from_other_tag(
     builder: &gtk::Builder,
     new_name: &str,
@@ -1918,6 +1947,20 @@ pub fn create_tag_from_other_tag(
     Ok(())
 }
 
+/// Handles the action triggered by the "Create Tag from Tag" button in a GTK application.
+///
+/// This function prompts the user to enter the name of the new tag and the name of the base tag
+/// via a text entry window and then attempts to create a new Git tag based on an existing tag.
+/// Displays error messages in the console and GTK message dialogs accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
+///
 fn handle_tag_from_tag(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
     let result = create_text_entry_window2(
@@ -2056,27 +2099,7 @@ fn handle_ls_trees_rt(builder: &gtk::Builder) -> io::Result<()> {
 }
 
 fn obtain_text_from_ls_trees(builder: &gtk::Builder, hash: &str) -> Result<String, io::Error> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
 
     let mut output: Vec<u8> = vec![];
     let _ = ls_tree(hash, &git_dir, "", &mut output);
@@ -2110,27 +2133,7 @@ fn obtain_text_from_ls_trees(builder: &gtk::Builder, hash: &str) -> Result<Strin
 fn obtain_text_from_ls_trees_r(builder: &gtk::Builder, hash: &str) -> Result<String, io::Error> {
     let builder_clone = builder.clone();
 
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
 
     let mut output: Vec<u8> = vec![];
     let _ = ls_tree(hash, &git_dir, "-r", &mut output);
@@ -2162,27 +2165,7 @@ fn obtain_text_from_ls_trees_r(builder: &gtk::Builder, hash: &str) -> Result<Str
 }
 
 fn obtain_text_from_ls_trees_d(builder: &gtk::Builder, hash: &str) -> Result<String, io::Error> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
 
     let mut output: Vec<u8> = vec![];
     let _ = ls_tree(hash, &git_dir, "-d", &mut output);
@@ -2214,27 +2197,7 @@ fn obtain_text_from_ls_trees_d(builder: &gtk::Builder, hash: &str) -> Result<Str
 }
 
 fn obtain_text_from_ls_trees_rt(builder: &gtk::Builder, hash: &str) -> Result<String, io::Error> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
 
     let mut output: Vec<u8> = vec![];
     let _ = ls_tree(hash, &git_dir, "-r-t", &mut output);
