@@ -3489,9 +3489,18 @@ pub fn list_files_window(builder: &Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Checks if a given path is ignored based on the rules specified in a gitignore file.
+///
+/// This function calls the `git check-ignore` command with the provided path and gitignore file.
+/// The result is then displayed in a GTK text view.
+///
+/// # Arguments
+/// * `gitignore_path` - The path to the gitignore file.
+/// * `line` - A vector representing the command line for `git check-ignore`.
+/// * `cloned_text_view` - A reference to the GTK text view for displaying the command output.
+///
 fn check_ignore(gitignore_path: &str, line: Vec<String>, cloned_text_view: &TextView) {
     let mut output: Vec<u8> = vec![];
-
     match git_check_ignore(".mgitignore", &gitignore_path, line, &mut output) {
         Ok(_) => {
             let buffer = match cloned_text_view.get_buffer() {
@@ -3529,19 +3538,45 @@ fn check_ignore(gitignore_path: &str, line: Vec<String>, cloned_text_view: &Text
     }
 }
 
-/// Handles the "Check Ignore" button click event.
+/// Constructs a command line for the `git check-ignore` command based on the state of a switch.
 ///
-/// This function checks if a specified path is ignored by Git based on the
-/// contents of the `.mgitignore` file. The result is displayed in the provided
-/// GTK `TextView`. Optionally, it can display more detailed information if the
-/// corresponding switch is active.
+/// If the switch is active, the command line includes the "-v" (verbose) option.
 ///
 /// # Arguments
+/// * `switch_is_active` - A boolean indicating whether the switch is active.
+/// * `path` - The path for which the check-ignore command is being constructed.
 ///
-/// * `button` - The GTK button that triggers the action when clicked.
-/// * `text_view` - The GTK `TextView` where the check result will be displayed.
-/// * `entry` - The GTK `Entry` containing the path to be checked.
-/// * `switch` - The GTK `Switch` that controls whether to display verbose information.
+/// # Returns
+/// A vector of strings representing the command line for the `git check-ignore` command.
+///
+fn get_line_for_check_ignore(switch_is_active: bool, path: String) -> Vec<String> {
+    let line: Vec<String> = if switch_is_active {
+        vec![
+            "git".to_string(),
+            "check-ignore".to_string(),
+            "-v".to_string(),
+            path,
+        ]
+    } else {
+        vec!["git".to_string(), "check-ignore".to_string(), path]
+    };
+    return line;
+}
+
+/// Handles the "clicked" signal for the ignore button.
+///
+/// This function is connected to the click event of a GTK button. It obtains the Git directory
+/// (assumed to be in a folder named ".mgit"), determines the working directory, and constructs
+/// the path to the ".mgitignore" file. It then retrieves the input path from a GTK entry widget,
+/// checks if it is empty, and displays an error message if so. Otherwise, it generates a line
+/// based on the path and the state of a GTK switch, and checks if this line is ignored in the
+/// ".mgitignore" file. The result is displayed in a GTK text view.
+///
+/// # Arguments
+/// * `button` - A reference to the GTK button triggering the event.
+/// * `text_view` - A reference to the GTK text view for displaying results.
+/// * `entry` - A reference to the GTK entry for obtaining the input path.
+/// * `switch` - A reference to the GTK switch indicating whether to check for inclusion or exclusion.
 ///
 pub fn check_ignore_button_on_clicked(
     button: &Button,
@@ -3551,7 +3586,7 @@ pub fn check_ignore_button_on_clicked(
 ) {
     let cloned_text_view = text_view.clone();
     let cloned_entry = entry.clone();
-    let cloned_siwtch = switch.clone();
+    let cloned_switch = switch.clone();
     button.connect_clicked(move |_| {
         let git_dir = match obtain_git_dir(".mgit") {
             Ok(dir) => dir,
@@ -3560,65 +3595,23 @@ pub fn check_ignore_button_on_clicked(
                 return;
             }
         };
+        let working_dir = match Path::new(&git_dir).parent() {
+            Some(dir) => dir.to_string_lossy().to_string(),
+            None => {
+                eprintln!("No se pudo obtener el working dir");
+                return;
+            }
+        };
 
-        let gitignore_path = format!("{}/{}", git_dir, ".mgitignore");
+        let gitignore_path = format!("{}/{}", working_dir, ".mgitignore");
 
         let path = cloned_entry.get_text();
         if path.is_empty() {
             show_message_dialog("Error", "Debe ingresar un path");
         } else {
-            let line: Vec<String> = if cloned_siwtch.get_active() {
-                vec![
-                    "git".to_string(),
-                    "check-ignore".to_string(),
-                    "-v".to_string(),
-                    path.to_string(),
-                ]
-            } else {
-                vec![
-                    "git".to_string(),
-                    "check-ignore".to_string(),
-                    path.to_string(),
-                ]
-            };
-            let mut output: Vec<u8> = vec![];
+            let line = get_line_for_check_ignore(cloned_switch.get_active(), path.to_string());
 
-            //            check_ignore(&gitignore_path, line, &cloned_text_view);
-            match git_check_ignore(".mgitignore", &gitignore_path, line, &mut output) {
-                Ok(_) => {
-                    let buffer = match cloned_text_view.get_buffer() {
-                        Some(buf) => buf,
-                        None => {
-                            eprintln!("No se pudo obtener el text buffer");
-                            show_message_dialog(
-                                "Fatal error",
-                                "Algo sucedió mientras intentábamos obtener los datos :(",
-                            );
-                            return;
-                        }
-                    };
-
-                    let string = match String::from_utf8(output) {
-                        Ok(str) => str,
-                        Err(_e) => {
-                            eprintln!("No se pudo convertir el resultado a string.");
-                            show_message_dialog(
-                                "Fatal error",
-                                "Algo sucedió mientras intentábamos obtener los datos :(",
-                            );
-                            return;
-                        }
-                    };
-                    buffer.set_text(string.as_str());
-                }
-                Err(e) => {
-                    eprintln!("{}", e);
-                    show_message_dialog(
-                        "Fatal error",
-                        "Algo sucedió mientras intentábamos obtener los datos :(",
-                    );
-                }
-            }
+            check_ignore(&gitignore_path, line, &cloned_text_view);
         }
     });
 }
