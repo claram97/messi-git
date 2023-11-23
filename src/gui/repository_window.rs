@@ -835,44 +835,6 @@ fn handle_create_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
-/// Handle the button click event to create a branch from an existing branch.
-///
-/// # Returns
-///
-/// * `Ok(())` - If the branch creation and UI operations are successful.
-/// * `Err(io::Error)` - If there is an error during branch creation or UI operations.
-// fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result<()> {
-//     let builder_clone = builder.clone();
-
-//     let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
-//         let mut output: Vec<u8> = Vec::new();
-//         git_branch(Some(text.to_string()), Some("-c"), None, &mut output).unwrap(); // Aquí puedes realizar la llamada a la nueva funcionalidad
-
-//         let branch_text_view: gtk::TextView =
-//             builder_clone.get_object("show-branches-text").unwrap();
-
-//         let texto = match str::from_utf8(&output) {
-//             Ok(s) => s,
-//             Err(_) => {
-//                 eprintln!("Error turning result into string.");
-//                 "Error obtaining TextView"
-//             }
-//         };
-
-//         if let Some(buffer) = branch_text_view.get_buffer() {
-//             buffer.set_text(texto);
-//         } else {
-//             eprintln!("Error obtaining TextView.");
-//         }
-//     });
-
-//     if let Err(err) = create_result {
-//         eprintln!("Error creating text entry window: {}", err);
-//     }
-
-//     Ok(())
-// }
-
 fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
 
