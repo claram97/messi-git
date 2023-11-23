@@ -1991,23 +1991,60 @@ fn handle_tag_from_tag(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Calls the `git ls-tree` command to retrieve tree information based on the specified hash and option.
+///
+/// This function obtains the Git directory (assumed to be in a folder named ".mgit") and
+/// executes the `git ls-tree` command with the provided hash and option. The output of the command
+/// is then used to update a GTK text view within the specified GTK builder.
+///
+/// # Arguments
+/// * `option` - The option to be used with the `git ls-tree` command.
+/// * `hash` - The hash or branch name to identify the specific tree.
+/// * `builder` - A reference to the GTK builder containing the text view to be updated.
+///
+fn call_ls_trees(option: &str, hash: &str, builder: &gtk::Builder) {
+    let git_dir = match obtain_git_dir(".mgit") {
+        Ok(dir) => dir,
+        Err(_) => {
+            eprintln!("No se encontró el directorio git.");
+            return;
+        }
+    };
+
+    let mut output: Vec<u8> = vec![];
+    match ls_tree(&hash, &git_dir, option, &mut output) {
+        Ok(_texto) => match update_list_trees_view(builder, output, "trees-text") {
+            Ok(_) => {}
+            Err(_e) => {
+                show_message_dialog("Error", "No se pudo actualizar la vista");
+            }
+        },
+        Err(_err) => {
+            show_message_dialog("Error", &_err.to_string());
+        }
+    }
+}
+
+/// Handles the execution of the `git ls-tree` command based on user input through a text entry window.
+///
+/// This function prompts the user to enter a hash or branch name using a text entry window. Upon
+/// receiving the input, it calls the `call_ls_trees` function to retrieve tree information and
+/// update a GTK text view within the provided GTK builder.
+///
+/// # Arguments
+/// * `builder` - A reference to the GTK builder containing the elements required for interaction.
+///
+/// # Returns
+/// An `io::Result` indicating success or an error in creating the text entry window.
+///
 fn handle_ls_trees(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
 
     let result = create_text_entry_window("Enter hash", move |hash| {
-        let resultado = obtain_text_from_ls_trees(&builder_clone, &hash);
-        match resultado {
-            Ok(texto) => {
-                show_message_dialog("Success", &format!("Result for hash '{}': {}", hash, texto));
-            }
-            Err(_err) => match _err.kind() {
-                std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Success", "Operation completed successfully");
-                }
-                _ => {
-                    show_message_dialog("Error", "Failed to perform operation.");
-                }
-            },
+        if hash.is_empty() {
+            show_message_dialog("Error", "Debe ingresar un hash");
+        } else {
+            call_ls_trees("", &hash, &builder_clone);
         }
     });
 
@@ -2018,50 +2055,55 @@ fn handle_ls_trees(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Handles the execution of the `git ls-tree -r` command based on user input through a text entry window.
+///
+/// This function prompts the user to enter a hash or branch name using a text entry window. Upon
+/// receiving the input, it calls the `call_ls_trees` function with the `-r` option to retrieve
+/// recursive tree information and updates a GTK text view within the provided GTK builder.
+///
+/// # Arguments
+/// * `builder` - A reference to the GTK builder containing the elements required for interaction.
+///
+/// # Returns
+/// An `io::Result` indicating success or an error in creating the text entry window.
+///
 fn handle_ls_trees_r(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
 
     let result = create_text_entry_window("Enter hash", move |hash| {
-        let resultado = obtain_text_from_ls_trees_r(&builder_clone, &hash);
-        match resultado {
-            Ok(texto) => {
-                show_message_dialog("Success", &format!("Result for hash '{}': {}", hash, texto));
-            }
-            Err(_err) => match _err.kind() {
-                std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Success", "Operation completed successfully");
-                }
-                _ => {
-                    show_message_dialog("Error", "Failed to perform operation.");
-                }
-            },
+        if hash.is_empty() {
+            show_message_dialog("Error", "Debe ingresar un hash");
+        } else {
+            call_ls_trees("-r", &hash, &builder_clone);
         }
     });
 
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
-
     Ok(())
 }
 
+/// Handles the execution of the `git ls-tree -d` command based on user input through a text entry window.
+///
+/// This function prompts the user to enter a hash or branch name using a text entry window. Upon
+/// receiving the input, it calls the `call_ls_trees` function with the `-d` option to retrieve
+/// only directories in the tree and updates a GTK text view within the provided GTK builder.
+///
+/// # Arguments
+/// * `builder` - A reference to the GTK builder containing the elements required for interaction.
+///
+/// # Returns
+/// An `io::Result` indicating success or an error in creating the text entry window.
+///
 fn handle_ls_trees_d(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
 
     let result = create_text_entry_window("Enter hash", move |hash| {
-        let resultado = obtain_text_from_ls_trees_d(&builder_clone, &hash);
-        match resultado {
-            Ok(texto) => {
-                show_message_dialog("Success", &format!("Result for hash '{}': {}", hash, texto));
-            }
-            Err(_err) => match _err.kind() {
-                std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Success", "Operation completed successfully");
-                }
-                _ => {
-                    show_message_dialog("Error", "Failed to perform operation.");
-                }
-            },
+        if hash.is_empty() {
+            show_message_dialog("Error", "Debe ingresar un hash");
+        } else {
+            call_ls_trees("-d", &hash, &builder_clone);
         }
     });
 
@@ -2071,23 +2113,27 @@ fn handle_ls_trees_d(builder: &gtk::Builder) -> io::Result<()> {
 
     Ok(())
 }
+
+/// Handles the execution of the `git ls-tree -r -t` command based on user input through a text entry window.
+///
+/// This function prompts the user to enter a hash or branch name using a text entry window. Upon
+/// receiving the input, it calls the `call_ls_trees` function with the `-r-t` option to retrieve
+/// only subtrees in the recursive tree and updates a GTK text view within the provided GTK builder.
+///
+/// # Arguments
+/// * `builder` - A reference to the GTK builder containing the elements required for interaction.
+///
+/// # Returns
+/// An `io::Result` indicating success or an error in creating the text entry window.
+///
 fn handle_ls_trees_rt(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
 
     let result = create_text_entry_window("Enter hash", move |hash| {
-        let resultado = obtain_text_from_ls_trees_rt(&builder_clone, &hash);
-        match resultado {
-            Ok(texto) => {
-                show_message_dialog("Success", &format!("Result for hash '{}': {}", hash, texto));
-            }
-            Err(_err) => match _err.kind() {
-                std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Success", "Operation completed successfully");
-                }
-                _ => {
-                    show_message_dialog("Error", "Failed to perform operation.");
-                }
-            },
+        if hash.is_empty() {
+            show_message_dialog("Error", "Debe ingresar un hash");
+        } else {
+            call_ls_trees("-r-t", &hash, &builder_clone);
         }
     });
 
@@ -2098,13 +2144,32 @@ fn handle_ls_trees_rt(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
-fn obtain_text_from_ls_trees(builder: &gtk::Builder, hash: &str) -> Result<String, io::Error> {
-    let git_dir = obtain_git_dir(".mgit")?;
-
-    let mut output: Vec<u8> = vec![];
-    let _ = ls_tree(hash, &git_dir, "", &mut output);
-
-    let tree_text_view: gtk::TextView = builder.get_object("trees-text").unwrap();
+/// Updates a GTK text view with the provided output.
+///
+/// This function takes a reference to a GTK builder, a vector of bytes representing the
+/// output of a command, and the ID of the text view widget. It attempts to retrieve the
+/// specified text view from the builder, convert the byte vector to a UTF-8 string, and
+/// sets the content of the text view to the resulting string.
+///
+/// # Arguments
+/// * `builder` - A reference to the GTK builder containing the text view to be updated.
+/// * `output` - A vector of bytes representing the output content.
+/// * `id` - The ID of the GTK text view widget within the builder.
+///
+/// # Returns
+/// A `Result` containing the converted output string on success or an `io::Error` on failure.
+///
+fn update_list_trees_view(builder: &gtk::Builder, output: Vec<u8>, id: &str) -> io::Result<String> {
+    let tree_text_view: gtk::TextView = match builder.get_object(id) {
+        Some(text_view) => text_view,
+        None => {
+            eprintln!("Error obtaining text view for list trees.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining text view for list trees",
+            ));
+        }
+    };
 
     let text = match String::from_utf8(output) {
         Ok(s) => s,
@@ -2126,105 +2191,6 @@ fn obtain_text_from_ls_trees(builder: &gtk::Builder, hash: &str) -> Result<Strin
             "Error obtaining TextView",
         ));
     }
-
-    Ok(text)
-}
-
-fn obtain_text_from_ls_trees_r(builder: &gtk::Builder, hash: &str) -> Result<String, io::Error> {
-    let builder_clone = builder.clone();
-
-    let git_dir = obtain_git_dir(".mgit")?;
-
-    let mut output: Vec<u8> = vec![];
-    let _ = ls_tree(hash, &git_dir, "-r", &mut output);
-
-    let tree_text_view: gtk::TextView = builder_clone.get_object("trees-text").unwrap();
-
-    let text = match String::from_utf8(output) {
-        Ok(s) => s,
-        Err(_) => {
-            eprintln!("Error turning result into string.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error turning result into string",
-            ));
-        }
-    };
-
-    if let Some(buffer) = tree_text_view.get_buffer() {
-        buffer.set_text(&text);
-    } else {
-        eprintln!("Error obtaining TextView.");
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Error obtaining TextView",
-        ));
-    }
-
-    Ok(text)
-}
-
-fn obtain_text_from_ls_trees_d(builder: &gtk::Builder, hash: &str) -> Result<String, io::Error> {
-    let git_dir = obtain_git_dir(".mgit")?;
-
-    let mut output: Vec<u8> = vec![];
-    let _ = ls_tree(hash, &git_dir, "-d", &mut output);
-
-    let tree_text_view: gtk::TextView = builder.get_object("trees-text").unwrap();
-
-    let text = match String::from_utf8(output) {
-        Ok(s) => s,
-        Err(_) => {
-            eprintln!("Error turning result into string.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error turning result into string",
-            ));
-        }
-    };
-
-    if let Some(buffer) = tree_text_view.get_buffer() {
-        buffer.set_text(&text);
-    } else {
-        eprintln!("Error obtaining TextView.");
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Error obtaining TextView",
-        ));
-    }
-
-    Ok(text)
-}
-
-fn obtain_text_from_ls_trees_rt(builder: &gtk::Builder, hash: &str) -> Result<String, io::Error> {
-    let git_dir = obtain_git_dir(".mgit")?;
-
-    let mut output: Vec<u8> = vec![];
-    let _ = ls_tree(hash, &git_dir, "-r-t", &mut output);
-
-    let tree_text_view: gtk::TextView = builder.get_object("trees-text").unwrap();
-
-    let text = match String::from_utf8(output) {
-        Ok(s) => s,
-        Err(_) => {
-            eprintln!("Error turning result into string.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error turning result into string",
-            ));
-        }
-    };
-
-    if let Some(buffer) = tree_text_view.get_buffer() {
-        buffer.set_text(&text);
-    } else {
-        eprintln!("Error obtaining TextView.");
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Error obtaining TextView",
-        ));
-    }
-
     Ok(text)
 }
 

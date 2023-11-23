@@ -7,5 +7,5 @@
 	url = rme
 	fetch = +refs/heads/*:refs/remotes/remoteeeee/name/*
 [user]
-	name = Fran
-	email = clari
+	name = Clara
+	email = email
