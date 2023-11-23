@@ -1889,65 +1889,12 @@ fn handle_tag_add_annotated(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
-fn handle_tag_from_tag(builder: &gtk::Builder) -> io::Result<()> {
-    let builder_clone = builder.clone();
-    let result = create_text_entry_window2(
-        "Enter tag new name",
-        "Enter tag old name",
-        move |new_name, old_name| {
-            let resultado = obtain_text_from_tag_from_tag(&builder_clone, &new_name, &old_name);
-            match resultado {
-                Ok(_texto) => {
-                    match handle_list_tags(&builder_clone) {
-                        Ok(_) => {}
-                        Err(_e) => {
-                            show_message_dialog(
-                                "Error",
-                                "We had a problem trying to refresh the view.",
-                            );
-                        }
-                    }
-                    //show_message_dialog("Success", &format!("Tag '{}' removed successfully", texto));
-                }
-                Err(_err) => {
-                    let error_message = _err.to_string();
-                    show_message_dialog("Error", &error_message);
-                }
-            }
-        },
-    );
-    if result.is_err() {
-        eprintln!("Error creating text entry window.");
-    }
-    Ok(())
-}
-
-pub fn obtain_text_from_tag_from_tag(
+pub fn create_tag_from_other_tag(
     builder: &gtk::Builder,
     new_name: &str,
     old_name: &str,
-) -> Result<String, io::Error> {
-    let mut current_dir = match std::env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error obtaining actual directory: {:?}", err);
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining actual directory",
-            ));
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error obtaining git dir");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error obtaining git dir",
-            ));
-        }
-    };
+) -> io::Result<()> {
+    let git_dir = obtain_git_dir(".mgit")?;
 
     let line = vec![
         String::from("git"),
@@ -1958,37 +1905,49 @@ pub fn obtain_text_from_tag_from_tag(
 
     let mut output: Vec<u8> = vec![];
     match git_tag(&git_dir, line, &mut output) {
-        Ok(_) => {}
-        Err(error) => {
-            eprintln!("{:?}", error);
-            return Err(error);
+        Ok(_texto) => match handle_list_tags(builder) {
+            Ok(_) => {}
+            Err(_e) => {
+                show_message_dialog("Error", "We had a problem trying to refresh the view.");
+            }
+        },
+        Err(_err) => {
+            let error_message = _err.to_string();
+            show_message_dialog("Error", &error_message);
         }
     }
 
-    let tags_text_view: gtk::TextView = builder.get_object("tag-text").unwrap();
+    Ok(())
+}
 
-    let text = match str::from_utf8(&output) {
-        Ok(s) => s.to_string(),
-        Err(_) => {
-            eprintln!("Error turning result into string.");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error turning result into string",
-            ));
-        }
-    };
-
-    if let Some(buffer) = tags_text_view.get_buffer() {
-        buffer.set_text(&text);
-    } else {
-        eprintln!("Error obtaining TextView.");
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Error obtaining TextView",
-        ));
+fn handle_tag_from_tag(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+    let result = create_text_entry_window2(
+        "Nombre del nuevo tag",
+        "Nombre del tag de base",
+        move |new_tag_name, base_tag_name| {
+            if new_tag_name.is_empty() || base_tag_name.is_empty() {
+                show_message_dialog(
+                    "Error",
+                    "Debe proveer el nombre del nuevo tag y el nombre del tag de base",
+                );
+            } else {
+                let resultado =
+                    create_tag_from_other_tag(&builder_clone, &new_tag_name, &base_tag_name);
+                match resultado {
+                    Ok(_) => {}
+                    Err(_err) => {
+                        let error_message = _err.to_string();
+                        eprintln!("{error_message}");
+                    }
+                }
+            }
+        },
+    );
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
     }
-
-    Ok(text)
+    Ok(())
 }
 
 fn handle_ls_trees(builder: &gtk::Builder) -> io::Result<()> {
