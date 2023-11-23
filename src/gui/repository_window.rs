@@ -1801,6 +1801,22 @@ fn handle_tag_verify(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Adds an annotated Git tag with the specified name and message.
+///
+/// This function utilizes the `git_tag` operation with the `-a` option to add an annotated Git tag
+/// with the provided name and message. If successful, it updates the Git tag view by calling `handle_list_tags`.
+/// Displays error messages using GTK message dialogs and the console if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `name`: The name of the Git tag to be added.
+/// - `message`: The message associated with the Git tag.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation.
+///
 pub fn add_annotated_tag(builder: &gtk::Builder, name: &str, message: &str) -> io::Result<()> {
     let git_dir = obtain_git_dir(".mgit")?;
 
@@ -1831,6 +1847,20 @@ pub fn add_annotated_tag(builder: &gtk::Builder, name: &str, message: &str) -> i
     Ok(())
 }
 
+/// Handles the action triggered by the "Add Annotated Tag" button in a GTK application.
+///
+/// This function prompts the user to enter a tag name and a tag message via a text entry window
+/// and then attempts to add an annotated Git tag using the entered name and message.
+/// Displays error messages in the console and GTK message dialogs accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
+///
 fn handle_tag_add_annotated(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
     let result = create_text_entry_window2(
