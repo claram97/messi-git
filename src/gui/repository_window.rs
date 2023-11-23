@@ -2012,7 +2012,7 @@ fn call_ls_trees(option: &str, hash: &str, builder: &gtk::Builder) {
     };
 
     let mut output: Vec<u8> = vec![];
-    match ls_tree(&hash, &git_dir, option, &mut output) {
+    match ls_tree(hash, &git_dir, option, &mut output) {
         Ok(_texto) => match update_list_trees_view(builder, output, "trees-text") {
             Ok(_) => {}
             Err(_e) => {
