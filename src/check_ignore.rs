@@ -1,10 +1,14 @@
 use std::io::{self, Write};
 
 use crate::ignorer::Ignorer;
-use crate::utils::get_current_time;
 use crate::logger::Logger;
+use crate::utils::get_current_time;
 
-pub fn log_check_ignore(name_of_ignorer: &str, git_ignore_path: &str, option: &str) -> io::Result<()> {
+pub fn log_check_ignore(
+    name_of_ignorer: &str,
+    git_ignore_path: &str,
+    option: &str,
+) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
 
@@ -19,7 +23,6 @@ pub fn log_check_ignore(name_of_ignorer: &str, git_ignore_path: &str, option: &s
     logger.flush()?;
     Ok(())
 }
-
 
 /// Checks if specified paths should be ignored based on the provided `Ignorer`.
 ///

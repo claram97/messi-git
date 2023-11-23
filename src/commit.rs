@@ -1,14 +1,14 @@
 use crate::cat_file;
 use crate::hash_object;
+use crate::logger::Logger;
 use crate::tree_handler;
 use crate::tree_handler::has_tree_changed_since_last_commit;
+use crate::utils::get_current_time;
 use std::fs;
 use std::io;
 use std::io::Read;
 use std::io::Write;
 use std::path::Path;
-use crate::logger::Logger;
-use crate::utils::get_current_time;
 
 const NO_PARENT: &str = "0000000000000000000000000000000000000000";
 const INDEX_FILE_NAME: &str = "index";
@@ -28,7 +28,6 @@ pub fn log_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> i
     logger.flush()?;
     Ok(())
 }
-
 
 /// Creates a new commit file.
 /// With the given tree hash, parent commit and message. Adds the author and date.

@@ -1,8 +1,8 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
-use crate::logger::Logger;
-use crate::utils::get_current_time;
 const GIT_DIR: &str = ".mgit";
 
 pub fn log_init(git_dir: &Path) -> io::Result<()> {
@@ -18,7 +18,6 @@ pub fn log_init(git_dir: &Path) -> io::Result<()> {
     logger.flush()?;
     Ok(())
 }
-
 
 /// `create_directory_if_not_exists` is a utility function that creates a directory if it doesn't exist.
 ///

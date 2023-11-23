@@ -1,11 +1,11 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use crate::{branch, cat_file, config::Config, hash_object, utils};
 use std::{
     fs::{self, File},
     io::{self, Write},
     path::Path,
 };
-use crate::logger::Logger;
-use crate::utils::get_current_time;
-use crate::{branch, cat_file, config::Config, hash_object, utils};
 
 /// List the tags in the specified directory and write their names to the given output.
 ///

@@ -1,8 +1,8 @@
 use std::io::{self, Write};
 
-use crate::{fetch, merge};
-use crate::utils::get_current_time;
 use crate::logger::Logger;
+use crate::utils::get_current_time;
+use crate::{fetch, merge};
 
 pub fn log_push(branch: &str, local_dir: &str, remote_repo_name: Option<&str>) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";

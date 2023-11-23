@@ -10,7 +10,8 @@ pub fn log_remote(line: &[&str]) -> io::Result<()> {
 
     let full_message = format!(
         "Command 'git remote': Subcommand '{:?}', {}",
-        line, get_current_time()
+        line,
+        get_current_time()
     );
     logger.write_all(full_message.as_bytes())?;
     logger.flush()?;

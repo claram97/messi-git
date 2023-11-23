@@ -4,10 +4,10 @@ use std::{
     path::Path,
 };
 
-use std::fs::File;
-use std::io::prelude::*;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
+use std::fs::File;
+use std::io::prelude::*;
 
 pub fn log_show_ref(git_dir: &str, line: Vec<String>) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
@@ -15,7 +15,9 @@ pub fn log_show_ref(git_dir: &str, line: Vec<String>) -> io::Result<()> {
 
     let full_message = format!(
         "Command 'git show-ref': Git Directory '{}', Line '{:?}', {}",
-        git_dir, line, get_current_time()
+        git_dir,
+        line,
+        get_current_time()
     );
     logger.write_all(full_message.as_bytes())?;
     logger.flush()?;

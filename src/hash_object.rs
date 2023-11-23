@@ -4,10 +4,10 @@ use std::{
     path::Path,
 };
 
-use flate2::{write::ZlibEncoder, Compression};
-use sha1::{Digest, Sha1};
 use crate::logger::Logger;
 use crate::utils::get_current_time;
+use flate2::{write::ZlibEncoder, Compression};
+use sha1::{Digest, Sha1};
 
 pub fn log_hash_object(path: &str, git_dir_path: &str) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";

@@ -1,13 +1,13 @@
 use crate::cat_file;
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use std::io::Write;
 use std::{
     fmt::Display,
     fs,
     io::{self, Error},
     path::Path,
 };
-use crate::logger::Logger;
-use std::io::Write;
-use crate::utils::get_current_time;
 
 /// LogIter is a structure that will help to iterate
 /// through commit logs in the correct way.
@@ -199,11 +199,14 @@ impl Log {
     fn parse_commit_header_line(&mut self, line: &str) -> io::Result<()> {
         println!("Calling parse commit header line function!\n");
         match line.split_once(' ') {
-            Some(("tree", hash)) => {self.tree_hash = hash.to_string();
+            Some(("tree", hash)) => {
+                self.tree_hash = hash.to_string();
                 println!("hash {:?}\n", hash);
-            },
-            Some(("parent", hash)) => {self.parent_hash = Some(hash.to_string());
-                println!("hash {:?}\n", hash);},
+            }
+            Some(("parent", hash)) => {
+                self.parent_hash = Some(hash.to_string());
+                println!("hash {:?}\n", hash);
+            }
             Some(("author", author)) => {
                 let fields: Vec<&str> = author.split(' ').collect();
                 println!("fields {:?}\n", fields);
@@ -318,7 +321,10 @@ pub fn log(
     oneline: bool,
 ) -> io::Result<impl Iterator<Item = Log>> {
     log_log(&Path::new(git_dir), commit)?;
-    println!("Calling git log with commit {:?} and git_dir {:?}", commit, git_dir);
+    println!(
+        "Calling git log with commit {:?} and git_dir {:?}",
+        commit, git_dir
+    );
     let log = Log::load(commit, git_dir)?.set_online(oneline);
     Ok(log.iter().skip(skip).take(amount))
 }

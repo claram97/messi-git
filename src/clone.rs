@@ -1,13 +1,11 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use crate::{client::Client, config, init, tree_handler};
 use std::{
     collections::HashMap,
     fs,
     io::{self, Read, Write},
 };
-use crate::utils::get_current_time;
-use crate::logger::Logger;
-
-
 
 pub fn log_clone(repo_url: &str, destination: &str) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";

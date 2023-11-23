@@ -1,11 +1,11 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use crate::{hash_object, index::Index};
 use std::{
     fs,
     io::{self, Write},
     path::Path,
 };
-use crate::logger::Logger;
-use crate::utils::get_current_time;
-use crate::{hash_object, index::Index};
 const BLOB: &str = "blob";
 
 /// Lists files present in the provided index.
@@ -221,7 +221,14 @@ pub fn git_ls_files(
         list_files_in_index(index, output)?;
     } else if line.len() == 3 {
         if line[2].eq("-o") {
-            list_untracked_files(working_dir, git_dir, current_directory, line.clone(), index, output)?;
+            list_untracked_files(
+                working_dir,
+                git_dir,
+                current_directory,
+                line.clone(),
+                index,
+                output,
+            )?;
         } else if line[2].eq("-m") {
             list_modified_files(working_dir, index, output)?;
         } else {

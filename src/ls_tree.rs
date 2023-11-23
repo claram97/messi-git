@@ -1,9 +1,8 @@
+use crate::logger::Logger;
 use crate::tree_handler;
+use crate::utils::get_current_time;
 use std::io;
 use std::io::Write;
-use crate::logger::Logger;
-use crate::utils::get_current_time;
-
 
 pub fn log_ls_tree(hash: &str, git_dir: &str, option: &str) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";

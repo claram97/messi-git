@@ -1,10 +1,10 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use flate2::bufread::ZlibDecoder;
 use std::{
     fs::File,
     io::{self, BufReader, ErrorKind, Read, Write},
 };
-use crate::utils::get_current_time;
-use crate::logger::Logger;
 
 pub fn log_cat_file(hash: &str, directory: &str) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";

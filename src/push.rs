@@ -1,7 +1,7 @@
-use crate::{client::Client, config};
-use std::io;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
+use crate::{client::Client, config};
+use std::io;
 use std::io::Write;
 
 pub fn log_push(branch: &str, git_dir: &str) -> io::Result<()> {

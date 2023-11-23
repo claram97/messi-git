@@ -5,10 +5,10 @@ use std::io;
 
 use crate::ignorer::is_subpath;
 use crate::index::Index;
-use std::path::PathBuf;
-use crate::utils::get_current_time;
 use crate::logger::Logger;
+use crate::utils::get_current_time;
 use std::path::Path;
+use std::path::PathBuf;
 
 use std::io::Write;
 
@@ -38,11 +38,7 @@ pub fn process_file_name(index: &mut Index, file_name: &str) -> io::Result<()> {
     Ok(())
 }
 
-fn log_add(
-    add_type: &str,
-    file: &str,
-    git_dir: &Path,
-) -> io::Result<()> {
+fn log_add(add_type: &str, file: &str, git_dir: &Path) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
 
@@ -56,10 +52,6 @@ fn log_add(
     logger.flush()?;
     Ok(())
 }
-
-
-
-
 
 /// Add files to the Git index.
 ///
@@ -107,7 +99,7 @@ pub fn add(
         index.write_file()?;
 
         // Log the added file and current time
-       
+
         log_add("single", path, &PathBuf::from(&path));
     }
 

@@ -1,10 +1,10 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use crate::{client::Client, config};
 use std::{
     collections::HashMap,
     io::{self, BufRead, Write},
 };
-use crate::logger::Logger;
-use crate::utils::get_current_time;
-use crate::{client::Client, config};
 
 /// Represents a single entry in the "FETCH_HEAD" file, typically created during Git fetch operations.
 ///

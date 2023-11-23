@@ -1,11 +1,11 @@
 use std::io;
 
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use crate::{
     branch, commit, tree_handler,
     utils::{self, get_git_ignore_path},
 };
-use crate::utils::get_current_time;
-use crate::logger::Logger;
 use std::io::Write;
 
 /// Checks if a branch fast-forwards to a common commit.
@@ -103,7 +103,12 @@ fn two_way_merge(
     Ok(conflicting_paths)
 }
 
-pub fn log_merge(our_branch: &str, their_branch: &str, git_dir: &str, root_dir: &str) -> io::Result<()> {
+pub fn log_merge(
+    our_branch: &str,
+    their_branch: &str,
+    git_dir: &str,
+    root_dir: &str,
+) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
 

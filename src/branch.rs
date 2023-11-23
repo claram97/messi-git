@@ -1,10 +1,10 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use std::{
     fs::{self, File},
     io::{self, Read, Write},
     path::{Path, PathBuf},
 };
-use crate::utils::get_current_time;
-use crate::logger::Logger;
 
 use crate::{
     commit::{self, get_branch_name},
@@ -400,7 +400,11 @@ pub fn git_branch(
     } else {
         list_branches(&git_dir, output)?;
     }
-    log_command("git_branch", option.unwrap_or_default(), &PathBuf::from(&git_dir))?;
+    log_command(
+        "git_branch",
+        option.unwrap_or_default(),
+        &PathBuf::from(&git_dir),
+    )?;
     Ok(())
 }
 
@@ -413,7 +417,6 @@ fn log_command(command: &str, option: &str, git_dir: &Path) -> io::Result<()> {
     logger.flush()?;
     Ok(())
 }
-
 
 /// Removes ANSI escape codes from the input string.
 ///

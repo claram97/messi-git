@@ -1,8 +1,8 @@
 use crate::index::Index;
-use std::fs;
-use std::io;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
+use std::fs;
+use std::io;
 use std::io::Write;
 
 pub fn log_rm(file_name: &str, git_dir_path: &str, git_ignore_path: &str) -> io::Result<()> {
@@ -11,13 +11,13 @@ pub fn log_rm(file_name: &str, git_dir_path: &str, git_ignore_path: &str) -> io:
 
     let full_message = format!(
         "Command 'git rm': File '{}', {}",
-        file_name, get_current_time()
+        file_name,
+        get_current_time()
     );
     logger.write_all(full_message.as_bytes())?;
     logger.flush()?;
     Ok(())
 }
-
 
 /// Remove a file from both the index and the working directory.
 ///

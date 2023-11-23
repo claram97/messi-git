@@ -1,11 +1,11 @@
 use crate::branch;
+use crate::logger::Logger;
 use crate::tree_handler;
+use crate::utils::get_current_time;
 use std::fs;
 use std::io;
-use std::path::Path;
-use crate::utils::get_current_time;
-use crate::logger::Logger;
 use std::io::Write;
+use std::path::Path;
 
 fn log_checkout(
     current_branch: &str,
@@ -61,7 +61,6 @@ pub fn checkout_branch(git_dir_path: &Path, root_dir: &str, branch_name: &str) -
         Ok(name) => name,
         Err(_) => "Unknown".to_string(),
     };
-    
 
     match checkout_branch_references(git_dir_path, branch_name) {
         Ok(old_commit_id) => {
@@ -117,7 +116,7 @@ fn checkout_branch_references(git_dir: &Path, branch_name: &str) -> io::Result<S
     let head_file = git_dir.join("HEAD");
     let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
     fs::write(head_file, new_head_content)?;
-    
+
     Ok(old_commit_id)
 }
 
@@ -362,8 +361,9 @@ pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) -> Result<(), io::
             fs::write(&head_file, &new_head_content)?;
 
             // Log the force checkout
-            let current_branch = branch::get_current_branch_path(git_dir.to_str().unwrap_or_default())
-                .unwrap_or_else(|_| "Unknown".to_string());
+            let current_branch =
+                branch::get_current_branch_path(git_dir.to_str().unwrap_or_default())
+                    .unwrap_or_else(|_| "Unknown".to_string());
             log_checkout(&current_branch, branch_name, "Force checkout", git_dir)?;
 
             println!("Force switched to branch: {}", branch_name);
@@ -384,8 +384,9 @@ pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) -> Result<(), io::
             fs::write(&head_file, &new_head_content)?;
 
             // Log the force checkout
-            let current_branch = branch::get_current_branch_path(git_dir.to_str().unwrap_or_default())
-                .unwrap_or_else(|_| "Unknown".to_string());
+            let current_branch =
+                branch::get_current_branch_path(git_dir.to_str().unwrap_or_default())
+                    .unwrap_or_else(|_| "Unknown".to_string());
             log_checkout(&current_branch, commit_id, "Force checkout", git_dir)?;
 
             println!("Force switched to commit (detached mode): {}", commit_id);
