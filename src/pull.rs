@@ -1,6 +1,25 @@
 use std::io::{self, Write};
 
 use crate::{fetch, merge};
+use crate::utils::get_current_time;
+use crate::logger::Logger;
+
+pub fn log_push(branch: &str, local_dir: &str, remote_repo_name: Option<&str>) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let remote_name = remote_repo_name.unwrap_or("origin");
+    let full_message = format!(
+        "Command 'git push': Branch '{}', Local Directory '{}', Remote Repository Name '{}', {}",
+        branch,
+        local_dir,
+        remote_name,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Perform a Git pull operation to update a local branch from a remote repository.
 ///
@@ -54,6 +73,7 @@ pub fn git_pull(
     }
     let hash = branch_remotes.commit_hash.clone();
     merge::merge_remote_branch(branch, &hash, &git_dir)?;
+    log_push(branch, local_dir, remote_repo_name)?;
     Ok(())
 }
 

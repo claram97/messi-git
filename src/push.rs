@@ -1,5 +1,23 @@
 use crate::{client::Client, config};
 use std::io;
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use std::io::Write;
+
+pub fn log_push(branch: &str, git_dir: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git push': Branch '{}', Git Directory '{}', {}",
+        branch,
+        git_dir,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Pushes the specified branch to the remote repository.
 ///
@@ -30,6 +48,7 @@ pub fn git_push(branch: &str, git_dir: &str) -> io::Result<()> {
         }
     };
     let mut client = Client::new(address, repo_name, "localhost");
+    log_push(branch, git_dir)?;
     client.receive_pack(branch, git_dir)
 }
 

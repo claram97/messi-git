@@ -1,6 +1,25 @@
 use crate::tree_handler;
 use std::io;
 use std::io::Write;
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+
+
+pub fn log_ls_tree(hash: &str, git_dir: &str, option: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git ls-tree': Hash '{}', Git Directory '{}', Option '{}', {}",
+        hash,
+        git_dir,
+        option,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// The given hash must be either refer to a commit or to a tree.
 /// It will list all the blobs in the referred tree and also list the blobs contained in the subtrees of it.
@@ -32,6 +51,6 @@ pub fn ls_tree(hash: &str, git_dir: &str, option: &str, output: &mut impl Write)
         "-r-t" => tree.print_tree_recursive(output, git_dir, "")?,
         _ => return Err(io::Error::new(io::ErrorKind::Other, "Invalid option")),
     }
-
+    log_ls_tree(hash, git_dir, option)?;
     Ok(())
 }

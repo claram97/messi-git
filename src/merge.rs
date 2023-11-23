@@ -4,6 +4,9 @@ use crate::{
     branch, commit, tree_handler,
     utils::{self, get_git_ignore_path},
 };
+use crate::utils::get_current_time;
+use crate::logger::Logger;
+use std::io::Write;
 
 /// Checks if a branch fast-forwards to a common commit.
 ///
@@ -100,6 +103,23 @@ fn two_way_merge(
     Ok(conflicting_paths)
 }
 
+pub fn log_merge(our_branch: &str, their_branch: &str, git_dir: &str, root_dir: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git merge': Our Branch '{}', Their Branch '{}', Git Directory '{}', Root Directory '{}', {}",
+        our_branch,
+        their_branch,
+        git_dir,
+        root_dir,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
 /// Given two branches, merges `our_branch` with `their_branch`.
 /// It will try to do a fast forward merge, if it is not possible, it will do a two way merge.
 /// `our_branch` will point to a new commit that contains the changes of both branches.
@@ -128,6 +148,7 @@ pub fn git_merge(
     if is_fast_forward(&our_commit, &common_ancestor) {
         fast_forward_merge(our_branch, their_branch, git_dir, root_dir)?;
         let tuple = (our_commit, vec![]);
+        log_merge(our_branch, their_branch, git_dir, root_dir)?;
         Ok(tuple)
     } else {
         let conflicting_paths = two_way_merge(our_branch, their_branch, git_dir, root_dir)?;
@@ -135,6 +156,8 @@ pub fn git_merge(
         let hash =
             commit::new_merge_commit(git_dir, &commit_message, &our_commit, &their_commit, "")?;
         let tuple = (hash, conflicting_paths);
+        log_merge(our_branch, their_branch, git_dir, root_dir)?;
+
         Ok(tuple)
     }
 }
