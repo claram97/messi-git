@@ -2988,16 +2988,7 @@ pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
 /// Returns an `io::Result<()>` indicating success or an error.
 ///
 pub fn call_git_merge(their_branch: &str) -> io::Result<Vec<String>> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Not a git directory.\n",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
     let root_dir = match Path::new(&git_dir).parent() {
         Some(dir) => dir,
         None => {
@@ -3117,16 +3108,7 @@ pub fn set_merge_button_behavior(
 /// or resulted in an error.
 ///
 fn show_current_branch_on_merge_window(merge_text_view: &TextView) -> io::Result<()> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found.\n",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
 
     let buffer = match merge_text_view.get_buffer() {
         Some(buff) => buff,
@@ -3507,6 +3489,46 @@ pub fn list_files_window(builder: &Builder) -> io::Result<()> {
     Ok(())
 }
 
+fn check_ignore(gitignore_path: &str, line: Vec<String>, cloned_text_view: &TextView) {
+    let mut output: Vec<u8> = vec![];
+
+    match git_check_ignore(".mgitignore", &gitignore_path, line, &mut output) {
+        Ok(_) => {
+            let buffer = match cloned_text_view.get_buffer() {
+                Some(buf) => buf,
+                None => {
+                    eprintln!("No se pudo obtener el text buffer");
+                    show_message_dialog(
+                        "Fatal error",
+                        "Algo sucedió mientras intentábamos obtener los datos :(",
+                    );
+                    return;
+                }
+            };
+
+            let string = match String::from_utf8(output) {
+                Ok(str) => str,
+                Err(_e) => {
+                    eprintln!("No se pudo convertir el resultado a string.");
+                    show_message_dialog(
+                        "Fatal error",
+                        "Algo sucedió mientras intentábamos obtener los datos :(",
+                    );
+                    return;
+                }
+            };
+            buffer.set_text(string.as_str());
+        }
+        Err(e) => {
+            eprintln!("{}", e);
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+        }
+    }
+}
+
 /// Handles the "Check Ignore" button click event.
 ///
 /// This function checks if a specified path is ignored by Git based on the
@@ -3531,27 +3553,10 @@ pub fn check_ignore_button_on_clicked(
     let cloned_entry = entry.clone();
     let cloned_siwtch = switch.clone();
     button.connect_clicked(move |_| {
-        let mut current_dir = match std::env::current_dir() {
+        let git_dir = match obtain_git_dir(".mgit") {
             Ok(dir) => dir,
-            Err(_e) => {
-                eprintln!("No se pudo obtener el directorio actual");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-
-                return;
-            }
-        };
-        let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-            Some(dir) => dir,
-            None => {
-                eprintln!("No se pudo obtener el git dir.");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-
+            Err(_error) => {
+                eprintln!("No se pudo obtener el git dir");
                 return;
             }
         };
@@ -3578,6 +3583,7 @@ pub fn check_ignore_button_on_clicked(
             };
             let mut output: Vec<u8> = vec![];
 
+            //            check_ignore(&gitignore_path, line, &cloned_text_view);
             match git_check_ignore(".mgitignore", &gitignore_path, line, &mut output) {
                 Ok(_) => {
                     let buffer = match cloned_text_view.get_buffer() {
@@ -3611,7 +3617,6 @@ pub fn check_ignore_button_on_clicked(
                         "Fatal error",
                         "Algo sucedió mientras intentábamos obtener los datos :(",
                     );
-                    //no sé, personalizar esto jiji
                 }
             }
         }
