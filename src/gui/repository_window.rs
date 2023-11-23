@@ -4009,6 +4009,59 @@ pub fn show_ref_window(builder: &Builder) {
     verify_ref_button_on_clicked(&verify_ref_button, &show_ref_view, &show_ref_entry);
 }
 
+/// Calls the `git config set-user-info` command to update the user's name and email in the Git configuration.
+///
+/// This function obtains the Git directory (assumed to be in a folder named ".mgit") and constructs
+/// the command line for the `git config set-user-info` command with the provided name and email.
+/// It then executes the command and displays success or error messages accordingly.
+///
+/// # Arguments
+/// * `name` - The new user name to be set in the Git configuration.
+/// * `email` - The new user email to be set in the Git configuration.
+///
+fn call_git_config(name: String, email: String) {
+    let git_dir = match obtain_git_dir(".mgit") {
+        Ok(dir) => dir,
+        Err(_e) => {
+            eprintln!("No se pudo obtener el git dir.");
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+
+            return;
+        }
+    };
+
+    let line = vec![
+        "git".to_string(),
+        "config".to_string(),
+        "set-user-info".to_string(),
+        name,
+        email,
+    ];
+
+    match git_config(&git_dir, line) {
+        Ok(_) => {
+            show_message_dialog("Éxito", "Información actualizada con éxito");
+        }
+        Err(_e) => {
+            show_message_dialog("Error", &_e.to_string());
+        }
+    }
+}
+
+/// Handles the "clicked" signal for the configuration button.
+///
+/// This function is connected to the click event of a GTK button. It retrieves the user's name
+/// and email from the provided GTK entry widgets, checks if both fields are filled, and calls
+/// the `call_git_config` function to update the Git configuration accordingly.
+///
+/// # Arguments
+/// * `button` - A reference to the GTK button triggering the event.
+/// * `name_entry` - A reference to the GTK entry widget for the user's name.
+/// * `email_entry` - A reference to the GTK entry widget for the user's email.
+///
 fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entry: &gtk::Entry) {
     let cloned_name_entry = name_entry.clone();
     let cloned_email_entry = email_entry.clone();
@@ -4019,39 +4072,20 @@ fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entr
         if name.is_empty() || email.is_empty() {
             show_message_dialog("Warning", "Debe completar ambos campos para continuar");
         } else {
-            let git_dir = match obtain_git_dir(".mgit") {
-                Ok(dir) => dir,
-                Err(_e) => {
-                    eprintln!("No se pudo obtener el git dir.");
-                    show_message_dialog(
-                        "Fatal error",
-                        "Algo sucedió mientras intentábamos obtener los datos :(",
-                    );
-
-                    return;
-                }
-            };
-
-            let line = vec![
-                "git".to_string(),
-                "config".to_string(),
-                "set-user-info".to_string(),
-                name,
-                email,
-            ];
-
-            match git_config(&git_dir, line) {
-                Ok(_) => {
-                    show_message_dialog("Éxito", "Información actualizada con éxito");
-                }
-                Err(_e) => {
-                    show_message_dialog("Error", &_e.to_string());
-                }
-            }
+            call_git_config(name, email);
         }
     });
 }
 
+/// Configures the elements of the configuration window and connects relevant signals.
+///
+/// This function takes a GTK builder and initializes various elements of the configuration window,
+/// such as buttons, entries, and labels. It applies styles to these elements and connects the
+/// "clicked" signal of the configuration button to the `config_button_on_clicked` function.
+///
+/// # Arguments
+/// * `builder` - A reference to the GTK builder containing the configuration window elements.
+///
 fn config_window(builder: &gtk::Builder) {
     let config_button = get_button(builder, "config-button");
     let name_entry = match get_entry(builder, "set-user-name-entry") {
@@ -4371,7 +4405,6 @@ fn get_current_dir_string() -> io::Result<String> {
         })
 }
 
-/// Get the Git directory path or return an error if not found.
 fn get_git_directory_path(current_dir: &Path) -> io::Result<String> {
     match utils::find_git_directory(&mut current_dir.to_path_buf(), ".mgit") {
         Some(path) => Ok(path),
