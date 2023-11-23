@@ -1295,7 +1295,7 @@ fn handle_branch(args: Vec<String>) {
                     println!("Branch {name} successfully created!");
                 }
                 Err(_e) => {
-                    eprintln!("{}", _e.to_string())
+                    eprintln!("{}", _e)
                 }
             }
         }
@@ -1349,7 +1349,7 @@ fn handle_branch(args: Vec<String>) {
                     println!("Branch {name} succesfully created from {new_name}");
                 }
                 Err(_e) => {
-                    eprintln!("{}", _e.to_string())
+                    eprintln!("{}", _e)
                 }
             }
         }

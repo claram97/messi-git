@@ -11,7 +11,7 @@ use crate::commit::get_branch_name;
 use crate::git_config::git_config;
 use crate::tag::git_tag;
 use crate::utils::obtain_git_dir;
-use std::fmt::Write;
+
 use std::str;
 //use crate::fetch::git_fetch_for_gui;
 use crate::branch::git_branch;
@@ -566,7 +566,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub fn obtain_text_from_fetch() -> Result<String, std::io::Error> {
+pub fn _obtain_text_from_fetch() -> Result<String, std::io::Error> {
     // let current_dir = match std::env::current_dir() {
     //     Ok(dir) => dir,
     //     Err(err) => {
@@ -594,7 +594,7 @@ pub fn obtain_text_from_fetch() -> Result<String, std::io::Error> {
     Ok("hola".to_string())
 }
 
-fn handle_fetch_button(builder: &gtk::Builder) {
+fn handle_fetch_button(_builder: &gtk::Builder) {
     // let log_text_view_result: Option<gtk::TextView> = builder.get_object("fetch-text");
 
     // if let Some(log_text_view) = log_text_view_result {
@@ -1077,21 +1077,19 @@ fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
 fn modify_current_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
     if !text1.is_empty() {
         show_message_dialog("Error", "La opción 'rama actual' está activada. Por favor desactive esta opción si desea cambiar el nombre de otra rama o deje el primer campo vacío para cambiar el nombre de la rama actual.");
+    } else if text2.is_empty() {
+        show_message_dialog("Error", "Por favor, indique el nuevo nombre para la rama.");
     } else {
-        if text2.is_empty() {
-            show_message_dialog("Error", "Por favor, indique el nuevo nombre para la rama.");
-        } else {
-            let mut output: Vec<u8> = vec![];
-            match git_branch(None, Some("-m"), Some(&text2), &mut output) {
-                Ok(_) => match handle_show_branches_button(&builder) {
-                    Ok(_) => {}
-                    Err(_error) => {
-                        show_message_dialog("Error", "No se pudo actualizar la vista");
-                    }
-                },
-                Err(error) => {
-                    show_message_dialog("Error", &error.to_string());
+        let mut output: Vec<u8> = vec![];
+        match git_branch(None, Some("-m"), Some(text2), &mut output) {
+            Ok(_) => match handle_show_branches_button(builder) {
+                Ok(_) => {}
+                Err(_error) => {
+                    show_message_dialog("Error", "No se pudo actualizar la vista");
                 }
+            },
+            Err(error) => {
+                show_message_dialog("Error", &error.to_string());
             }
         }
     }
@@ -1589,7 +1587,7 @@ fn handle_tag_add_normal(builder: &gtk::Builder) -> io::Result<()> {
         match add_normal_tag(&builder_clone, &git_dir, &tag_name) {
             Ok(_) => {}
             Err(error) => {
-                eprintln!("{}", error.to_string());
+                eprintln!("{}", error);
             }
         }
     });
@@ -1663,7 +1661,7 @@ fn handle_tag_remove(builder: &gtk::Builder) -> io::Result<()> {
         match remove_tag(&builder_clone, &name) {
             Ok(_) => {}
             Err(error) => {
-                eprintln!("{}", error.to_string())
+                eprintln!("{}", error)
             }
         }
     });
@@ -1690,7 +1688,7 @@ fn handle_tag_remove(builder: &gtk::Builder) -> io::Result<()> {
 /// Returns the tag information as a `String` on success or an `io::Error` if there are issues with the UI components
 /// or converting the Git output to a string.
 ///
-fn update_view_with_verified_tag(builder: &Builder, output: &mut Vec<u8>) -> io::Result<(String)> {
+fn update_view_with_verified_tag(builder: &Builder, output: &mut [u8]) -> io::Result<String> {
     let tags_text_view: gtk::TextView = match builder.get_object("tag-text") {
         Some(text_view) => text_view,
         None => {
