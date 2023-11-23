@@ -3692,35 +3692,59 @@ pub fn handle_apply_button_style(button: &Button) {
     }
 }
 
-/// Handles the click event of the "Show Ref" button.
+/// Updates a GTK text view with the provided output.
 ///
-/// This function is connected to the click event of a GTK button. When the button is clicked,
-/// it retrieves and displays the references in the Git repository using the `git show-ref` command.
-/// The output is presented in a GTK `TextView`.
+/// This function takes a reference to a GTK text view and a vector of bytes representing the
+/// output of a command. It attempts to convert the byte vector to a UTF-8 string and sets the
+/// content of the text view to the resulting string.
 ///
 /// # Arguments
+/// * `cloned_text_view` - A reference to the GTK text view to be updated.
+/// * `output` - A vector of bytes representing the output content.
 ///
-/// * `button` - The GTK `Button` triggering the click event.
-/// * `text_view` - The GTK `TextView` where the output will be displayed.
+fn update_show_ref_view(cloned_text_view: &gtk::TextView, output: Vec<u8>) {
+    let buffer = match cloned_text_view.get_buffer() {
+        Some(buf) => buf,
+        None => {
+            eprintln!("No se pudo obtener el text buffer");
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+            return;
+        }
+    };
+
+    let string = match String::from_utf8(output) {
+        Ok(str) => str,
+        Err(_e) => {
+            eprintln!("No se pudo convertir el resultado a string.");
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+            return;
+        }
+    };
+    buffer.set_text(string.as_str());
+}
+
+/// Handles the "clicked" signal for the show-ref button.
+///
+/// This function is connected to the click event of a GTK button. It obtains the Git directory
+/// (assumed to be in a folder named ".mgit") and constructs the command line for the `git show-ref`
+/// command. The result of the command is then displayed in a GTK text view.
+///
+/// # Arguments
+/// * `button` - A reference to the GTK button triggering the event.
+/// * `text_view` - A reference to the GTK text view for displaying results.
 ///
 pub fn show_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
-        let mut current_dir = match std::env::current_dir() {
+        let git_dir = match obtain_git_dir(".mgit") {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el directorio actual");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-
-                return;
-            }
-        };
-        let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-            Some(dir) => dir,
-            None => {
                 eprintln!("No se pudo obtener el git dir.");
                 show_message_dialog(
                     "Fatal error",
@@ -3730,6 +3754,7 @@ pub fn show_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
                 return;
             }
         };
+
         let line = vec!["git".to_string(), "show-ref".to_string()];
 
         let mut output: Vec<u8> = vec![];
@@ -3741,30 +3766,7 @@ pub fn show_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
             );
             return;
         }
-        let buffer = match cloned_text_view.get_buffer() {
-            Some(buf) => buf,
-            None => {
-                eprintln!("No se pudo obtener el text buffer");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-                return;
-            }
-        };
-
-        let string = match String::from_utf8(output) {
-            Ok(str) => str,
-            Err(_e) => {
-                eprintln!("No se pudo convertir el resultado a string.");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-                return;
-            }
-        };
-        buffer.set_text(string.as_str());
+        update_show_ref_view(&cloned_text_view, output);
     });
 }
 
@@ -3782,21 +3784,9 @@ pub fn show_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
 pub fn show_heads_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
-        let mut current_dir = match std::env::current_dir() {
+        let git_dir = match obtain_git_dir(".mgit") {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el directorio actual");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-
-                return;
-            }
-        };
-        let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-            Some(dir) => dir,
-            None => {
                 eprintln!("No se pudo obtener el git dir.");
                 show_message_dialog(
                     "Fatal error",
@@ -3821,30 +3811,7 @@ pub fn show_heads_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
             );
             return;
         }
-        let buffer = match cloned_text_view.get_buffer() {
-            Some(buf) => buf,
-            None => {
-                eprintln!("No se pudo obtener el text buffer");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-                return;
-            }
-        };
-
-        let string = match String::from_utf8(output) {
-            Ok(str) => str,
-            Err(_e) => {
-                eprintln!("No se pudo convertir el resultado a string.");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-                return;
-            }
-        };
-        buffer.set_text(string.as_str());
+        update_show_ref_view(&cloned_text_view, output);
     });
 }
 
@@ -3885,30 +3852,8 @@ pub fn show_tags_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
             );
             return;
         }
-        let buffer = match cloned_text_view.get_buffer() {
-            Some(buf) => buf,
-            None => {
-                eprintln!("No se pudo obtener el text buffer");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-                return;
-            }
-        };
 
-        let string = match String::from_utf8(output) {
-            Ok(str) => str,
-            Err(_e) => {
-                eprintln!("No se pudo convertir el resultado a string.");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-                return;
-            }
-        };
-        buffer.set_text(string.as_str());
+        update_show_ref_view(&cloned_text_view, output);
     });
 }
 
@@ -3926,21 +3871,9 @@ pub fn show_tags_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
 pub fn show_hash_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
-        let mut current_dir = match std::env::current_dir() {
+        let git_dir = match obtain_git_dir(".mgit") {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el directorio actual");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-
-                return;
-            }
-        };
-        let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-            Some(dir) => dir,
-            None => {
                 eprintln!("No se pudo obtener el git dir.");
                 show_message_dialog(
                     "Fatal error",
@@ -3965,30 +3898,8 @@ pub fn show_hash_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
             );
             return;
         }
-        let buffer = match cloned_text_view.get_buffer() {
-            Some(buf) => buf,
-            None => {
-                eprintln!("No se pudo obtener el text buffer");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-                return;
-            }
-        };
 
-        let string = match String::from_utf8(output) {
-            Ok(str) => str,
-            Err(_e) => {
-                eprintln!("No se pudo convertir el resultado a string.");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-                return;
-            }
-        };
-        buffer.set_text(string.as_str());
+        update_show_ref_view(&cloned_text_view, output);
     });
 }
 
@@ -4008,21 +3919,9 @@ pub fn verify_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView, 
     let cloned_text_view = text_view.clone();
     let cloned_entry = entry.clone();
     button.connect_clicked(move |_| {
-        let mut current_dir = match std::env::current_dir() {
+        let git_dir = match obtain_git_dir(".mgit") {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el directorio actual");
-                show_message_dialog(
-                    "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
-                );
-
-                return;
-            }
-        };
-        let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-            Some(dir) => dir,
-            None => {
                 eprintln!("No se pudo obtener el git dir.");
                 show_message_dialog(
                     "Fatal error",
@@ -4052,30 +3951,8 @@ pub fn verify_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView, 
                 );
                 return;
             }
-            let buffer = match cloned_text_view.get_buffer() {
-                Some(buf) => buf,
-                None => {
-                    eprintln!("No se pudo obtener el text buffer");
-                    show_message_dialog(
-                        "Fatal error",
-                        "Algo sucedió mientras intentábamos obtener los datos :(",
-                    );
-                    return;
-                }
-            };
 
-            let string = match String::from_utf8(output) {
-                Ok(str) => str,
-                Err(_e) => {
-                    eprintln!("No se pudo convertir el resultado a string.");
-                    show_message_dialog(
-                        "Fatal error",
-                        "Algo sucedió mientras intentábamos obtener los datos :(",
-                    );
-                    return;
-                }
-            };
-            buffer.set_text(string.as_str());
+            update_show_ref_view(&cloned_text_view, output);
         }
     });
 }
@@ -4142,17 +4019,15 @@ fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entr
         if name.is_empty() || email.is_empty() {
             show_message_dialog("Warning", "Debe completar ambos campos para continuar");
         } else {
-            let mut current_dir = match std::env::current_dir() {
+            let git_dir = match obtain_git_dir(".mgit") {
                 Ok(dir) => dir,
-                Err(err) => {
-                    eprintln!("Error al obtener el directorio actual: {:?}", err);
-                    return;
-                }
-            };
-            let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-                Some(dir) => dir,
-                None => {
-                    eprintln!("Error al obtener el git dir");
+                Err(_e) => {
+                    eprintln!("No se pudo obtener el git dir.");
+                    show_message_dialog(
+                        "Fatal error",
+                        "Algo sucedió mientras intentábamos obtener los datos :(",
+                    );
+
                     return;
                 }
             };
