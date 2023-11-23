@@ -2355,7 +2355,7 @@ fn update_remote_view(builder: &gtk::Builder, output: &mut [u8]) -> io::Result<(
         }
     };
 
-    let text = match str::from_utf8(&output) {
+    let text = match str::from_utf8(output) {
         Ok(s) => s.to_string(),
         Err(_) => {
             eprintln!("Error turning result into string.");
@@ -2441,7 +2441,7 @@ fn update_tag_view(builder: &gtk::Builder, output: &mut [u8]) -> io::Result<()> 
         }
     };
 
-    let text = match str::from_utf8(&output) {
+    let text = match str::from_utf8(output) {
         Ok(s) => s.to_string(),
         Err(_) => {
             eprintln!("Error turning result into string.");
@@ -3501,7 +3501,7 @@ pub fn list_files_window(builder: &Builder) -> io::Result<()> {
 ///
 fn check_ignore(gitignore_path: &str, line: Vec<String>, cloned_text_view: &TextView) {
     let mut output: Vec<u8> = vec![];
-    match git_check_ignore(".mgitignore", &gitignore_path, line, &mut output) {
+    match git_check_ignore(".mgitignore", gitignore_path, line, &mut output) {
         Ok(_) => {
             let buffer = match cloned_text_view.get_buffer() {
                 Some(buf) => buf,
@@ -3560,7 +3560,7 @@ fn get_line_for_check_ignore(switch_is_active: bool, path: String) -> Vec<String
     } else {
         vec!["git".to_string(), "check-ignore".to_string(), path]
     };
-    return line;
+    line
 }
 
 /// Handles the "clicked" signal for the ignore button.
