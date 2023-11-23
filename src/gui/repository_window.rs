@@ -2326,36 +2326,24 @@ fn handle_remote_rename(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
-/// Handles the display of remote repositories in a TextView.
+/// Creates a new Git tag with a specified name based on an existing Git tag.
 ///
-/// This function retrieves the list of remote repositories using Git commands and displays the result in a TextView.
+/// This function utilizes the `git_tag` operation to create a new Git tag with the provided name (`new_name`)
+/// based on an existing Git tag with the name (`old_name`). If successful, it updates the Git tag view
+/// by calling `handle_list_tags`. Displays error messages using GTK message dialogs and the console
+/// if any issues occur.
 ///
 /// # Arguments
 ///
-/// - `builder`: A reference to the GTK builder containing the TextView widget.
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `new_name`: The name of the new Git tag to be created.
+/// - `old_name`: The name of the existing Git tag to base the new tag on.
 ///
 /// # Returns
 ///
-/// A `Result` indicating success or failure. If successful, the list of remote repositories is displayed in the TextView;
-/// otherwise, an error message is shown.
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation.
 ///
-fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
-    let git_dir = obtain_git_dir(".mgit")?;
-
-    let mut config = Config::load(&git_dir)?;
-
-    let mut output: Vec<u8> = vec![];
-    match git_remote(&mut config, vec!["remote"], &mut output) {
-        Ok(_) => {}
-        Err(_e) => {
-            let error = _e.to_string();
-            eprintln!("{}", error);
-            return Err(io::Error::new(io::ErrorKind::Other, "&error"));
-        }
-    }
-
-    drop(config);
-
+fn update_remote_view(builder: &gtk::Builder, output: &mut [u8]) -> io::Result<()> {
     let remote_text_view: gtk::TextView = match builder.get_object("remote-text") {
         Some(text_view) => text_view,
         None => {
@@ -2387,25 +2375,62 @@ fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
             "Error obtaining TextView",
         ));
     }
+    Ok(())
+}
+
+/// Handles the display of remote repositories in a TextView.
+///
+/// This function retrieves the list of remote repositories using Git commands and displays the result in a TextView.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to the GTK builder containing the TextView widget.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, the list of remote repositories is displayed in the TextView;
+/// otherwise, an error message is shown.
+///
+fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
+    let git_dir = obtain_git_dir(".mgit")?;
+
+    let mut config = Config::load(&git_dir)?;
+
+    let mut output: Vec<u8> = vec![];
+    match git_remote(&mut config, vec!["remote"], &mut output) {
+        Ok(_) => {}
+        Err(_e) => {
+            let error = _e.to_string();
+            eprintln!("{}", error);
+            return Err(io::Error::new(io::ErrorKind::Other, "&error"));
+        }
+    }
+
+    drop(config);
+
+    update_remote_view(builder, &mut output)?;
 
     Ok(())
 }
 
-fn handle_list_tags(_builder: &gtk::Builder) -> io::Result<()> {
-    let git_dir = obtain_git_dir(".mgit")?;
-
-    let line = vec![String::from("git"), String::from("tag"), String::from("-l")];
-
-    let mut output: Vec<u8> = vec![];
-    match git_tag(&git_dir, line, &mut output) {
-        Ok(_config) => {}
-        Err(error) => {
-            eprintln!("{:?}", error);
-            return Err(error);
-        }
-    }
-
-    let tags_text_view: gtk::TextView = match _builder.get_object("tag-text") {
+/// Updates the GTK tag view with the provided output.
+///
+/// This function takes a GTK builder reference and a mutable slice of bytes (`output`) as input.
+/// It retrieves the tag text view from the builder, converts the output bytes to a UTF-8 string,
+/// and updates the text view with the obtained string. Displays error messages in the console
+/// and returns an `io::Error` if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `output`: A mutable slice of bytes representing the output to be displayed in the tag text view.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the conversion process.
+///
+fn update_tag_view(builder: &gtk::Builder, output: &mut [u8]) -> io::Result<()> {
+    let tags_text_view: gtk::TextView = match builder.get_object("tag-text") {
         Some(view) => view,
         None => {
             eprintln!("No se pudo obtener el text view");
@@ -2436,6 +2461,39 @@ fn handle_list_tags(_builder: &gtk::Builder) -> io::Result<()> {
             "Error obtaining TextView",
         ));
     }
+
+    Ok(())
+}
+
+/// Handles the action triggered by the "List Tags" button in a GTK application.
+///
+/// This function retrieves the Git directory path, performs a Git tag operation to list available tags,
+/// and updates the tag view by calling `update_tag_view`. Displays error messages using GTK message dialogs
+/// and the console if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation or updating the view.
+///
+fn handle_list_tags(builder: &gtk::Builder) -> io::Result<()> {
+    let git_dir = obtain_git_dir(".mgit")?;
+
+    let line = vec![String::from("git"), String::from("tag"), String::from("-l")];
+
+    let mut output: Vec<u8> = vec![];
+    match git_tag(&git_dir, line, &mut output) {
+        Ok(_config) => {}
+        Err(error) => {
+            eprintln!("{:?}", error);
+            return Err(error);
+        }
+    }
+
+    update_tag_view(builder, &mut output)?;
 
     Ok(())
 }
