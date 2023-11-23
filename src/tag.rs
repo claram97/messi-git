@@ -124,7 +124,7 @@ fn create_annotated_tag(
     output: &mut impl Write,
 ) -> io::Result<()> {
     let file_path = format!("{}/{}", tags_path, tag_name);
-    println!("File path {:?}", file_path);
+    println!("File path {:?}\n", file_path);
     let path = Path::new(&file_path);
     if path.exists() {
         println!("Existe");

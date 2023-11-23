@@ -612,7 +612,9 @@ impl Config {
         for line in reader.lines() {
             let line = line?;
 
-            if line.contains("name") {
+            if line.contains("/name/") {
+                writeln!(output_file, "{}", line)?;
+            } else if line.contains("name") {
                 writeln!(output_file, "\tname = {}", name)?;
                 found_user = true;
             } else if line.contains("email") {
