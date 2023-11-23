@@ -53,6 +53,7 @@ use gtk::Entry;
 use gtk::EntryExt;
 use gtk::GtkWindowExt;
 use gtk::LabelExt;
+use gtk::ScrolledWindow;
 use gtk::ScrolledWindowExt;
 use gtk::SwitchExt;
 use gtk::TextBufferExt;
@@ -593,29 +594,29 @@ pub fn obtain_text_from_fetch() -> Result<String, std::io::Error> {
 }
 
 fn handle_fetch_button(builder: &gtk::Builder) {
-    let log_text_view_result: Option<gtk::TextView> = builder.get_object("fetch-text");
+    // let log_text_view_result: Option<gtk::TextView> = builder.get_object("fetch-text");
 
-    if let Some(log_text_view) = log_text_view_result {
-        let text_from_function = obtain_text_from_fetch();
+    // if let Some(log_text_view) = log_text_view_result {
+    //     let text_from_function = obtain_text_from_fetch();
 
-        match text_from_function {
-            Ok(texto) => {
-                log_text_view.set_hexpand(true);
-                log_text_view.set_halign(gtk::Align::Start);
+    //     match text_from_function {
+    //         Ok(texto) => {
+    //             log_text_view.set_hexpand(true);
+    //             log_text_view.set_halign(gtk::Align::Start);
 
-                if let Some(buffer) = log_text_view.get_buffer() {
-                    buffer.set_text(texto.as_str());
-                } else {
-                    eprintln!("Fatal error in show repository window.");
-                }
-            }
-            Err(err) => {
-                eprintln!("Error al obtener el texto: {}", err);
-            }
-        }
-    } else {
-        eprintln!("We couldn't find log text view 'log-text'");
-    }
+    //             if let Some(buffer) = log_text_view.get_buffer() {
+    //                 buffer.set_text(texto.as_str());
+    //             } else {
+    //                 eprintln!("Fatal error in show repository window.");
+    //             }
+    //         }
+    //         Err(err) => {
+    //             eprintln!("Error al obtener el texto: {}", err);
+    //         }
+    //     }
+    // } else {
+    //     eprintln!("We couldn't find log text view 'log-text'");
+    // }
 }
 
 /// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
@@ -723,15 +724,61 @@ fn handle_force_checkout_button() -> io::Result<()> {
     result
 }
 
-/// Handle the "Show Branches" button's click event. This function retrieves information about Git branches
-/// and displays them in a text view within the GUI. If the operation is successful, it updates the text view
-/// with the branch information. If there is an error, it prints an error message to the standard error.
+/// Retrieves information about Git branches in the repository.
+///
+/// # Returns
+///
+/// Returns a tuple containing the result of the `git_branch` operation and a string
+/// representing the output of the operation.
+///
+/// The tuple consists of:
+/// - `io::Result<()>`: Result indicating the success or failure of the `git_branch` operation.
+/// - `String`: Output of the `git_branch` operation, representing information about Git branches.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there are issues obtaining the output or if the `git_branch` operation fails.
+///
+fn show_branches() -> io::Result<(io::Result<()>, String)> {
+    let mut output: Vec<u8> = vec![];
+    let result = git_branch(None, None, None, &mut output);
+    let output_string = match String::from_utf8(output) {
+        Ok(string) => string,
+        Err(_e) => {
+            show_message_dialog("Fatal error", "Something unexpected happened.");
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "Couldn't get the output\n",
+            ));
+        }
+    };
+    Ok((result, output_string))
+}
+
+/// Retrieves a `TextView` and a `ScrolledWindow` from a GTK builder for branch GUI.
+///
+/// This function is designed to obtain the necessary GTK widgets (TextView and ScrolledWindow)
+/// for displaying Git branch information in a graphical user interface (GUI).
 ///
 /// # Arguments
 ///
-/// * `builder` - A reference to a GTK builder used to create UI elements.
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
 ///
-fn handle_show_branches_button(builder: &gtk::Builder) -> io::Result<()> {
+/// # Returns
+///
+/// Returns a tuple containing a `TextView` and a `ScrolledWindow`.
+///
+/// The tuple consists of:
+/// - `TextView`: The GTK TextView widget for displaying text information.
+/// - `ScrolledWindow`: The GTK ScrolledWindow widget for providing scrolling functionality.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if any of the required GTK widgets are not found in the builder.
+///
+fn get_text_view_and_scroll_for_branch_gui(
+    builder: &gtk::Builder,
+) -> io::Result<(TextView, ScrolledWindow)> {
     let branch_text_view: gtk::TextView = match builder.get_object("show-branches-text") {
         Some(text_view) => text_view,
         None => {
@@ -754,19 +801,31 @@ fn handle_show_branches_button(builder: &gtk::Builder) -> io::Result<()> {
         }
     };
 
-    let mut output: Vec<u8> = vec![];
-    let result = git_branch(None, None, None, &mut output);
-    let output_string = match String::from_utf8(output) {
-        Ok(string) => string,
-        Err(_e) => {
-            show_message_dialog("Fatal error", "Something unexpected happened.");
-            return Err(io::Error::new(
-                io::ErrorKind::Interrupted,
-                "Couldn't get the output\n",
-            ));
-        }
-    };
+    Ok((branch_text_view, scrolled_window))
+}
 
+/// Handles the result of the `show_branches` operation and updates the GTK UI components accordingly.
+///
+/// This function takes the result of the `show_branches` operation, the GTK TextView,
+/// the ScrolledWindow, and the output string. It then updates the UI components based on the result.
+///
+/// # Arguments
+///
+/// - `result`: Result indicating the success or failure of the `show_branches` operation.
+/// - `branch_text_view`: A reference to the GTK TextView widget for displaying text information.
+/// - `scrolled_window`: A reference to the GTK ScrolledWindow widget for providing scrolling functionality.
+/// - `output_string`: The output string representing information about Git branches.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the GTK components.
+///
+fn handle_show_branches_result(
+    result: io::Result<()>,
+    branch_text_view: &gtk::TextView,
+    scrolled_window: &ScrolledWindow,
+    output_string: String,
+) -> io::Result<()> {
     let buffer = match branch_text_view.get_buffer() {
         Some(buf) => buf,
         None => {
@@ -782,7 +841,7 @@ fn handle_show_branches_button(builder: &gtk::Builder) -> io::Result<()> {
             let clean_output = branch::remove_ansi_escape_codes(&output_string);
             buffer.set_text(&clean_output);
             scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
-            scrolled_window.add(&branch_text_view);
+            scrolled_window.add(branch_text_view);
         }
         Err(_e) => {
             show_message_dialog("Error", &_e.to_string());
@@ -791,41 +850,67 @@ fn handle_show_branches_button(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
-/// Handle the "Create Branch" button's click event. This function opens a text entry window for users to enter
-/// the name of the branch they want to create. Once the branch name is entered and confirmed, it attempts to create
-/// the new branch and updates the repository window. If the operation is successful, it closes all windows.
-/// If there is an error, it prints an error message to the standard error.
+/// Handles the action triggered by the "Show Branches" button in a GTK application.
+///
+/// This function orchestrates the process of displaying Git branches in a GTK UI.
 ///
 /// # Arguments
 ///
-/// * `builder` - A reference to a GTK builder used to create UI elements.
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
 ///
-/// # Errors
+/// # Returns
 ///
-/// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
+///
+fn handle_show_branches_button(builder: &gtk::Builder) -> io::Result<()> {
+    let (branch_text_view, scrolled_window) = get_text_view_and_scroll_for_branch_gui(builder)?;
+
+    let (result, output_string) = show_branches()?;
+
+    handle_show_branches_result(result, &branch_text_view, &scrolled_window, output_string)?;
+
+    Ok(())
+}
+
+fn create_branch(builder: &Builder, name: String) {
+    let mut output: Vec<u8> = vec![];
+    match git_branch(Some(name), Some("-c"), None, &mut output) {
+        Ok(_) => match handle_show_branches_button(builder) {
+            Ok(_) => {}
+            Err(_) => {
+                show_message_dialog("Error", "We couldn't update the view");
+            }
+        },
+        Err(_) => {
+            let output_string = match String::from_utf8(output) {
+                Ok(string) => string,
+                Err(_e) => {
+                    show_message_dialog("Fatal error", "Something unexpected happened.");
+                    return;
+                }
+            };
+            show_message_dialog("Error", &output_string);
+        }
+    }
+}
+/// Handles the action triggered by the "Create Branch" button in a GTK application.
+///
+/// This function prompts the user to enter the name of the branch via a text entry window.
+/// Upon receiving the branch name, it attempts to create a new Git branch using the entered name.
+/// If successful, it updates the Git branch view by calling `handle_show_branches_button`.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
 ///
 fn handle_create_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
-    let create_result = create_text_entry_window("Enter the name of the branch", move |text| {
-        let mut output: Vec<u8> = vec![];
-        match git_branch(Some(text), Some("-c"), None, &mut output) {
-            Ok(_) => match handle_show_branches_button(&builder_clone) {
-                Ok(_) => {}
-                Err(_) => {
-                    show_message_dialog("Error", "We couldn't update the view");
-                }
-            },
-            Err(_) => {
-                let output_string = match String::from_utf8(output) {
-                    Ok(string) => string,
-                    Err(_e) => {
-                        show_message_dialog("Fatal error", "Something unexpected happened.");
-                        return;
-                    }
-                };
-                show_message_dialog("Error", &output_string);
-            }
-        }
+    let create_result = create_text_entry_window("Enter the name of the branch", move |name| {
+        create_branch(&builder_clone, name);
     });
 
     if create_result.is_err() {
@@ -835,33 +920,73 @@ fn handle_create_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Creates a new Git branch with the specified name based on an existing branch.
+///
+/// This function utilizes the `git_branch` operation to create a new branch with the provided name.
+/// If successful, it updates the Git branch view by calling `handle_show_branches_button`.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `new_branch_name`: The name of the new branch to be created.
+/// - `existing_branch_name`: The name of the existing branch that the new branch will be based on.
+///
+fn create_branch_from_another_branch(
+    builder: &Builder,
+    new_branch_name: String,
+    existing_branch_name: &str,
+) {
+    let mut output: Vec<u8> = Vec::new();
+    match git_branch(
+        Some(new_branch_name),
+        None,
+        Some(existing_branch_name),
+        &mut output,
+    ) {
+        Ok(_) => match handle_show_branches_button(builder) {
+            Ok(_) => {}
+            Err(_) => {
+                show_message_dialog("Error", "We couldn't update the view");
+            }
+        },
+        Err(_) => {
+            let output_string = match String::from_utf8(output) {
+                Ok(string) => string,
+                Err(_e) => {
+                    show_message_dialog("Fatal error", "Something unexpected happened.");
+                    return;
+                }
+            };
+            show_message_dialog("Error", &output_string);
+        }
+    }
+}
+
+/// Handles the action triggered by the "Create Branch from Branch" button in a GTK application.
+///
+/// This function prompts the user to enter the name of the new branch and the name of the existing branch
+/// via a text entry window. It then creates a new Git branch based on the existing branch using the entered names.
+/// If successful, it updates the Git branch view by calling `handle_show_branches_button`.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components.
+///
 fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
-
     let create_result = create_text_entry_window2(
         "Nombre de la nueva branch",
         "Nombre de la branch de base",
         move |new_branch_name, existing_branch_name| {
-            let mut output: Vec<u8> = Vec::new();
-            match git_branch(Some(new_branch_name), None, Some(&existing_branch_name), &mut output) {
-                Ok(_) => match handle_show_branches_button(&builder_clone) {
-                    Ok(_) => {}
-                    Err(_) => {
-                        show_message_dialog("Error", "We couldn't update the view");
-                    }
-                },
-                Err(_) => {
-                    let output_string = match String::from_utf8(output) {
-                        Ok(string) => string,
-                        Err(_e) => {
-                            show_message_dialog("Fatal error", "Something unexpected happened.");
-                            return;
-                        }
-                    };
-                    show_message_dialog("Error", &output_string);
-                }
-            }
-            
+            create_branch_from_another_branch(
+                &builder_clone,
+                new_branch_name,
+                &existing_branch_name,
+            );
         },
     );
 

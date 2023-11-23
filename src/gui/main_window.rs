@@ -1,7 +1,9 @@
 use super::clone_window::configure_clone_window;
 use super::init_window::configure_init_window;
 use crate::gui::repository_window::show_repository_window;
-use crate::gui::style::{apply_button_style, apply_window_style, get_button, load_and_get_window, show_message_dialog};
+use crate::gui::style::{
+    apply_button_style, apply_window_style, get_button, load_and_get_window, show_message_dialog,
+};
 use gtk::prelude::*;
 use gtk::Builder;
 use gtk::{self, FileChooserAction, FileChooserDialog, FileChooserExt};

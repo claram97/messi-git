@@ -1303,15 +1303,19 @@ fn handle_branch(args: Vec<String>) {
         if args[2] == "-m" {
             match git_branch(None, Some("-m"), Some(args[3]), &mut io::stdout()) {
                 Ok(_) => {
-                    println!("Current branch name modified to {}",args[3]);
+                    println!("Current branch name modified to {}", args[3]);
                 }
                 Err(e) => {
                     eprintln!("{}", e)
                 }
             }
-        }
-        else if args[2] == "-c" {
-            match git_branch(Some(args[3].to_string()), Some("-c"), None, &mut io::stdout()) {
+        } else if args[2] == "-c" {
+            match git_branch(
+                Some(args[3].to_string()),
+                Some("-c"),
+                None,
+                &mut io::stdout(),
+            ) {
                 Ok(_) => {
                     println!("Branch {} successfully created!", args[3]);
                 }
@@ -1319,21 +1323,27 @@ fn handle_branch(args: Vec<String>) {
                     eprintln!("{}", e)
                 }
             }
-        }
-        else if args[2] == "-d" {
-                match git_branch(Some(args[3].to_string()), Some("-d"), None, &mut io::stdout()) {
-                    Ok(_) => {
-                    }
-                    Err(e) => {
-                        eprintln!("{}", e)
-                    }
+        } else if args[2] == "-d" {
+            match git_branch(
+                Some(args[3].to_string()),
+                Some("-d"),
+                None,
+                &mut io::stdout(),
+            ) {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{}", e)
                 }
-            
-        }
-        else {
+            }
+        } else {
             let name = args[2];
             let new_name = &args[3].to_string();
-            let result = git_branch(Some(name.to_string()), None, Some(new_name), &mut io::stdout());
+            let result = git_branch(
+                Some(name.to_string()),
+                None,
+                Some(new_name),
+                &mut io::stdout(),
+            );
             match result {
                 Ok(_) => {
                     println!("Branch {name} succesfully created from {new_name}");
@@ -1343,8 +1353,7 @@ fn handle_branch(args: Vec<String>) {
                 }
             }
         }
-    }
-    else {
+    } else {
         handle_branch_options(args);
     }
 }
@@ -1398,9 +1407,7 @@ fn handle_branch_options(args: Vec<&str>) {
             let new_args: Vec<&&str> = args.iter().skip(3).collect();
             for arg in new_args {
                 match git_branch(Some(arg.to_string()), Some("-d"), None, &mut io::stdout()) {
-                    Ok(_) => {
-                        
-                    }
+                    Ok(_) => {}
                     Err(e) => {
                         eprintln!("{}", e)
                     }

@@ -188,7 +188,7 @@ fn create_branch_from_existing_one(
         return Err(io::Error::new(
             io::ErrorKind::AlreadyExists,
             format!("fatal: A branch named '{}' already exists\n", branch_name),
-        ))
+        ));
     }
 
     let from_refs = (&git_dir).to_string() + "/refs/heads/" + from;
@@ -199,7 +199,7 @@ fn create_branch_from_existing_one(
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
             format!("fatal: Not a valid object name: '{}'.\n", from),
-        ))
+        ));
     }
 
     let commit_hash = fs::read_to_string(from_path)?;
@@ -236,7 +236,7 @@ fn create_branch_from_current_one(
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
             "fatal: Please commit something to create a branch\n".to_string(),
-        ))
+        ));
     }
 
     let new_refs = (&git_dir).to_string() + "/refs/heads/" + branch_name;
@@ -246,8 +246,8 @@ fn create_branch_from_current_one(
         output.write_all(buffer.as_bytes())?;
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            format!("fatal: A branch named '{}' already exists\n", branch_name)
-        ))
+            format!("fatal: A branch named '{}' already exists\n", branch_name),
+        ));
     }
     let current_commit = get_current_branch_commit(git_dir)?;
     let mut file = File::create(&new_refs)?;
@@ -336,8 +336,8 @@ pub fn modify_branch(
             )?;
             return Err(io::Error::new(
                 io::ErrorKind::AlreadyExists,
-                format!("fatal: A branch named {} already exists.\n", new_name)
-            ))
+                format!("fatal: A branch named {} already exists.\n", new_name),
+            ));
         } else {
             let current_branch = get_branch_name(git_dir)?;
             if current_branch.eq(branch_name) {
@@ -354,10 +354,7 @@ pub fn modify_branch(
             branch_name
         );
         output.write_all(error_message.as_bytes())?;
-        return Err(io::Error::new(
-            io::ErrorKind::AlreadyExists,
-            error_message
-        ))
+        return Err(io::Error::new(io::ErrorKind::AlreadyExists, error_message));
     }
 
     Ok(())
@@ -407,7 +404,7 @@ pub fn git_branch(
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidInput,
                         "Invalid option\n",
-                    ))
+                    ));
                 }
             }
         } else if let Some(new_name) = new_name {
