@@ -6,6 +6,23 @@ use std::{
 
 use flate2::{write::ZlibEncoder, Compression};
 use sha1::{Digest, Sha1};
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+
+pub fn log_hash_object(path: &str, git_dir_path: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git hash-object': Path '{}', Git Directory '{}', {}",
+        path,
+        git_dir_path,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Returns the sha1 hash of the given content.
 /// It does not add any type information to the content.
@@ -87,6 +104,7 @@ pub fn store_file(path: &str, git_dir_path: &str) -> io::Result<String> {
     create_directory(&output_file_dir)?;
     let output_file_str = output_file_dir + &content_hash[2..];
     compress_content(path, output_file_str.as_str(), "blob")?;
+    log_hash_object(path, git_dir_path)?;
     Ok(content_hash)
 }
 

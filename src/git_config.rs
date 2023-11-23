@@ -1,6 +1,24 @@
 use std::io::{self, Error, ErrorKind};
 
 use crate::config::Config;
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use std::io::Write;
+
+pub fn log_config(git_dir: &str, line: &[String]) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git config': Git Directory '{}', Command Line '{:?}', {}",
+        git_dir,
+        line,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Set Git user information (name and email) in the specified configuration file.
 ///
@@ -36,7 +54,7 @@ pub fn git_config(git_dir: &str, line: Vec<String>) -> io::Result<()> {
         let (name, email) = config.get_user_name_and_email()?;
         println!("Name = {name}\nEmail = {email}")
     }
-
+    log_config(git_dir, &line)?;
     Ok(())
 }
 //Usage: git config set-user-info name email

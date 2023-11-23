@@ -3,7 +3,8 @@ use std::{
     io::{self, Write},
     path::Path,
 };
-
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use crate::{hash_object, index::Index};
 const BLOB: &str = "blob";
 
@@ -167,7 +168,28 @@ fn list_modified_files(
     }
     Ok(())
 }
-//let current_directory = std::env::current_dir()?;
+
+pub fn log_ls_files(
+    working_dir: &str,
+    git_dir: &str,
+    current_directory: &str,
+    line: &[String],
+) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git ls-files': Working Directory '{}', Git Directory '{}', Current Directory '{}', Line '{:?}', {}",
+        working_dir,
+        git_dir,
+        current_directory,
+        line,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Lists files based on the provided command line arguments in a manner similar to the 'git ls-files' command.
 ///
@@ -199,13 +221,14 @@ pub fn git_ls_files(
         list_files_in_index(index, output)?;
     } else if line.len() == 3 {
         if line[2].eq("-o") {
-            list_untracked_files(working_dir, git_dir, current_directory, line, index, output)?;
+            list_untracked_files(working_dir, git_dir, current_directory, line.clone(), index, output)?;
         } else if line[2].eq("-m") {
             list_modified_files(working_dir, index, output)?;
         } else {
             return Err(io::Error::new(io::ErrorKind::Interrupted, "Fatal error.\n"));
         }
     }
+    log_ls_files(working_dir, git_dir, current_directory, &line)?;
     Ok(())
 }
 
