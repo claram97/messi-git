@@ -5,6 +5,20 @@ use crate::logger::Logger;
 use crate::utils::get_current_time;
 use std::io::Write;
 
+/// Logs the 'git config' command with the specified Git directory and command line.
+///
+/// This function logs the 'git config' command with the provided Git directory and
+/// command line arguments to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir` - A string slice representing the path to the Git directory.
+/// * `line` - A vector of strings representing the command line arguments.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_config(git_dir: &str, line: &[String]) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

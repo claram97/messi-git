@@ -408,6 +408,21 @@ pub fn git_branch(
     Ok(())
 }
 
+/// Logs a custom Git command with the specified parameters.
+///
+/// This function logs a custom Git command with the provided parameters to a file named
+/// 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `command` - A string slice representing the Git command.
+/// * `option` - A string slice representing the command option or additional information.
+/// * `git_dir` - A `Path` representing the path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 fn log_command(command: &str, option: &str, git_dir: &Path) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

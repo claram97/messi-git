@@ -6,6 +6,20 @@ use std::{
     io::{self, BufReader, ErrorKind, Read, Write},
 };
 
+/// Logs the 'git cat-file' command with the specified parameters.
+///
+/// This function logs the 'git cat-file' command with the provided parameters to a file named
+/// 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `hash` - A string slice representing the hash value of the Git object.
+/// * `directory` - A string slice representing the path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_cat_file(hash: &str, directory: &str) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

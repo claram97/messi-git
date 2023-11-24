@@ -4,6 +4,21 @@ use crate::ignorer::Ignorer;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 
+/// Logs the 'git check-ignore' command with the specified parameters.
+///
+/// This function logs the 'git check-ignore' command with the provided parameters to a file named
+/// 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `name_of_ignorer` - A string slice representing the name of the ignorer.
+/// * `git_ignore_path` - A string slice representing the path to the Git ignore file.
+/// * `option` - A string slice representing the option used in the check-ignore command.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_check_ignore(
     name_of_ignorer: &str,
     git_ignore_path: &str,

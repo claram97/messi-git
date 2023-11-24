@@ -13,6 +13,21 @@ use std::path::Path;
 const NO_PARENT: &str = "0000000000000000000000000000000000000000";
 const INDEX_FILE_NAME: &str = "index";
 
+/// Logs the 'git commit' command with the specified Git directory, commit message, and Git ignore path.
+///
+/// This function logs the 'git commit' command with the provided Git directory, commit message, and
+/// Git ignore path to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir_path` - The path to the Git directory.
+/// * `message` - The commit message.
+/// * `git_ignore_path` - The path to the Git ignore file.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

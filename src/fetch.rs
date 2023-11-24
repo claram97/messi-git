@@ -171,6 +171,21 @@ fn get_clean_refs(refs: &HashMap<String, String>) -> Vec<String> {
     clean_refs
 }
 
+/// Logs the 'git fetch' command with the specified remote repository name, host, and local directory.
+///
+/// This function logs the 'git fetch' command with the provided remote repository name, host, and
+/// local directory to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `remote_repo_name` - An optional name for the remote repository to fetch from. If not provided, "origin" is used.
+/// * `host` - The host associated with the remote repository.
+/// * `local_dir` - The path to the local directory where the repository is located.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

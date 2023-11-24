@@ -7,6 +7,22 @@ use std::io;
 use std::io::Write;
 use std::path::Path;
 
+/// Logs the 'git checkout' command with the specified parameters.
+///
+/// This function logs the 'git checkout' command with the provided parameters to a file named
+/// 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `current_branch` - The name of the current branch.
+/// * `new_branch` - The name of the branch to check out.
+/// * `option` - An optional string representing additional options for the checkout.
+/// * `git_dir` - The path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 fn log_checkout(
     current_branch: &str,
     new_branch: &str,

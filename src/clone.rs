@@ -7,6 +7,20 @@ use std::{
     io::{self, Read, Write},
 };
 
+/// Logs the 'git clone' command with the specified repository URL and destination.
+///
+/// This function logs the 'git clone' command with the provided repository URL and destination to a
+/// file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `repo_url` - The URL of the repository to clone.
+/// * `destination` - The destination path for the cloned repository.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_clone(repo_url: &str, destination: &str) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

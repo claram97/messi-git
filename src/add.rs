@@ -38,6 +38,21 @@ pub fn process_file_name(index: &mut Index, file_name: &str) -> io::Result<()> {
     Ok(())
 }
 
+/// Logs a 'git add' command with the specified parameters.
+///
+/// This function logs a 'git add' command with the provided parameters to a file named
+/// 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `add_type` - A string slice representing the type of addition (e.g., "new" or "modified").
+/// * `file` - A string slice representing the path to the file being added.
+/// * `git_dir` - A `Path` representing the path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 fn log_add(add_type: &str, file: &str, git_dir: &Path) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
