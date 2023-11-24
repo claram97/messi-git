@@ -105,7 +105,7 @@ pub fn add(
                 index.write_file()?;
 
                 // Log the added file and current time
-                log_add("all", &file_name, &PathBuf::from(&path));
+                log_add("all", &file_name, &PathBuf::from(&path))?;
             }
         }
     } else {
@@ -115,7 +115,7 @@ pub fn add(
 
         // Log the added file and current time
 
-        log_add("single", path, &PathBuf::from(&path));
+        log_add("single", path, &PathBuf::from(&path))?;
     }
 
     Ok(())
