@@ -127,7 +127,7 @@ pub fn git_init(
         "Git repository initialized successfully in '{}'.",
         directory
     );
-    log_init(&Path::new(&git_dir))?;
+    log_init(Path::new(&git_dir))?;
     Ok(())
 }
 

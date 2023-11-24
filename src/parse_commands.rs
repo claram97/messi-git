@@ -28,7 +28,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use std::thread::current;
+
 use std::{env, io};
 
 const GIT_DIR: &str = ".mgit";
@@ -995,7 +995,7 @@ fn handle_log() {
             return;
         }
     };
-    println!("Current dir {}", current_dir.to_string_lossy().to_string());
+    println!("Current dir {}", current_dir.to_string_lossy());
     println!("Git dir {}", git_dir);
     let log_iter = match log::log(None, &git_dir, 10, 0, false) {
         Ok(iter) => iter,

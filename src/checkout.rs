@@ -27,7 +27,7 @@ fn log_checkout(
     current_branch: &str,
     new_branch: &str,
     option: &str,
-    git_dir: &Path,
+    _git_dir: &Path,
 ) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
@@ -374,7 +374,7 @@ pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) -> Result<(), io::
             // Update the HEAD file to force the branch change
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("ref: {}\n", branch_or_commit);
-            fs::write(&head_file, &new_head_content)?;
+            fs::write(head_file, new_head_content)?;
 
             // Log the force checkout
             let current_branch =
@@ -397,7 +397,7 @@ pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) -> Result<(), io::
             // Update the HEAD file to force the commit change in "detached" mode
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("{} (commit)\n", commit_id);
-            fs::write(&head_file, &new_head_content)?;
+            fs::write(head_file, new_head_content)?;
 
             // Log the force checkout
             let current_branch =
