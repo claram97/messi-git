@@ -28,7 +28,6 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-
 use std::{env, io};
 
 const GIT_DIR: &str = ".mgit";
