@@ -169,6 +169,22 @@ fn list_modified_files(
     Ok(())
 }
 
+/// Logs the 'git ls-files' command with the specified working directory, Git directory, current directory, and line.
+///
+/// This function logs the 'git ls-files' command with the provided working directory, Git directory,
+/// current directory, and command line arguments to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `working_dir` - A string representing the root directory of the working tree.
+/// * `git_dir` - A string representing the path to the `.git` directory.
+/// * `current_directory` - A string representing the current directory to list files from.
+/// * `line` - A vector of strings representing the original command line arguments.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_ls_files(
     working_dir: &str,
     git_dir: &str,

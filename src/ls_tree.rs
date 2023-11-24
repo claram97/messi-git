@@ -4,6 +4,21 @@ use crate::utils::get_current_time;
 use std::io;
 use std::io::Write;
 
+/// Logs the 'git ls-tree' command with the specified hash, Git directory, and option.
+///
+/// This function logs the 'git ls-tree' command with the provided hash, Git directory, and option
+/// to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `hash` - A string representing the hash to list in the tree.
+/// * `git_dir` - A string representing the path to the Git directory.
+/// * `option` - A string representing the option to include in the command.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_ls_tree(hash: &str, git_dir: &str, option: &str) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

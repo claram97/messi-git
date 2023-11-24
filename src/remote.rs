@@ -4,6 +4,18 @@ use crate::config::Config;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 
+/// Logs the 'git remote' command with the specified subcommand.
+///
+/// This function logs the 'git remote' command with the provided subcommand to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `line` - A slice containing the subcommand and its arguments.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_remote(line: &[&str]) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

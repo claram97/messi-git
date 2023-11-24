@@ -8,6 +8,21 @@ use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
 
+/// Logs the 'git status' command with optional counts for untracked, unstaged, and staged files.
+///
+/// This function logs the 'git status' command along with counts for untracked, unstaged, and
+/// staged files, if provided, to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `untracked_count` - An optional count of untracked files.
+/// * `unstaged_count` - An optional count of unstaged files.
+/// * `staged_count` - An optional count of staged files.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_status(
     untracked_count: Option<i32>,
     unstaged_count: Option<i32>,

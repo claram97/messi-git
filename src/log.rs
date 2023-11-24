@@ -293,6 +293,21 @@ impl Display for Log {
         writeln!(f, "{}\n{}\n{}\n\n{}", commit, author, date, message)
     }
 }
+
+/// Logs the 'git log' command with the specified commit and Git directory.
+///
+/// This function logs the 'git log' command with the provided commit and Git directory
+/// to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir` - A `Path` representing the path to the Git directory.
+/// * `commit` - An optional string slice representing the complete hash of the commit.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 fn log_log(git_dir: &Path, commit: Option<&str>) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

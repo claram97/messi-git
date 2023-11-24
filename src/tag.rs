@@ -327,6 +327,20 @@ fn verify_tag(
     Ok(())
 }
 
+/// Logs the 'git tag' command with the specified Git directory and tag.
+///
+/// This function logs the 'git tag' command with the provided Git directory and tag to a file
+/// named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir` - The path to the Git directory.
+/// * `tag` - The tag being operated on.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_tag(git_dir: &str, tag: &str) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

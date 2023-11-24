@@ -5,6 +5,19 @@ use std::io::{self, Write};
 use std::path::Path;
 const GIT_DIR: &str = ".mgit";
 
+/// Logs the 'git init' command with the specified Git directory.
+///
+/// This function logs the 'git init' command with the provided Git directory
+/// to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir` - A `Path` representing the path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_init(git_dir: &Path) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

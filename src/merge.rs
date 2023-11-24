@@ -103,6 +103,22 @@ fn two_way_merge(
     Ok(conflicting_paths)
 }
 
+/// Logs the 'git merge' command with the specified branch names, Git directory, and root directory.
+///
+/// This function logs the 'git merge' command with the provided our branch, their branch, Git directory,
+/// and root directory to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `our_branch` - A string representing the name of our branch.
+/// * `their_branch` - A string representing the name of their branch.
+/// * `git_dir` - A string representing the path to the Git directory.
+/// * `root_dir` - A string representing the path to the root directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_merge(
     our_branch: &str,
     their_branch: &str,

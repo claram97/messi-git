@@ -9,6 +9,20 @@ use crate::utils::get_current_time;
 use flate2::{write::ZlibEncoder, Compression};
 use sha1::{Digest, Sha1};
 
+/// Logs the 'git hash-object' command with the specified file path and Git directory.
+///
+/// This function logs the 'git hash-object' command with the provided file path
+/// and Git directory to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `path` - A string slice representing the path to the file.
+/// * `git_dir_path` - A string slice representing the path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_hash_object(path: &str, git_dir_path: &str) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

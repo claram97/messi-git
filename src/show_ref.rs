@@ -9,6 +9,20 @@ use crate::utils::get_current_time;
 use std::fs::File;
 use std::io::prelude::*;
 
+/// Logs the 'git show-ref' command with the specified Git directory and command line arguments.
+///
+/// This function logs the 'git show-ref' command with the provided Git directory and command line
+/// arguments to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir` - The path to the Git directory.
+/// * `line` - The command line arguments used with 'git show-ref'.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_show_ref(git_dir: &str, line: Vec<String>) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;

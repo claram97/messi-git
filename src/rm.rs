@@ -5,6 +5,21 @@ use std::fs;
 use std::io;
 use std::io::Write;
 
+/// Logs the 'git rm' command with the specified file name, Git directory path, and Git ignore path.
+///
+/// This function logs the 'git rm' command with the provided file name, Git directory path, and
+/// Git ignore path to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `file_name` - The name of the file to be removed.
+/// * `git_dir_path` - The path to the Git directory.
+/// * `git_ignore_path` - The path to the Git ignore file.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
 pub fn log_rm(file_name: &str, git_dir_path: &str, git_ignore_path: &str) -> io::Result<()> {
     let log_file_path = "logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
