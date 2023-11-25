@@ -1,8 +1,36 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
-
 const GIT_DIR: &str = ".mgit";
+
+/// Logs the 'git init' command with the specified Git directory.
+///
+/// This function logs the 'git init' command with the provided Git directory
+/// to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir` - A `Path` representing the path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_init(git_dir: &Path) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git init': Initialized repository at '{}'{}",
+        git_dir.display(),
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// `create_directory_if_not_exists` is a utility function that creates a directory if it doesn't exist.
 ///
@@ -66,6 +94,7 @@ pub fn git_init(
 
     create_directory_if_not_exists(&format!("{}/objects", &git_dir))?;
     create_directory_if_not_exists(&format!("{}/refs/heads", &git_dir))?;
+    create_directory_if_not_exists(&format!("{}/refs/tags", &git_dir))?; // Create 'refs/tags' directory
 
     // HEAD file
     let head_content = format!("ref: refs/heads/{}\n", initial_branch);
@@ -98,6 +127,7 @@ pub fn git_init(
         "Git repository initialized successfully in '{}'.",
         directory
     );
+    log_init(Path::new(&git_dir))?;
     Ok(())
 }
 

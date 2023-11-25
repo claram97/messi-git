@@ -3,3 +3,9 @@
 	filemode = true
 	bare = false
 	logallrefupdates = true
+[remote "remoteeeee"]
+	url = rme
+	fetch = +refs/heads/*:refs/remotes/remoteeeee/name/*
+[user]
+	name = Clara
+	email = email

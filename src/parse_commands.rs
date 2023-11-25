@@ -10,6 +10,7 @@ use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
 use crate::fetch::git_fetch;
+use crate::{git_config, ls_tree, rebase, tree_handler, add, log, push};
 use crate::hash_object::store_file;
 use crate::index::Index;
 use crate::init::git_init;
@@ -23,7 +24,6 @@ use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
-use crate::{add, log, push, tree_handler, ls_tree, rebase};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -59,6 +59,7 @@ pub enum GitCommand {
     ShowRef,
     Rebase,
     Tag,
+    Config,
 }
 
 /// Reads user input from the command line and splits it into a vector of strings.
@@ -139,6 +140,7 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
         "show-ref" => Some(GitCommand::ShowRef),
         "rebase" => Some(GitCommand::Rebase),
         "tag" => Some(GitCommand::Tag),
+        "config" => Some(GitCommand::Config),
         _ => {
             eprintln!("Not a valid Git option.");
             None
@@ -183,6 +185,42 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
         GitCommand::ShowRef => handle_show_ref(args),
         GitCommand::Rebase => handle_rebase(args),
         GitCommand::Tag => handle_tag(args),
+        GitCommand::Config => handle_config(args),
+    }
+}
+
+/// Handles the configuration based on the provided arguments.
+///
+/// # Arguments
+///
+/// * `args` - A vector of strings containing the command-line arguments.
+///
+fn handle_config(args: Vec<String>) {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+    let change = args.len() == 5;
+    match git_config::git_config(&git_dir, args) {
+        Ok(_) => {
+            if change {
+                println!("Successfully changed");
+            }
+        }
+        Err(e) => {
+            eprintln!("error: {}", e);
+        }
     }
 }
 
@@ -251,43 +289,59 @@ fn handle_ls_trees(args: Vec<String>) {
     let git_dir = match find_git_directory(&mut PathBuf::from("."), ".mgit") {
         Some(dir) => dir,
         None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error obtaining the git directory");
             return;
         }
     };
 
-    if args.len() == 3 {
-        let result = ls_tree::ls_tree(&args[2], &git_dir, "");
-        if result.is_err() {
-            eprintln!("{:?}", result);
-        }
-    } else if args.len() == 4 {
-        if args[2] == "-r" {
-            let result = ls_tree::ls_tree(&args[3], &git_dir, "-r");
-            if result.is_err() {
-                eprintln!("{:?}", result);
-            }
-        } else if args[2] == "-d" {
-            let result = ls_tree::ls_tree(&args[3], &git_dir, "-d");
-            if result.is_err() {
-                eprintln!("{:?}", result);
-            }
-        } else {
+    match args.len() {
+        3 => handle_ls_tree_default(&args[2], PathBuf::from(&git_dir)),
+        4 => handle_ls_tree_with_options(&args[2..], PathBuf::from(&git_dir)),
+        5 => handle_ls_tree_with_option(&args[2], PathBuf::from(&git_dir), &args[3]),
+        _ => {
             eprintln!("Usage: git ls-tree <tree-ish>");
         }
-    } else if args.len() == 5 {
-        if args[2] == "-r" && args[3] == "-t" {
-            let result = ls_tree::ls_tree(&args[4], &git_dir, "-r-t");
-            if result.is_err() {
-                eprintln!("{:?}", result);
-            }
-        } else {
-            eprintln!("Usage: git ls-tree <tree-ish>");
-        }
-    } else {
-        eprintln!("Usage: git ls-tree <tree-ish>");
     }
+}
 
+fn handle_ls_tree_default(tree_ish: &str, git_dir: PathBuf) {
+    let result = ls_tree::ls_tree(
+        tree_ish,
+        git_dir.to_str().expect("Invalid git_dir path"),
+        "",
+        &mut io::stdout(),
+    );
+    if let Err(err) = result {
+        eprintln!("{:?}", err);
+    }
+}
+
+fn handle_ls_tree_with_options(args: &[String], git_dir: PathBuf) {
+    let git_dir_str = git_dir.to_str().expect("Invalid git_dir path");
+    match args {
+        [arg1, tree_ish] if arg1 == "-r" => {
+            handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-r")
+        }
+        [arg1, tree_ish] if arg1 == "-d" => {
+            handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-d")
+        }
+        [arg1, arg2, tree_ish] if arg1 == "-r" && arg2 == "-t" => {
+            handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-r-t")
+        }
+        _ => eprintln!("Usage: git ls-tree <tree-ish>"),
+    }
+}
+
+fn handle_ls_tree_with_option(tree_ish: &str, git_dir: PathBuf, option: &str) {
+    let result = ls_tree::ls_tree(
+        tree_ish,
+        git_dir.to_str().expect("Invalid git_dir path"),
+        option,
+        &mut io::stdout(),
+    );
+    if let Err(err) = result {
+        eprintln!("{:?}", err);
+    }
 }
 
 /// Handles the "check-ignore" command in a Git-like system.
@@ -976,7 +1030,8 @@ fn handle_log() {
             return;
         }
     };
-
+    println!("Current dir {}", current_dir.to_string_lossy());
+    println!("Git dir {}", git_dir);
     let log_iter = match log::log(None, &git_dir, 10, 0, false) {
         Ok(iter) => iter,
         Err(_e) => {
@@ -1270,17 +1325,83 @@ fn handle_branch(args: Vec<String>) {
                 }
             }
         } else {
-            let name = args[2].to_string();
-            let result = git_branch(Some(name), None, None, &mut io::stdout());
+            let name = args[2];
+            let result = git_branch(Some(name.to_string()), None, None, &mut io::stdout());
             match result {
-                Ok(_) => {}
-                Err(_e) => {}
+                Ok(_) => {
+                    println!("Branch {name} successfully created!");
+                }
+                Err(_e) => {
+                    eprintln!("{}", _e)
+                }
             }
         }
-    } else if args.len() > 3 {
+    } else if args.len() == 4 {
+        if args[2] == "-m" {
+            match git_branch(None, Some("-m"), Some(args[3]), &mut io::stdout()) {
+                Ok(_) => {
+                    println!("Current branch name modified to {}", args[3]);
+                }
+                Err(e) => {
+                    eprintln!("{}", e)
+                }
+            }
+        } else if args[2] == "-c" {
+            match git_branch(
+                Some(args[3].to_string()),
+                Some("-c"),
+                None,
+                &mut io::stdout(),
+            ) {
+                Ok(_) => {
+                    println!("Branch {} successfully created!", args[3]);
+                }
+                Err(e) => {
+                    eprintln!("{}", e)
+                }
+            }
+        } else if args[2] == "-d" {
+            match git_branch(
+                Some(args[3].to_string()),
+                Some("-d"),
+                None,
+                &mut io::stdout(),
+            ) {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{}", e)
+                }
+            }
+        } else {
+            let name = args[2];
+            let new_name = &args[3].to_string();
+            let result = git_branch(
+                Some(name.to_string()),
+                None,
+                Some(new_name),
+                &mut io::stdout(),
+            );
+            match result {
+                Ok(_) => {
+                    println!("Branch {name} succesfully created from {new_name}");
+                }
+                Err(_e) => {
+                    eprintln!("{}", _e)
+                }
+            }
+        }
+    } else {
         handle_branch_options(args);
     }
 }
+
+//git branch
+//git branch -l
+//git branch -c branch
+//git branch new existent
+//git branch -m new_name
+//git branch -m branch new_name
+//git branch -d name
 
 /// Handles various options for Git branch operations.
 ///
@@ -1301,16 +1422,7 @@ fn handle_branch(args: Vec<String>) {
 fn handle_branch_options(args: Vec<&str>) {
     match args[2] {
         "-m" => {
-            if args.len() == 4 {
-                match git_branch(None, Some("-m"), Some(args[3]), &mut io::stdout()) {
-                    Ok(_) => {
-                        println!("Modified");
-                    }
-                    Err(e) => {
-                        eprintln!("{}", e)
-                    }
-                }
-            } else if args.len() == 5 {
+            if args.len() == 5 {
                 match git_branch(
                     Some(args[3].to_string()),
                     Some("-m"),
@@ -1318,7 +1430,7 @@ fn handle_branch_options(args: Vec<&str>) {
                     &mut io::stdout(),
                 ) {
                     Ok(_) => {
-                        println!("Modified")
+                        println!("Branch {} successfully modified to {}", args[3], args[4]);
                     }
                     Err(e) => {
                         eprintln!("{}", e)
@@ -1332,9 +1444,7 @@ fn handle_branch_options(args: Vec<&str>) {
             let new_args: Vec<&&str> = args.iter().skip(3).collect();
             for arg in new_args {
                 match git_branch(Some(arg.to_string()), Some("-d"), None, &mut io::stdout()) {
-                    Ok(_) => {
-                        println!("Deleted");
-                    }
+                    Ok(_) => {}
                     Err(e) => {
                         eprintln!("{}", e)
                     }
@@ -1346,7 +1456,7 @@ fn handle_branch_options(args: Vec<&str>) {
             for arg in new_args {
                 match git_branch(Some(arg.to_string()), Some("-c"), None, &mut io::stdout()) {
                     Ok(_) => {
-                        println!("Created");
+                        println!("Branch {arg} succesfully created!");
                     }
                     Err(e) => {
                         eprintln!("{}", e)

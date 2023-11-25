@@ -820,8 +820,8 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton">
-                            <property name="label" translatable="yes">button</property>
+                          <object class="GtkButton" id="verify-tag">
+                            <property name="label" translatable="yes">Verify Tag</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="receives-default">True</property>
@@ -1487,6 +1487,97 @@
                 <property name="name">page9</property>
                 <property name="title" translatable="yes">Ls Trees</property>
                 <property name="position">13</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFixed">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <child>
+                  <object class="GtkEntry" id="set-user-name-entry">
+                    <property name="width-request">250</property>
+                    <property name="height-request">70</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="placeholder-text" translatable="yes">Rogelio Flores</property>
+                  </object>
+                  <packing>
+                    <property name="x">250</property>
+                    <property name="y">250</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="set-user-email-entry">
+                    <property name="width-request">250</property>
+                    <property name="height-request">70</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="placeholder-text" translatable="yes">your_email@domain.com</property>
+                  </object>
+                  <packing>
+                    <property name="x">250</property>
+                    <property name="y">400</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="config-button">
+                    <property name="label" translatable="yes">Enviar</property>
+                    <property name="width-request">70</property>
+                    <property name="height-request">30</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                  </object>
+                  <packing>
+                    <property name="x">500</property>
+                    <property name="y">500</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="set-user-name-label">
+                    <property name="width-request">100</property>
+                    <property name="height-request">70</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label" translatable="yes">Name:</property>
+                  </object>
+                  <packing>
+                    <property name="x">100</property>
+                    <property name="y">250</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="set-user-email-label">
+                    <property name="width-request">100</property>
+                    <property name="height-request">70</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label" translatable="yes">Email:</property>
+                  </object>
+                  <packing>
+                    <property name="x">100</property>
+                    <property name="y">400</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="config-title-label">
+                    <property name="width-request">300</property>
+                    <property name="height-request">100</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label" translatable="yes">Who are you?
+Set your name and email :)</property>
+                  </object>
+                  <packing>
+                    <property name="x">200</property>
+                    <property name="y">109</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="name">Config</property>
+                <property name="title" translatable="yes">Config</property>
+                <property name="position">14</property>
               </packing>
             </child>
           </object>

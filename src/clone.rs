@@ -1,9 +1,40 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use crate::{client::Client, config, init, tree_handler};
 use std::{
     collections::HashMap,
     fs,
     io::{self, Read, Write},
 };
+
+/// Logs the 'git clone' command with the specified repository URL and destination.
+///
+/// This function logs the 'git clone' command with the provided repository URL and destination to a
+/// file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `repo_url` - The URL of the repository to clone.
+/// * `destination` - The destination path for the cloned repository.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_clone(repo_url: &str, destination: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git clone': Repository URL '{}', Destination '{}', {}",
+        repo_url,
+        destination,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Retrieves the commit hash of the default branch from the local Git repository.
 ///
@@ -118,7 +149,10 @@ pub fn git_clone(
     host: &str,
     working_dir: &str,
 ) -> io::Result<()> {
+    log_clone(remote_repo_url, working_dir)?;
+
     init::git_init(working_dir, "master", None)?;
+
     let local_git_dir = working_dir.to_string() + "/.mgit";
     let mut client = Client::new(remote_repo_url, remote_repo_name, host);
     let refs = client.get_server_refs()?;
@@ -139,9 +173,9 @@ pub fn git_clone(
         "/refs/heads/master".to_string(),
         &mut io::stdout(),
     )?;
+
     Ok(())
 }
-
 #[cfg(test)]
 mod tests {
     use std::env;

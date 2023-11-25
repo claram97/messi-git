@@ -1,8 +1,10 @@
 use crate::cat_file;
 use crate::hash_object;
+use crate::logger::Logger;
 use crate::tree_handler;
 use crate::tree_handler::Tree;
 use crate::tree_handler::has_tree_changed_since_last_commit;
+use crate::utils::get_current_time;
 use std::fs;
 use std::io;
 use std::io::Read;
@@ -11,6 +13,37 @@ use std::path::Path;
 
 const NO_PARENT: &str = "0000000000000000000000000000000000000000";
 const INDEX_FILE_NAME: &str = "index";
+
+/// Logs the 'git commit' command with the specified Git directory, commit message, and Git ignore path.
+///
+/// This function logs the 'git commit' command with the provided Git directory, commit message, and
+/// Git ignore path to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir_path` - The path to the Git directory.
+/// * `message` - The commit message.
+/// * `git_ignore_path` - The path to the Git ignore file.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git commit': Git Directory '{}', Message '{}', Git Ignore Path '{}', {}",
+        git_dir_path,
+        message,
+        git_ignore_path,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Creates a new commit file.
 /// With the given tree hash, parent commit and message. Adds the author and date.
@@ -112,6 +145,7 @@ pub fn new_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> i
     let commit_hash = create_new_commit_file(git_dir_path, message, &parent_hash, git_ignore_path)?;
     let mut branch_file = std::fs::File::create(&branch_path)?;
     branch_file.write_all(commit_hash.as_bytes())?;
+    log_commit(git_dir_path, message, git_ignore_path)?;
     Ok(commit_hash)
 }
 
@@ -194,18 +228,6 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
     Ok(parent_hash.to_string())
 }
 
-/// Retrieves the commit message associated with a given commit hash in a Git repository.
-///
-/// # Arguments
-///
-/// * `commit_hash` - A string representing the hash of the commit.
-/// * `git_dir_path` - A string specifying the path to the Git directory.
-///
-/// # Returns
-///
-/// Returns a `Result` containing the commit message as a `String` if successful,
-/// otherwise returns an `io::Error`.
-///
 pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
     let message: &str = match commit_file.split('\n').nth(5) {
@@ -214,7 +236,6 @@ pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<S
     };
     Ok(message.to_string())
 }
-
 /// Reads and returns the commit hash referred to by the HEAD reference in a Git repository.
 ///
 /// This function reads the contents of the Git repository's "HEAD" file to determine the commit hash

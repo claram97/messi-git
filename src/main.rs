@@ -4,6 +4,7 @@ use messi::gui::main_window::run_main_window;
 use messi::parse_commands::get_user_input;
 use messi::parse_commands::{handle_git_command, parse_git_command};
 use messi::server;
+use std::io::Write;
 
 /// Runs the application with a graphical user interface (GUI) using GTK.
 ///
@@ -59,13 +60,39 @@ fn run_without_gui() -> io::Result<()> {
             break;
         }
         if second_argument == "init" {
-            handle_init_command(args)?;
+            let args_clone = args.clone();
+            handle_init_command(args_clone)?;
+            log_to_file(second_argument, "Command executed")?;
         } else if let Some(git_command) = parse_git_command(second_argument) {
-            handle_git_command(git_command, args);
+            let args_clone = args.clone();
+            handle_git_command(git_command, args_clone);
+            log_to_file(second_argument, "Command executed")?;
         }
     }
 
     process_user_input()
+}
+
+/// Logs a command and its associated message to a file.
+///
+/// # Arguments
+///
+/// * `command` - A string representing the command being logged.
+/// * `message` - A string containing the message to be logged along with the command.
+///
+/// # Returns
+///
+/// Returns a `Result` indicating the success or failure of the logging operation.
+///
+fn log_to_file(command: &str, message: &str) -> Result<(), std::io::Error> {
+    let mut logger = messi::logger::Logger::new("logger_comands.txt")?;
+
+    let full_message = format!("Command '{}': {}", command, message);
+    logger.write_all(full_message.as_bytes())?;
+
+    logger.flush()?;
+
+    Ok(())
 }
 
 /// Handles the "init" command, initializing a new Git repository.
@@ -140,48 +167,6 @@ fn process_user_input() -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
-    // let args = env::args();
-    // let line: Vec<String> = args.skip(1).collect();
-    // let index = Index::load(
-    //     "/home/claram97/taller/23C2-messi/.mgit/index",
-    //     "/home/claram97/taller/23C2-messi/.mgit",
-    //     "/home/claram97/taller/23C2-messi/.mgitignore",
-    // )?;
-    // git_ls_files(
-    //     "/home/claram97/taller/23C2-messi",
-    //     "/home/claram97/taller/23C2-messi/.mgit",
-    //     "/home/claram97/taller/23C2-messi",
-    //     line,
-    //     &index,
-    //     &mut stdout(),
-    // )?;
-
-    //let args: Vec<String> = env::args().collect();
-
-    //Esto iría al parse commands
-    // let args = env::args();
-    // let ignorer = Ignorer::load("/home/claram97/taller/23C2-messi/.mgitignore");
-    // let line = args.skip(1).collect();
-    // git_check_ignore(".mgitignore", &ignorer, line, &mut io::stdout())?;
-
-    /*let args: Vec<String> = env::args().collect();
-
-    if args.len() != 1 && args.len() != 2 && args.len() != 5 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "Cantidad inválida de parámetros\n",
-        ));
-    }*/
-
-    //Esto iría en parse commands
-    /*let args = env::args();
-    let line: Vec<String> = args.skip(1).collect();
-    git_show_ref(
-        "/home/claram97/taller/23C2-messi/.mgit",
-        line,
-        &mut io::stdout(),
-    )?;*/
-
     let args: Vec<String> = env::args().collect();
     if args.len() != 1 && args.len() != 2 && args.len() != 5 {
         return Err(io::Error::new(
