@@ -149,11 +149,9 @@ fn create_annotated_tag(
         commit, tag_name, name, email, timestamp, offset, mensaje
     );
     let hash = hash_object::store_string_to_file(&tag_content, git_dir, "tag")?;
-
     let mut new_file = File::create(&file_path)?;
     new_file.write_all(hash.as_bytes())?;
     new_file.flush()?;
-
     Ok(())
 }
 
@@ -210,6 +208,7 @@ fn copy_tag(
     let content = fs::read_to_string(old_tag_path)?;
     let mut new_tag_file = File::create(new_tag_path)?;
     new_tag_file.write_all(content.as_bytes())?;
+    new_tag_file.flush()?;
     Ok(())
 }
 
