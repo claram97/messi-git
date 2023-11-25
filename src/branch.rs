@@ -1,3 +1,5 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use std::{
     fs::{self, File},
     io::{self, Read, Write},
@@ -420,6 +422,36 @@ pub fn git_branch(
     } else {
         list_branches(&git_dir, output)?;
     }
+    log_command(
+        "git_branch",
+        option.unwrap_or_default(),
+        &PathBuf::from(&git_dir),
+    )?;
+    Ok(())
+}
+
+/// Logs a custom Git command with the specified parameters.
+///
+/// This function logs a custom Git command with the provided parameters to a file named
+/// 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `command` - A string slice representing the Git command.
+/// * `option` - A string slice representing the command option or additional information.
+/// * `git_dir` - A `Path` representing the path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+fn log_command(command: &str, option: &str, _git_dir: &Path) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!("Command '{}': {} {}", command, option, get_current_time());
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
     Ok(())
 }
 

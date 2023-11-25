@@ -1,10 +1,11 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use crate::{branch, cat_file, config::Config, hash_object, utils};
 use std::{
     fs::{self, File},
     io::{self, Write},
     path::Path,
 };
-
-use crate::{branch, cat_file, config::Config, hash_object, utils};
 
 /// List the tags in the specified directory and write their names to the given output.
 ///
@@ -325,6 +326,35 @@ fn verify_tag(
     Ok(())
 }
 
+/// Logs the 'git tag' command with the specified Git directory and tag.
+///
+/// This function logs the 'git tag' command with the provided Git directory and tag to a file
+/// named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir` - The path to the Git directory.
+/// * `tag` - The tag being operated on.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_tag(git_dir: &str, tag: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git tag': Git Directory '{}', Tag '{:?}', {}",
+        git_dir,
+        tag,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
 /// Interact with Git tags based on command line arguments.
 ///
 /// # Arguments
@@ -351,31 +381,39 @@ pub fn git_tag(git_dir: &str, line: Vec<String>, output: &mut impl Write) -> io:
         if line[2] == "-l" {
             list_tags(&tags_path, output)?;
         } else {
-            create_tag(git_dir, &tags_path, &line[2], output)?;
+            let tag = &line[2];
+            log_tag(git_dir, tag)?;
+            create_tag(git_dir, &tags_path, tag, output)?;
         }
     } else if line.len() == 6 {
         if line[2] == "-a" {
-            create_annotated_tag(git_dir, &tags_path, &line[3], &line[5], output)?;
+            let tag = &line[3];
+            log_tag(git_dir, tag)?;
+            create_annotated_tag(git_dir, &tags_path, tag, &line[5], output)?;
         }
     } else if line.len() >= 4 {
         if line[2] == "-d" {
             let tags_to_delete: Vec<&String> = line.iter().skip(3).collect();
             for tag in tags_to_delete {
+                log_tag(git_dir, tag)?;
                 delete_tag(tag, &tags_path, output)?;
             }
         } else if line[2] == "-v" {
             let tags_to_verify: Vec<&String> = line.iter().skip(3).collect();
             for tag in tags_to_verify {
+                log_tag(git_dir, tag)?;
                 verify_tag(git_dir, tag, &tags_path, output)?;
             }
         } else {
-            copy_tag(&line[2], &line[3], &tags_path, output)?;
+            let source_tag = &line[2];
+            let destination_tag = &line[3];
+            log_tag(git_dir, source_tag)?;
+            copy_tag(source_tag, destination_tag, &tags_path, output)?;
         }
     }
 
     Ok(())
 }
-
 #[cfg(test)]
 mod tests {
     use std::fs::File;

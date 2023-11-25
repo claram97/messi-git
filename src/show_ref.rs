@@ -4,8 +4,39 @@ use std::{
     path::Path,
 };
 
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use std::fs::File;
 use std::io::prelude::*;
+
+/// Logs the 'git show-ref' command with the specified Git directory and command line arguments.
+///
+/// This function logs the 'git show-ref' command with the provided Git directory and command line
+/// arguments to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir` - The path to the Git directory.
+/// * `line` - The command line arguments used with 'git show-ref'.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_show_ref(git_dir: &str, line: Vec<String>) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git show-ref': Git Directory '{}', Line '{:?}', {}",
+        git_dir,
+        line,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Displays information about Git references based on the provided command-line arguments.
 ///
@@ -45,10 +76,10 @@ pub fn git_show_ref(git_dir: &str, line: Vec<String>, output: &mut impl Write) -
     if line.len() == 2 {
         show_ref(git_dir, output)?;
     } else if line.len() == 3 {
-        show_ref_with_options(git_dir, line, output)?;
+        show_ref_with_options(git_dir, line.clone(), output)?;
     } else if line.len() >= 3 {
         if line[2].eq("--verify") {
-            verify_ref(git_dir, line, output)?;
+            verify_ref(git_dir, line.clone(), output)?;
         } else if line[2].starts_with("--") {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -61,6 +92,7 @@ pub fn git_show_ref(git_dir: &str, line: Vec<String>, output: &mut impl Write) -
             "Invalid number of arguments",
         ));
     }
+    log_show_ref(git_dir, line)?;
     Ok(())
 }
 

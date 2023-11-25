@@ -5,6 +5,12 @@ use std::io;
 
 use crate::ignorer::is_subpath;
 use crate::index::Index;
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use std::path::Path;
+use std::path::PathBuf;
+
+use std::io::Write;
 
 /// Process a file or directory specified by `file_name` and update the index accordingly.
 ///
@@ -29,6 +35,36 @@ pub fn process_file_name(index: &mut Index, file_name: &str) -> io::Result<()> {
         index.add_path(file_name)?;
     }
 
+    Ok(())
+}
+
+/// Logs a 'git add' command with the specified parameters.
+///
+/// This function logs a 'git add' command with the provided parameters to a file named
+/// 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `add_type` - A string slice representing the type of addition (e.g., "new" or "modified").
+/// * `file` - A string slice representing the path to the file being added.
+/// * `git_dir` - A `Path` representing the path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+fn log_add(add_type: &str, file: &str, _git_dir: &Path) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git add': Add type: {}, File: {}, Time: {}",
+        add_type,
+        file,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
     Ok(())
 }
 
@@ -67,12 +103,20 @@ pub fn add(
                 let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
                 process_file_name(&mut index, &file_name)?;
                 index.write_file()?;
+
+                // Log the added file and current time
+                log_add("all", &file_name, &PathBuf::from(&path))?;
             }
         }
     } else {
         let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
         process_file_name(&mut index, path)?;
         index.write_file()?;
+
+        // Log the added file and current time
+
+        log_add("single", path, &PathBuf::from(&path))?;
     }
+
     Ok(())
 }

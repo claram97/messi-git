@@ -58,6 +58,11 @@ pub fn find_git_directory(
     None
 }
 
+pub fn get_current_time() -> String {
+    use chrono::Local;
+    Local::now().to_string()
+}
+
 /// Retrieves the commit history of a branch with corresponding commit messages.
 ///
 /// This function takes a commit hash and the Git directory, then traverses the commit

@@ -1,4 +1,7 @@
 use crate::cat_file;
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use std::io::Write;
 use std::{
     fmt::Display,
     fs,
@@ -291,6 +294,35 @@ impl Display for Log {
     }
 }
 
+/// Logs the 'git log' command with the specified commit and Git directory.
+///
+/// This function logs the 'git log' command with the provided commit and Git directory
+/// to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir` - A `Path` representing the path to the Git directory.
+/// * `commit` - An optional string slice representing the complete hash of the commit.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+fn log_log(git_dir: &Path, commit: Option<&str>) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git log': Commit '{:?}', Git Dir '{}', {}",
+        commit,
+        git_dir.display(),
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
 /// This function receive relevante information to create a Log and
 /// return the corresponding iterator
 ///
@@ -303,6 +335,8 @@ pub fn log(
     skip: usize,
     oneline: bool,
 ) -> io::Result<impl Iterator<Item = Log>> {
+
+    log_log(Path::new(git_dir), commit)?;
     println!(
         "Calling git log with commit {:?} and git_dir {:?}",
         commit, git_dir
