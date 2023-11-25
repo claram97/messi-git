@@ -28,7 +28,6 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use std::thread::current;
 use std::{env, io};
 
 const GIT_DIR: &str = ".mgit";
@@ -306,7 +305,12 @@ fn handle_ls_trees(args: Vec<String>) {
 }
 
 fn handle_ls_tree_default(tree_ish: &str, git_dir: PathBuf) {
-    let result = ls_tree::ls_tree(tree_ish, git_dir.to_str().expect("Invalid git_dir path"), "", &mut io::stdout());
+    let result = ls_tree::ls_tree(
+        tree_ish,
+        git_dir.to_str().expect("Invalid git_dir path"),
+        "",
+        &mut io::stdout(),
+    );
     if let Err(err) = result {
         eprintln!("{:?}", err);
     }
@@ -315,20 +319,30 @@ fn handle_ls_tree_default(tree_ish: &str, git_dir: PathBuf) {
 fn handle_ls_tree_with_options(args: &[String], git_dir: PathBuf) {
     let git_dir_str = git_dir.to_str().expect("Invalid git_dir path");
     match args {
-        [arg1, tree_ish] if arg1 == "-r" => handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-r"),
-        [arg1, tree_ish] if arg1 == "-d" => handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-d"),
-        [arg1, arg2, tree_ish] if arg1 == "-r" && arg2 == "-t" => handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-r-t"),
+        [arg1, tree_ish] if arg1 == "-r" => {
+            handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-r")
+        }
+        [arg1, tree_ish] if arg1 == "-d" => {
+            handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-d")
+        }
+        [arg1, arg2, tree_ish] if arg1 == "-r" && arg2 == "-t" => {
+            handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-r-t")
+        }
         _ => eprintln!("Usage: git ls-tree <tree-ish>"),
     }
 }
 
 fn handle_ls_tree_with_option(tree_ish: &str, git_dir: PathBuf, option: &str) {
-    let result = ls_tree::ls_tree(tree_ish, git_dir.to_str().expect("Invalid git_dir path"), option, &mut io::stdout());
+    let result = ls_tree::ls_tree(
+        tree_ish,
+        git_dir.to_str().expect("Invalid git_dir path"),
+        option,
+        &mut io::stdout(),
+    );
     if let Err(err) = result {
         eprintln!("{:?}", err);
     }
 }
-
 
 /// Handles the "check-ignore" command in a Git-like system.
 ///
@@ -980,7 +994,7 @@ fn handle_log() {
             return;
         }
     };
-    println!("Current dir {}", current_dir.to_string_lossy().to_string());
+    println!("Current dir {}", current_dir.to_string_lossy());
     println!("Git dir {}", git_dir);
     let log_iter = match log::log(None, &git_dir, 10, 0, false) {
         Ok(iter) => iter,

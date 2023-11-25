@@ -1,4 +1,7 @@
 use crate::cat_file;
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use std::io::Write;
 use std::{
     fmt::Display,
     fs,
@@ -196,11 +199,14 @@ impl Log {
     fn parse_commit_header_line(&mut self, line: &str) -> io::Result<()> {
         println!("Calling parse commit header line function!\n");
         match line.split_once(' ') {
-            Some(("tree", hash)) => {self.tree_hash = hash.to_string();
+            Some(("tree", hash)) => {
+                self.tree_hash = hash.to_string();
                 println!("hash {:?}\n", hash);
-            },
-            Some(("parent", hash)) => {self.parent_hash = Some(hash.to_string());
-                println!("hash {:?}\n", hash);},
+            }
+            Some(("parent", hash)) => {
+                self.parent_hash = Some(hash.to_string());
+                println!("hash {:?}\n", hash);
+            }
             Some(("author", author)) => {
                 let fields: Vec<&str> = author.split(' ').collect();
                 println!("fields {:?}\n", fields);
@@ -288,6 +294,35 @@ impl Display for Log {
     }
 }
 
+/// Logs the 'git log' command with the specified commit and Git directory.
+///
+/// This function logs the 'git log' command with the provided commit and Git directory
+/// to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir` - A `Path` representing the path to the Git directory.
+/// * `commit` - An optional string slice representing the complete hash of the commit.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+fn log_log(git_dir: &Path, commit: Option<&str>) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git log': Commit '{:?}', Git Dir '{}', {}",
+        commit,
+        git_dir.display(),
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
 /// This function receive relevante information to create a Log and
 /// return the corresponding iterator
 ///
@@ -300,7 +335,11 @@ pub fn log(
     skip: usize,
     oneline: bool,
 ) -> io::Result<impl Iterator<Item = Log>> {
-    println!("Calling git log with commit {:?} and git_dir {:?}", commit, git_dir);
+    log_log(Path::new(git_dir), commit)?;
+    println!(
+        "Calling git log with commit {:?} and git_dir {:?}",
+        commit, git_dir
+    );
     let log = Log::load(commit, git_dir)?.set_online(oneline);
     Ok(log.iter().skip(skip).take(amount))
 }
