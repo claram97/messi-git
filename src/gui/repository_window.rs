@@ -1007,10 +1007,8 @@ fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result
         eprintln!("Error creating text entry window: {}", err);
     }
 
-
     Ok(())
 }
-
 
 /// Deletes a Git branch with the specified name.
 ///
@@ -1540,7 +1538,6 @@ fn handle_remote_rm(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
-
 /// Adds a normal Git tag with the specified name.
 ///
 /// This function utilizes the `git_tag` operation to add a normal Git tag with the provided name.
@@ -1903,7 +1900,6 @@ fn handle_tag_add_annotated(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
-
 /// Creates a new Git tag with a specified name based on an existing Git tag.
 ///
 /// This function utilizes the `git_tag` operation to create a new Git tag with the provided name (`new_name`)
@@ -1934,7 +1930,6 @@ pub fn create_tag_from_other_tag(
         new_name.to_string(),
         old_name.to_string(),
     ];
-
 
     let mut output: Vec<u8> = vec![];
     match git_tag(&git_dir, line, &mut output) {
@@ -2053,7 +2048,6 @@ fn handle_ls_trees(builder: &gtk::Builder) -> io::Result<()> {
             call_ls_trees("", &hash, &builder_clone);
         }
     });
-
 
     if result.is_err() {
         eprintln!("Error creating text entry window.");

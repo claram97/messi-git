@@ -10,7 +10,6 @@ use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
 use crate::fetch::git_fetch;
-use crate::{git_config, ls_tree, rebase, tree_handler, add, log, push};
 use crate::hash_object::store_file;
 use crate::index::Index;
 use crate::init::git_init;
@@ -24,6 +23,7 @@ use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
+use crate::{add, git_config, log, ls_tree, push, rebase, tree_handler};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -445,10 +445,11 @@ fn handle_rebase(args: Vec<String>) {
     };
 
     if args.len() == 3 {
-        let result = rebase::rebase(&current_branch, &args[2], &git_dir);
-        if result.is_err() {
-            eprintln!("{:?}", result);
-        }
+        println!("Rebase will be called here!")
+        // let result = rebase::rebase(&current_branch, &args[2], &git_dir);
+        // if result.is_err() {
+        //     eprintln!("{:?}", result);
+        // }
     } else {
         eprintln!("Usage: git rebase <branch>");
     }

@@ -2,8 +2,8 @@ use crate::cat_file;
 use crate::hash_object;
 use crate::logger::Logger;
 use crate::tree_handler;
-use crate::tree_handler::Tree;
 use crate::tree_handler::has_tree_changed_since_last_commit;
+use crate::tree_handler::Tree;
 use crate::utils::get_current_time;
 use std::fs;
 use std::io;
@@ -181,9 +181,14 @@ pub fn new_merge_commit(
     Ok(commit_hash)
 }
 
-pub fn new_rebase_commit(git_dir_path: &str, message: &str, parent_commit: &str, tree: &Tree) -> io::Result<String> {
+pub fn new_rebase_commit(
+    git_dir_path: &str,
+    message: &str,
+    parent_commit: &str,
+    tree: &Tree,
+) -> io::Result<String> {
     let (tree_hash, _) = tree_handler::write_tree(tree, git_dir_path)?;
-    
+
     let time = chrono::Local::now();
     let commit_content = format!(
         "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0","user", "email@email", "user", "email@email"

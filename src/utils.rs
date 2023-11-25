@@ -145,7 +145,6 @@ pub fn get_branch_commit_history_until(
     Ok(parents)
 }
 
-
 /// Get the unique commit history for a given commit hash in a Git repository.
 ///
 /// This function retrieves the unique commit history for a specified commit hash by recursively

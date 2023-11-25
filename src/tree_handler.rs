@@ -70,15 +70,13 @@ impl Tree {
         while !path.is_empty() {
             current_tree = current_tree.get_or_create_dir(path.remove(0));
         }
-        
+
         match current_tree.files.iter().position(|(p, h)| p == file_name) {
             Some(index) => {
                 current_tree.files.remove(index);
                 current_tree.add_file(file_name, hash)
-            },
-            None => {
-                current_tree.add_file(file_name, hash)
             }
+            None => current_tree.add_file(file_name, hash),
         }
     }
 
