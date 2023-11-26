@@ -116,10 +116,7 @@ impl<R: Read + Seek> Packfile<R> {
     ///
     fn get_next(&mut self) -> io::Result<PackfileEntry> {
         let initial_position = self.bufreader.stream_position()?;
-        println!("Initial position: {}", initial_position);
         let (obj_type, obj_size) = self.get_obj_type_size()?;
-
-        dbg!(obj_type, obj_size);
         match obj_type {
             ObjectType::OfsDelta => self.get_ofs_delta_object(initial_position),
             ObjectType::RefDelta => self.get_ref_delta_object(),
@@ -136,7 +133,6 @@ impl<R: Read + Seek> Packfile<R> {
         let mut obj = vec![];
         let bytes_read = decompressor.read_to_end(&mut obj)?;
         if obj_size != bytes_read {
-            println!("type {:?}. bytes:\n{:?}", obj_type, obj);
             return Err(Error::new(
                 io::ErrorKind::InvalidInput,
                 "Corrupted packfile. Size is not correct",
@@ -146,7 +142,6 @@ impl<R: Read + Seek> Packfile<R> {
     }
 
     fn get_ofs_delta_object(&mut self, initial_position: u64) -> io::Result<PackfileEntry> {
-        dbg!("Desempaqetando ofs delta");
         let delta_offset = delta_utils::read_offset_encoding(&mut self.bufreader)?;
         let base_obj_pos = initial_position
             .checked_sub(delta_offset)
@@ -154,8 +149,7 @@ impl<R: Read + Seek> Packfile<R> {
                 io::ErrorKind::InvalidInput,
                 "Invalid delta offset",
             ))?;
-        println!("Desempaqetando ofs delta. Delta offset: {}", delta_offset);
-        println!("Base obj pos: {}", base_obj_pos);
+        println!("\nDesempaqetando ofs delta");
         let position = self.bufreader.stream_position()?;
         self.bufreader
             .seek(io::SeekFrom::Start(base_obj_pos))?;
@@ -209,10 +203,9 @@ impl<R: Read + Seek> Packfile<R> {
         if base.size != base_size {
             return Err(delta_utils::make_error("Incorrect base object length"));
         }
-
         let result_size = delta_utils::read_size_encoding(&mut delta)?;
-        let mut result = Vec::with_capacity(result_size);
-        while delta_utils::apply_delta_instruction(&mut delta, &base.content, &mut result)? {}
+        let commands = delta_utils::read_delta_commands(&mut delta)?;
+        let result = delta_utils::recreate_from_commands(&base.content, &commands);
         if result.len() != result_size {
             return Err(delta_utils::make_error("Incorrect object length"));
         }
@@ -282,9 +275,6 @@ pub fn create_packfile_from_set(
 /// Returns an `io::Error` if there is an issue reading or storing the objects.
 ///
 pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
-    let mut file = File::create("tests/packfiles/pack-ref-delta.pack")?;
-    file.write_all(packfile)?;
-    dbg!("Pacfile written");
     let packfile = Packfile::reader(Cursor::new(packfile), git_dir)?;
     for entry in packfile {
         let entry = entry?;
@@ -316,7 +306,6 @@ fn append_objects(
     for (_obj_type, hash) in objects {
         let entry = PackfileEntry::from_hash(&hash, git_dir)?;
         let offset = packfile.len();
-        println!("Appending object in position: {}", offset);
         if let Some(base_obj) = find_base_object_index(&entry, &objects_in_packfile) {
             append_delta_object(packfile, &base_obj, &entry, git_dir)?;
         } else {
@@ -381,7 +370,7 @@ fn append_delta_object(
 ) -> io::Result<()> {
     let offset = packfile.len() - base_object.1;
     println!(
-        "Append delta object. Offset: {}. Base obj in: {}",
+        "\nAppend delta object. Offset: {}. Base obj in: {}",
         offset, base_object.1
     );
 
@@ -396,7 +385,6 @@ fn append_delta_object(
     let encoded_result_size = delta_utils::encode_size(object.size);    
     let commands =
     delta_utils::delta_commands_from_objects(&base_object.0.content, &object.content);
-    
     let mut encoder = ZlibEncoder::new(packfile, Compression::default());
     encoder.write_all(&encoded_base_size)?;
     encoder.write_all(&encoded_result_size)?;

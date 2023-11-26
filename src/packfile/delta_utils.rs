@@ -4,7 +4,9 @@ const COPY_INSTRUCTION_FLAG: u8 = 1 << 7;
 const COPY_OFFSET_BYTES: u8 = 4;
 const COPY_SIZE_BYTES: u8 = 3;
 const COPY_ZERO_SIZE: usize = 0x10000;
-const MAX_COPY_SIZE: usize = 0x7F;
+const MAX_INSERT_SIZE: usize = 0x7F;
+const MAX_COPY_SIZE: usize = 0xFFFFFF;
+const MAX_COPY_OFFSET: usize = 0xFFFFFFFF;
 
 // Read an integer of up to `bytes` bytes.
 // `present_bytes` indicates which bytes are provided. The others are 0.
@@ -28,44 +30,34 @@ fn read_partial_int<R: Read>(
 // Reads a single delta instruction from a stream
 // and appends the relevant bytes to `result`.
 // Returns whether the delta stream still had instructions.
-pub fn apply_delta_instruction<R: Read>(
-    stream: &mut R,
-    base: &[u8],
-    result: &mut Vec<u8>,
-) -> io::Result<bool> {
-    // Check if the stream has ended, meaning the new object is done
-    let instruction = match read_bytes(stream) {
-        Ok([instruction]) => instruction,
-        Err(err) if err.kind() == io::ErrorKind::UnexpectedEof => return Ok(false),
-        Err(err) => return Err(err),
-    };
-    if instruction & COPY_INSTRUCTION_FLAG == 0 {
-        // Data instruction; the instruction byte specifies the number of data bytes
-        if instruction == 0 {
-            // Appending 0 bytes doesn't make sense, so git disallows it
-            return Err(make_error("Invalid data instruction"));
+pub fn read_delta_commands<R: Read>(packfile: &mut R) -> io::Result<Vec<Command>> {
+    let mut commands = Vec::new();
+    let mut i = 0;
+    loop {
+        let command = match read_bytes(packfile) {
+            Ok([command]) => command,
+            Err(err) if err.kind() == io::ErrorKind::UnexpectedEof => return Ok(commands),
+            Err(err) => return Err(err),
+        };
+        i+=1;
+        println!("Reading command {} with value {}", i, command);
+        if command & COPY_INSTRUCTION_FLAG == 0 {
+            if command == 0 {
+                return Err(make_error("Invalid data command"));
+            }
+            let mut data = vec![0; command as usize];
+            packfile.read_exact(&mut data)?;
+            commands.push(Command::Insert(data));
+        } else {
+            let mut encoded_bytes = command;
+            let offset = read_partial_int(packfile, COPY_OFFSET_BYTES, &mut encoded_bytes)?;
+            let mut size = read_partial_int(packfile, COPY_SIZE_BYTES, &mut encoded_bytes)?;
+            if size == 0 {
+                size = COPY_ZERO_SIZE;
+            }
+            commands.push(Command::Copy { offset, size });
         }
-
-        // Append the provided bytes
-        let mut data = vec![0; instruction as usize];
-        stream.read_exact(&mut data)?;
-        result.extend_from_slice(&data);
-    } else {
-        // Copy instruction
-        let mut nonzero_bytes = instruction;
-        let offset = read_partial_int(stream, COPY_OFFSET_BYTES, &mut nonzero_bytes)?;
-        let mut size = read_partial_int(stream, COPY_SIZE_BYTES, &mut nonzero_bytes)?;
-        if size == 0 {
-            // Copying 0 bytes doesn't make sense, so git assumes a different size
-            size = COPY_ZERO_SIZE;
-        }
-        // Copy bytes from the base object
-        let base_data = base
-            .get(offset..(offset + size))
-            .ok_or_else(|| make_error("Invalid copy instruction"))?;
-        result.extend_from_slice(base_data);
     }
-    Ok(true)
 }
 
 pub fn make_error(message: &str) -> io::Error {
@@ -141,7 +133,7 @@ fn decode_size(bytes: &[u8]) -> usize {
     n
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Command {
     Copy { offset: usize, size: usize },
     Insert(Vec<u8>),
@@ -151,20 +143,40 @@ impl Command {
     pub fn encode(&self) -> Vec<u8> {
         match self {
             Command::Copy { offset, size } => {
-                let mut encoded = Vec::new();
-                let offset = encode_size(*offset);
-                let size = encode_size(*size);
-                encoded.extend_from_slice(&offset);
-                encoded.extend_from_slice(&size);
+                println!("Encoding copy: offset {} size {}", offset, size);
+                let mut encoded = vec![0x80];
+                let offset = offset.to_le_bytes();
+                let size = size.to_le_bytes();
+
+                for i in 0..4 {
+                    if offset[i] != 0 {
+                        encoded.push(offset[i]);
+                        encoded[0] |= 1 << i;
+                    }
+                }
+                for i in 0..3 {
+                    if size[i] != 0 {
+                        encoded.push(size[i]);
+                        encoded[0] |= 1 << (i + 4);
+                    }
+                }
                 encoded
             }
             Command::Insert(bytes) => {
                 let mut encoded = Vec::new();
-                bytes.chunks(MAX_COPY_SIZE).for_each(|chunk| {
-                    let header = 0x7F & chunk.len() as u8;
+                if bytes.len() > MAX_INSERT_SIZE {
+                    let first_slice = &bytes[..MAX_INSERT_SIZE];
+                    let second_slice = &bytes[MAX_INSERT_SIZE..];
+                    let command = Command::Insert(first_slice.to_vec());
+                    encoded.extend(command.encode());
+                    let command = Command::Insert(second_slice.to_vec());
+                    encoded.extend(command.encode());
+                } else {
+                    println!("Encoding insert: {} bytes", bytes.len());
+                    let header = 0x7F & bytes.len() as u8;
                     encoded.push(header);
                     encoded.extend_from_slice(bytes);
-                });
+                }
                 encoded
             }
         }
@@ -199,18 +211,58 @@ pub fn delta_commands_from_objects(base: &[u8], object: &[u8]) -> Vec<Command> {
             commands.push(Command::Insert(oline.to_vec()));
         }
     }
-    commands
+    optimize_delta_commands(commands.as_slice())
+}
+
+fn optimize_delta_commands(commands: &[Command]) -> Vec<Command> {
+    let mut optimized = vec![commands[0].clone()];
+    let mut i = 0;
+    for command in &commands[1..] {
+        match (&optimized[i], command) {
+            (
+                Command::Copy {
+                    offset: o1,
+                    size: s1,
+                },
+                Command::Copy {
+                    offset: o2,
+                    size: s2,
+                },
+            ) => {
+                if *o1 + *s1 == *o2 && *s1 + *s2 <= MAX_COPY_SIZE {
+                    optimized[i] = Command::Copy {
+                        offset: *o1,
+                        size: *s1 + *s2,
+                    };
+                } else {
+                    optimized.push(command.clone());
+                    i += 1;
+                }
+            }
+            (Command::Insert(b1), Command::Insert(b2)) => {
+                optimized[i] = Command::Insert([b1.as_slice(), b2.as_slice()].concat());
+            }
+            _ => {
+                optimized.push(command.clone());
+                i += 1;
+            }
+        }
+    }
+    optimized
 }
 
 pub fn recreate_from_commands(base: &[u8], commands: &[Command]) -> Vec<u8> {
     let mut recreated = Vec::new();
+    println!("\nRecreating from {} commands", commands.len());
     for c in commands {
         match c {
             Command::Copy { offset, size } => {
+                println!("Copying: offset {} size {}", offset, size);
                 let copied = &base[*offset..offset + size];
                 recreated.extend_from_slice(copied);
             }
             Command::Insert(bytes) => {
+                println!("Inserting: {} bytes", bytes.len());
                 recreated.extend_from_slice(bytes);
             }
         }
@@ -273,7 +325,6 @@ mod tests {
         assert_eq!(decode_size(&[255, 255, 255, 127]), 268435455);
     }
 
-
     #[test]
     fn test_encode_decode_offset() {
         assert_eq!(encode_offset(53), vec![53]);
@@ -284,34 +335,33 @@ mod tests {
 
         assert_eq!(encode_offset(111), vec![111]);
         assert_eq!(decode_offset(&[111]), 111);
-        
-        assert_eq!(encode_offset(479), vec![130,95]);
-        assert_eq!(decode_offset(&[130,95]), 479);
-        
-        assert_eq!(encode_offset(499), vec![130,115]);
-        assert_eq!(decode_offset(&[130,115]), 499);
-        
-        assert_eq!(encode_offset(446), vec![130,62]);
-        assert_eq!(decode_offset(&[130,62]), 446);
-        
-        assert_eq!(encode_offset(566), vec![131,54]);
-        assert_eq!(decode_offset(&[131,54]), 566);
-        
-        assert_eq!(encode_offset(584), vec![131,72]);
-        assert_eq!(decode_offset(&[131,72]), 584);
-        
-        assert_eq!(encode_offset(138), vec![128,10]);
-        assert_eq!(decode_offset(&[128,10]), 138);
-        
-        assert_eq!(encode_offset(717), vec![132,77]);
-        assert_eq!(decode_offset(&[132,77]), 717);
-        
-        assert_eq!(encode_offset(812), vec![133,44]);
-        assert_eq!(decode_offset(&[133,44]), 812);
-        
-        assert_eq!(encode_offset(1187), vec![136,35]);
-        assert_eq!(decode_offset(&[136,35]), 1187);
-        
+
+        assert_eq!(encode_offset(479), vec![130, 95]);
+        assert_eq!(decode_offset(&[130, 95]), 479);
+
+        assert_eq!(encode_offset(499), vec![130, 115]);
+        assert_eq!(decode_offset(&[130, 115]), 499);
+
+        assert_eq!(encode_offset(446), vec![130, 62]);
+        assert_eq!(decode_offset(&[130, 62]), 446);
+
+        assert_eq!(encode_offset(566), vec![131, 54]);
+        assert_eq!(decode_offset(&[131, 54]), 566);
+
+        assert_eq!(encode_offset(584), vec![131, 72]);
+        assert_eq!(decode_offset(&[131, 72]), 584);
+
+        assert_eq!(encode_offset(138), vec![128, 10]);
+        assert_eq!(decode_offset(&[128, 10]), 138);
+
+        assert_eq!(encode_offset(717), vec![132, 77]);
+        assert_eq!(decode_offset(&[132, 77]), 717);
+
+        assert_eq!(encode_offset(812), vec![133, 44]);
+        assert_eq!(decode_offset(&[133, 44]), 812);
+
+        assert_eq!(encode_offset(1187), vec![136, 35]);
+        assert_eq!(decode_offset(&[136, 35]), 1187);
     }
 
     #[test]
@@ -339,5 +389,49 @@ mod tests {
         assert_eq!(recreated.len(), object.len());
         assert_eq!(recreated, object);
         Ok(())
+    }
+
+    #[test]
+    fn test_copy_encoding() {
+        let command = Command::Copy {
+            offset: 0x00,
+            size: 0x56,
+        };
+        let encoded = command.encode();
+        assert_eq!(encoded, vec![0b10010000, 0x56]);
+
+        let command = Command::Copy {
+            offset: 0x12,
+            size: 0x56,
+        };
+        let encoded = command.encode();
+        assert_eq!(encoded, vec![0b10010001, 0x12, 0x56]);
+
+        let command = Command::Copy {
+            offset: 0x1234,
+            size: 0x5678,
+        };
+        let encoded = command.encode();
+        assert_eq!(encoded, vec![0b10110011, 0x34, 0x12, 0x78, 0x56]);
+
+        let command = Command::Copy {
+            offset: 0x1234A5,
+            size: 0x5678B4,
+        };
+        let encoded = command.encode();
+        assert_eq!(
+            encoded,
+            vec![0b11110111, 0xA5, 0x34, 0x12, 0xB4, 0x78, 0x56]
+        );
+
+        let command = Command::Copy {
+            offset: 0xA0B1C2D3,
+            size: 0x5678D8,
+        };
+        let encoded = command.encode();
+        assert_eq!(
+            encoded,
+            vec![0b11111111, 0xD3, 0xC2, 0xB1, 0xA0, 0xD8, 0x78, 0x56]
+        );
     }
 }
