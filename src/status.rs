@@ -1,10 +1,57 @@
 const BLOB: &str = "blob";
 use crate::hash_object;
 use crate::index::Index;
+use crate::logger::Logger;
 use crate::tree_handler::Tree;
+use crate::utils::get_current_time;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
+
+/// Logs the 'git status' command with optional counts for untracked, unstaged, and staged files.
+///
+/// This function logs the 'git status' command along with counts for untracked, unstaged, and
+/// staged files, if provided, to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `untracked_count` - An optional count of untracked files.
+/// * `unstaged_count` - An optional count of unstaged files.
+/// * `staged_count` - An optional count of staged files.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_status(
+    untracked_count: Option<i32>,
+    unstaged_count: Option<i32>,
+    staged_count: Option<i32>,
+) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+    let mut full_message: String = String::new();
+    if let Some(untracked_count) = untracked_count {
+        full_message = format!(
+            "Command 'git status': {}\nUntracked files {untracked_count}",
+            get_current_time()
+        );
+    } else if let Some(unstaged_count) = unstaged_count {
+        full_message = format!(
+            "Command 'git status': {}\nUnstaged files {unstaged_count}",
+            get_current_time()
+        );
+    } else if let Some(staged_count) = staged_count {
+        full_message = format!(
+            "Command 'git status': {}\nStaged files {staged_count}",
+            get_current_time()
+        );
+    }
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
 /// Recursively find and write information about untracked files in a Git repository.
 ///
 /// This function traverses the directory structure starting from the `current_directory`, compares
@@ -32,7 +79,7 @@ pub fn find_untracked_files(
     for entry in fs::read_dir(current_directory)? {
         let entry = entry?;
         let entry_path = entry.path();
-
+        let mut count = 0;
         if let Ok(relative_entry_path) = entry_path.strip_prefix(base_directory) {
             let relative_entry_path_str = relative_entry_path.to_string_lossy().to_string();
             if !relative_entry_path_str.starts_with('.')
@@ -42,16 +89,19 @@ pub fn find_untracked_files(
                 if entry_path.is_dir() {
                     let buffer = format!("\x1b[31m\t\t{}x1b[0m\n", relative_entry_path_str);
                     output.write_all(buffer.as_bytes())?;
+                    count += 1;
                     find_untracked_files(&entry_path, base_directory, index, output)?
                 }
                 if entry_path.is_file() {
                     let buffer = format!("\t\t{}\n", relative_entry_path_str);
+                    count += 1;
                     output.write_all(buffer.as_bytes())?;
                 }
             }
         } else {
             eprintln!("We've found some kind of mistake in git status");
         }
+        log_status(Some(count), None, None)?;
     }
     Ok(())
 }
@@ -78,14 +128,17 @@ pub fn changes_to_be_committed(
     commit_tree: &Tree,
     output: &mut impl Write,
 ) -> io::Result<()> {
+    let mut count = 0;
     for (path, hash) in index.iter() {
         if let Some(new_hash) = commit_tree.get_hash_from_path(path) {
             if hash.ne(&new_hash) {
+                count += 1;
                 let buffer = format!("\x1b[31m\t\tmodified:\t {}\x1b[0m\n", path);
                 output.write_all(buffer.as_bytes())?;
             }
         }
     }
+    log_status(None, Some(count), None)?;
     Ok(())
 }
 
@@ -146,12 +199,19 @@ pub fn find_unstaged_changes(
     output: &mut impl Write,
 ) -> io::Result<()> {
     for (path, hash) in index.iter() {
-        let complete_path = git_dir.to_string() + "/" + path;
-        let new_hash = hash_object::hash_file_content(&complete_path, BLOB)?;
-        if hash.ne(&new_hash) {
-            let buffer = format!("\x1b[31m\t\tmodified:\t {}\x1b[0m\n", path);
-            output.write_all(buffer.as_bytes())?;
+        let mut count = 0;
+        let complete_path_string = git_dir.to_string() + "/" + path;
+        let complete_path = Path::new(&complete_path_string);
+        if complete_path.is_file() {
+            let new_hash = hash_object::hash_file_content(&complete_path_string, BLOB)?;
+
+            if hash.ne(&new_hash) {
+                count += 1;
+                let buffer = format!("\x1b[31m\t\tmodified:\t {}\x1b[0m\n", path);
+                output.write_all(buffer.as_bytes())?;
+            }
         }
+        log_status(None, Some(count), None)?;
     }
     Ok(())
 }

@@ -1,6 +1,6 @@
 use crate::add::add;
 use crate::branch;
-use crate::branch::git_branch_for_ui;
+use crate::check_ignore::git_check_ignore;
 use crate::checkout::checkout_branch;
 use crate::checkout::checkout_commit_detached;
 use crate::checkout::create_and_checkout_branch;
@@ -8,10 +8,19 @@ use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
-use crate::gui::gui::add_to_open_windows;
+use crate::git_config::git_config;
+use crate::tag::git_tag;
+use crate::utils::obtain_git_dir;
+
+use std::str;
+//use crate::fetch::git_fetch_for_gui;
+use crate::branch::git_branch;
+use crate::config::Config;
+use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
 use crate::gui::style::create_text_entry_window;
+use crate::gui::style::create_text_entry_window2;
 use crate::gui::style::filter_color_code;
 use crate::gui::style::get_button;
 use crate::gui::style::get_entry;
@@ -19,12 +28,17 @@ use crate::gui::style::get_text_view;
 use crate::gui::style::load_and_get_window;
 use crate::gui::style::show_message_dialog;
 use crate::index;
+use crate::index::Index;
 use crate::log::log;
 use crate::log::Log;
+use crate::ls_files::git_ls_files;
+use crate::ls_tree::ls_tree;
 use crate::merge;
 use crate::pull::git_pull;
 use crate::push;
+use crate::remote::git_remote;
 use crate::rm::git_rm;
+use crate::show_ref::git_show_ref;
 use crate::status;
 use crate::tree_handler;
 use crate::tree_handler::Tree;
@@ -32,11 +46,17 @@ use crate::utils;
 use crate::utils::find_git_directory;
 use gtk::prelude::BuilderExtManual;
 use gtk::Builder;
+use gtk::Button;
 use gtk::ButtonExt;
+use gtk::ContainerExt;
 use gtk::DialogExt;
+use gtk::Entry;
 use gtk::EntryExt;
 use gtk::GtkWindowExt;
 use gtk::LabelExt;
+use gtk::ScrolledWindow;
+use gtk::ScrolledWindowExt;
+use gtk::SwitchExt;
 use gtk::TextBufferExt;
 use gtk::TextView;
 use gtk::TextViewExt;
@@ -45,6 +65,12 @@ use std::env;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
+
+use super::style::apply_entry_style;
+use super::style::apply_label_style;
+use super::style::create_text_entry_window_with_switch;
+use super::style::get_label;
+use super::style::get_switch;
 
 /// Displays a repository window with various buttons and actions in a GTK application.
 ///
@@ -115,6 +141,18 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
     let builder_clone_for_merge = builder.clone();
     merge_window(&builder_clone_for_merge)?;
 
+    let builder_clone_for_ls_files = builder.clone();
+    list_files_window(&builder_clone_for_ls_files)?;
+
+    let builder_clone_for_check_ignore = builder.clone();
+    check_ignore_window(&builder_clone_for_check_ignore);
+
+    let builder_clone_for_show_ref = builder.clone();
+    show_ref_window(&builder_clone_for_show_ref);
+
+    let builder_clone_for_git_config = builder.clone();
+    config_window(&builder_clone_for_git_config);
+
     setup_buttons(builder)?;
 
     Ok(())
@@ -137,6 +175,9 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "pull",
         "push",
         "show-branches-button",
+        "delete-branch-button",
+        "modify-branch-button",
+        "another-branch",
         "add-path-button",
         "add-all-button",
         "remove-path-button",
@@ -147,6 +188,23 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "checkout3",
         "checkout4",
         "checkout5",
+        "remote-add",
+        "remote-rm",
+        "remote-set-url",
+        "remote-get-url",
+        "remote-rename",
+        "remote",
+        "list-tags",
+        "add-normal-tag",
+        "remove-tag",
+        "add-annotated-tag",
+        "verify-tag",
+        "tag-from-tag",
+        "trees-button",
+        "r-trees",
+        "d-trees",
+        "rt-trees",
+        "show-fetch",
     ];
 
     for button_id in button_ids.iter() {
@@ -252,6 +310,96 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
     };
     match button_id {
+        "trees-button" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_ls_trees(&builder_clone);
+            });
+        }
+        "r-trees" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_ls_trees_r(&builder_clone);
+            });
+        }
+        "d-trees" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_ls_trees_d(&builder_clone);
+            });
+        }
+        "rt-trees" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_ls_trees_rt(&builder_clone);
+            });
+        }
+        "verify-tag" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_tag_verify(&builder_clone);
+            });
+        }
+        "tag-from-tag" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_tag_from_tag(&builder_clone);
+            });
+        }
+        "list-tags" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_list_tags(&builder_clone);
+            });
+        }
+        "add-normal-tag" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_tag_add_normal(&builder_clone);
+            });
+        }
+        "add-annotated-tag" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_tag_add_annotated(&builder_clone);
+            });
+        }
+        "remove-tag" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_tag_remove(&builder_clone);
+            });
+        }
+        "another-branch" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_create_branch_from_branch_button(&builder_clone);
+            });
+        }
+        "remote" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_remote(&builder_clone);
+            });
+        }
+        "remote-add" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_remote_add(&builder_clone);
+            });
+        }
+        "remote-rm" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_remote_rm(&builder_clone);
+            });
+        }
+        "remote-set-url" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_remote_set_url();
+            });
+        }
+        "remote-get-url" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_remote_get_url();
+            });
+        }
+        "remote-rename" => {
+            button.connect_clicked(move |_| {
+                let _ = handle_remote_rename(&builder_clone);
+            });
+        }
+        "show-fetch" => {
+            button.connect_clicked(move |_| {
+                handle_fetch_button(&builder_clone);
+            });
+        }
         "show-log-button" => {
             button.connect_clicked(move |_| {
                 handle_show_log_button_click(&builder_clone);
@@ -349,13 +497,32 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
             });
         }
         "show-branches-button" => {
-            button.connect_clicked(move |_| {
-                handle_show_branches_button(&builder_clone);
+            button.connect_clicked(move |_| match handle_show_branches_button(&builder_clone) {
+                Ok(_) => {}
+                Err(err) => {
+                    show_message_dialog("Error", &err.to_string());
+                }
             });
         }
         "new-branch-button" => {
             button.connect_clicked(move |_| {
-                let result = handle_create_branch_button();
+                let result = handle_create_branch_button(&builder_clone);
+                if result.is_err() {
+                    eprintln!("Error handling create branch button.")
+                }
+            });
+        }
+        "delete-branch-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_delete_branch_button(&builder_clone);
+                if result.is_err() {
+                    eprintln!("Error handling create branch button.")
+                }
+            });
+        }
+        "modify-branch-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_modify_branch_button(&builder_clone);
                 if result.is_err() {
                     eprintln!("Error handling create branch button.")
                 }
@@ -397,6 +564,60 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         _ => {}
     }
     Ok(())
+}
+
+pub fn _obtain_text_from_fetch() -> Result<String, std::io::Error> {
+    // let current_dir = match std::env::current_dir() {
+    //     Ok(dir) => dir,
+    //     Err(err) => {
+    //         eprintln!("Error al obtener el directorio actual: {:?}", err);
+
+    //     }
+    // };
+    // let url_text = &_args[2];//aca hay q poner la url
+    // //The remote repo url is the first part of the URL, up until the last '/'.
+    // let _remote_repo_url = match url_text.rsplit_once('/') {
+    //     Some((string, _)) => string,
+    //     None => "",
+    // };
+
+    // //The remote repository name is the last part of the URL.
+    // let remote_repo_name = url_text.split('/').last().unwrap_or("");
+    // let result = git_fetch_for_gui(
+    //     Some(remote_repo_name),
+    //     "localhost",
+    //     current_dir.to_str().expect("Error "),
+    // );
+    // let refs_text: String = result.join("\n");
+
+    // Ok(refs_text)
+    Ok("hola".to_string())
+}
+
+fn handle_fetch_button(_builder: &gtk::Builder) {
+    // let log_text_view_result: Option<gtk::TextView> = builder.get_object("fetch-text");
+
+    // if let Some(log_text_view) = log_text_view_result {
+    //     let text_from_function = obtain_text_from_fetch();
+
+    //     match text_from_function {
+    //         Ok(texto) => {
+    //             log_text_view.set_hexpand(true);
+    //             log_text_view.set_halign(gtk::Align::Start);
+
+    //             if let Some(buffer) = log_text_view.get_buffer() {
+    //                 buffer.set_text(texto.as_str());
+    //             } else {
+    //                 eprintln!("Fatal error in show repository window.");
+    //             }
+    //         }
+    //         Err(err) => {
+    //             eprintln!("Error al obtener el texto: {}", err);
+    //         }
+    //     }
+    // } else {
+    //     eprintln!("We couldn't find log text view 'log-text'");
+    // }
 }
 
 /// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
@@ -504,53 +725,466 @@ fn handle_force_checkout_button() -> io::Result<()> {
     result
 }
 
-/// Handle the "Show Branches" button's click event. This function retrieves information about Git branches
-/// and displays them in a text view within the GUI. If the operation is successful, it updates the text view
-/// with the branch information. If there is an error, it prints an error message to the standard error.
+/// Retrieves information about Git branches in the repository.
+///
+/// # Returns
+///
+/// Returns a tuple containing the result of the `git_branch` operation and a string
+/// representing the output of the operation.
+///
+/// The tuple consists of:
+/// - `io::Result<()>`: Result indicating the success or failure of the `git_branch` operation.
+/// - `String`: Output of the `git_branch` operation, representing information about Git branches.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there are issues obtaining the output or if the `git_branch` operation fails.
+///
+fn show_branches() -> io::Result<(io::Result<()>, String)> {
+    let mut output: Vec<u8> = vec![];
+    let result = git_branch(None, None, None, &mut output);
+    let output_string = match String::from_utf8(output) {
+        Ok(string) => string,
+        Err(_e) => {
+            show_message_dialog("Fatal error", "Something unexpected happened.");
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "Couldn't get the output\n",
+            ));
+        }
+    };
+    Ok((result, output_string))
+}
+
+/// Retrieves a `TextView` and a `ScrolledWindow` from a GTK builder for branch GUI.
+///
+/// This function is designed to obtain the necessary GTK widgets (TextView and ScrolledWindow)
+/// for displaying Git branch information in a graphical user interface (GUI).
 ///
 /// # Arguments
 ///
-/// * `builder` - A reference to a GTK builder used to create UI elements.
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
 ///
-fn handle_show_branches_button(builder: &gtk::Builder) {
-    let branch_text_view: gtk::TextView = builder.get_object("show-branches-text").unwrap();
-
-    let text_from_function = git_branch_for_ui(None);
-    match text_from_function {
-        Ok(texto) => {
-            let buffer = branch_text_view.get_buffer().unwrap();
-            buffer.set_text(texto.as_str());
+/// # Returns
+///
+/// Returns a tuple containing a `TextView` and a `ScrolledWindow`.
+///
+/// The tuple consists of:
+/// - `TextView`: The GTK TextView widget for displaying text information.
+/// - `ScrolledWindow`: The GTK ScrolledWindow widget for providing scrolling functionality.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if any of the required GTK widgets are not found in the builder.
+///
+fn get_text_view_and_scroll_for_branch_gui(
+    builder: &gtk::Builder,
+) -> io::Result<(TextView, ScrolledWindow)> {
+    let branch_text_view: gtk::TextView = match builder.get_object("show-branches-text") {
+        Some(text_view) => text_view,
+        None => {
+            eprintln!("Couldn't get show branches text view");
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Couldn't get show branches text view\n",
+            ));
         }
-        Err(err) => {
-            eprintln!("Error al obtener el texto: {}", err);
+    };
+
+    let scrolled_window: gtk::ScrolledWindow = match builder.get_object("scrolled-window") {
+        Some(scrolled) => scrolled,
+        None => {
+            eprintln!("Couldn't get show branches scrolled window");
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Couldn't get show branches scrolled window\n",
+            ));
+        }
+    };
+
+    Ok((branch_text_view, scrolled_window))
+}
+
+/// Handles the result of the `show_branches` operation and updates the GTK UI components accordingly.
+///
+/// This function takes the result of the `show_branches` operation, the GTK TextView,
+/// the ScrolledWindow, and the output string. It then updates the UI components based on the result.
+///
+/// # Arguments
+///
+/// - `result`: Result indicating the success or failure of the `show_branches` operation.
+/// - `branch_text_view`: A reference to the GTK TextView widget for displaying text information.
+/// - `scrolled_window`: A reference to the GTK ScrolledWindow widget for providing scrolling functionality.
+/// - `output_string`: The output string representing information about Git branches.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the GTK components.
+///
+fn handle_show_branches_result(
+    result: io::Result<()>,
+    branch_text_view: &gtk::TextView,
+    scrolled_window: &ScrolledWindow,
+    output_string: String,
+) -> io::Result<()> {
+    let buffer = match branch_text_view.get_buffer() {
+        Some(buf) => buf,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "Couldn't get the text view\n",
+            ));
+        }
+    };
+
+    match result {
+        Ok(_) => {
+            let clean_output = branch::remove_ansi_escape_codes(&output_string);
+            buffer.set_text(&clean_output);
+            scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+            scrolled_window.add(branch_text_view);
+        }
+        Err(_e) => {
+            show_message_dialog("Error", &_e.to_string());
+        }
+    }
+    Ok(())
+}
+
+/// Handles the action triggered by the "Show Branches" button in a GTK application.
+///
+/// This function orchestrates the process of displaying Git branches in a GTK UI.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
+///
+fn handle_show_branches_button(builder: &gtk::Builder) -> io::Result<()> {
+    let (branch_text_view, scrolled_window) = get_text_view_and_scroll_for_branch_gui(builder)?;
+
+    let (result, output_string) = show_branches()?;
+
+    handle_show_branches_result(result, &branch_text_view, &scrolled_window, output_string)?;
+
+    Ok(())
+}
+
+/// Creates a new Git branch with the specified name and updates the branch view.
+///
+/// This function utilizes the `git_branch` operation with the `-c` option to create a new Git branch
+/// with the provided name. If successful, it updates the branch view by calling `handle_show_branches_button`.
+/// Displays error messages using GTK message dialogs and the console if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `name`: The name of the new Git branch to be created.
+///
+fn create_branch(builder: &Builder, name: String) {
+    let mut output: Vec<u8> = vec![];
+    match git_branch(Some(name), Some("-c"), None, &mut output) {
+        Ok(_) => match handle_show_branches_button(builder) {
+            Ok(_) => {}
+            Err(_) => {
+                show_message_dialog("Error", "We couldn't update the view");
+            }
+        },
+        Err(_) => {
+            let output_string = match String::from_utf8(output) {
+                Ok(string) => string,
+                Err(_e) => {
+                    show_message_dialog("Fatal error", "Something unexpected happened.");
+                    return;
+                }
+            };
+            show_message_dialog("Error", &output_string);
         }
     }
 }
 
-/// Handle the "Create Branch" button's click event. This function opens a text entry window for users to enter
-/// the name of the branch they want to create. Once the branch name is entered and confirmed, it attempts to create
-/// the new branch and updates the repository window. If the operation is successful, it closes all windows.
-/// If there is an error, it prints an error message to the standard error.
+/// Handles the action triggered by the "Create Branch" button in a GTK application.
+///
+/// This function prompts the user to enter the name of the branch via a text entry window.
+/// Upon receiving the branch name, it attempts to create a new Git branch using the entered name.
+/// If successful, it updates the Git branch view by calling `handle_show_branches_button`.
 ///
 /// # Arguments
 ///
-/// * `builder` - A reference to a GTK builder used to create UI elements.
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
 ///
-/// # Errors
+/// # Returns
 ///
-/// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
 ///
-fn handle_create_branch_button() -> io::Result<()> {
-    let create_result = create_text_entry_window("Enter the name of the branch", |text| {
-        let result = git_branch_for_ui(Some(text));
-        if result.is_err() {
-            eprintln!("Error creating text entry window.");
-        }
+fn handle_create_branch_button(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+    let create_result = create_text_entry_window("Enter the name of the branch", move |name| {
+        create_branch(&builder_clone, name);
     });
 
     if create_result.is_err() {
         eprintln!("Error creating text entry window.");
     }
+
+    Ok(())
+}
+
+/// Creates a new Git branch with the specified name based on an existing branch.
+///
+/// This function utilizes the `git_branch` operation to create a new branch with the provided name.
+/// If successful, it updates the Git branch view by calling `handle_show_branches_button`.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `new_branch_name`: The name of the new branch to be created.
+/// - `existing_branch_name`: The name of the existing branch that the new branch will be based on.
+///
+fn create_branch_from_another_branch(
+    builder: &Builder,
+    new_branch_name: String,
+    existing_branch_name: &str,
+) {
+    let mut output: Vec<u8> = Vec::new();
+    match git_branch(
+        Some(new_branch_name),
+        None,
+        Some(existing_branch_name),
+        &mut output,
+    ) {
+        Ok(_) => match handle_show_branches_button(builder) {
+            Ok(_) => {}
+            Err(_) => {
+                show_message_dialog("Error", "We couldn't update the view");
+            }
+        },
+        Err(_) => {
+            let output_string = match String::from_utf8(output) {
+                Ok(string) => string,
+                Err(_e) => {
+                    show_message_dialog("Fatal error", "Something unexpected happened.");
+                    return;
+                }
+            };
+            show_message_dialog("Error", &output_string);
+        }
+    }
+}
+
+/// Handles the action triggered by the "Create Branch from Branch" button in a GTK application.
+///
+/// This function prompts the user to enter the name of the new branch and the name of the existing branch
+/// via a text entry window. It then creates a new Git branch based on the existing branch using the entered names.
+/// If successful, it updates the Git branch view by calling `handle_show_branches_button`.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components.
+///
+fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+    let create_result = create_text_entry_window2(
+        "Nombre de la nueva branch",
+        "Nombre de la branch de base",
+        move |new_branch_name, existing_branch_name| {
+            create_branch_from_another_branch(
+                &builder_clone,
+                new_branch_name,
+                &existing_branch_name,
+            );
+        },
+    );
+
+    if let Err(err) = create_result {
+        eprintln!("Error creating text entry window: {}", err);
+    }
+
+
+    Ok(())
+}
+
+
+/// Deletes a Git branch with the specified name.
+///
+/// This function utilizes the `git_branch` operation to delete a Git branch with the provided name.
+/// If successful, it updates the Git branch view by calling `handle_show_branches_button`.
+/// Displays success or error messages using GTK message dialogs accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `name`: The name of the branch to be deleted.
+///
+fn delete_branch(builder: &Builder, name: String) {
+    let mut output: Vec<u8> = Vec::new();
+    match git_branch(Some(name), Some("-d"), None, &mut output) {
+        Ok(_) => {
+            match handle_show_branches_button(builder) {
+                Ok(_) => {}
+                Err(_e) => {
+                    show_message_dialog("Error", "No se pudo actualizar la vista");
+                }
+            }
+            let texto = match str::from_utf8(&output) {
+                Ok(s) => s,
+                Err(_) => {
+                    eprintln!("Error turning result into string.");
+                    "Error obtaining TextView"
+                }
+            };
+
+            show_message_dialog("Éxito", texto);
+        }
+        Err(error) => {
+            show_message_dialog("Error", &error.to_string());
+        }
+    }
+}
+
+/// Handles the action triggered by the "Delete Branch" button in a GTK application.
+///
+/// This function prompts the user to enter the name of the branch via a text entry window.
+/// It then deletes the specified Git branch using the entered name and updates the Git branch view.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
+///
+fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+
+    let create_result = create_text_entry_window("Enter the name of the branch", move |name| {
+        delete_branch(&builder_clone, name);
+    });
+
+    if let Err(err) = create_result {
+        eprintln!("Error creating text entry window: {}", err);
+    }
+
+    Ok(())
+}
+
+/// Modifies the name of the current Git branch.
+///
+/// This function attempts to modify the name of the current Git branch using the provided text parameters.
+/// If successful, it updates the Git branch view by calling `handle_show_branches_button`.
+/// Displays error messages using GTK message dialogs accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `text1`: The first text parameter, indicating the current branch name. If not empty, an error is displayed.
+/// - `text2`: The second text parameter, representing the new name for the current branch.
+///
+fn modify_current_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
+    if !text1.is_empty() {
+        show_message_dialog("Error", "La opción 'rama actual' está activada. Por favor desactive esta opción si desea cambiar el nombre de otra rama o deje el primer campo vacío para cambiar el nombre de la rama actual.");
+    } else if text2.is_empty() {
+        show_message_dialog("Error", "Por favor, indique el nuevo nombre para la rama.");
+    } else {
+        let mut output: Vec<u8> = vec![];
+        match git_branch(None, Some("-m"), Some(text2), &mut output) {
+            Ok(_) => match handle_show_branches_button(builder) {
+                Ok(_) => {}
+                Err(_error) => {
+                    show_message_dialog("Error", "No se pudo actualizar la vista");
+                }
+            },
+            Err(error) => {
+                show_message_dialog("Error", &error.to_string());
+            }
+        }
+    }
+}
+
+/// Updates the name of a specified Git branch.
+///
+/// This function attempts to update the name of a specified Git branch using the provided text parameters.
+/// If successful, it updates the Git branch view by calling `handle_show_branches_button`.
+/// Displays error messages using GTK message dialogs accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `text1`: The current name of the branch to be updated.
+/// - `text2`: The new name for the specified branch.
+///
+fn update_git_branch(builder: &Builder, text1: String, text2: &str) {
+    let mut output: Vec<u8> = vec![];
+    match git_branch(Some(text1), Some("-m"), Some(text2), &mut output) {
+        Ok(_) => match handle_show_branches_button(builder) {
+            Ok(_) => {}
+            Err(_error) => {
+                show_message_dialog("Error", "No se pudo actualizar la vista");
+            }
+        },
+        Err(error) => {
+            show_message_dialog("Error", &error.to_string());
+        }
+    }
+}
+
+/// Modifies the name of a specific Git branch.
+///
+/// This function attempts to modify the name of a specified Git branch using the provided text parameters.
+/// If successful, it updates the Git branch view by calling `update_git_branch`.
+/// Displays an error message using GTK message dialog if either of the text parameters is empty.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `text1`: The first text parameter, representing the current name of the branch to be modified.
+/// - `text2`: The second text parameter, indicating the new name for the specified branch.
+///
+fn modify_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
+    if text1.is_empty() || text2.is_empty() {
+        show_message_dialog(
+            "Error",
+            "Debe ingresar el nombre de la rama a modificar y el nuevo nombre.",
+        );
+    } else {
+        update_git_branch(builder, text1.to_string(), text2);
+    }
+}
+
+/// Handles the action triggered by the "Modify Branch" button in a GTK application.
+///
+/// This function prompts the user to enter the current and new names of the branch via a text entry window,
+/// along with an option to specify if the modification applies to the current branch.
+/// It then either modifies the name of the current Git branch or another specified branch
+/// and updates the Git branch view accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components.
+///
+fn handle_modify_branch_button(builder: &gtk::Builder) -> io::Result<()> {
+    let message1 = "Nombre actual";
+    let message2 = "Nombre nuevo";
+    let builder_clone = builder.clone();
+    create_text_entry_window_with_switch(message1, message2, move |text1, text2, switch_value| {
+        if switch_value {
+            modify_current_branch(&builder_clone, &text1, &text2);
+        } else {
+            modify_branch(&builder_clone, &text1, &text2);
+        }
+    })?;
 
     Ok(())
 }
@@ -572,7 +1206,6 @@ fn handle_add_path_button(builder: &Builder) -> io::Result<()> {
     let create_result = create_text_entry_window("Enter the path of the file", move |text| {
         match obtain_text_from_add(&text) {
             Ok(_texto) => {
-                //show_message_dialog("Operación exitosa", "Agregado correctamente");
                 let result = set_staging_area_texts(&builder_clone);
                 if result.is_err() {
                     eprintln!("No se pudo actualizar la vista de staging.");
@@ -657,7 +1290,6 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
                 if result.is_err() {
                     eprintln!("No se pudo actualizar la vista de staging.");
                 }
-                //                println!("Texto: {}", texto);
             }
             Err(_err) => {
                 show_message_dialog("Error", "El path ingresado no es correcto.");
@@ -667,6 +1299,1176 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
+    Ok(())
+}
+
+/// Adds a new remote to the Git configuration.
+///
+/// This function adds a new remote to the Git configuration using the provided
+/// name and URL. It interacts with the `git_remote` function to perform the
+/// necessary Git commands.
+///
+/// # Arguments
+///
+/// * `name` - The name of the remote to be added.
+/// * `url` - The URL of the remote repository.
+///
+/// # Returns
+///
+/// A `Result` indicating whether the operation was successful or resulted in an error.
+///
+pub fn obtain_text_from_remote_add(name: &str, url: &str) -> Result<String, io::Error> {
+    let git_dir = utils::obtain_git_dir(".mgit")?;
+
+    let mut config = Config::load(&git_dir)?;
+
+    let line: Vec<&str> = vec!["add", name, url];
+
+    let mut output: Vec<u8> = vec![];
+    let result = git_remote(&mut config, line, &mut output);
+    let string =
+        String::from_utf8(output).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    drop(config);
+    if result.is_err() {
+        return Err(io::Error::new(io::ErrorKind::Other, string));
+    }
+
+    Ok(string)
+}
+
+/// Removes a remote from the Git configuration.
+///
+/// This function removes a remote from the Git configuration using the provided
+/// remote name. It interacts with the `git_remote` function to perform the
+/// necessary Git commands.
+///
+/// # Arguments
+///
+/// * `text` - The name of the remote to be removed.
+///
+/// # Returns
+///
+/// A `Result` indicating whether the operation was successful or resulted in an error.
+///
+pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
+    let git_dir = obtain_git_dir(".mgit")?;
+
+    let mut config = Config::load(&git_dir)?;
+
+    let line: Vec<&str> = vec!["remove", text];
+
+    let mut output: Vec<u8> = vec![];
+    let result = git_remote(&mut config, line, &mut output);
+    drop(config);
+    let string =
+        String::from_utf8(output).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    if result.is_err() {
+        return Err(io::Error::new(io::ErrorKind::Other, string));
+    }
+
+    Ok(string)
+}
+
+/// Sets the URL of a remote repository in the Git configuration.
+///
+/// This function sets the URL of a remote repository in the Git configuration using the
+/// provided remote name, and the new URL. It interacts with the `git_remote` function to
+/// perform the necessary Git commands.
+///
+/// # Arguments
+///
+/// * `name` - The name of the remote repository.
+/// * `url` - The new URL to set for the remote repository.
+///
+/// # Returns
+///
+/// A `Result` indicating whether the operation was successful or resulted in an error.
+///
+pub fn obtain_text_from_remote_set_url(name: &str, url: &str) -> Result<String, io::Error> {
+    let git_dir = obtain_git_dir(".mgit")?;
+
+    let mut config = Config::load(&git_dir)?;
+
+    let line: Vec<&str> = vec!["set-url", name, url];
+
+    let mut output: Vec<u8> = vec![];
+    let result = git_remote(&mut config, line, &mut output);
+    drop(config);
+    let string =
+        String::from_utf8(output).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    if result.is_err() {
+        return Err(io::Error::new(io::ErrorKind::Other, string));
+    }
+
+    Ok(string)
+}
+
+/// Obtains the URL of a remote repository from the Git configuration.
+///
+/// This function retrieves the URL of a remote repository from the Git configuration using the
+/// provided remote name. It interacts with the `git_remote` function to perform the necessary
+/// Git commands.
+///
+/// # Arguments
+///
+/// * `text` - The name of the remote repository.
+///
+/// # Returns
+///
+/// A `Result` containing the URL of the remote repository if the operation was successful,
+/// otherwise an error indicating the failure.
+///
+pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> {
+    let git_dir = utils::obtain_git_dir(".mgit")?;
+
+    let mut config = Config::load(&git_dir)?;
+
+    let line: Vec<&str> = vec!["get-url", text];
+
+    let mut output: Vec<u8> = vec![];
+    let result = git_remote(&mut config, line, &mut output);
+    drop(config);
+    let string =
+        String::from_utf8(output).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    if result.is_err() {
+        return Err(io::Error::new(io::ErrorKind::Other, string));
+    }
+
+    Ok(string)
+}
+
+/// Renames a remote repository in the Git configuration.
+///
+/// This function renames a remote repository in the Git configuration from the old name to the new
+/// name. It interacts with the `git_remote` function to perform the necessary Git commands.
+///
+/// # Arguments
+///
+/// * `old_name` - The current name of the remote repository.
+/// * `new_name` - The new name to be assigned to the remote repository.
+///
+/// # Returns
+///
+/// A `Result` containing a success message if the operation was successful, otherwise an error
+/// indicating the failure.
+///
+pub fn obtain_text_from_remote_rename(old_name: &str, new_name: &str) -> Result<String, io::Error> {
+    let git_dir = obtain_git_dir(".mgit")?;
+
+    let mut config = Config::load(&git_dir)?;
+
+    let line: Vec<&str> = vec!["rename", old_name, new_name];
+
+    let mut output: Vec<u8> = vec![];
+    let result = git_remote(&mut config, line, &mut output);
+    drop(config);
+    let string =
+        String::from_utf8(output).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    if result.is_err() {
+        return Err(io::Error::new(io::ErrorKind::Other, string));
+    }
+
+    Ok(string)
+}
+
+/// Handles the addition of a remote repository.
+///
+/// This function displays a text entry window with fields for the name and URL of a remote repository.
+/// It then calls `obtain_text_from_remote_add` to perform the necessary Git commands based on the
+/// provided name and URL.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, a message is displayed; otherwise, an
+/// error message is shown.
+///
+fn handle_remote_add(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+    let result =
+        create_text_entry_window2("Enter remote name", "Enter remote URL", move |name, url| {
+            let resultado = obtain_text_from_remote_add(&name, &url);
+            match resultado {
+                Ok(_texto) => match handle_remote(&builder_clone) {
+                    Ok(_) => {}
+                    Err(_e) => {
+                        show_message_dialog("Error", "Couldn't update the view!");
+                    }
+                },
+                Err(_err) => {
+                    let error_mesage = _err.to_string();
+                    show_message_dialog("Error", &error_mesage)
+                }
+            }
+        });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+
+/// Handles the removal of a remote repository.
+///
+/// This function displays a text entry window for the user to enter the name of the remote repository
+/// to be removed. It then calls `obtain_text_from_remote_rm` to perform the necessary Git commands
+/// based on the provided repository name.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, a message is displayed; otherwise, an
+/// error message is shown.
+///
+fn handle_remote_rm(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+    let result = create_text_entry_window("Enter repository name", move |text| {
+        let resultado = obtain_text_from_remote_rm(&text);
+        match resultado {
+            Ok(_texto) => match handle_remote(&builder_clone) {
+                Ok(_) => {}
+                Err(_e) => {
+                    show_message_dialog("Error", "Couldn't update the view!");
+                }
+            },
+            Err(_err) => {
+                let error_mesage = _err.to_string();
+                show_message_dialog("Error", &error_mesage)
+            }
+        }
+    });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+
+
+/// Adds a normal Git tag with the specified name.
+///
+/// This function utilizes the `git_tag` operation to add a normal Git tag with the provided name.
+/// If successful, it updates the Git tag view by calling `handle_list_tags`.
+/// Displays error messages using GTK message dialogs accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `git_dir`: The path to the Git directory.
+/// - `tag_name`: The name of the normal Git tag to be added.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation.
+///
+pub fn add_normal_tag(builder: &gtk::Builder, git_dir: &str, tag_name: &str) -> io::Result<()> {
+    let line = vec![
+        String::from("git"),
+        String::from("tag"),
+        tag_name.to_string(),
+    ];
+    let mut output: Vec<u8> = vec![];
+
+    match git_tag(git_dir, line, &mut output) {
+        Ok(_texto) => match handle_list_tags(builder) {
+            Ok(_) => {}
+            Err(_e) => {
+                show_message_dialog("Error", "We had a problem trying to refresh the view.");
+            }
+        },
+        Err(_err) => {
+            let error_message = _err.to_string();
+            show_message_dialog("Error", &error_message);
+        }
+    }
+
+    Ok(())
+}
+
+/// Handles the action triggered by the "Add Normal Tag" button in a GTK application.
+///
+/// This function prompts the user to enter a tag name via a text entry window
+/// and then attempts to add a normal Git tag using the entered name.
+/// Displays an error message in the console if there are issues with the Git operation.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
+///
+fn handle_tag_add_normal(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+    let git_dir = obtain_git_dir(".mgit")?;
+
+    let result = create_text_entry_window("Enter tag name", move |tag_name| {
+        match add_normal_tag(&builder_clone, &git_dir, &tag_name) {
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!("{}", error);
+            }
+        }
+    });
+
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+
+/// Removes a Git tag with the specified name.
+///
+/// This function utilizes the `git_tag` operation with the `-d` option to remove a Git tag with the provided name.
+/// If successful, it updates the Git tag view by calling `handle_list_tags`.
+/// Displays error messages using GTK message dialogs accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `name`: The name of the Git tag to be removed.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation.
+///
+pub fn remove_tag(builder: &Builder, name: &str) -> io::Result<()> {
+    let git_dir = obtain_git_dir(".mgit")?;
+
+    let line = vec![
+        String::from("git"),
+        String::from("tag"),
+        String::from("-d"),
+        name.to_string(),
+    ];
+
+    let mut output: Vec<u8> = vec![];
+    match git_tag(&git_dir, line, &mut output) {
+        Ok(_) => match handle_list_tags(builder) {
+            Ok(_) => {}
+            Err(_e) => {
+                show_message_dialog("Error", "We had a problem trying to refresh the view.");
+            }
+        },
+        Err(_err) => {
+            let error_message = _err.to_string();
+            show_message_dialog("Error", &error_message);
+        }
+    }
+
+    Ok(())
+}
+
+/// Handles the action triggered by the "Remove Tag" button in a GTK application.
+///
+/// This function prompts the user to enter a tag name via a text entry window
+/// and then attempts to remove the specified Git tag.
+/// Displays an error message in the console if there are issues with the Git operation.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
+///
+fn handle_tag_remove(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+    let result = create_text_entry_window("Enter tag name", move |name| {
+        match remove_tag(&builder_clone, &name) {
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!("{}", error)
+            }
+        }
+    });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+
+/// Updates the GTK TextView with verified tag information.
+///
+/// This function takes a GTK builder and the output vector from a Git operation
+/// as input and updates the specified TextView with the verified tag information.
+/// If successful, it returns the tag information as a String.
+/// Displays error messages using the console and an `io::Error` if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `output`: A mutable reference to a vector containing the output of a Git operation.
+///
+/// # Returns
+///
+/// Returns the tag information as a `String` on success or an `io::Error` if there are issues with the UI components
+/// or converting the Git output to a string.
+///
+fn update_view_with_verified_tag(builder: &Builder, output: &mut [u8]) -> io::Result<String> {
+    let tags_text_view: gtk::TextView = match builder.get_object("tag-text") {
+        Some(text_view) => text_view,
+        None => {
+            eprintln!("Text view not found.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error turning result into string",
+            ));
+        }
+    };
+
+    let text = match str::from_utf8(output) {
+        Ok(s) => s.to_string(),
+        Err(_) => {
+            eprintln!("Error turning result into string.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error turning result into string",
+            ));
+        }
+    };
+
+    if let Some(buffer) = tags_text_view.get_buffer() {
+        buffer.set_text(&text);
+    } else {
+        eprintln!("Error obtaining TextView.");
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Error obtaining TextView",
+        ));
+    }
+    Ok(text)
+}
+
+/// Verifies a Git tag with the specified name and updates the GTK TextView.
+///
+/// This function utilizes the `git_tag` operation with the `-v` option to verify a Git tag with the provided name.
+/// If successful, it updates the specified TextView with the verified tag information.
+/// Returns the tag information as a `Result<String, io::Error>`.
+/// Displays error messages using the console and an `io::Error` if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `tag_name`: The name of the Git tag to be verified.
+///
+/// # Returns
+///
+/// Returns the verified tag information as a `Result<String, io::Error>`.
+///
+pub fn verify_tag(builder: &Builder, tag_name: &str) -> Result<String, io::Error> {
+    let git_dir = obtain_git_dir(".mgit")?;
+
+    let line = vec![
+        String::from("git"),
+        String::from("tag"),
+        String::from("-v"),
+        tag_name.to_string(),
+    ];
+
+    let mut output: Vec<u8> = vec![];
+    match git_tag(&git_dir, line, &mut output) {
+        Ok(_config) => {}
+        Err(error) => {
+            eprintln!("{:?}", error);
+            return Err(error);
+        }
+    }
+
+    let text = update_view_with_verified_tag(builder, &mut output)?;
+
+    Ok(text)
+}
+
+/// Handles the action triggered by the "Verify Tag" button in a GTK application.
+///
+/// This function prompts the user to enter a tag name via a text entry window
+/// and then attempts to verify the specified Git tag.
+/// Displays an error message using GTK message dialogs if there are issues with the Git operation.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
+///
+fn handle_tag_verify(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+
+    let result = create_text_entry_window("Enter tag name", move |name| {
+        let resultado = verify_tag(&builder_clone, &name);
+        match resultado {
+            Ok(_texto) => {}
+            Err(_err) => {
+                let error_message =
+                    format!("error: {name}: cannot verify a non-tag object of type commit.");
+                show_message_dialog("Error", &error_message);
+            }
+        }
+    });
+
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+
+/// Adds an annotated Git tag with the specified name and message.
+///
+/// This function utilizes the `git_tag` operation with the `-a` option to add an annotated Git tag
+/// with the provided name and message. If successful, it updates the Git tag view by calling `handle_list_tags`.
+/// Displays error messages using GTK message dialogs and the console if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `name`: The name of the Git tag to be added.
+/// - `message`: The message associated with the Git tag.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation.
+///
+pub fn add_annotated_tag(builder: &gtk::Builder, name: &str, message: &str) -> io::Result<()> {
+    let git_dir = obtain_git_dir(".mgit")?;
+
+    let line = vec![
+        String::from("git"),
+        String::from("tag"),
+        String::from("-a"),
+        name.to_string(),
+        String::from("-m"),
+        message.to_string(),
+    ];
+
+    let mut output: Vec<u8> = vec![];
+    println!("Git dir: {}, line {:?}", git_dir, line);
+    match git_tag(&git_dir, line, &mut output) {
+        Ok(_texto) => match handle_list_tags(builder) {
+            Ok(_) => {}
+            Err(_e) => {
+                show_message_dialog("Error", "We had a problem trying to refresh the view.");
+            }
+        },
+        Err(_err) => {
+            let error_message = _err.to_string();
+            show_message_dialog("Error", &error_message);
+        }
+    }
+
+    Ok(())
+}
+
+/// Handles the action triggered by the "Add Annotated Tag" button in a GTK application.
+///
+/// This function prompts the user to enter a tag name and a tag message via a text entry window
+/// and then attempts to add an annotated Git tag using the entered name and message.
+/// Displays error messages in the console and GTK message dialogs accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
+///
+fn handle_tag_add_annotated(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+    let result = create_text_entry_window2(
+        "Enter tag name",
+        "Enter tag message",
+        move |name, message| {
+            if name.is_empty() || message.is_empty() {
+                show_message_dialog("Error", "Debe proveer un nombre y un mensaje para el tag.");
+            } else {
+                let resultado = add_annotated_tag(&builder_clone, &name, &message);
+                match resultado {
+                    Ok(_) => {}
+                    Err(_err) => {
+                        let error_message = _err.to_string();
+                        eprintln!("{}", error_message);
+                    }
+                }
+            }
+        },
+    );
+
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+
+
+/// Creates a new Git tag with a specified name based on an existing Git tag.
+///
+/// This function utilizes the `git_tag` operation to create a new Git tag with the provided name (`new_name`)
+/// based on an existing Git tag with the name (`old_name`). If successful, it updates the Git tag view
+/// by calling `handle_list_tags`. Displays error messages using GTK message dialogs and the console
+/// if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `new_name`: The name of the new Git tag to be created.
+/// - `old_name`: The name of the existing Git tag to base the new tag on.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation.
+///
+pub fn create_tag_from_other_tag(
+    builder: &gtk::Builder,
+    new_name: &str,
+    old_name: &str,
+) -> io::Result<()> {
+    let git_dir = obtain_git_dir(".mgit")?;
+
+    let line = vec![
+        String::from("git"),
+        String::from("tag"),
+        new_name.to_string(),
+        old_name.to_string(),
+    ];
+
+
+    let mut output: Vec<u8> = vec![];
+    match git_tag(&git_dir, line, &mut output) {
+        Ok(_texto) => match handle_list_tags(builder) {
+            Ok(_) => {}
+            Err(_e) => {
+                show_message_dialog("Error", "We had a problem trying to refresh the view.");
+            }
+        },
+        Err(_err) => {
+            let error_message = _err.to_string();
+            show_message_dialog("Error", &error_message);
+        }
+    }
+
+    Ok(())
+}
+
+/// Handles the action triggered by the "Create Tag from Tag" button in a GTK application.
+///
+/// This function prompts the user to enter the name of the new tag and the name of the base tag
+/// via a text entry window and then attempts to create a new Git tag based on an existing tag.
+/// Displays error messages in the console and GTK message dialogs accordingly.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the Git operation.
+///
+fn handle_tag_from_tag(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+    let result = create_text_entry_window2(
+        "Nombre del nuevo tag",
+        "Nombre del tag de base",
+        move |new_tag_name, base_tag_name| {
+            if new_tag_name.is_empty() || base_tag_name.is_empty() {
+                show_message_dialog(
+                    "Error",
+                    "Debe proveer el nombre del nuevo tag y el nombre del tag de base",
+                );
+            } else {
+                let resultado =
+                    create_tag_from_other_tag(&builder_clone, &new_tag_name, &base_tag_name);
+                match resultado {
+                    Ok(_) => {}
+                    Err(_err) => {
+                        let error_message = _err.to_string();
+                        eprintln!("{error_message}");
+                    }
+                }
+            }
+        },
+    );
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+
+/// Calls the `git ls-tree` command to retrieve tree information based on the specified hash and option.
+///
+/// This function obtains the Git directory (assumed to be in a folder named ".mgit") and
+/// executes the `git ls-tree` command with the provided hash and option. The output of the command
+/// is then used to update a GTK text view within the specified GTK builder.
+///
+/// # Arguments
+/// * `option` - The option to be used with the `git ls-tree` command.
+/// * `hash` - The hash or branch name to identify the specific tree.
+/// * `builder` - A reference to the GTK builder containing the text view to be updated.
+///
+fn call_ls_trees(option: &str, hash: &str, builder: &gtk::Builder) {
+    let git_dir = match obtain_git_dir(".mgit") {
+        Ok(dir) => dir,
+        Err(_) => {
+            eprintln!("No se encontró el directorio git.");
+            return;
+        }
+    };
+
+    let mut output: Vec<u8> = vec![];
+    match ls_tree(hash, &git_dir, option, &mut output) {
+        Ok(_texto) => match update_list_trees_view(builder, output, "trees-text") {
+            Ok(_) => {}
+            Err(_e) => {
+                show_message_dialog("Error", "No se pudo actualizar la vista");
+            }
+        },
+        Err(_err) => {
+            show_message_dialog("Error", &_err.to_string());
+        }
+    }
+}
+
+/// Handles the execution of the `git ls-tree` command based on user input through a text entry window.
+///
+/// This function prompts the user to enter a hash or branch name using a text entry window. Upon
+/// receiving the input, it calls the `call_ls_trees` function to retrieve tree information and
+/// update a GTK text view within the provided GTK builder.
+///
+/// # Arguments
+/// * `builder` - A reference to the GTK builder containing the elements required for interaction.
+///
+/// # Returns
+/// An `io::Result` indicating success or an error in creating the text entry window.
+///
+fn handle_ls_trees(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+
+    let result = create_text_entry_window("Enter hash", move |hash| {
+        if hash.is_empty() {
+            show_message_dialog("Error", "Debe ingresar un hash");
+        } else {
+            call_ls_trees("", &hash, &builder_clone);
+        }
+    });
+
+
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+
+/// Handles the execution of the `git ls-tree -r` command based on user input through a text entry window.
+///
+/// This function prompts the user to enter a hash or branch name using a text entry window. Upon
+/// receiving the input, it calls the `call_ls_trees` function with the `-r` option to retrieve
+/// recursive tree information and updates a GTK text view within the provided GTK builder.
+///
+/// # Arguments
+/// * `builder` - A reference to the GTK builder containing the elements required for interaction.
+///
+/// # Returns
+/// An `io::Result` indicating success or an error in creating the text entry window.
+///
+fn handle_ls_trees_r(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+
+    let result = create_text_entry_window("Enter hash", move |hash| {
+        if hash.is_empty() {
+            show_message_dialog("Error", "Debe ingresar un hash");
+        } else {
+            call_ls_trees("-r", &hash, &builder_clone);
+        }
+    });
+
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+
+/// Handles the execution of the `git ls-tree -d` command based on user input through a text entry window.
+///
+/// This function prompts the user to enter a hash or branch name using a text entry window. Upon
+/// receiving the input, it calls the `call_ls_trees` function with the `-d` option to retrieve
+/// only directories in the tree and updates a GTK text view within the provided GTK builder.
+///
+/// # Arguments
+/// * `builder` - A reference to the GTK builder containing the elements required for interaction.
+///
+/// # Returns
+/// An `io::Result` indicating success or an error in creating the text entry window.
+///
+fn handle_ls_trees_d(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+
+    let result = create_text_entry_window("Enter hash", move |hash| {
+        if hash.is_empty() {
+            show_message_dialog("Error", "Debe ingresar un hash");
+        } else {
+            call_ls_trees("-d", &hash, &builder_clone);
+        }
+    });
+
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+
+/// Handles the execution of the `git ls-tree -r -t` command based on user input through a text entry window.
+///
+/// This function prompts the user to enter a hash or branch name using a text entry window. Upon
+/// receiving the input, it calls the `call_ls_trees` function with the `-r-t` option to retrieve
+/// only subtrees in the recursive tree and updates a GTK text view within the provided GTK builder.
+///
+/// # Arguments
+/// * `builder` - A reference to the GTK builder containing the elements required for interaction.
+///
+/// # Returns
+/// An `io::Result` indicating success or an error in creating the text entry window.
+///
+fn handle_ls_trees_rt(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+
+    let result = create_text_entry_window("Enter hash", move |hash| {
+        if hash.is_empty() {
+            show_message_dialog("Error", "Debe ingresar un hash");
+        } else {
+            call_ls_trees("-r-t", &hash, &builder_clone);
+        }
+    });
+
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+
+    Ok(())
+}
+
+/// Updates a GTK text view with the provided output.
+///
+/// This function takes a reference to a GTK builder, a vector of bytes representing the
+/// output of a command, and the ID of the text view widget. It attempts to retrieve the
+/// specified text view from the builder, convert the byte vector to a UTF-8 string, and
+/// sets the content of the text view to the resulting string.
+///
+/// # Arguments
+/// * `builder` - A reference to the GTK builder containing the text view to be updated.
+/// * `output` - A vector of bytes representing the output content.
+/// * `id` - The ID of the GTK text view widget within the builder.
+///
+/// # Returns
+/// A `Result` containing the converted output string on success or an `io::Error` on failure.
+///
+fn update_list_trees_view(builder: &gtk::Builder, output: Vec<u8>, id: &str) -> io::Result<String> {
+    let tree_text_view: gtk::TextView = match builder.get_object(id) {
+        Some(text_view) => text_view,
+        None => {
+            eprintln!("Error obtaining text view for list trees.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining text view for list trees",
+            ));
+        }
+    };
+
+    let text = match String::from_utf8(output) {
+        Ok(s) => s,
+
+        Err(_) => {
+            eprintln!("Error turning result into string.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error turning result into string",
+            ));
+        }
+    };
+
+    if let Some(buffer) = tree_text_view.get_buffer() {
+        buffer.set_text(&text);
+    } else {
+        eprintln!("Error obtaining TextView.");
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Error obtaining TextView",
+        ));
+    }
+    Ok(text)
+}
+
+/// Handles setting the URL for a remote repository.
+///
+/// This function displays a text entry window for the user to enter the name of the remote repository
+/// and the new URL. It then calls `obtain_text_from_remote_set_url` to perform the necessary Git
+/// commands based on the provided repository name and URL.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, a message is displayed; otherwise, an
+/// error message is shown.
+///
+fn handle_remote_set_url() -> io::Result<()> {
+    let result = create_text_entry_window2("Enter repo name", "Enter new URL", |name, url| {
+        let resultado = obtain_text_from_remote_set_url(&name, &url);
+        match resultado {
+            Ok(_texto) => {
+                show_message_dialog("Éxito", "La URL se actualizó correctamente.");
+            }
+            Err(_err) => {
+                let error_mesage = _err.to_string();
+                show_message_dialog("Error", &error_mesage)
+            }
+        }
+    });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+
+/// Handles getting the URL for a remote repository.
+///
+/// This function displays a text entry window for the user to enter the name of the remote repository.
+/// It then calls `obtain_text_from_remote_get_url` to perform the necessary Git commands based on the
+/// provided repository name and obtain the URL.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, a message is displayed with the obtained URL;
+/// otherwise, an error message is shown.
+///
+fn handle_remote_get_url() -> io::Result<()> {
+    let result = create_text_entry_window("Enter the name of the repository", move |text| {
+        let resultado = obtain_text_from_remote_get_url(&text);
+        match resultado {
+            Ok(texto) => {
+                show_message_dialog("Éxito", &format!("{}'", texto));
+            }
+            Err(_err) => {
+                let error_mesage = _err.to_string();
+                show_message_dialog("Error", &error_mesage)
+            }
+        }
+    });
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+
+/// Handles renaming a remote repository.
+///
+/// This function displays a text entry window for the user to enter the old and new names of the remote repository.
+/// It then calls `obtain_text_from_remote_rename` to perform the necessary Git commands based on the provided
+/// old and new repository names and renames the remote repository.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, a message is displayed with the result;
+/// otherwise, an error message is shown.
+///
+fn handle_remote_rename(builder: &gtk::Builder) -> io::Result<()> {
+    let builder_clone = builder.clone();
+    let result = create_text_entry_window2(
+        "Enter old repo name",
+        "Enter new repo name",
+        move |old_name, new_name| {
+            let resultado = obtain_text_from_remote_rename(&old_name, &new_name);
+            match resultado {
+                Ok(_texto) => match handle_remote(&builder_clone) {
+                    Ok(_) => {}
+                    Err(_e) => {
+                        show_message_dialog("Error", "Couldn't update the view!");
+                    }
+                },
+                Err(_err) => {
+                    let error_mesage = _err.to_string();
+                    show_message_dialog("Error", &error_mesage)
+                }
+            }
+        },
+    );
+    if result.is_err() {
+        eprintln!("Error creating text entry window.");
+    }
+    Ok(())
+}
+
+/// Creates a new Git tag with a specified name based on an existing Git tag.
+///
+/// This function utilizes the `git_tag` operation to create a new Git tag with the provided name (`new_name`)
+/// based on an existing Git tag with the name (`old_name`). If successful, it updates the Git tag view
+/// by calling `handle_list_tags`. Displays error messages using GTK message dialogs and the console
+/// if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `new_name`: The name of the new Git tag to be created.
+/// - `old_name`: The name of the existing Git tag to base the new tag on.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation.
+///
+fn update_remote_view(builder: &gtk::Builder, output: &mut [u8]) -> io::Result<()> {
+    let remote_text_view: gtk::TextView = match builder.get_object("remote-text") {
+        Some(text_view) => text_view,
+        None => {
+            eprintln!("Couldn't get remote text view.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Couldn't get remote text view.",
+            ));
+        }
+    };
+
+    let text = match str::from_utf8(output) {
+        Ok(s) => s.to_string(),
+        Err(_) => {
+            eprintln!("Error turning result into string.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error turning result into string",
+            ));
+        }
+    };
+
+    if let Some(buffer) = remote_text_view.get_buffer() {
+        buffer.set_text(&text);
+    } else {
+        eprintln!("Error obtaining TextView.");
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Error obtaining TextView",
+        ));
+    }
+    Ok(())
+}
+
+/// Handles the display of remote repositories in a TextView.
+///
+/// This function retrieves the list of remote repositories using Git commands and displays the result in a TextView.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to the GTK builder containing the TextView widget.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. If successful, the list of remote repositories is displayed in the TextView;
+/// otherwise, an error message is shown.
+///
+fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
+    let git_dir = obtain_git_dir(".mgit")?;
+
+    let mut config = Config::load(&git_dir)?;
+
+    let mut output: Vec<u8> = vec![];
+    match git_remote(&mut config, vec!["remote"], &mut output) {
+        Ok(_) => {}
+        Err(_e) => {
+            let error = _e.to_string();
+            eprintln!("{}", error);
+            return Err(io::Error::new(io::ErrorKind::Other, "&error"));
+        }
+    }
+
+    drop(config);
+
+    update_remote_view(builder, &mut output)?;
+
+    Ok(())
+}
+
+/// Updates the GTK tag view with the provided output.
+///
+/// This function takes a GTK builder reference and a mutable slice of bytes (`output`) as input.
+/// It retrieves the tag text view from the builder, converts the output bytes to a UTF-8 string,
+/// and updates the text view with the obtained string. Displays error messages in the console
+/// and returns an `io::Error` if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+/// - `output`: A mutable slice of bytes representing the output to be displayed in the tag text view.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components or the conversion process.
+///
+fn update_tag_view(builder: &gtk::Builder, output: &mut [u8]) -> io::Result<()> {
+    let tags_text_view: gtk::TextView = match builder.get_object("tag-text") {
+        Some(view) => view,
+        None => {
+            eprintln!("No se pudo obtener el text view");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining text view",
+            ));
+        }
+    };
+
+    let text = match str::from_utf8(output) {
+        Ok(s) => s.to_string(),
+        Err(_) => {
+            eprintln!("Error turning result into string.");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error turning result into string",
+            ));
+        }
+    };
+
+    if let Some(buffer) = tags_text_view.get_buffer() {
+        buffer.set_text(&text);
+    } else {
+        eprintln!("Error obtaining TextView.");
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Error obtaining TextView",
+        ));
+    }
+
+    Ok(())
+}
+
+/// Handles the action triggered by the "List Tags" button in a GTK application.
+///
+/// This function retrieves the Git directory path, performs a Git tag operation to list available tags,
+/// and updates the tag view by calling `update_tag_view`. Displays error messages using GTK message dialogs
+/// and the console if any issues occur.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to a GTK builder containing the necessary UI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation or updating the view.
+///
+fn handle_list_tags(builder: &gtk::Builder) -> io::Result<()> {
+    let git_dir = obtain_git_dir(".mgit")?;
+
+    let line = vec![String::from("git"), String::from("tag"), String::from("-l")];
+
+    let mut output: Vec<u8> = vec![];
+    match git_tag(&git_dir, line, &mut output) {
+        Ok(_config) => {}
+        Err(error) => {
+            eprintln!("{:?}", error);
+            return Err(error);
+        }
+    }
+
+    update_tag_view(builder, &mut output)?;
+
     Ok(())
 }
 
@@ -690,15 +2492,36 @@ fn handle_checkout_branch_window() -> io::Result<()> {
             Ok(texto) => {
                 show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
             }
-            Err(_err) => {
-                show_message_dialog("Error", "La rama indicada no existe.");
-            }
+            Err(_err) => match _err.kind() {
+                std::io::ErrorKind::UnexpectedEof => {
+                    show_message_dialog("Éxito", "Changed correctly to branch ");
+                }
+                _ => {
+                    show_message_dialog("Error", "La rama indicada no existe.");
+                }
+            },
         }
     });
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
     Ok(())
+}
+
+/// Obtains the ScrolledWindow widget for displaying log text.
+///
+/// This function retrieves the ScrolledWindow widget from the GTK builder based on its identifier.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to the GTK builder containing the ScrolledWindow widget.
+///
+/// # Returns
+///
+/// An `Option` containing the ScrolledWindow widget if found; otherwise, `None`.
+///
+fn obtain_log_text_scrolled_window(builder: &gtk::Builder) -> Option<gtk::ScrolledWindow> {
+    builder.get_object("scroll-log")
 }
 
 /// Handle the "Show Log" button's click event. This function retrieves a text view widget from the GTK builder
@@ -708,11 +2531,18 @@ fn handle_checkout_branch_window() -> io::Result<()> {
 /// # Arguments
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
-///
 fn handle_show_log_button_click(builder: &gtk::Builder) {
     let log_text_view_result: Option<gtk::TextView> = builder.get_object("log-text");
 
     if let Some(log_text_view) = log_text_view_result {
+        let log_text_scrolled_window = match obtain_log_text_scrolled_window(builder) {
+            Some(sw) => sw,
+            None => {
+                eprintln!("No se pudo obtener el ScrolledWindow.");
+                return;
+            }
+        };
+
         let text_from_function = obtain_text_from_log();
 
         match text_from_function {
@@ -725,6 +2555,10 @@ fn handle_show_log_button_click(builder: &gtk::Builder) {
                 } else {
                     eprintln!("Fatal error in show repository window.");
                 }
+
+                // Añade el TextView al ScrolledWindow
+                log_text_scrolled_window.add(&log_text_view);
+                log_text_scrolled_window.show_all();
             }
             Err(err) => {
                 eprintln!("Error al obtener el texto: {}", err);
@@ -1037,23 +2871,30 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
     let git_dir_path = Path::new(&git_dir);
 
-    let result = match checkout_branch(
+    let _result = match checkout_branch(
         git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
         text,
     ) {
         Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
-        Err(err) => Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("Error calling the 'checkout branch' function: {:?}\n", err),
-        )),
+        Err(err) => {
+            {
+                match err.kind() {
+                    std::io::ErrorKind::UnexpectedEof => {
+                        eprintln!("exito.");
+                    }
+                    _ => {
+                        return Err(io::Error::new(
+                            io::ErrorKind::NotFound,
+                            "Error calling the 'checkout branch' function\n",
+                        ));
+                    }
+                };
+            };
+            Err(())
+        }
     };
-    if result.is_err() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Error calling the 'checkout branch' function\n",
-        ));
-    }
+
     Ok("Ok".to_string())
 }
 
@@ -1121,16 +2962,7 @@ pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
 /// Returns an `io::Result<()>` indicating success or an error.
 ///
 pub fn call_git_merge(their_branch: &str) -> io::Result<Vec<String>> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Not a git directory.\n",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
     let root_dir = match Path::new(&git_dir).parent() {
         Some(dir) => dir,
         None => {
@@ -1197,14 +3029,6 @@ pub fn merge_button_connect_clicked(
                 }
                 Err(_e) => {
                     show_message_dialog("Error", "Merge interrupted due to an error.");
-                    // match text_view_clone.get_buffer() {
-                    //     Some(buff) => {
-                    //         buff.set_text("Conflicts on merge!");
-                    //     }
-                    //     None => {
-                    //         eprintln!("Couldn't write the output on the text view.");
-                    //     }
-                    // };
                 }
             };
         }
@@ -1226,8 +3050,6 @@ pub fn set_merge_button_behavior(
     entry: &gtk::Entry,
     text_view: &gtk::TextView,
 ) -> io::Result<()> {
-    //let entry_clone = entry.clone();
-    //let text_view_clone = text_view.clone();
     let mut current_dir = std::env::current_dir()?;
     let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
         Some(dir) => dir,
@@ -1244,17 +3066,23 @@ pub fn set_merge_button_behavior(
     Ok(())
 }
 
+/// Shows the current Git branch on a merge window.
+///
+/// This function retrieves the current Git branch name and displays it in
+/// the provided `TextView` within a merge window. The user is prompted to
+/// enter the branch they want to merge with the current branch.
+///
+/// # Arguments
+///
+/// * `merge_text_view` - The GTK `TextView` where the merge information is displayed.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful
+/// or resulted in an error.
+///
 fn show_current_branch_on_merge_window(merge_text_view: &TextView) -> io::Result<()> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found.\n",
-            ));
-        }
-    };
+    let git_dir = obtain_git_dir(".mgit")?;
 
     let buffer = match merge_text_view.get_buffer() {
         Some(buff) => buff,
@@ -1274,6 +3102,1015 @@ fn show_current_branch_on_merge_window(merge_text_view: &TextView) -> io::Result
     );
 
     Ok(())
+}
+
+/// Handles the "List Modified" button click event.
+///
+/// This function retrieves the list of modified files using Git and displays
+/// them in the provided GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK button that triggers the action when clicked.
+/// * `text_view` - The GTK `TextView` where the list of modified files will be displayed.
+///
+pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
+    let cloned_text_view = text_view.clone();
+    button.connect_clicked(move |_| {
+        let mut current_dir = match std::env::current_dir() {
+            Ok(dir) => dir,
+            Err(_e) => {
+                eprintln!("No se pudo obtener el directorio actual");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+            Some(dir) => dir,
+            None => {
+                eprintln!("No se pudo obtener el git dir.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let working_dir = match Path::new(&git_dir).parent() {
+            Some(dir) => dir.to_string_lossy().to_string(),
+            None => {
+                eprintln!("No se pudo obtener el working dir.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let current_dir = &current_dir.to_string_lossy().to_string();
+        let line = vec!["git".to_string(), "ls-files".to_string(), "-m".to_string()];
+        let index_path = format!("{}/{}", git_dir, "index");
+        let gitignore_path = format!("{}/{}", git_dir, ".mgitignore");
+        let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
+            Ok(index) => index,
+            Err(_e) => {
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let mut output: Vec<u8> = vec![];
+        let result = git_ls_files(
+            &working_dir,
+            &git_dir,
+            current_dir,
+            line,
+            &index,
+            &mut output,
+        );
+        if result.is_err() {
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+            return;
+        }
+        let buffer = match cloned_text_view.get_buffer() {
+            Some(buf) => buf,
+            None => {
+                eprintln!("No se pudo obtener el text buffer");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+                return;
+            }
+        };
+
+        let string = match String::from_utf8(output) {
+            Ok(str) => str,
+            Err(_e) => {
+                eprintln!("No se pudo convertir el resultado a string.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+                return;
+            }
+        };
+        buffer.set_text(string.as_str());
+    });
+}
+
+/// Handles the "List Index" button click event.
+///
+/// This function retrieves the list of files in the Git index and displays
+/// them in the provided GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK button that triggers the action when clicked.
+/// * `text_view` - The GTK `TextView` where the list of index files will be displayed.
+///
+pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
+    let cloned_text_view = text_view.clone();
+    button.connect_clicked(move |_| {
+        let mut current_dir = match std::env::current_dir() {
+            Ok(dir) => dir,
+            Err(_e) => {
+                eprintln!("No se pudo obtener el directorio actual");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+            Some(dir) => dir,
+            None => {
+                eprintln!("No se pudo obtener el git dir.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let working_dir = match Path::new(&git_dir).parent() {
+            Some(dir) => dir.to_string_lossy().to_string(),
+            None => {
+                eprintln!("No se pudo obtener el working dir.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let current_dir = &current_dir.to_string_lossy().to_string();
+        let line = vec!["git".to_string(), "ls-files".to_string()];
+        let index_path = format!("{}/{}", git_dir, "index");
+        let gitignore_path = format!("{}/{}", git_dir, ".mgitignore");
+        let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
+            Ok(index) => index,
+            Err(_e) => {
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let mut output: Vec<u8> = vec![];
+        let result = git_ls_files(
+            &working_dir,
+            &git_dir,
+            current_dir,
+            line,
+            &index,
+            &mut output,
+        );
+        if result.is_err() {
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+            return;
+        }
+        let buffer = match cloned_text_view.get_buffer() {
+            Some(buf) => buf,
+            None => {
+                eprintln!("No se pudo obtener el text buffer");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+                return;
+            }
+        };
+
+        let string = match String::from_utf8(output) {
+            Ok(str) => str,
+            Err(_e) => {
+                eprintln!("No se pudo convertir el resultado a string.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+                return;
+            }
+        };
+        buffer.set_text(string.as_str());
+    });
+}
+
+/// Handles the "List Untracked" button click event.
+///
+/// This function retrieves the list of untracked files using Git and displays
+/// them in the provided GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK button that triggers the action when clicked.
+/// * `text_view` - The GTK `TextView` where the list of untracked files will be displayed.
+///
+pub fn list_untracked_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
+    let cloned_text_view = text_view.clone();
+    button.connect_clicked(move |_| {
+        let mut current_dir = match std::env::current_dir() {
+            Ok(dir) => dir,
+            Err(_e) => {
+                eprintln!("No se pudo obtener el directorio actual");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+            Some(dir) => dir,
+            None => {
+                eprintln!("No se pudo obtener el git dir.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let working_dir = match Path::new(&git_dir).parent() {
+            Some(dir) => dir.to_string_lossy().to_string(),
+            None => {
+                eprintln!("No se pudo obtener el working dir.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let current_dir = &current_dir.to_string_lossy().to_string();
+        let line = vec!["git".to_string(), "ls-files".to_string(), "-o".to_string()];
+        let index_path = format!("{}/{}", git_dir, "index");
+        let gitignore_path = format!("{}/{}", git_dir, ".mgitignore");
+        let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
+            Ok(index) => index,
+            Err(_e) => {
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let mut output: Vec<u8> = vec![];
+        let result = git_ls_files(
+            &working_dir,
+            &git_dir,
+            current_dir,
+            line,
+            &index,
+            &mut output,
+        );
+        if result.is_err() {
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+            return;
+        }
+        let buffer = match cloned_text_view.get_buffer() {
+            Some(buf) => buf,
+            None => {
+                eprintln!("No se pudo obtener el text buffer");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+                return;
+            }
+        };
+
+        let string = match String::from_utf8(output) {
+            Ok(str) => str,
+            Err(_e) => {
+                eprintln!("No se pudo convertir el resultado a string.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+                return;
+            }
+        };
+        buffer.set_text(string.as_str());
+    });
+}
+
+/// Opens a window that lists different types of Git-tracked files.
+///
+/// This function initializes and displays a GTK window with buttons to list
+/// untracked files, files in the Git index, and modified files. The file
+/// lists are displayed in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `builder` - The GTK `Builder` used to construct the window.
+///
+pub fn list_files_window(builder: &Builder) -> io::Result<()> {
+    let list_untracked_button = get_button(builder, "list-untracked-button");
+    let list_index_button = get_button(builder, "list-index-button");
+    let list_modified_button = get_button(builder, "list-modified-button");
+    let text_view = match get_text_view(builder, "ls-files-view") {
+        Some(text_view) => text_view,
+        None => {
+            eprintln!("Error!");
+            return Ok(());
+        }
+    };
+
+    let scrolled_window: gtk::ScrolledWindow = builder.get_object("scroll-files").unwrap();
+    scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+    scrolled_window.add(&text_view);
+
+    apply_button_style(&list_untracked_button)
+        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    apply_button_style(&list_index_button)
+        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    apply_button_style(&list_modified_button)
+        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+    list_untracked_button_on_clicked(&list_untracked_button, &text_view);
+    list_index_button_on_clicked(&list_index_button, &text_view);
+    list_modified_button_on_clicked(&list_modified_button, &text_view);
+    Ok(())
+}
+
+/// Checks if a given path is ignored based on the rules specified in a gitignore file.
+///
+/// This function calls the `git check-ignore` command with the provided path and gitignore file.
+/// The result is then displayed in a GTK text view.
+///
+/// # Arguments
+/// * `gitignore_path` - The path to the gitignore file.
+/// * `line` - A vector representing the command line for `git check-ignore`.
+/// * `cloned_text_view` - A reference to the GTK text view for displaying the command output.
+///
+fn check_ignore(gitignore_path: &str, line: Vec<String>, cloned_text_view: &TextView) {
+    let mut output: Vec<u8> = vec![];
+    match git_check_ignore(".mgitignore", gitignore_path, line, &mut output) {
+        Ok(_) => {
+            let buffer = match cloned_text_view.get_buffer() {
+                Some(buf) => buf,
+                None => {
+                    eprintln!("No se pudo obtener el text buffer");
+                    show_message_dialog(
+                        "Fatal error",
+                        "Algo sucedió mientras intentábamos obtener los datos :(",
+                    );
+                    return;
+                }
+            };
+
+            let string = match String::from_utf8(output) {
+                Ok(str) => str,
+                Err(_e) => {
+                    eprintln!("No se pudo convertir el resultado a string.");
+                    show_message_dialog(
+                        "Fatal error",
+                        "Algo sucedió mientras intentábamos obtener los datos :(",
+                    );
+                    return;
+                }
+            };
+            buffer.set_text(string.as_str());
+        }
+        Err(e) => {
+            eprintln!("{}", e);
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+        }
+    }
+}
+
+/// Constructs a command line for the `git check-ignore` command based on the state of a switch.
+///
+/// If the switch is active, the command line includes the "-v" (verbose) option.
+///
+/// # Arguments
+/// * `switch_is_active` - A boolean indicating whether the switch is active.
+/// * `path` - The path for which the check-ignore command is being constructed.
+///
+/// # Returns
+/// A vector of strings representing the command line for the `git check-ignore` command.
+///
+fn get_line_for_check_ignore(switch_is_active: bool, path: String) -> Vec<String> {
+    let line: Vec<String> = if switch_is_active {
+        vec![
+            "git".to_string(),
+            "check-ignore".to_string(),
+            "-v".to_string(),
+            path,
+        ]
+    } else {
+        vec!["git".to_string(), "check-ignore".to_string(), path]
+    };
+    line
+}
+
+/// Handles the "clicked" signal for the ignore button.
+///
+/// This function is connected to the click event of a GTK button. It obtains the Git directory
+/// (assumed to be in a folder named ".mgit"), determines the working directory, and constructs
+/// the path to the ".mgitignore" file. It then retrieves the input path from a GTK entry widget,
+/// checks if it is empty, and displays an error message if so. Otherwise, it generates a line
+/// based on the path and the state of a GTK switch, and checks if this line is ignored in the
+/// ".mgitignore" file. The result is displayed in a GTK text view.
+///
+/// # Arguments
+/// * `button` - A reference to the GTK button triggering the event.
+/// * `text_view` - A reference to the GTK text view for displaying results.
+/// * `entry` - A reference to the GTK entry for obtaining the input path.
+/// * `switch` - A reference to the GTK switch indicating whether to check for inclusion or exclusion.
+///
+pub fn check_ignore_button_on_clicked(
+    button: &Button,
+    text_view: &gtk::TextView,
+    entry: &gtk::Entry,
+    switch: &gtk::Switch,
+) {
+    let cloned_text_view = text_view.clone();
+    let cloned_entry = entry.clone();
+    let cloned_switch = switch.clone();
+    button.connect_clicked(move |_| {
+        let git_dir = match obtain_git_dir(".mgit") {
+            Ok(dir) => dir,
+            Err(_error) => {
+                eprintln!("No se pudo obtener el git dir");
+                return;
+            }
+        };
+        let working_dir = match Path::new(&git_dir).parent() {
+            Some(dir) => dir.to_string_lossy().to_string(),
+            None => {
+                eprintln!("No se pudo obtener el working dir");
+                return;
+            }
+        };
+
+        let gitignore_path = format!("{}/{}", working_dir, ".mgitignore");
+
+        let path = cloned_entry.get_text();
+        if path.is_empty() {
+            show_message_dialog("Error", "Debe ingresar un path");
+        } else {
+            let line = get_line_for_check_ignore(cloned_switch.get_active(), path.to_string());
+
+            check_ignore(&gitignore_path, line, &cloned_text_view);
+        }
+    });
+}
+
+/// Sets up and displays the "Check Ignore" window.
+///
+/// This function initializes and displays a GTK window with UI elements for
+/// checking whether a specified path is ignored by Git based on the contents
+/// of the `.mgitignore` file. The user can input the path in an entry, and
+/// choose whether to display more detailed information using a switch.
+/// The result of the check is displayed in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `builder` - The GTK `Builder` used to construct the window.
+///
+pub fn check_ignore_window(builder: &Builder) {
+    let check_ignore_button = get_button(builder, "check-ignore-button");
+    let check_ignore_entry = match get_entry(builder, "check-ignore-entry") {
+        Some(entry) => entry,
+        None => {
+            eprintln!("No se pudo obtener el entry.");
+            return;
+        }
+    };
+    let check_ignore_view = match get_text_view(builder, "check-ignore-view") {
+        Some(view) => view,
+        None => {
+            eprintln!("No se pudo obtener el text view.");
+            return;
+        }
+    };
+
+    let check_ignore_switch = match get_switch(builder, "check-ignore-switch") {
+        Some(view) => view,
+        None => {
+            eprintln!("No se pudo obtener el switch.");
+            return;
+        }
+    };
+
+    let scrolled_window: gtk::ScrolledWindow = builder.get_object("scroll-ig").unwrap();
+
+    match apply_button_style(&check_ignore_button) {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{}", e);
+        }
+    }
+    apply_entry_style(&check_ignore_entry);
+
+    scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+    scrolled_window.add(&check_ignore_view);
+
+    check_ignore_button_on_clicked(
+        &check_ignore_button,
+        &check_ignore_view,
+        &check_ignore_entry,
+        &check_ignore_switch,
+    );
+}
+
+/// Applies a custom style to a GTK button.
+///
+/// This function applies a custom style to a specified GTK button. If successful,
+/// the button will be visually updated to reflect the applied style.
+///
+/// # Arguments
+///
+/// * `button` - The GTK `Button` to which the style will be applied.
+///
+pub fn handle_apply_button_style(button: &Button) {
+    match apply_button_style(button) {
+        Ok(_) => {}
+        Err(_e) => {
+            eprintln!("No se pudo aplicar el estilo al botón");
+        }
+    }
+}
+
+/// Updates a GTK text view with the provided output.
+///
+/// This function takes a reference to a GTK text view and a vector of bytes representing the
+/// output of a command. It attempts to convert the byte vector to a UTF-8 string and sets the
+/// content of the text view to the resulting string.
+///
+/// # Arguments
+/// * `cloned_text_view` - A reference to the GTK text view to be updated.
+/// * `output` - A vector of bytes representing the output content.
+///
+fn update_show_ref_view(cloned_text_view: &gtk::TextView, output: Vec<u8>) {
+    let buffer = match cloned_text_view.get_buffer() {
+        Some(buf) => buf,
+        None => {
+            eprintln!("No se pudo obtener el text buffer");
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+            return;
+        }
+    };
+
+    let string = match String::from_utf8(output) {
+        Ok(str) => str,
+        Err(_e) => {
+            eprintln!("No se pudo convertir el resultado a string.");
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+            return;
+        }
+    };
+    buffer.set_text(string.as_str());
+}
+
+/// Handles the "clicked" signal for the show-ref button.
+///
+/// This function is connected to the click event of a GTK button. It obtains the Git directory
+/// (assumed to be in a folder named ".mgit") and constructs the command line for the `git show-ref`
+/// command. The result of the command is then displayed in a GTK text view.
+///
+/// # Arguments
+/// * `button` - A reference to the GTK button triggering the event.
+/// * `text_view` - A reference to the GTK text view for displaying results.
+///
+pub fn show_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
+    let cloned_text_view = text_view.clone();
+    button.connect_clicked(move |_| {
+        let git_dir = match obtain_git_dir(".mgit") {
+            Ok(dir) => dir,
+            Err(_e) => {
+                eprintln!("No se pudo obtener el git dir.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+
+        let line = vec!["git".to_string(), "show-ref".to_string()];
+
+        let mut output: Vec<u8> = vec![];
+        let result = git_show_ref(&git_dir, line, &mut output);
+        if result.is_err() {
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+            return;
+        }
+        update_show_ref_view(&cloned_text_view, output);
+    });
+}
+
+/// Handles the click event of the "Show Heads" button.
+///
+/// This function is connected to the click event of a GTK button. When the button is clicked,
+/// it retrieves and displays the references in the Git repository that are heads (branches)
+/// using the `git show-ref --heads` command. The output is presented in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK `Button` triggering the click event.
+/// * `text_view` - The GTK `TextView` where the output will be displayed.
+///
+pub fn show_heads_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
+    let cloned_text_view = text_view.clone();
+    button.connect_clicked(move |_| {
+        let git_dir = match obtain_git_dir(".mgit") {
+            Ok(dir) => dir,
+            Err(_e) => {
+                eprintln!("No se pudo obtener el git dir.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let line = vec![
+            "git".to_string(),
+            "show-ref".to_string(),
+            "--heads".to_string(),
+        ];
+
+        let mut output: Vec<u8> = vec![];
+        let result = git_show_ref(&git_dir, line, &mut output);
+        if result.is_err() {
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+            return;
+        }
+        update_show_ref_view(&cloned_text_view, output);
+    });
+}
+
+/// Handles the click event of the "Show Tags" button.
+///
+/// This function is connected to the click event of a GTK button. When the button is clicked,
+/// it retrieves and displays the references in the Git repository that are tags
+/// using the `git show-ref --tags` command. The output is presented in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK `Button` triggering the click event.
+/// * `text_view` - The GTK `TextView` where the output will be displayed.
+///
+pub fn show_tags_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
+    let cloned_text_view = text_view.clone();
+    button.connect_clicked(move |_| {
+        let git_dir = match obtain_git_dir(".mgit") {
+            Ok(dir) => dir,
+            Err(_) => {
+                eprintln!("Git dir not found.");
+                return;
+            }
+        };
+
+        let line = vec![
+            "git".to_string(),
+            "show-ref".to_string(),
+            "--tags".to_string(),
+        ];
+
+        let mut output: Vec<u8> = vec![];
+        let result = git_show_ref(&git_dir, line, &mut output);
+        if result.is_err() {
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+            return;
+        }
+
+        update_show_ref_view(&cloned_text_view, output);
+    });
+}
+
+/// Handles the click event of the "Show Hash" button.
+///
+/// This function is connected to the click event of a GTK button. When the button is clicked,
+/// it retrieves and displays the references in the Git repository along with their hashes
+/// using the `git show-ref --hash` command. The output is presented in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK `Button` triggering the click event.
+/// * `text_view` - The GTK `TextView` where the output will be displayed.
+///
+pub fn show_hash_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
+    let cloned_text_view = text_view.clone();
+    button.connect_clicked(move |_| {
+        let git_dir = match obtain_git_dir(".mgit") {
+            Ok(dir) => dir,
+            Err(_e) => {
+                eprintln!("No se pudo obtener el git dir.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let line = vec![
+            "git".to_string(),
+            "show-ref".to_string(),
+            "--hash".to_string(),
+        ];
+
+        let mut output: Vec<u8> = vec![];
+        let result = git_show_ref(&git_dir, line, &mut output);
+        if result.is_err() {
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+            return;
+        }
+
+        update_show_ref_view(&cloned_text_view, output);
+    });
+}
+
+/// Handles the click event of the "Verify Ref" button.
+///
+/// This function is connected to the click event of a GTK button. When the button is clicked,
+/// it verifies the reference pointed to by the provided path using the `git show-ref --verify`
+/// command. The result is displayed in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `button` - The GTK `Button` triggering the click event.
+/// * `text_view` - The GTK `TextView` where the output will be displayed.
+/// * `entry` - The GTK `Entry` containing the path to the reference to be verified.
+///
+pub fn verify_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView, entry: &Entry) {
+    let cloned_text_view = text_view.clone();
+    let cloned_entry = entry.clone();
+    button.connect_clicked(move |_| {
+        let git_dir = match obtain_git_dir(".mgit") {
+            Ok(dir) => dir,
+            Err(_e) => {
+                eprintln!("No se pudo obtener el git dir.");
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+
+                return;
+            }
+        };
+        let path = cloned_entry.get_text();
+        if path.is_empty() {
+            show_message_dialog("Error", "Debe ingresar un path");
+        } else {
+            let line = vec![
+                "git".to_string(),
+                "show-ref".to_string(),
+                "--verify".to_string(),
+                path.to_string(),
+            ];
+
+            let mut output: Vec<u8> = vec![];
+            let result = git_show_ref(&git_dir, line, &mut output);
+            if result.is_err() {
+                show_message_dialog(
+                    "Fatal error",
+                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                );
+                return;
+            }
+
+            update_show_ref_view(&cloned_text_view, output);
+        }
+    });
+}
+
+/// Sets up the "Show Ref" window with various buttons and their corresponding actions.
+///
+/// This function initializes the components of the "Show Ref" window, such as text views,
+/// buttons, and entry fields. It also connects the buttons to their respective click
+/// event handlers to perform specific Git operations and display the results in a GTK `TextView`.
+///
+/// # Arguments
+///
+/// * `builder` - The GTK `Builder` containing the UI elements for the "Show Ref" window.
+///
+pub fn show_ref_window(builder: &Builder) {
+    let show_ref_view = match get_text_view(builder, "show-ref-view") {
+        Some(view) => view,
+        None => {
+            eprintln!("No se pudo obtener el text view.");
+            return;
+        }
+    };
+
+    let show_ref_scrolled_window: gtk::ScrolledWindow = builder.get_object("scroll-ref").unwrap();
+    show_ref_scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+    show_ref_scrolled_window.add(&show_ref_view);
+
+    let show_ref_entry = match get_entry(builder, "show-ref-entry") {
+        Some(entry) => entry,
+        None => {
+            eprintln!("No se pudo obtener el entry");
+            return;
+        }
+    };
+
+    apply_entry_style(&show_ref_entry);
+
+    let verify_ref_button = get_button(builder, "verify-ref-button");
+    let show_ref_button = get_button(builder, "show-ref-button");
+    let show_heads_button = get_button(builder, "show-heads-button");
+    let show_tags_button = get_button(builder, "show-tags-button");
+    let show_hash_button = get_button(builder, "show-hash-button");
+
+    handle_apply_button_style(&verify_ref_button);
+    handle_apply_button_style(&show_ref_button);
+    handle_apply_button_style(&show_heads_button);
+    handle_apply_button_style(&show_tags_button);
+    handle_apply_button_style(&show_hash_button);
+
+    show_ref_button_on_clicked(&show_ref_button, &show_ref_view);
+    show_heads_button_on_clicked(&show_heads_button, &show_ref_view);
+    show_tags_button_on_clicked(&show_tags_button, &show_ref_view);
+    show_hash_button_on_clicked(&show_hash_button, &show_ref_view);
+    verify_ref_button_on_clicked(&verify_ref_button, &show_ref_view, &show_ref_entry);
+}
+
+/// Calls the `git config set-user-info` command to update the user's name and email in the Git configuration.
+///
+/// This function obtains the Git directory (assumed to be in a folder named ".mgit") and constructs
+/// the command line for the `git config set-user-info` command with the provided name and email.
+/// It then executes the command and displays success or error messages accordingly.
+///
+/// # Arguments
+/// * `name` - The new user name to be set in the Git configuration.
+/// * `email` - The new user email to be set in the Git configuration.
+///
+fn call_git_config(name: String, email: String) {
+    let git_dir = match obtain_git_dir(".mgit") {
+        Ok(dir) => dir,
+        Err(_e) => {
+            eprintln!("No se pudo obtener el git dir.");
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+
+            return;
+        }
+    };
+
+    let line = vec![
+        "git".to_string(),
+        "config".to_string(),
+        "set-user-info".to_string(),
+        name,
+        email,
+    ];
+
+    match git_config(&git_dir, line) {
+        Ok(_) => {
+            show_message_dialog("Éxito", "Información actualizada con éxito");
+        }
+        Err(_e) => {
+            show_message_dialog("Error", &_e.to_string());
+        }
+    }
+}
+
+/// Handles the "clicked" signal for the configuration button.
+///
+/// This function is connected to the click event of a GTK button. It retrieves the user's name
+/// and email from the provided GTK entry widgets, checks if both fields are filled, and calls
+/// the `call_git_config` function to update the Git configuration accordingly.
+///
+/// # Arguments
+/// * `button` - A reference to the GTK button triggering the event.
+/// * `name_entry` - A reference to the GTK entry widget for the user's name.
+/// * `email_entry` - A reference to the GTK entry widget for the user's email.
+///
+fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entry: &gtk::Entry) {
+    let cloned_name_entry = name_entry.clone();
+    let cloned_email_entry = email_entry.clone();
+    button.connect_clicked(move |_| {
+        let name = cloned_name_entry.get_text().to_string();
+        let email = cloned_email_entry.get_text().to_string();
+
+        if name.is_empty() || email.is_empty() {
+            show_message_dialog("Warning", "Debe completar ambos campos para continuar");
+        } else {
+            call_git_config(name, email);
+        }
+    });
+}
+
+/// Configures the elements of the configuration window and connects relevant signals.
+///
+/// This function takes a GTK builder and initializes various elements of the configuration window,
+/// such as buttons, entries, and labels. It applies styles to these elements and connects the
+/// "clicked" signal of the configuration button to the `config_button_on_clicked` function.
+///
+/// # Arguments
+/// * `builder` - A reference to the GTK builder containing the configuration window elements.
+///
+fn config_window(builder: &gtk::Builder) {
+    let config_button = get_button(builder, "config-button");
+    let name_entry = match get_entry(builder, "set-user-name-entry") {
+        Some(name_entry) => name_entry,
+        None => {
+            eprintln!("Entry not found");
+            return;
+        }
+    };
+    let email_entry = match get_entry(builder, "set-user-email-entry") {
+        Some(email_entry) => email_entry,
+        None => {
+            eprintln!("Entry not found");
+            return;
+        }
+    };
+    let name_label = match get_label(builder, "set-user-name-label", 13.0) {
+        Some(name_label) => name_label,
+        None => {
+            eprintln!("Label not found");
+            return;
+        }
+    };
+    let email_label = match get_label(builder, "set-user-email-label", 13.0) {
+        Some(email_label) => email_label,
+        None => {
+            eprintln!("Label not found");
+            return;
+        }
+    };
+    let config_title = match get_label(builder, "config-title-label", 17.0) {
+        Some(name_entry) => name_entry,
+        None => {
+            eprintln!("Label not found");
+            return;
+        }
+    };
+
+    match apply_button_style(&config_button) {
+        Ok(_) => {}
+        Err(_e) => {
+            eprintln!("Couldn't apply button style");
+        }
+    }
+    apply_entry_style(&name_entry);
+    apply_entry_style(&email_entry);
+    apply_label_style(&name_label);
+    apply_label_style(&email_label);
+    apply_label_style(&config_title);
+
+    config_button_on_clicked(&config_button, &name_entry, &email_entry);
 }
 
 /// ## `merge_window`
@@ -1542,7 +4379,6 @@ fn get_current_dir_string() -> io::Result<String> {
         })
 }
 
-/// Get the Git directory path or return an error if not found.
 fn get_git_directory_path(current_dir: &Path) -> io::Result<String> {
     match utils::find_git_directory(&mut current_dir.to_path_buf(), ".mgit") {
         Some(path) => Ok(path),

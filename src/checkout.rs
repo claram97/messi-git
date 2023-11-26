@@ -1,8 +1,48 @@
 use crate::branch;
+use crate::logger::Logger;
 use crate::tree_handler;
+use crate::utils::get_current_time;
 use std::fs;
 use std::io;
+use std::io::Write;
 use std::path::Path;
+
+/// Logs the 'git checkout' command with the specified parameters.
+///
+/// This function logs the 'git checkout' command with the provided parameters to a file named
+/// 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `current_branch` - The name of the current branch.
+/// * `new_branch` - The name of the branch to check out.
+/// * `option` - An optional string representing additional options for the checkout.
+/// * `git_dir` - The path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+fn log_checkout(
+    current_branch: &str,
+    new_branch: &str,
+    option: &str,
+    _git_dir: &Path,
+) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git checkout': From '{}' to '{}'{} {}",
+        current_branch,
+        new_branch,
+        option,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Checkout a specific branch by updating the HEAD reference in a Git-like repository.
 ///
@@ -33,14 +73,23 @@ pub fn checkout_branch(git_dir_path: &Path, root_dir: &str, branch_name: &str) -
         }
     };
 
+    let current_branch = match branch::get_current_branch_path(git_dir_path_str) {
+        Ok(name) => name,
+        Err(_) => "Unknown".to_string(),
+    };
+
     match checkout_branch_references(git_dir_path, branch_name) {
         Ok(old_commit_id) => {
             let new_commit_id = branch::get_current_branch_commit(git_dir_path_str)?;
             match replace_working_tree(git_dir_path_str, root_dir, &old_commit_id, &new_commit_id) {
-                Ok(_) => Ok(()),
+                Ok(_) => {
+                    log_checkout(&current_branch, branch_name, "Checkout", git_dir_path)?;
+                    Ok(())
+                }
                 Err(err) => Err(err),
             }
         }
+
         Err(err) => Err(err),
     }
 }
@@ -83,6 +132,7 @@ fn checkout_branch_references(git_dir: &Path, branch_name: &str) -> io::Result<S
     let head_file = git_dir.join("HEAD");
     let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
     fs::write(head_file, new_head_content)?;
+
     Ok(old_commit_id)
 }
 
@@ -121,10 +171,15 @@ pub fn create_and_checkout_branch(
             ))
         }
     };
+    let current_branch = match branch::get_current_branch_path(git_dir_str) {
+        Ok(name) => name,
+        Err(_) => "Unknown".to_string(),
+    };
 
     let old_commit_id = create_and_checkout_branch_references(git_dir_str, branch_name)?;
     let branch_commit_id = branch::get_current_branch_commit(git_dir_str)?;
     replace_working_tree(git_dir_str, root_dir, &old_commit_id, &branch_commit_id)?;
+    log_checkout(&current_branch, branch_name, "Create and Checkout", git_dir)?;
     Ok(())
 }
 
@@ -148,7 +203,7 @@ fn create_and_checkout_branch_references(
     git_dir_str: &str,
     branch_name: &str,
 ) -> io::Result<String> {
-    branch::create_new_branch(git_dir_str, branch_name, &mut io::stdout())?;
+    branch::create_new_branch(git_dir_str, branch_name, None, &mut io::stdout())?;
     let old_commit_id = checkout_branch_references(Path::new(git_dir_str), branch_name)?;
     Ok(old_commit_id)
 }
@@ -179,11 +234,17 @@ pub fn create_or_reset_branch(git_dir: &Path, root_dir: &str, branch_name: &str)
     };
     //Check if the branch reference file exists
     if branch_ref_file.exists() {
-        branch::delete_branch(git_dir_str, branch_name)?;
+        branch::delete_branch(git_dir_str, branch_name, &mut io::stdout())?;
         create_and_checkout_branch(git_dir, root_dir, branch_name)?;
     } else {
         create_and_checkout_branch(git_dir, root_dir, branch_name)?;
     }
+    let current_branch = match branch::get_current_branch_path(git_dir_str) {
+        Ok(name) => name,
+        Err(_) => "Unknown".to_string(),
+    };
+    log_checkout(&current_branch, branch_name, "Create or reset", git_dir)?;
+
     Ok(())
 }
 
@@ -209,10 +270,17 @@ pub fn checkout_commit_detached(git_dir: &Path, root_dir: &str, commit_id: &str)
             ))
         }
     };
+
     match checkout_commit_detached_references(git_dir_str, commit_id) {
         Ok(old_commit_id) => {
             match replace_working_tree(git_dir_str, root_dir, &old_commit_id, commit_id) {
-                Ok(_) => Ok(()),
+                Ok(_) => {
+                    // Log the checkout
+                    let current_branch = branch::get_current_branch_path(git_dir_str)
+                        .unwrap_or_else(|_| "Unknown".to_string());
+                    log_checkout(&current_branch, commit_id, "Create or reset", git_dir)?;
+                    Ok(())
+                }
                 Err(err) => Err(err),
             }
         }
@@ -269,10 +337,6 @@ fn replace_working_tree(
 ) -> io::Result<()> {
     let commit_tree = tree_handler::load_tree_from_commit(new_commit_id, git_dir)?;
     let latest_tree = tree_handler::load_tree_from_commit(old_commit_id, git_dir)?;
-    // let file_dir: &Path = match Path::new(git_dir).parent() {
-    //     Some(path) => path,
-    //     None => return Err(io::Error::new(io::ErrorKind::Other, "Error when reading parent dir")),
-    // };
 
     latest_tree.delete_directories(root_dir)?;
     commit_tree.create_directories(root_dir, git_dir)?;
@@ -312,6 +376,12 @@ pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) -> Result<(), io::
             let new_head_content = format!("ref: {}\n", branch_or_commit);
             fs::write(head_file, new_head_content)?;
 
+            // Log the force checkout
+            let current_branch =
+                branch::get_current_branch_path(git_dir.to_str().unwrap_or_default())
+                    .unwrap_or_else(|_| "Unknown".to_string());
+            log_checkout(&current_branch, branch_name, "Force checkout", git_dir)?;
+
             println!("Force switched to branch: {}", branch_name);
             Ok(())
         } else {
@@ -328,6 +398,12 @@ pub fn force_checkout(git_dir: &Path, branch_or_commit: &str) -> Result<(), io::
             let head_file = git_dir.join("HEAD");
             let new_head_content = format!("{} (commit)\n", commit_id);
             fs::write(head_file, new_head_content)?;
+
+            // Log the force checkout
+            let current_branch =
+                branch::get_current_branch_path(git_dir.to_str().unwrap_or_default())
+                    .unwrap_or_else(|_| "Unknown".to_string());
+            log_checkout(&current_branch, commit_id, "Force checkout", git_dir)?;
 
             println!("Force switched to commit (detached mode): {}", commit_id);
             Ok(())

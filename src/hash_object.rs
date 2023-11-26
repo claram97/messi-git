@@ -4,8 +4,39 @@ use std::{
     path::Path,
 };
 
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use flate2::{write::ZlibEncoder, Compression};
 use sha1::{Digest, Sha1};
+
+/// Logs the 'git hash-object' command with the specified file path and Git directory.
+///
+/// This function logs the 'git hash-object' command with the provided file path
+/// and Git directory to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `path` - A string slice representing the path to the file.
+/// * `git_dir_path` - A string slice representing the path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_hash_object(path: &str, git_dir_path: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git hash-object': Path '{}', Git Directory '{}', {}",
+        path,
+        git_dir_path,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Returns the sha1 hash of the given content.
 /// It does not add any type information to the content.
@@ -87,6 +118,7 @@ pub fn store_file(path: &str, git_dir_path: &str) -> io::Result<String> {
     create_directory(&output_file_dir)?;
     let output_file_str = output_file_dir + &content_hash[2..];
     compress_content(path, output_file_str.as_str(), "blob")?;
+    log_hash_object(path, git_dir_path)?;
     Ok(content_hash)
 }
 
@@ -239,6 +271,28 @@ pub fn store_tree_to_file(
     let output_file_str = output_file_dir + &tree_hash[2..];
     compress_tree(data, &output_file_str)?;
     Ok(tree_hash)
+}
+
+pub fn get_tree_hash(
+    blobs: Vec<(String, String, Vec<u8>)>,
+    trees: Vec<(String, String, Vec<u8>)>,
+) -> String {
+    let mut blobs = blobs;
+    blobs.append(&mut trees.clone());
+    blobs.sort_by(|a, b| a.1.cmp(&b.1));
+    let mut size = 0;
+    for (mode, name, hash) in blobs.clone() {
+        size += mode.len() + name.len() + hash.len() + 2;
+    }
+    let mut data: Vec<u8> = Vec::new();
+    let header = format!("tree {}\0", size);
+    data.write_all(header.as_bytes()).unwrap();
+    for (mode, name, hash) in blobs {
+        data.write_all(format!("{} {}\0", mode, name).as_bytes())
+            .unwrap();
+        data.write_all(&hash).unwrap();
+    }
+    hash_byte_array(&data)
 }
 
 /// Compresses a given vector of bytes representing a Git tree object and writes it to a file.

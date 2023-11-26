@@ -1,23 +1,29 @@
 use crate::branch::{get_current_branch_path, git_branch};
 use crate::cat_file::cat_file;
+use crate::check_ignore::git_check_ignore;
 use crate::checkout::checkout_branch;
 use crate::checkout::checkout_commit_detached;
 use crate::checkout::create_and_checkout_branch;
 use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
+use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
+use crate::fetch::git_fetch;
 use crate::hash_object::store_file;
 use crate::index::Index;
 use crate::init::git_init;
 use crate::log::print_logs;
+use crate::ls_files::git_ls_files;
 use crate::merge::git_merge;
 use crate::pull::git_pull;
 use crate::remote::git_remote;
 use crate::rm::git_rm;
+use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
+use crate::tree_handler::Tree;
 use crate::utils::find_git_directory;
-use crate::{add, log, push, tree_handler};
+use crate::{add, git_config, log, ls_tree, push, tree_handler};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -25,6 +31,7 @@ use std::path::{Path, PathBuf};
 use std::{env, io};
 
 const GIT_DIR: &str = ".mgit";
+
 /// Enumeration representing Git commands.
 ///
 /// This enumeration defines Git commands that can be used.
@@ -46,6 +53,13 @@ pub enum GitCommand {
     Pull,
     Push,
     Branch,
+    ListFiles,
+    ListTrees,
+    CheckIgnore,
+    ShowRef,
+    Rebase,
+    Tag,
+    Config,
 }
 
 /// Reads user input from the command line and splits it into a vector of strings.
@@ -120,6 +134,13 @@ pub fn parse_git_command(second_argument: &str) -> Option<GitCommand> {
         "pull" => Some(GitCommand::Pull),
         "push" => Some(GitCommand::Push),
         "branch" => Some(GitCommand::Branch),
+        "ls-files" => Some(GitCommand::ListFiles),
+        "ls-tree" => Some(GitCommand::ListTrees),
+        "check-ignore" => Some(GitCommand::CheckIgnore),
+        "show-ref" => Some(GitCommand::ShowRef),
+        "rebase" => Some(GitCommand::Rebase),
+        "tag" => Some(GitCommand::Tag),
+        "config" => Some(GitCommand::Config),
         _ => {
             eprintln!("Not a valid Git option.");
             None
@@ -158,7 +179,247 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
         GitCommand::Push => handle_push(),
         GitCommand::Branch => handle_branch(args),
         GitCommand::Init => handle_init(args),
+        GitCommand::ListFiles => handle_ls_files(args),
+        GitCommand::ListTrees => handle_ls_trees(args),
+        GitCommand::CheckIgnore => handle_check_ignore(args),
+        GitCommand::ShowRef => handle_show_ref(args),
+        GitCommand::Rebase => handle_rebase(args),
+        GitCommand::Tag => handle_tag(args),
+        GitCommand::Config => handle_config(args),
     }
+}
+
+/// Handles the configuration based on the provided arguments.
+///
+/// # Arguments
+///
+/// * `args` - A vector of strings containing the command-line arguments.
+///
+fn handle_config(args: Vec<String>) {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+    let change = args.len() == 5;
+    match git_config::git_config(&git_dir, args) {
+        Ok(_) => {
+            if change {
+                println!("Successfully changed");
+            }
+        }
+        Err(e) => {
+            eprintln!("error: {}", e);
+        }
+    }
+}
+
+/// Handles the "ls-files" command in a Git-like system.
+///
+/// # Arguments
+///
+/// * `args` - The arguments passed to the "ls-files" command.
+fn handle_ls_files(args: Vec<String>) {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            eprintln!("Fatal error on ls files.");
+            return;
+        }
+    };
+
+    let index_path = format!("{}/{}", git_dir, "index");
+    let gitignore_path = format!("{}/{}", working_dir, ".mgitignore");
+    let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
+        Ok(ind) => ind,
+        Err(_e) => {
+            eprintln!("Couldn't load index.");
+            return;
+        }
+    };
+
+    let current_dir = current_dir.to_string_lossy().to_string();
+    match git_ls_files(
+        &working_dir,
+        &git_dir,
+        &current_dir,
+        args,
+        &index,
+        &mut io::stdout(),
+    ) {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{:?}", e)
+        }
+    }
+}
+
+fn handle_ls_trees(args: Vec<String>) {
+    if args.len() < 3 {
+        eprintln!("Usage: git ls-tree <tree-ish>");
+        return;
+    }
+
+    let git_dir = match find_git_directory(&mut PathBuf::from("."), ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error obtaining the git directory");
+            return;
+        }
+    };
+
+    match args.len() {
+        3 => handle_ls_tree_default(&args[2], PathBuf::from(&git_dir)),
+        4 => handle_ls_tree_with_options(&args[2..], PathBuf::from(&git_dir)),
+        5 => handle_ls_tree_with_option(&args[2], PathBuf::from(&git_dir), &args[3]),
+        _ => {
+            eprintln!("Usage: git ls-tree <tree-ish>");
+        }
+    }
+}
+
+fn handle_ls_tree_default(tree_ish: &str, git_dir: PathBuf) {
+    let result = ls_tree::ls_tree(
+        tree_ish,
+        git_dir.to_str().expect("Invalid git_dir path"),
+        "",
+        &mut io::stdout(),
+    );
+    if let Err(err) = result {
+        eprintln!("{:?}", err);
+    }
+}
+
+fn handle_ls_tree_with_options(args: &[String], git_dir: PathBuf) {
+    let git_dir_str = git_dir.to_str().expect("Invalid git_dir path");
+    match args {
+        [arg1, tree_ish] if arg1 == "-r" => {
+            handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-r")
+        }
+        [arg1, tree_ish] if arg1 == "-d" => {
+            handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-d")
+        }
+        [arg1, arg2, tree_ish] if arg1 == "-r" && arg2 == "-t" => {
+            handle_ls_tree_with_option(tree_ish, git_dir_str.into(), "-r-t")
+        }
+        _ => eprintln!("Usage: git ls-tree <tree-ish>"),
+    }
+}
+
+fn handle_ls_tree_with_option(tree_ish: &str, git_dir: PathBuf, option: &str) {
+    let result = ls_tree::ls_tree(
+        tree_ish,
+        git_dir.to_str().expect("Invalid git_dir path"),
+        option,
+        &mut io::stdout(),
+    );
+    if let Err(err) = result {
+        eprintln!("{:?}", err);
+    }
+}
+
+/// Handles the "check-ignore" command in a Git-like system.
+///
+/// # Arguments
+///
+/// * `args` - The arguments passed to the "check-ignore" command.
+fn handle_check_ignore(args: Vec<String>) {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            eprintln!("Fatal error on ls files.");
+            return;
+        }
+    };
+
+    let gitignore_path = format!("{}/{}", working_dir, ".mgitignore");
+
+    match git_check_ignore(".mgitignore", &gitignore_path, args, &mut io::stdout()) {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{}", e)
+        }
+    }
+}
+
+/// Handles the "show-ref" command in a Git-like system.
+///
+/// # Arguments
+///
+/// * `args` - The arguments passed to the "show-ref" command.
+fn handle_show_ref(args: Vec<String>) {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error al obtener el git dir");
+            return;
+        }
+    };
+
+    match git_show_ref(&git_dir, args, &mut io::stdout()) {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{}", e)
+        }
+    }
+}
+
+fn handle_rebase(_args: Vec<String>) {
+    // Implementación para el comando "Rebase"
+}
+
+fn handle_tag(_args: Vec<String>) {
+    // Implementación para el comando "Tag"
 }
 
 /// Handles the 'hash-object' Git command.
@@ -234,12 +495,198 @@ fn handle_cat_file(args: Vec<String>) {
     }
 }
 
-/// Handles the 'git status' command by analyzing the working directory and index.
+/// Retrieves the working directory of a Git repository based on the provided Git directory.
 ///
-/// This function prints information about the current branch, changes not staged for commit,
-/// and changes to be committed, as well as untracked files.
+/// This function takes a Git directory path (`git_dir`) and returns the corresponding
+/// working directory. It is assumed that the Git directory is a valid path, and the function
+/// attempts to obtain the parent directory as the working directory. If successful, it returns
+/// a `PathBuf` containing the working directory.
 ///
-fn handle_status() {
+/// # Arguments
+///
+/// * `git_dir` - A string slice representing the path to the Git directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a `PathBuf` with the working directory if successful,
+/// otherwise returns an `io::Error` with a description of the encountered issue.
+///
+fn get_working_directory_status(git_dir: &str) -> io::Result<PathBuf> {
+    let parent = Path::new(git_dir)
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Error al obtener el working dir"))?;
+    Ok(parent.to_path_buf())
+}
+
+/// Loads the index and commit tree of a Git repository.
+///
+/// This function reads and returns the index and commit tree of a Git repository
+/// based on the provided Git directory.
+///
+/// # Arguments
+///
+/// * `git_dir` - A string slice representing the path to the Git directory.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a tuple with the loaded `Index` and `Tree` if successful,
+/// otherwise returns an `io::Error` with a description of the encountered issue.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there are issues loading the index or commit tree.
+///
+fn load_index_and_commit_tree(git_dir: &str) -> io::Result<(Index, Tree)> {
+    let index_path = format!("{}/{}", git_dir, "index");
+    let git_ignore_path = format!(
+        "{}/{}",
+        get_working_directory_status(git_dir)?.to_string_lossy(),
+        ".mgitignore"
+    );
+
+    let index = Index::load(&index_path, git_dir, &git_ignore_path)?;
+
+    let branch_path = get_current_branch_path(git_dir)?;
+    let current_branch_path = format!("{}/{}", git_dir, branch_path);
+
+    if let Ok(mut current_commit_file) = File::open(current_branch_path) {
+        let mut commit_hash = String::new();
+        current_commit_file.read_to_string(&mut commit_hash)?;
+
+        let commit_tree = tree_handler::load_tree_from_commit(&commit_hash, git_dir)?;
+
+        Ok((index, commit_tree))
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Error al abrir el archivo de commit",
+        ))
+    }
+}
+
+/// Prints the changes to be committed based on the Git index and commit tree.
+///
+/// This function prints the changes that are currently staged for commit according to
+/// the provided Git index and commit tree. It provides information about files that
+/// are scheduled to be committed.
+///
+/// # Arguments
+///
+/// * `index` - A reference to the Git index.
+/// * `commit_tree` - A reference to the commit tree.
+///
+/// # Returns
+///
+/// Returns an `io::Result` indicating whether the operation was successful or encountered an error.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there are issues while determining the changes to be committed.
+///
+fn print_changes_to_be_committed(index: &Index, commit_tree: &Tree) -> io::Result<()> {
+    let mut changes_to_be_committed_output: Vec<u8> = vec![];
+    changes_to_be_committed(index, commit_tree, &mut changes_to_be_committed_output)?;
+
+    if !changes_to_be_committed_output.is_empty() {
+        println!();
+        println!("\x1b[33mChanges to be commited:\x1b[0m\n");
+        println!("\t(use \"git add <file>...\" to update what will be committed)");
+        println!("\t(use \"git checkout -- <file>...\" to discard changes in working directory)");
+
+        for byte in &changes_to_be_committed_output {
+            print!("{}", *byte as char);
+            println!();
+        }
+    }
+
+    Ok(())
+}
+
+/// Prints information about untracked files based on the current state of the Git repository.
+///
+/// This function identifies and prints information about files in the working directory
+/// that are not currently tracked by Git. It provides guidance on how to include these
+/// files in the next commit.
+///
+/// # Arguments
+///
+/// * `current_dir` - A reference to the current directory.
+/// * `working_dir` - A reference to the working directory.
+/// * `index` - A reference to the Git index.
+///
+/// # Returns
+///
+/// Returns an `io::Result` indicating whether the operation was successful or encountered an error.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there are issues while finding untracked files.
+///
+fn print_untracked_files(current_dir: &Path, working_dir: &Path, index: &Index) -> io::Result<()> {
+    let mut untracked_output: Vec<u8> = vec![];
+    find_untracked_files(current_dir, working_dir, index, &mut untracked_output)?;
+
+    if !untracked_output.is_empty() {
+        println!();
+        println!("\x1b[33mUntracked files:\x1b[0m\n");
+        println!("\t(use \"git add <file>...\" to include in what will be committed)");
+
+        for byte in &untracked_output {
+            print!("{}", *byte as char);
+        }
+    }
+
+    Ok(())
+}
+
+/// Prints information about changes not staged for commit in the Git repository.
+///
+/// This function identifies and prints information about changes in the working directory
+/// that have not been staged for the next commit. It provides guidance on how to update
+/// the changes to be included in the next commit or discard them.
+///
+/// # Arguments
+///
+/// * `index` - A reference to the Git index.
+/// * `working_dir` - A reference to the working directory.
+///
+/// # Returns
+///
+/// Returns an `io::Result` indicating whether the operation was successful or encountered an error.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there are issues while finding changes not staged for commit.
+///
+fn print_not_staged_for_commit(index: &Index, working_dir: &Path) -> io::Result<()> {
+    let mut not_staged_for_commit: Vec<u8> = vec![];
+    find_unstaged_changes(
+        index,
+        working_dir.to_string_lossy().as_ref(),
+        &mut not_staged_for_commit,
+    )?;
+
+    if !not_staged_for_commit.is_empty() {
+        println!();
+        println!("\x1b[31mChanges not staged for commit:\x1b[0m\n");
+        println!("\t(use \"git add <file>...\" to update what will be committed)");
+        println!("\t(use \"git restore <file>...\" to discard changes in working directory)");
+
+        for byte in &not_staged_for_commit {
+            print!("{}", *byte as char);
+        }
+    }
+
+    Ok(())
+}
+
+/// Handles the status command for a Git repository.
+///
+/// This function provides information about the current status of the Git repository,
+/// including changes not staged for commit, changes to be committed, and untracked files.
+/// It prints the status information to the console.
+///
+pub fn handle_status() {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -256,10 +703,6 @@ fn handle_status() {
         }
     };
 
-    let red = "\x1b[31m";
-    let yellow = "\x1b[33m";
-    let green = "\x1b[32m";
-    let reset = "\x1b[0m";
     let branch_name = match get_branch_name(&git_dir) {
         Ok(name) => name,
         Err(_) => {
@@ -267,134 +710,56 @@ fn handle_status() {
             return;
         }
     };
-    let index_path = format!("{}/{}", git_dir, "index");
 
-    let working_dir = match Path::new(&git_dir).parent() {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Fatal error on git rm");
+    let (index, commit_tree) = match load_index_and_commit_tree(&git_dir) {
+        Ok(tuple) => tuple,
+        Err(err) => {
+            eprintln!("Error cargando el índice y el árbol de commit: {:?}", err);
             return;
         }
     };
+    print_branch_status(&branch_name);
 
-    let git_ignore_path = format!("{}/{}", working_dir.to_string_lossy(), ".mgitignore");
-
-    let index = match Index::load(&index_path, &git_dir, &git_ignore_path) {
-        Ok(index) => index,
-        Err(_) => {
-            eprintln!("Error loading index.");
-            return;
+    if let Ok(working_dir) = get_working_directory(&git_dir) {
+        if let Err(err) = print_not_staged_for_commit(&index, working_dir.as_ref()) {
+            eprintln!(
+                "Error al imprimir los cambios no preparados para commit: {:?}",
+                err
+            );
         }
-    };
-
-    let branch_path = match get_current_branch_path(&git_dir) {
-        Ok(path) => path,
-        Err(_e) => {
-            eprintln!("Error getting current branch path.");
-            return;
-        }
-    };
-
-    let current_branch_path = format!("{}/{}", git_dir, branch_path);
-
-    let mut changes_to_be_committed_output: Vec<u8> = vec![];
-
-    if let Ok(opening_result) = File::open(&current_branch_path) {
-        let mut current_commit_file = opening_result;
-        let mut commit_hash = String::new();
-        match current_commit_file.read_to_string(&mut commit_hash) {
-            Ok(_) => {}
-            Err(_e) => {
-                eprintln!("Error reading to string.");
-                return;
-            }
-        }
-        let commit_tree = match tree_handler::load_tree_from_commit(&commit_hash, &git_dir) {
-            Ok(tree) => tree,
-            Err(_e) => {
-                eprintln!("Couldn't load tree.");
-                return;
-            }
-        };
-
-        match changes_to_be_committed(&index, &commit_tree, &mut changes_to_be_committed_output) {
-            Ok(_) => {}
-            Err(_e) => {
-                eprintln!("Error on changes to be committed.");
-                return;
-            }
-        }
+    } else {
+        eprintln!("Error al obtener el directorio de trabajo.");
     }
 
-    let mut untracked_output: Vec<u8> = vec![];
-    match find_untracked_files(&current_dir, working_dir, &index, &mut untracked_output) {
-        Ok(_) => {}
-        Err(_e) => {
-            eprintln!("Error finding untracked files.");
-            return;
-        }
+    if let Err(err) = print_changes_to_be_committed(&index, &commit_tree) {
+        eprintln!(
+            "Error al imprimir los cambios preparados para commit: {:?}",
+            err
+        );
     }
 
-    let mut not_staged_for_commit: Vec<u8> = vec![];
-    match find_unstaged_changes(
-        &index,
-        working_dir.to_string_lossy().as_ref(),
-        &mut not_staged_for_commit,
-    ) {
-        Ok(_) => {}
-        Err(_e) => {
-            eprintln!("Error finding changes not staged for commit.");
-            return;
+    if let Ok(working_dir) = get_working_directory(&git_dir) {
+        if let Err(err) = print_untracked_files(&current_dir, working_dir.as_ref(), &index) {
+            eprintln!("Error al imprimir los archivos no rastreados: {:?}", err);
         }
+    } else {
+        eprintln!("Error al obtener el directorio de trabajo.");
     }
+}
 
+/// Prints the current branch status to the console.
+///
+/// This function displays information about the current Git branch,
+/// emphasizing the branch name with green color.
+///
+/// # Arguments
+///
+/// * `branch_name` - The name of the current Git branch.
+///
+pub fn print_branch_status(branch_name: &str) {
     println!();
-    print!("{}", reset);
-    println!("{}On branch {}{}", green, branch_name, reset);
-    print!("{}", reset);
-    //Falta personalizar la siguiente línea
-    print!("Your branch is up to date with 'origin/master'\n\n");
-    print!("{}", reset);
-
-    if !not_staged_for_commit.is_empty() {
-        println!();
-        println!("{}Changes not staged for commit:{}", red, reset);
-        println!("\t(use \"git add <file>...\" to update what will be committed)");
-        println!("\t(use \"git restore <file>...\" to discard changes in working directory)");
-
-        for byte in &not_staged_for_commit {
-            print!("{}", *byte as char);
-        }
-    }
-
-    print!("{}", reset);
-
-    if !changes_to_be_committed_output.is_empty() {
-        println!();
-        println!("{}Changes to be commited:{}", yellow, reset);
-        println!("\t(use \"git add <file>...\" to update what will be committed)");
-        println!("\t(use \"git checkout -- <file>...\" to discard changes in working directory)");
-        for byte in &changes_to_be_committed_output {
-            print!("{}", *byte as char);
-            println!();
-        }
-    }
-
-    print!("{}", reset);
-
-    if !untracked_output.is_empty() {
-        println!();
-        println!("{}Untracked files:{}", yellow, reset);
-        println!("\t(use \"git add <file>...\" to include in what will be committed)");
-
-        for byte in &untracked_output {
-            print!("{}", *byte as char);
-        }
-    }
-    print!("{}", reset);
-
-    //Esto no sé de dónde sacarlo ah
-    //print!("{}no changes added to commit (use \"git add\" and/or \"git commit -a\"){}\n", green, reset);
+    print!("On branch \x1b[32m{}", branch_name);
+    print!("\n\n");
 }
 
 /// Handles the 'git add' command, adding specified files to the staging area.
@@ -503,6 +868,54 @@ fn handle_commit(args: Vec<String>) {
     };
 }
 
+/// Get the working directory based on the Git directory.
+///
+/// # Arguments
+///
+/// * `git_dir` - The Git directory.
+///
+/// # Returns
+///
+/// * `Ok(String)` - The working directory if successful.
+/// * `Err(io::Error)` - An error if the working directory cannot be obtained.
+fn get_working_directory(git_dir: &str) -> io::Result<String> {
+    match Path::new(git_dir).parent() {
+        Some(parent) => Ok(parent.to_string_lossy().to_string()),
+        None => Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Error al obtener el working dir",
+        )),
+    }
+}
+
+/// Handle different checkout options.
+///
+/// # Arguments
+///
+/// * `git_dir` - The path to the Git directory.
+/// * `working_dir` - The working directory.
+/// * `option` - The checkout option.
+/// * `args` - Additional arguments.
+///
+/// # Returns
+///
+/// * `Ok(())` - If the checkout operation is successful.
+/// * `Err(io::Error)` - If there is an error during the checkout operation.
+fn handle_checkout_option(
+    git_dir: &Path,
+    working_dir: &str,
+    option: &str,
+    args: Vec<String>,
+) -> io::Result<()> {
+    match option {
+        "-b" => create_and_checkout_branch(git_dir, working_dir, &args[3]),
+        "-B" => create_or_reset_branch(git_dir, working_dir, &args[3]),
+        "--detach" => checkout_commit_detached(git_dir, working_dir, &args[3]),
+        "-f" => force_checkout(git_dir, &args[3]),
+        _ => checkout_branch(git_dir, working_dir, option),
+    }
+}
+
 /// Handles the 'git checkout' command, allowing various options such as creating a new branch,
 /// switching branches, or checking out a specific commit.
 ///
@@ -514,7 +927,7 @@ fn handle_commit(args: Vec<String>) {
 /// * `args` - A vector of command-line arguments, where the third element is the checkout option
 ///            ('-b', '-B', '--detach', '-f') and the fourth element is the branch or commit to checkout.
 ///
-fn handle_checkout(args: Vec<String>) {
+pub fn handle_checkout(args: Vec<String>) {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -531,10 +944,10 @@ fn handle_checkout(args: Vec<String>) {
         }
     };
 
-    let working_dir = match Path::new(&git_dir).parent() {
-        Some(parent) => parent.to_string_lossy().to_string(),
-        None => {
-            eprintln!("Error al obtener el working dir");
+    let working_dir = match get_working_directory(&git_dir) {
+        Ok(working_dir) => working_dir,
+        Err(err) => {
+            eprintln!("{}", err);
             return;
         }
     };
@@ -546,41 +959,15 @@ fn handle_checkout(args: Vec<String>) {
 
     let option = &args[2];
     let git_dir1 = Path::new(&git_dir);
-    match option.as_str() {
-        "-b" => {
-            let destination = &args[3];
+    let destination = &args;
 
-            if let Err(err) = create_and_checkout_branch(git_dir1, &working_dir, destination) {
-                eprintln!("Error al crear y cambiar a una nueva rama: {:?}", err);
+    if let Err(err) = handle_checkout_option(git_dir1, &working_dir, option, destination.to_vec()) {
+        match err.kind() {
+            std::io::ErrorKind::UnexpectedEof => {
+                eprintln!(" ");
             }
-        }
-        "-B" => {
-            let destination = &args[3];
-
-            if let Err(err) = create_or_reset_branch(git_dir1, &working_dir, destination) {
-                eprintln!("Error al crear o restablecer una rama si existe: {:?}", err);
-            }
-        }
-        "--detach" => {
-            let destination = &args[3];
-
-            if let Err(err) = checkout_commit_detached(git_dir1, &working_dir, destination) {
-                eprintln!(
-                    "Error al cambiar a un commit específico (modo desconectado): {:?}",
-                    err
-                );
-            }
-        }
-        "-f" => {
-            let destination = &args[3];
-
-            if let Err(err) = force_checkout(git_dir1, destination) {
-                eprintln!("Error al forzar el cambio de rama o commit (descartando cambios sin confirmar): {:?}", err);
-            }
-        }
-        _ => {
-            if let Err(err) = checkout_branch(git_dir1, &working_dir, option) {
-                eprintln!("Error al cambiar a la rama especificada: {:?}", err);
+            _ => {
+                eprintln!("Error cambiar de rama : {:?}", err);
             }
         }
     }
@@ -607,7 +994,8 @@ fn handle_log() {
             return;
         }
     };
-
+    println!("Current dir {}", current_dir.to_string_lossy());
+    println!("Git dir {}", git_dir);
     let log_iter = match log::log(None, &git_dir, 10, 0, false) {
         Ok(iter) => iter,
         Err(_e) => {
@@ -618,12 +1006,75 @@ fn handle_log() {
     print_logs(log_iter);
 }
 
+/// Handles the 'clone' command for the custom Git implementation.
+///
+/// This function takes a vector of command-line arguments (`_args`) and performs
+/// the necessary steps to clone a remote Git repository into the current directory.
+///
+/// # Arguments
+///
+/// * `_args` - A vector of command-line arguments where the URL of the remote Git
+///   repository is expected at index 2.
+///
 fn handle_clone(_args: Vec<String>) {
-    println!("Handling Clone command with argument: ");
+    let current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+    let url_text = &_args[2];
+    //The remote repo url is the first part of the URL, up until the last '/'.
+    let remote_repo_url = match url_text.rsplit_once('/') {
+        Some((string, _)) => string,
+        None => "",
+    };
+
+    //The remote repository name is the last part of the URL.
+    let remote_repo_name = url_text.split('/').last().unwrap_or("");
+    let _ = git_clone(
+        remote_repo_url,
+        remote_repo_name,
+        "localhost",
+        current_dir.to_str().expect("Error "),
+    );
 }
 
+/// Handles the 'fetch' command, which fetches changes from a remote repository.
+///
+/// # Arguments
+///
+/// * `_args` - A vector of command-line arguments.
+///
 fn handle_fetch(_args: Vec<String>) {
-    println!("Handling Fetch command with argument: ");
+    let current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            return;
+        }
+    };
+    let url_text = &_args[2];
+    //The remote repo url is the first part of the URL, up until the last '/'.
+    let _remote_repo_url = match url_text.rsplit_once('/') {
+        Some((string, _)) => string,
+        None => "",
+    };
+
+    //The remote repository name is the last part of the URL.
+    let remote_repo_name = url_text.split('/').last().unwrap_or("");
+    let result = git_fetch(
+        Some(remote_repo_name),
+        "localhost",
+        current_dir.to_str().expect("Error "),
+    );
+
+    // Manejo del resultado (puede imprimir un mensaje o manejar errores según sea necesario).
+    match result {
+        Ok(()) => println!("Fetch successful!"),
+        Err(err) => eprintln!("Error during fetch: {:?}", err),
+    }
 }
 
 /// Handles the 'git merge' command, merging changes from one branch into the current branch.
@@ -819,47 +1270,204 @@ fn handle_push() {
 /// * `args` - A vector of command-line arguments.
 ///
 fn handle_branch(args: Vec<String>) {
+    let args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
     if args.len() == 2 {
-        let result = git_branch(None);
+        let result = git_branch(None, None, None, &mut io::stdout());
         match result {
             Ok(_) => {}
-            Err(_e) => {}
+            Err(_e) => {
+                eprintln!("Error showing branches.");
+            }
+        }
+    } else if args.len() == 3 {
+        if args[2] == "-l" {
+            let result = git_branch(None, None, None, &mut io::stdout());
+            match result {
+                Ok(_) => {}
+                Err(_e) => {
+                    eprintln!("Error showing branches.");
+                }
+            }
+        } else {
+            let name = args[2];
+            let result = git_branch(Some(name.to_string()), None, None, &mut io::stdout());
+            match result {
+                Ok(_) => {
+                    println!("Branch {name} successfully created!");
+                }
+                Err(_e) => {
+                    eprintln!("{}", _e)
+                }
+            }
+        }
+    } else if args.len() == 4 {
+        if args[2] == "-m" {
+            match git_branch(None, Some("-m"), Some(args[3]), &mut io::stdout()) {
+                Ok(_) => {
+                    println!("Current branch name modified to {}", args[3]);
+                }
+                Err(e) => {
+                    eprintln!("{}", e)
+                }
+            }
+        } else if args[2] == "-c" {
+            match git_branch(
+                Some(args[3].to_string()),
+                Some("-c"),
+                None,
+                &mut io::stdout(),
+            ) {
+                Ok(_) => {
+                    println!("Branch {} successfully created!", args[3]);
+                }
+                Err(e) => {
+                    eprintln!("{}", e)
+                }
+            }
+        } else if args[2] == "-d" {
+            match git_branch(
+                Some(args[3].to_string()),
+                Some("-d"),
+                None,
+                &mut io::stdout(),
+            ) {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{}", e)
+                }
+            }
+        } else {
+            let name = args[2];
+            let new_name = &args[3].to_string();
+            let result = git_branch(
+                Some(name.to_string()),
+                None,
+                Some(new_name),
+                &mut io::stdout(),
+            );
+            match result {
+                Ok(_) => {
+                    println!("Branch {name} succesfully created from {new_name}");
+                }
+                Err(_e) => {
+                    eprintln!("{}", _e)
+                }
+            }
         }
     } else {
-        let name = args[2].to_string();
-        let result = git_branch(Some(name));
-        match result {
-            Ok(_) => {}
-            Err(_e) => {}
+        handle_branch_options(args);
+    }
+}
+
+//git branch
+//git branch -l
+//git branch -c branch
+//git branch new existent
+//git branch -m new_name
+//git branch -m branch new_name
+//git branch -d name
+
+/// Handles various options for Git branch operations.
+///
+/// This function takes a vector of command-line arguments (`args`) and performs different actions
+/// based on the specified options. The supported options include:
+///
+/// - `-m`: Rename a Git branch.
+/// - `-d`: Delete one or more Git branches.
+/// - `-c`: Create a new Git branch.
+///
+/// # Arguments
+///
+/// - `args`: A vector of command-line arguments where the first element is the program name,
+/// the second element is the main command (e.g., "git"), and the third element is the option
+/// specifying the Git branch operation ("-m", "-d", "-c"). The subsequent elements depend on
+/// the chosen option.
+///
+fn handle_branch_options(args: Vec<&str>) {
+    match args[2] {
+        "-m" => {
+            if args.len() == 5 {
+                match git_branch(
+                    Some(args[3].to_string()),
+                    Some("-m"),
+                    Some(args[4]),
+                    &mut io::stdout(),
+                ) {
+                    Ok(_) => {
+                        println!("Branch {} successfully modified to {}", args[3], args[4]);
+                    }
+                    Err(e) => {
+                        eprintln!("{}", e)
+                    }
+                }
+            } else {
+                eprintln!("fatal: too many arguments for a rename operation");
+            }
+        }
+        "-d" => {
+            let new_args: Vec<&&str> = args.iter().skip(3).collect();
+            for arg in new_args {
+                match git_branch(Some(arg.to_string()), Some("-d"), None, &mut io::stdout()) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        eprintln!("{}", e)
+                    }
+                }
+            }
+        }
+        "-c" => {
+            let new_args: Vec<&&str> = args.iter().skip(3).collect();
+            for arg in new_args {
+                match git_branch(Some(arg.to_string()), Some("-c"), None, &mut io::stdout()) {
+                    Ok(_) => {
+                        println!("Branch {arg} succesfully created!");
+                    }
+                    Err(e) => {
+                        eprintln!("{}", e)
+                    }
+                }
+            }
+        }
+        _ => {
+            eprintln!("Invalid option!");
         }
     }
 }
 
-/// Initializes a Git repository with optional configuration.
+/// Handles the initialization of a Git repository.
 ///
-/// This function initializes a Git repository in the specified directory. It supports
-/// optional configuration through command-line arguments:
+/// # Arguments
 ///
-/// - `-b` or `--initial-branch`: Specifies the name of the initial branch. If not provided,
-///   the default branch name 'main' is used.
-/// - `--template`: Specifies a template directory to copy files from.
-///
-/// If the provided `current_directory` doesn't exist, it will be created.
-///
-/// ## Parameters
-///
-/// - `args`: A vector of strings containing command-line arguments. The function parses
-///   these arguments to determine the initial branch and template directory.
-///
+/// * `args` - A vector of command-line arguments.
 pub fn handle_init(args: Vec<String>) {
+    // Extract configuration parameters from command-line arguments
+    let (current_directory, initial_branch, template_directory) = extract_init_params(&args);
+
+    // Initialize the Git repository with the extracted parameters
+    if let Err(err) = git_init(&current_directory, &initial_branch, template_directory) {
+        eprintln!("Error al inicializar el repositorio Git: {}", err);
+    }
+}
+
+/// Extracts initialization parameters from command-line arguments.
+///
+/// # Arguments
+///
+/// * `args` - A vector of command-line arguments.
+///
+/// # Returns
+///
+/// A tuple containing the current directory, initial branch, and template directory.
+fn extract_init_params(args: &Vec<String>) -> (String, String, Option<&str>) {
     let mut current_directory = match std::env::current_dir() {
         Ok(dir) => dir.to_string_lossy().to_string(),
         Err(_) => {
             eprintln!("Current dir not found");
-            return;
+            return (String::new(), String::from("main"), None);
         }
     };
-    let mut initial_branch = "main";
+
+    let mut initial_branch = String::from("main");
     let mut template_directory: Option<&str> = None;
 
     let mut index = 2;
@@ -868,7 +1476,7 @@ pub fn handle_init(args: Vec<String>) {
         match arg.as_str() {
             "-b" | "--initial-branch" => {
                 if index + 1 < args.len() {
-                    initial_branch = &args[index + 1];
+                    initial_branch = args[index + 1].clone();
                     index += 1;
                 }
             }
@@ -884,7 +1492,6 @@ pub fn handle_init(args: Vec<String>) {
         }
         index += 1;
     }
-    if let Err(err) = git_init(&current_directory, initial_branch, template_directory) {
-        eprintln!("Error al inicializar el repositorio Git: {}", err);
-    }
+
+    (current_directory, initial_branch, template_directory)
 }

@@ -30,6 +30,12 @@ impl Ignorer {
         }
         false
     }
+
+    pub fn print(&self) {
+        for path in &self.paths {
+            println!("{:?}", path);
+        }
+    }
 }
 
 /// Splits a given path into its individual subpaths and returns them as a vector of strings.

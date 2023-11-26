@@ -1,5 +1,5 @@
 use crate::clone;
-use crate::gui::gui::add_to_open_windows;
+use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::apply_entry_style;
 use crate::gui::style::apply_label_style;
@@ -20,7 +20,7 @@ use std::io;
 use std::path::Path;
 use std::result;
 
-use super::gui::close_all_windows;
+use super::main_window::close_all_windows;
 use super::repository_window::show_repository_window;
 use super::style::show_message_dialog;
 
@@ -109,13 +109,11 @@ fn connect_button_clicked_clone_repository(
         if url_text.is_empty() || dir_text.is_empty() {
             show_message_dialog("Error", "Faltan datos: URL o directorio de clonación.");
         } else {
-            //The remote repo url is the first part of the URL, up until the last '/'.
             let remote_repo_url = match url_text.rsplit_once('/') {
                 Some((string, _)) => string,
                 None => "",
             };
 
-            //The remote repository name is the last part of the URL.
             let remote_repo_name = url_text.split('/').last().unwrap_or("");
 
             println!("URL: {}", remote_repo_url);
@@ -170,34 +168,8 @@ pub fn configure_clone_window(
     builder: &gtk::Builder,
 ) -> io::Result<()> {
     add_to_open_windows(new_window_clone);
-    let result = apply_window_style(new_window_clone);
-    if result.is_err() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Interrupted,
-            "Fatal error.\n",
-        ));
-    }
-
-    let url_entry = match get_entry(builder, "url-entry") {
-        Some(entry) => entry,
-        None => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Entry not found: url-entry\n",
-            ))
-        }
-    };
-
-    apply_entry_style(&url_entry);
-    let dir_to_clone_entry = match get_entry(builder, "dir-to-clone-entry") {
-        Some(entry) => entry,
-        None => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Entry not found.\n",
-            ))
-        }
-    };
+    let (url_entry, dir_to_clone_entry) =
+        apply_styles_and_get_entries(new_window_clone, builder, "url-entry", "dir-to-clone-entry")?;
     let dir_to_clone_entry_clone = dir_to_clone_entry.clone();
 
     apply_entry_style(&dir_to_clone_entry);
@@ -211,35 +183,9 @@ pub fn configure_clone_window(
     connect_button_clicked_clone_repository(&clone_button, &url_entry, &dir_to_clone_entry)?;
     connect_button_clicked_browse(&browse_button, new_window_clone, &dir_to_clone_entry);
 
-    let url_label = match get_label(builder, "url-label", 14.0) {
-        Some(label) => label,
-        None => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Label not found: url-label\n",
-            ))
-        }
-    };
-
-    let clone_dir_label = match get_label(builder, "clone-dir-label", 14.0) {
-        Some(label) => label,
-        None => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Label not found: clone-dir-label\n",
-            ))
-        }
-    };
-
-    let clone_info_label = match get_label(builder, "clone-info-label", 26.0) {
-        Some(label) => label,
-        None => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Label not found: clone-info-label\n",
-            ))
-        }
-    };
+    let url_label = get_label_with_error(builder, "url-label", 14.0)?;
+    let clone_dir_label = get_label_with_error(builder, "clone-dir-label", 14.0)?;
+    let clone_info_label = get_label_with_error(builder, "clone-info-label", 26.0)?;
 
     apply_label_style(&url_label);
     apply_label_style(&clone_dir_label);
@@ -247,4 +193,88 @@ pub fn configure_clone_window(
 
     new_window_clone.set_default_size(800, 600);
     Ok(())
+}
+
+/// Retrieves a GTK label with the specified ID and font size from a GTK builder.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to the GTK builder containing the label.
+/// * `label_id` - The ID of the label to retrieve from the builder.
+/// * `font_size` - The font size to set for the retrieved label.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the retrieved GTK label if successful, or an `io::Error`
+/// if the label with the specified ID is not found in the builder.
+///
+fn get_label_with_error(
+    builder: &gtk::Builder,
+    label_id: &str,
+    font_size: f64,
+) -> io::Result<gtk::Label> {
+    match get_label(builder, label_id, font_size) {
+        Some(label) => Ok(label),
+        None => Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Label not found: {}\n", label_id),
+        )),
+    }
+}
+
+/// Applies styles to a GTK window and retrieves two GTK entries with specified IDs.
+///
+/// # Arguments
+///
+/// * `new_window_clone` - A reference to the GTK window to apply styles to.
+/// * `builder` - A reference to the GTK builder containing the entries.
+/// * `url_entry_id` - The ID of the URL entry to retrieve and style.
+/// * `dir_to_clone_entry_id` - The ID of the directory entry to retrieve and style.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a tuple with two GTK entries (URL entry and directory entry)
+/// if successful, or an `io::Error` if any style application or entry retrieval fails.
+///
+fn apply_styles_and_get_entries(
+    new_window_clone: &gtk::Window,
+    builder: &gtk::Builder,
+    url_entry_id: &str,
+    dir_to_clone_entry_id: &str,
+) -> Result<(gtk::Entry, gtk::Entry), io::Error> {
+    if let Err(err) = apply_window_style(new_window_clone) {
+        eprintln!("Error applying window style: {}", err);
+    }
+
+    let url_entry = get_and_apply_entry_style(builder, url_entry_id)?;
+    let dir_to_clone_entry = get_and_apply_entry_style(builder, dir_to_clone_entry_id)?;
+
+    Ok((url_entry, dir_to_clone_entry))
+}
+
+/// Retrieves a GTK entry from a builder, applies a specific style, and returns the entry.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to the GTK builder containing the entry.
+/// * `entry_id` - The ID of the entry to retrieve and style.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the styled GTK entry if successful,
+/// or an `io::Error` if the entry is not found or if any style application fails.
+///
+fn get_and_apply_entry_style(
+    builder: &gtk::Builder,
+    entry_id: &str,
+) -> Result<gtk::Entry, io::Error> {
+    if let Some(entry) = get_entry(builder, entry_id) {
+        apply_entry_style(&entry);
+        Ok(entry)
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Entry not found: {}\n", entry_id),
+        ))
+    }
 }

@@ -1,5 +1,36 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use crate::{client::Client, config};
 use std::io;
+use std::io::Write;
+
+/// Logs the 'git push' command with the specified branch and Git directory.
+///
+/// This function logs the 'git push' command with the provided branch and Git directory to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `branch` - A string representing the name of the branch to push.
+/// * `git_dir` - A string representing the path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_push(branch: &str, git_dir: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git push': Branch '{}', Git Directory '{}', {}",
+        branch,
+        git_dir,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Pushes the specified branch to the remote repository.
 ///
@@ -30,6 +61,7 @@ pub fn git_push(branch: &str, git_dir: &str) -> io::Result<()> {
         }
     };
     let mut client = Client::new(address, repo_name, "localhost");
+    log_push(branch, git_dir)?;
     client.receive_pack(branch, git_dir)
 }
 
@@ -52,7 +84,7 @@ mod tests {
         let host = "localhost";
         let git_dir_path = local_dir.clone() + "/.mgit";
         let _ = clone::git_clone(&address, remote_repo_name, host, &local_dir);
-        let _ = branch::create_new_branch(&git_dir_path, "branch", &mut io::stdout());
+        let _ = branch::create_new_branch(&git_dir_path, "branch", None, &mut io::stdout());
         let _ = checkout::checkout_branch(&PathBuf::from(&git_dir_path), &local_dir, "branch");
         //Create two new files to push
         let file_path = local_dir.clone() + "/test_file.txt";

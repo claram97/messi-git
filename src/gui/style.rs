@@ -1,4 +1,4 @@
-use crate::gui::gui::add_to_open_windows;
+use crate::gui::main_window::add_to_open_windows;
 use gtk::prelude::*;
 use gtk::BinExt;
 use gtk::Builder;
@@ -58,6 +58,14 @@ pub fn get_button(builder: &Builder, button_id: &str) -> gtk::Button {
 pub fn get_text_view(builder: &Builder, text_view_id: &str) -> Option<gtk::TextView> {
     if let Some(text_view) = builder.get_object::<gtk::TextView>(text_view_id) {
         return Some(text_view);
+    }
+
+    None
+}
+
+pub fn get_switch(builder: &gtk::Builder, switch_id: &str) -> Option<gtk::Switch> {
+    if let Some(switch) = builder.get_object::<gtk::Switch>(switch_id) {
+        return Some(switch);
     }
 
     None
@@ -321,6 +329,113 @@ pub fn create_text_entry_window(
         on_text_entered(text);
     });
 
+    entry_window_clone.show_all();
+    Ok(())
+}
+
+/// Creates a text entry window with two input fields.
+///
+/// This function creates a GTK window with two text entry fields and an "OK" button.
+/// It takes two messages as input to set as default text in each entry field. When the
+/// user clicks "OK," the provided closure `on_text_entered` is called with the entered
+/// text from both fields.
+///
+/// # Arguments
+///
+/// * `message1` - The initial text for the first entry field.
+/// * `message2` - The initial text for the second entry field.
+/// * `on_text_entered` - A closure that will be called with the entered text from both fields.
+///
+/// # Returns
+///
+/// An `io::Result` indicating whether the operation was successful or resulted in an error.
+///
+pub fn create_text_entry_window2(
+    message1: &str,
+    message2: &str,
+    on_text_entered: impl Fn(String, String) + 'static,
+) -> io::Result<()> {
+    let entry_window = gtk::Window::new(gtk::WindowType::Toplevel);
+    add_to_open_windows(&entry_window);
+    apply_window_style(&entry_window)
+        .map_err(|_err| io::Error::new(io::ErrorKind::Other, "Error applying window stlye.\n"))?;
+    entry_window.set_title(&format!("{} {}", message1, message2));
+    entry_window.set_default_size(400, 150);
+
+    let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    entry_window.add(&main_box);
+
+    let entry1 = gtk::Entry::new();
+    entry1.set_text(message1);
+    main_box.add(&entry1);
+
+    let entry2 = gtk::Entry::new();
+    entry2.set_text(message2);
+    main_box.add(&entry2);
+
+    let ok_button = gtk::Button::with_label("OK");
+    apply_button_style(&ok_button)
+        .map_err(|_err| io::Error::new(io::ErrorKind::Other, "Error applying button stlye.\n"))?;
+    main_box.add(&ok_button);
+
+    let entry_window_clone = entry_window.clone();
+    ok_button.connect_clicked(move |_| {
+        let text1 = entry1.get_text().to_string();
+        let text2 = entry2.get_text().to_string();
+        entry_window.close();
+        on_text_entered(text1, text2);
+    });
+
+    entry_window_clone.show_all();
+    Ok(())
+}
+
+pub fn create_text_entry_window_with_switch(
+    message1: &str,
+    message2: &str,
+    on_text_entered: impl Fn(String, String, bool) + 'static,
+) -> io::Result<()> {
+    let entry_window = gtk::Window::new(gtk::WindowType::Toplevel);
+    add_to_open_windows(&entry_window);
+    apply_window_style(&entry_window)
+        .map_err(|_err| io::Error::new(io::ErrorKind::Other, "Error applying window style.\n"))?;
+    entry_window.set_title(&format!("{} {}", message1, message2));
+    entry_window.set_default_size(400, 150);
+
+    let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    entry_window.add(&main_box);
+
+    let entry1 = gtk::Entry::new();
+    entry1.set_text(message1);
+    main_box.add(&entry1);
+
+    let entry2 = gtk::Entry::new();
+    entry2.set_text(message2);
+    main_box.add(&entry2);
+
+    // Crear un Switch
+    let switch_label = gtk::Label::new(Some("Modify current branch"));
+    let switch = gtk::Switch::new();
+    switch.set_size_request(10, 10); // Ajusta el ancho del switch
+    main_box.add(&switch_label);
+    main_box.add(&switch);
+
+    let ok_button = gtk::Button::with_label("OK");
+    apply_button_style(&ok_button)
+        .map_err(|_err| io::Error::new(io::ErrorKind::Other, "Error applying button style.\n"))?;
+    main_box.add(&ok_button);
+
+    // Manejar el clic del botón OK
+    let entry_window_clone = entry_window.clone();
+    ok_button.connect_clicked(move |_| {
+        let text1 = entry1.get_text().to_string();
+        let text2 = entry2.get_text().to_string();
+        let switch_value = switch.get_active();
+        entry_window.close();
+        on_text_entered(text1, text2, switch_value);
+    });
+
+    // Mostrar todo y devolver el resultado
     entry_window_clone.show_all();
     Ok(())
 }

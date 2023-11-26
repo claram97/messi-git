@@ -1,6 +1,33 @@
 use std::{collections::HashSet, io, path::PathBuf};
 
+use chrono::{DateTime, FixedOffset, Offset, Utc};
+
 use crate::commit;
+
+pub fn obtain_git_dir(name: &str) -> Result<String, io::Error> {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error obtaining actual directory: {:?}", err);
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining actual directory",
+            ));
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, name) {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error obtaining git dir");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining git dir",
+            ));
+        }
+    };
+    Ok(git_dir)
+}
 
 /// Recursively searches for a directory named "name_of_git_directory" in the file system
 /// starting from the location specified by "current_dir."
@@ -29,6 +56,11 @@ pub fn find_git_directory(
         }
     }
     None
+}
+
+pub fn get_current_time() -> String {
+    use chrono::Local;
+    Local::now().to_string()
 }
 
 /// Retrieves the commit history of a branch with corresponding commit messages.
@@ -165,6 +197,44 @@ pub fn get_git_ignore_path(git_dir: &str) -> String {
     git_ignore_file.display().to_string()
 }
 
+/// Get the current timestamp and offset for the local time zone.
+///
+/// # Errors
+///
+/// The function returns an `io::Result` indicating whether obtaining the timestamp was successful or
+/// if there was an error during the process. Possible error scenarios include:
+///
+/// * Unable to calculate the offset for the local time zone, resulting in an `Interrupted` error.
+///
+/// # Panics
+///
+/// This function does not panic under normal circumstances. Panics may occur in case of unexpected errors.
+pub fn get_timestamp() -> io::Result<(i64, String)> {
+    let utc_now: DateTime<Utc> = Utc::now();
+
+    let offset = match FixedOffset::west_opt(3 * 3600) {
+        Some(off) => off,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "Error getting timestamp.\n",
+            ))
+        }
+    };
+
+    let local_time = utc_now.with_timezone(&offset);
+
+    let timestamp = local_time.timestamp();
+
+    let offset_formatted_for_timestamp = format!(
+        "{:+03}{:02}",
+        offset.fix().local_minus_utc() / 3600,
+        (offset.fix().local_minus_utc() % 3600) / 60
+    );
+
+    Ok((timestamp, offset_formatted_for_timestamp))
+}
+
 #[cfg(test)]
 mod tests {
     use std::{fs, io::Write};
@@ -291,5 +361,26 @@ mod tests {
         );
 
         let _ = fs::remove_dir_all("tests/utils/parents3");
+    }
+
+    #[test]
+    fn test_get_timestamp() -> io::Result<()> {
+        let result = get_timestamp()?;
+
+        let utc_now: DateTime<Utc> = Utc::now();
+
+        let offset = FixedOffset::west_opt(3 * 3600).unwrap();
+        let expected_local_time = utc_now.with_timezone(&offset);
+        let expected_timestamp = expected_local_time.timestamp();
+
+        let expected_offset_formatted = format!(
+            "{:+03}{:02}",
+            offset.fix().local_minus_utc() / 3600,
+            (offset.fix().local_minus_utc() % 3600) / 60
+        );
+
+        assert_eq!(result.0, expected_timestamp);
+        assert_eq!(result.1, expected_offset_formatted);
+        Ok(())
     }
 }

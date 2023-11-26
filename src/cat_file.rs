@@ -1,8 +1,39 @@
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use flate2::bufread::ZlibDecoder;
 use std::{
     fs::File,
     io::{self, BufReader, ErrorKind, Read, Write},
 };
+
+/// Logs the 'git cat-file' command with the specified parameters.
+///
+/// This function logs the 'git cat-file' command with the provided parameters to a file named
+/// 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `hash` - A string slice representing the hash value of the Git object.
+/// * `directory` - A string slice representing the path to the Git directory.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_cat_file(hash: &str, directory: &str) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git cat-file': Hash '{}', Git Dir '{}', {}",
+        hash,
+        directory,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// It recieves the complete hash of a file and writes the content of the file to output.
 /// output can be anything that implementes Write
@@ -16,6 +47,7 @@ use std::{
 /// * `output` - The output to write the content of the file to. It can be anything that implements Write. For example a file or a Vec<u8>. For writing to stdout, io::stdout() can be used.
 pub fn cat_file(hash: &str, directory: &str, output: &mut impl Write) -> io::Result<()> {
     if let Ok(content) = cat_file_return_content(hash, directory) {
+        log_cat_file("hash_here", "git_dir_here")?;
         output.write_all(content.as_bytes())
     } else {
         Err(io::Error::new(
@@ -76,7 +108,7 @@ pub fn cat_tree(hash: &str, directory: &str) -> io::Result<Vec<(String, String, 
         None => {
             return Err(io::Error::new(
                 ErrorKind::InvalidData,
-                "No se encontro el caracter nulo",
+                "Null character not found",
             ))
         }
     };

@@ -1,6 +1,35 @@
 use std::io::{self, Write};
 
 use crate::config::Config;
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+
+/// Logs the 'git remote' command with the specified subcommand.
+///
+/// This function logs the 'git remote' command with the provided subcommand to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `line` - A slice containing the subcommand and its arguments.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_remote(line: &[&str]) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git remote': Subcommand '{:?}', {}",
+        line,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
 /// Performs operations related to remotes in the configuration.
 ///
 /// This function allows adding, removing, changing the URL, and obtaining information about
@@ -23,8 +52,9 @@ pub fn git_remote(config: &mut Config, line: Vec<&str>, output: &mut impl Write)
     if line.is_empty() || line.len() > 3 {
         return report_error(output, "Invalid arguments.");
     }
-
+    log_remote(&line)?;
     match line[0] {
+        "remote" => handle_list_command(config, output),
         "add" => handle_add_command(config, &line, output),
         "remove" => handle_remove_command(config, &line, output),
         "set-url" => handle_set_url_command(config, &line, output),
@@ -55,6 +85,10 @@ fn report_error(output: &mut impl Write, error_message: &str) -> io::Result<()> 
     Err(io::Error::new(io::ErrorKind::InvalidInput, error_message))
 }
 
+fn handle_list_command(config: &mut Config, output: &mut impl Write) -> io::Result<()> {
+    config.list_remotes(output)?;
+    Ok(())
+}
 /// Handles the "add" subcommand for Git remotes.
 ///
 /// This function processes the "add" subcommand for Git remotes, validates the arguments, and
