@@ -352,10 +352,12 @@ impl ServerInstace {
 
 /// Runs a git server
 ///
-/// Parameters
-///     - domain,  port: domain port where the server will be listening
-///     - path: path where the repositories are stored
-///     - git_dir: name of the directory where the git files are stored
+/// # Arguments
+/// 
+/// * `domain` - The domain where the server will be listening
+/// * `port` - The port where the server will be listening
+/// * `path` - The path where the repositories are stored
+/// * `git_dir` - The name of the directory where the git files are stored
 pub fn run(domain: &str, port: &str, path: &str, git_dir: &str) -> io::Result<()> {
     let address = domain.to_owned() + ":" + port;
     let listener = TcpListener::bind(address)?;

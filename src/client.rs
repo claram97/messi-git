@@ -37,10 +37,11 @@ pub struct Client {
 impl Client {
     /// Creates client which will connect with a server (assuming its a git server)
     ///
-    /// Parameters:
-    ///     - address: address to establish a tcp connection
-    ///     - repository: name of the repository in the remote
-    ///     - host: name of the host. e.g. localhost
+    /// # Arguments
+    /// 
+    /// * `address` - The address of the server.
+    /// * `repository` - The name of the repository in the remote.
+    /// * `host` - The name of the host. e.g. localhost
     pub fn new(address: &str, repository: &str, host: &str) -> Self {
         let mut client = Self::default();
         client.repository = repository.to_owned();
@@ -73,10 +74,11 @@ impl Client {
     /// Else, the server is asked for the missing objects and a packfile is unpacked.
     /// Then the remote refs are updated.
     ///
-    /// Parameters:
-    ///    - wanted_branchs: vector with the names of the branchs to fetch
-    ///    - git_dir: path to the git directory
-    ///    - remote: name of the remote
+    /// # Arguments
+    /// 
+    /// * `wanted_branchs` - A vector with the names of the branchs to fetch.
+    /// * `git_dir` - The path to the git directory.
+    /// * `remote` - The name of the remote.
     pub fn upload_pack(
         &mut self,
         wanted_branchs: Vec<String>, // recibir vector con varias branchs
@@ -98,7 +100,6 @@ impl Client {
         if fetched_remotes_refs.is_empty() {
             log("Already up to date.")?;
             self.end_connection()?;
-            println!("Already up to date.");
             return Ok(());
         }
         self.wait_and_unpack_packfile()?;
@@ -112,10 +113,11 @@ impl Client {
     /// If the remote refs are up to date, then nothing is done.
     ///
     /// Refs can be updated, created or deleted. However, deletion is not implemented yet.
-    ///
-    /// Parameters:
-    ///   - branch: name of the branch to push
-    ///   - git_dir: path to the git directory
+    /// 
+    /// # Arguments
+    /// 
+    /// * `branch` - The name of the branch to push.
+    /// * `git_dir` - The path to the git directory.
     pub fn receive_pack(&mut self, branch: &str, git_dir: &str) -> io::Result<()> {
         log(&format!("Receive pack requested. Branch: {}", branch))?;
         self.clear();
@@ -128,10 +130,11 @@ impl Client {
         let new_hash = match client_heads_refs.get(branch) {
             Some(hash) => hash,
             None => {
-                log(&format!("Ref not found in local: {}", pushing_ref))?;
+                let message = format!("Ref not found in local: {}", pushing_ref);
+                log(&message)?;
                 return Err(Error::new(
                     io::ErrorKind::NotFound,
-                    format!("Ref not found in local: {}", pushing_ref),
+                    message,
                 ));
             }
         };
@@ -141,7 +144,6 @@ impl Client {
         };
         if &prev_hash == new_hash {
             log("Already up to date.")?;
-            println!("Already up to date.");
             return Ok(());
         }
         if prev_hash.is_empty() {
@@ -213,10 +215,11 @@ impl Client {
             let hash = match self.server_refs.get(&wanted_ref) {
                 Some(hash) => hash.clone(),
                 None => {
-                    log(&format!("Ref not found in remote: {}", wanted_ref))?;
+                    let message = format!("Ref not found in remote: {}", wanted_ref);
+                    log(&message)?;
                     return Err(Error::new(
                         io::ErrorKind::NotFound,
-                        format!("Ref not found in remote: {}", wanted_ref),
+                        message,
                     ));
                 }
             };
@@ -275,8 +278,9 @@ impl Client {
                 return packfile::handler::unpack_packfile(&bytes[..], &self.git_dir);
             }
         }
-        log("Packfile not found")?;
-        Err(Error::new(io::ErrorKind::NotFound, "Packfile not found"))
+        let error_message = "Packfile not found";
+        log(error_message)?;
+        Err(Error::new(io::ErrorKind::NotFound, error_message))
     }
 
     // Updates remote ref with the fetched hash
@@ -360,9 +364,3 @@ impl Client {
         self.send("0009done\n")
     }
 }
-
-// impl Drop for Client {
-//     fn drop(&mut self) {
-//         let _ = self.end_connection();
-//     }
-// }
