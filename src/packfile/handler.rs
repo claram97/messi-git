@@ -8,9 +8,16 @@ use flate2::{bufread::ZlibDecoder, write::ZlibEncoder, Compression};
 use sha1::Digest;
 use sha1::Sha1;
 
-use crate::hash_object;
+use crate::{hash_object, logger, utils::get_current_time};
 
 use super::{delta_utils, entry::PackfileEntry, object_type::ObjectType};
+
+fn log(message: &str) -> io::Result<()> {
+    let mut logger = logger::Logger::new("logs/packfile.log")?;
+    let message = format!("{} - {}", get_current_time(), message);
+    write!(logger, "{}", message)?;
+    logger.flush()
+}
 
 /// A packfile reader.
 #[derive(Debug)]
@@ -37,6 +44,7 @@ impl<R: Read + Seek> Packfile<R> {
     /// if validation or counting fails.
     ///
     pub fn reader(packfile: R, git_dir: &str) -> io::Result<Self> {
+        log("Creating packfile reader...")?;
         let mut packfile = Self {
             bufreader: BufReader::new(packfile),
             position: 0,
@@ -59,6 +67,7 @@ impl<R: Read + Seek> Packfile<R> {
     /// the version is not 2.
     ///
     fn validate(&mut self) -> io::Result<()> {
+        log("Validating packfile...")?;
         let [_] = self.read_bytes()?;
         let buf: [u8; 4] = self.read_bytes()?;
 
@@ -66,6 +75,7 @@ impl<R: Read + Seek> Packfile<R> {
             .map_err(|err| Error::new(io::ErrorKind::InvalidData, err.to_string()))?;
 
         if signature != "PACK" {
+            log(&format!("Invalid packfile signature: {}", signature))?;
             return Err(Error::new(
                 io::ErrorKind::InvalidData,
                 format!("Invalid packfile signature: {}", signature),
@@ -76,6 +86,10 @@ impl<R: Read + Seek> Packfile<R> {
         let version = u32::from_be_bytes(buf);
 
         if version != 2 {
+            log(&format!(
+                "Packfile version not supported: {}. Please use v2.",
+                version
+            ))?;
             return Err(Error::new(
                 io::ErrorKind::InvalidData,
                 format!(
@@ -100,6 +114,7 @@ impl<R: Read + Seek> Packfile<R> {
     fn count_objects(&mut self) -> io::Result<()> {
         let buf = self.read_bytes()?;
         self.total = u32::from_be_bytes(buf);
+        log(&format!("Total objects: {}", self.total))?;
         Ok(())
     }
 
@@ -192,6 +207,7 @@ impl<R: Read + Seek> Packfile<R> {
             obj_size |= ((byte & 0x7f) as usize) << bshift;
             bshift += 7;
         }
+        log(&format!("Object type: {}", obj_type))?;
         Ok((obj_type, obj_size))
     }
 
@@ -219,22 +235,28 @@ impl<R: Read + Seek> Packfile<R> {
     ///
     /// * `base` - The base object.
     fn apply_delta(&mut self, base: &PackfileEntry) -> io::Result<PackfileEntry> {
+        log("Applying delta...")?;
         let mut delta = ZlibDecoder::new(&mut self.bufreader);
         let base_size = delta_utils::read_size_encoding(&mut delta)?;
         if base.size != base_size {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "Incorrect base object length",
-            ));
+            let error_message = format!(
+                "Incorrect base object length. Expected: {}, Actual: {}",
+                base_size, base.size
+            );
+            log(&error_message)?;
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
         }
         let result_size = delta_utils::read_size_encoding(&mut delta)?;
         let commands = delta_utils::read_delta_commands(&mut delta)?;
         let result = delta_utils::recreate_from_commands(&base.content, &commands);
         if result.len() != result_size {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "Incorrect result object length",
-            ));
+            let error_message = format!(
+                "Incorrect result object length. Expected: {}, Actual: {}",
+                result_size,
+                result.len()
+            );
+            log(&error_message)?;
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, error_message));
         }
         Ok(PackfileEntry {
             obj_type: base.obj_type,
@@ -255,6 +277,13 @@ impl<R: Read + Seek> Iterator for Packfile<R> {
             return None;
         }
         self.position += 1;
+        log(&format!(
+            "Reading object {} of {}. Packfile position: {}",
+            self.position,
+            self.total,
+            self.bufreader.stream_position().unwrap_or_default()
+        ))
+        .ok();
         Some(self.get_next())
     }
 }
@@ -270,6 +299,7 @@ impl<R: Read + Seek> Iterator for Packfile<R> {
 ///
 /// Returns a `Result` containing the packfile if successful, or an `io::Error` if there is an issue
 pub fn create_packfile(objects: &[String], git_dir: &str) -> io::Result<Vec<u8>> {
+    log("Creating packfile...")?;
     let mut packfile = vec![];
     packfile.extend(b"PACK");
     let version: [u8; 4] = [0, 0, 0, 2];
@@ -315,15 +345,22 @@ pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
 ///
 /// Returns an `io::Error` if there is an issue reading or appending objects.
 fn append_objects(packfile: &mut Vec<u8>, objects: &[String], git_dir: &str) -> io::Result<()> {
+    log(&format!("Appending {} objects...", objects.len()))?;
     let mut objects_in_packfile = Vec::new();
     for hash in objects {
         let entry = PackfileEntry::from_hash(&hash, git_dir)?;
         let offset = packfile.len();
+        let mut t = entry.obj_type;
         if let Some(base_obj) = find_base_object_index(&entry, &objects_in_packfile) {
             append_delta_object(packfile, &base_obj, &entry, git_dir)?;
+            t = ObjectType::OfsDelta;
         } else {
             append_object(packfile, &entry, git_dir)?;
         }
+        log(&format!(
+            "Object {} of type {} appended at offset {}",
+            hash, t, offset
+        ))?;
         objects_in_packfile.push((entry, offset));
     }
     let mut hasher = Sha1::new();
@@ -442,12 +479,16 @@ fn append_delta_object(
         encoder.write_all(&encoded)?;
     }
     encoder.finish()?;
+    log(&format!(
+        "Delta object appended. Base object offset: {}",
+        base_object.1
+    ))?;
     Ok(())
 }
 /// Appends a single object to the given `packfile` vector.
 ///
 /// # Arguments
-/// 
+///
 /// * `packfile` - The packfile vector.
 /// * `object` - The object to append.
 /// * `git_dir` - The path to the Git directory.
@@ -465,18 +506,19 @@ fn append_object(packfile: &mut Vec<u8>, object: &PackfileEntry, _git_dir: &str)
     compressor.write_all(&object.content)?;
     let compressed_content = compressor.finish()?;
     packfile.extend(compressed_content);
+    log(&format!("Object appended. Size: {}", obj_size))?;
     Ok(())
 }
 
 /// Creates the header for a packfile object.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `obj_type` - The object type.
 /// * `obj_size` - The object size.
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns a vector containing the encoded header.
 fn object_header(obj_type: ObjectType, obj_size: usize) -> Vec<u8> {
     let mut encoded_header: Vec<u8> = Vec::new();

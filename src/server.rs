@@ -115,7 +115,7 @@ impl ServerInstace {
         }
         let mut missing = missing.into_iter().collect::<Vec<String>>();
         missing.sort();
-
+        log(&format!("Missing: {:?}", missing))?;
         let packfile = create_packfile(&missing, &self.git_dir_path)?;
         let packfile: Vec<u8> = [vec![1], packfile].concat();
         self.send_bytes(&pkt_line_bytes(&packfile))
