@@ -33,15 +33,12 @@ fn read_partial_int<R: Read>(
 // Returns whether the delta stream still had instructions.
 pub fn read_delta_commands<R: Read>(packfile: &mut R) -> io::Result<Vec<Command>> {
     let mut commands = Vec::new();
-    let mut i = 0;
     loop {
         let command = match read_bytes(packfile) {
             Ok([command]) => command,
             Err(err) if err.kind() == io::ErrorKind::UnexpectedEof => return Ok(commands),
             Err(err) => return Err(err),
         };
-        i+=1;
-        println!("Reading command {} with value {}", i, command);
         if command & COPY_COMMAND_FLAG == 0 {
             if command == 0 {
                 return Err(make_error("Invalid data command"));

@@ -275,6 +275,7 @@ pub fn create_packfile(
 /// Returns an `io::Error` if there is an issue reading or storing the objects.
 ///
 pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
+    println!("Unpacking packfile of {} bytes", packfile.len());
     let packfile = Packfile::reader(Cursor::new(packfile), git_dir)?;
     for entry in packfile {
         let entry = entry?;
@@ -332,6 +333,9 @@ fn find_base_object_index<'a>(
         .min_by_key(|(obj, _)| object.size.abs_diff(obj.size))
     {
         if (object.size.abs_diff(candidate.0.size) / object.size) > toleration / 100 {
+            return None;
+        }
+        if object.obj_type != candidate.0.obj_type {
             return None;
         }
         let mut total_lines = 0;
