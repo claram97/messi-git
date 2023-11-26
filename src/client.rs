@@ -38,20 +38,21 @@ impl Client {
     /// Creates client which will connect with a server (assuming its a git server)
     ///
     /// # Arguments
-    /// 
+    ///
     /// * `address` - The address of the server.
     /// * `repository` - The name of the repository in the remote.
     /// * `host` - The name of the host. e.g. localhost
     pub fn new(address: &str, repository: &str, host: &str) -> Self {
-        let mut client = Self::default();
-        client.repository = repository.to_owned();
-        client.host = host.to_owned();
-        client.address = address.to_owned();
         let _ = log(&format!(
             "New client. Address: {}. Host: {}. Repository: {}",
             address, host, repository
         ));
-        client
+        Self {
+            repository: repository.to_owned(),
+            host: host.to_owned(),
+            address: address.to_owned(),
+            ..Default::default()
+        }
     }
 
     // Establish a connection with the server and asks for the refs in the remote.
@@ -75,7 +76,7 @@ impl Client {
     /// Then the remote refs are updated.
     ///
     /// # Arguments
-    /// 
+    ///
     /// * `wanted_branchs` - A vector with the names of the branchs to fetch.
     /// * `git_dir` - The path to the git directory.
     /// * `remote` - The name of the remote.
@@ -113,9 +114,9 @@ impl Client {
     /// If the remote refs are up to date, then nothing is done.
     ///
     /// Refs can be updated, created or deleted. However, deletion is not implemented yet.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `branch` - The name of the branch to push.
     /// * `git_dir` - The path to the git directory.
     pub fn receive_pack(&mut self, branch: &str, git_dir: &str) -> io::Result<()> {
@@ -132,10 +133,7 @@ impl Client {
             None => {
                 let message = format!("Ref not found in local: {}", pushing_ref);
                 log(&message)?;
-                return Err(Error::new(
-                    io::ErrorKind::NotFound,
-                    message,
-                ));
+                return Err(Error::new(io::ErrorKind::NotFound, message));
             }
         };
         let prev_hash = match self.server_refs.get(&pushing_ref) {
@@ -217,10 +215,7 @@ impl Client {
                 None => {
                     let message = format!("Ref not found in remote: {}", wanted_ref);
                     log(&message)?;
-                    return Err(Error::new(
-                        io::ErrorKind::NotFound,
-                        message,
-                    ));
+                    return Err(Error::new(io::ErrorKind::NotFound, message));
                 }
             };
             if let Some(local_hash) = client_remotes_refs.get(&branch) {
@@ -344,7 +339,10 @@ impl Client {
 
     // Sends a message through the socket
     fn send(&mut self, message: &str) -> io::Result<()> {
-        log(&format!("Sending message: {}", message.replace('\0', "\\0")))?;
+        log(&format!(
+            "Sending message: {}",
+            message.replace('\0', "\\0")
+        ))?;
         write!(self.socket()?, "{}", message)
     }
 

@@ -131,7 +131,7 @@ pub fn encode_offset(n: usize) -> Vec<u8> {
         encoded.push(((n as u8) & 0x7F) | 0x80);
         n >>= 7;
     }
-    encoded[0] = encoded[0] & 0x7F;
+    encoded[0] &= 0x7F;
     encoded.reverse();
     encoded
 }
@@ -210,15 +210,15 @@ impl Command {
         let offset = offset.to_le_bytes();
         let size = size.to_le_bytes();
 
-        for i in 0..4 {
+        for (i, byte) in offset.iter().enumerate().take(4) {
             if offset[i] != 0 {
-                encoded.push(offset[i]);
+                encoded.push(*byte);
                 encoded[0] |= 1 << i;
             }
         }
-        for i in 0..3 {
+        for (i, byte) in size.iter().enumerate().take(3) {
             if size[i] != 0 {
-                encoded.push(size[i]);
+                encoded.push(*byte);
                 encoded[0] |= 1 << (i + 4);
             }
         }

@@ -306,7 +306,7 @@ pub fn create_packfile(objects: &[String], git_dir: &str) -> io::Result<Vec<u8>>
     packfile.extend(version);
     let obj_count: [u8; 4] = (objects.len() as u32).to_be_bytes();
     packfile.extend(obj_count);
-    append_objects(&mut packfile, &objects, git_dir)?;
+    append_objects(&mut packfile, objects, git_dir)?;
     Ok(packfile)
 }
 
@@ -348,11 +348,11 @@ fn append_objects(packfile: &mut Vec<u8>, objects: &[String], git_dir: &str) -> 
     log(&format!("Appending {} objects...", objects.len()))?;
     let mut objects_in_packfile = Vec::new();
     for hash in objects {
-        let entry = PackfileEntry::from_hash(&hash, git_dir)?;
+        let entry = PackfileEntry::from_hash(hash, git_dir)?;
         let offset = packfile.len();
         let mut t = entry.obj_type;
         if let Some(base_obj) = find_base_object_index(&entry, &objects_in_packfile) {
-            append_delta_object(packfile, &base_obj, &entry, git_dir)?;
+            append_delta_object(packfile, base_obj, &entry, git_dir)?;
             t = ObjectType::OfsDelta;
         } else {
             append_object(packfile, &entry, git_dir)?;
@@ -382,7 +382,7 @@ fn append_objects(packfile: &mut Vec<u8>, objects: &[String], git_dir: &str) -> 
 /// Returns a base object if found a valid candidate, or `None` if not.
 fn find_base_object_index<'a>(
     object: &'a PackfileEntry,
-    objects: &'a Vec<(PackfileEntry, usize)>,
+    objects: &'a [(PackfileEntry, usize)],
 ) -> Option<&'a (PackfileEntry, usize)> {
     let toleration = 20;
 
@@ -396,7 +396,7 @@ fn find_base_object_index<'a>(
         if (object.size.abs_diff(candidate.0.size) / object.size) > toleration / 100 {
             return None;
         }
-        if enough_candidate_coincidences(&object, &candidate.0, toleration) {
+        if enough_candidate_coincidences(object, &candidate.0, toleration) {
             return Some(candidate);
         }
     }
@@ -531,5 +531,5 @@ fn object_header(obj_type: ObjectType, obj_size: usize) -> Vec<u8> {
         size >>= 7;
     }
     encoded_header.push(c);
-    return encoded_header;
+    encoded_header
 }
