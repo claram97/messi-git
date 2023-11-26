@@ -1,6 +1,6 @@
 use crate::packfile::handler::{create_packfile, unpack_packfile};
 use crate::utils::get_current_time;
-use crate::{server_utils::*, logger};
+use crate::{logger, server_utils::*};
 
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -15,7 +15,7 @@ const ZERO_HASH: &str = "0000000000000000000000000000000000000000";
 
 fn log(message: &str) -> io::Result<()> {
     let mut logger = logger::Logger::new("logs/server.log")?;
-    let message = format!("{} - {}", get_current_time() ,message);
+    let message = format!("{} - {}", get_current_time(), message);
     write!(logger, "{}", message)?;
     logger.flush()
 }
@@ -353,7 +353,7 @@ impl ServerInstace {
 /// Runs a git server
 ///
 /// # Arguments
-/// 
+///
 /// * `domain` - The domain where the server will be listening
 /// * `port` - The port where the server will be listening
 /// * `path` - The path where the repositories are stored

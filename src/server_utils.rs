@@ -33,10 +33,7 @@ pub fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
     let (size, bytes) = read_pkt_line_bytes(socket)?;
     let line = from_utf8(&bytes).unwrap_or_default().to_string();
     if line.starts_with("ERR") {
-        return Err(Error::new(
-            io::ErrorKind::Other,
-            format!("Error: {}", line),
-        ));
+        return Err(Error::new(io::ErrorKind::Other, format!("Error: {}", line)));
     }
     Ok((size, line))
 }
@@ -170,7 +167,6 @@ pub fn get_missing_objects_from(
     haves: &HashSet<String>,
     git_dir: &str,
 ) -> io::Result<Vec<String>> {
-    
     if haves.contains(want) {
         return Ok(vec![]);
     }
@@ -266,10 +262,7 @@ impl CommitHashes {
 ///
 /// An `io::Result` containing a `HashSet` of tuples representing object types and their hashes.
 ///
-fn get_objects_tree_objects(
-    hash: &str,
-    git_dir: &str,
-) -> io::Result<HashSet<String>> {
+fn get_objects_tree_objects(hash: &str, git_dir: &str) -> io::Result<HashSet<String>> {
     let mut objects: HashSet<String> = HashSet::new();
     objects.insert(hash.to_string());
     let content = cat_file::cat_tree(hash, git_dir)?;

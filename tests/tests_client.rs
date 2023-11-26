@@ -48,9 +48,7 @@ fn test_upload_pack() -> io::Result<()> {
     let address = "localhost:".to_owned() + PORT;
     let mut client = Client::new(&address, "repo", "localhost");
     client.upload_pack(
-        vec![
-            "master".to_string(),
-        ],
+        vec!["master".to_string()],
         "tests/packfiles/.mgit",
         "origin",
     )?;

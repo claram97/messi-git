@@ -29,9 +29,9 @@ impl PackfileEntry {
 
     /// Create a new packfile entry from a hash.
     /// The hash is used to find the file in the .git/objects directory.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `hash` - The hash of the object.
     /// * `git_dir` - The path to the .git directory.
     pub fn from_hash(hash: &str, git_dir: &str) -> io::Result<Self> {

@@ -12,7 +12,11 @@ const MAX_COPY_SIZE: usize = 0xFFFFFF;
 // The offset is encoded in the first 4 bits
 // The size is encoded in the last 3 bits
 // The offset and size are encoded in little endian
-fn read_encoded_copy_int<R: Read>(stream: &mut R, bytes: u8, encoded_bits: u8) -> io::Result<usize> {
+fn read_encoded_copy_int<R: Read>(
+    stream: &mut R,
+    bytes: u8,
+    encoded_bits: u8,
+) -> io::Result<usize> {
     let mut value = 0;
     let mut encoded_bits = encoded_bits;
     for byte_index in 0..bytes {
@@ -317,14 +321,14 @@ fn optimize_delta_commands(commands: &[Command]) -> Vec<Command> {
 }
 
 /// Recreate an object from a base and a sequence of commands
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `base` - The base object
 /// * `commands` - The sequence of commands
-/// 
+///
 /// # Returns
-/// 
+///
 /// A vector of bytes representing the recreated object
 pub fn recreate_from_commands(base: &[u8], commands: &[Command]) -> Vec<u8> {
     let mut recreated = Vec::new();

@@ -1,4 +1,7 @@
-use std::{fmt::Display, io::{self, Error}};
+use std::{
+    fmt::Display,
+    io::{self, Error},
+};
 
 /// Possible object types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
