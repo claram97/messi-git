@@ -1,4 +1,4 @@
-use std::{io, fs, str::from_utf8, hash::Hash, collections::HashSet};
+use std::{io, fs, str::from_utf8, collections::HashSet};
 
 use messi::{packfile::{self, entry::PackfileEntry, handler::create_packfile}, server_utils};
 

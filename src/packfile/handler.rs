@@ -1,6 +1,4 @@
 use std::{
-    collections::HashSet,
-    fs::File,
     io::{self, BufReader, Cursor, Error, Read, Seek, Write},
     str::from_utf8,
     vec,
@@ -14,6 +12,7 @@ use crate::hash_object;
 
 use super::{delta_utils, entry::PackfileEntry, object_type::ObjectType};
 
+/// A packfile reader.
 #[derive(Debug)]
 pub struct Packfile<R: Read + Seek> {
     bufreader: BufReader<R>,
@@ -113,7 +112,6 @@ impl<R: Read + Seek> Packfile<R> {
     /// # Errors
     ///
     /// Returns an `io::Error` if there is an issue reading or decompressing the object.
-    ///
     fn get_next(&mut self) -> io::Result<PackfileEntry> {
         let initial_position = self.bufreader.stream_position()?;
         let (obj_type, obj_size) = self.get_obj_type_size()?;
@@ -124,6 +122,13 @@ impl<R: Read + Seek> Packfile<R> {
         }
     }
 
+    /// Reads a non delta object from the packfile.
+    ///
+    /// This method reads the compressed object data, decompresses it, and constructs a `PackfileEntry`
+    ///
+    /// # Errors
+    ///
+    /// Returns an `io::Error` if there is an issue reading or decompressing the object.
     fn get_base_object(
         &mut self,
         obj_type: ObjectType,
@@ -141,6 +146,11 @@ impl<R: Read + Seek> Packfile<R> {
         Ok(PackfileEntry::new(obj_type, obj_size, obj))
     }
 
+    /// Reads an ofs delta object from the packfile.
+    ///
+    /// # Arguments
+    ///
+    /// * `initial_position` - The position of the ofs delta object in the packfile.
     fn get_ofs_delta_object(&mut self, initial_position: u64) -> io::Result<PackfileEntry> {
         let delta_offset = delta_utils::read_offset_encoding(&mut self.bufreader)?;
         let base_obj_pos = initial_position
@@ -149,25 +159,29 @@ impl<R: Read + Seek> Packfile<R> {
                 io::ErrorKind::InvalidInput,
                 "Invalid delta offset",
             ))?;
-        println!("\nDesempaqetando ofs delta");
         let position = self.bufreader.stream_position()?;
-        self.bufreader
-            .seek(io::SeekFrom::Start(base_obj_pos))?;
+        self.bufreader.seek(io::SeekFrom::Start(base_obj_pos))?;
         let base_object = self.get_next()?;
         self.bufreader.seek(io::SeekFrom::Start(position))?;
         self.apply_delta(&base_object)
     }
 
+    /// Reads a ref delta object from the packfile.
+    ///
+    /// This method reads the hash of the base object, finds the base object in the packfile, and
+    /// applies the delta to the base object.
+    ///
+    /// THIS METHOD COULD NOT BE TESTED BECAUSE WE COULD NOT FIND A REF DELTA OBJECT IN ANY PACKFILE
     fn get_ref_delta_object(&mut self) -> io::Result<PackfileEntry> {
-        todo!("Desempaquetar ref delta not implemented");
         let mut hash = [0; 20];
         self.bufreader.read_exact(&mut hash)?;
-        let hash: Vec<String> = hash.iter().map(|byte| format!("{:02x}", byte)).collect(); // convierto los bytes del hash a string
+        let hash: Vec<String> = hash.iter().map(|byte| format!("{:02x}", byte)).collect();
         let hash = hash.concat().to_string();
         let base_object = PackfileEntry::from_hash(&hash, &self.git_dir)?;
         self.apply_delta(&base_object)
     }
 
+    /// Reads the object type and size from the packfile.
     fn get_obj_type_size(&mut self) -> io::Result<(ObjectType, usize)> {
         let mut byte = self.read_byte()?;
         let obj_type = ObjectType::try_from((byte & 0x70) >> 4)?;
@@ -182,32 +196,45 @@ impl<R: Read + Seek> Packfile<R> {
     }
 
     /// Reads a single byte from the packfile.
-    ///
-    /// # Errors
-    ///
-    /// Returns an `io::Error` if there is an issue reading the byte.
-    ///
     fn read_byte(&mut self) -> io::Result<u8> {
         let [buf] = self.read_bytes()?;
         Ok(buf)
     }
+
+    /// Reads a fixed number of bytes from the packfile.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `io::Error` if there is an issue reading the bytes.
     fn read_bytes<const N: usize>(&mut self) -> io::Result<[u8; N]> {
         let mut bytes = [0; N];
         self.bufreader.read_exact(&mut bytes)?;
         Ok(bytes)
     }
 
+    /// Given a base object and a delta object, applies the delta commands to the base object and returns the
+    /// resulting object.
+    ///
+    /// # Arguments
+    ///
+    /// * `base` - The base object.
     fn apply_delta(&mut self, base: &PackfileEntry) -> io::Result<PackfileEntry> {
         let mut delta = ZlibDecoder::new(&mut self.bufreader);
         let base_size = delta_utils::read_size_encoding(&mut delta)?;
         if base.size != base_size {
-            return Err(delta_utils::make_error("Incorrect base object length"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Incorrect base object length",
+            ));
         }
         let result_size = delta_utils::read_size_encoding(&mut delta)?;
         let commands = delta_utils::read_delta_commands(&mut delta)?;
         let result = delta_utils::recreate_from_commands(&base.content, &commands);
         if result.len() != result_size {
-            return Err(delta_utils::make_error("Incorrect object length"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Incorrect result object length",
+            ));
         }
         Ok(PackfileEntry {
             obj_type: base.obj_type,
@@ -232,28 +259,17 @@ impl<R: Read + Seek> Iterator for Packfile<R> {
     }
 }
 
-/// Create a Git packfile containing objects specified in a `HashSet`.
-///
-/// This function generates a Git packfile that contains the objects listed in the provided `HashSet`.
-/// A packfile is a binary format used by Git to store multiple Git objects efficiently in a single file.
+/// Creates a Git packfile from an array of objects hashes.
 ///
 /// # Arguments
 ///
-/// * `objects`: A `HashSet` containing tuples of `(ObjectType, String)`, representing the object type
-///   and its identifier (typically a hash).
-/// * `git_dir`: A string representing the path to the Git repository directory where objects are stored.
+/// * `objects` - An array of objects hashes.
+/// * `git_dir` - The path to the Git directory.
 ///
 /// # Returns
 ///
-/// Returns an `io::Result` containing the generated Git packfile as a `Vec<u8>`. If successful,
-/// `Ok(packfile)` is returned, where `packfile` is the binary representation of the packfile;
-/// otherwise, an error is returned.
-///
-pub fn create_packfile(
-    objects: &[String],
-    git_dir: &str,
-) -> io::Result<Vec<u8>> {
-    dbg!("Creating packfile");
+/// Returns a `Result` containing the packfile if successful, or an `io::Error` if there is an issue
+pub fn create_packfile(objects: &[String], git_dir: &str) -> io::Result<Vec<u8>> {
     let mut packfile = vec![];
     packfile.extend(b"PACK");
     let version: [u8; 4] = [0, 0, 0, 2];
@@ -266,16 +282,15 @@ pub fn create_packfile(
 
 /// Unpacks a Git packfile into individual Git objects.
 ///
-/// The `packfile` parameter is a slice containing the content of the Git packfile.
+/// # Arguments
 ///
-/// The `git_dir` parameter is the path to the Git directory.
+/// * `packfile` - The packfile to unpack.
+/// * `git_dir` - The path to the Git directory.
 ///
 /// # Errors
 ///
 /// Returns an `io::Error` if there is an issue reading or storing the objects.
-///
 pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
-    println!("Unpacking packfile of {} bytes", packfile.len());
     let packfile = Packfile::reader(Cursor::new(packfile), git_dir)?;
     for entry in packfile {
         let entry = entry?;
@@ -290,19 +305,16 @@ pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
 
 /// Appends objects to the given `packfile` vector.
 ///
-/// The `objects` parameter is a set of tuples, each containing an `ObjectType` and the hash of the object.
+/// # Arguments
 ///
-/// The `git_dir` parameter is the path to the Git directory.
+/// * `packfile` - The packfile vector.
+/// * `objects` - An array of objects hashes.
+/// * `git_dir` - The path to the Git directory. Used for finding base objects in ref-deltas.
 ///
 /// # Errors
 ///
 /// Returns an `io::Error` if there is an issue reading or appending objects.
-///
-fn append_objects(
-    packfile: &mut Vec<u8>,
-    objects: &[String],
-    git_dir: &str,
-) -> io::Result<()> {
+fn append_objects(packfile: &mut Vec<u8>, objects: &[String], git_dir: &str) -> io::Result<()> {
     let mut objects_in_packfile = Vec::new();
     for hash in objects {
         let entry = PackfileEntry::from_hash(&hash, git_dir)?;
@@ -312,7 +324,7 @@ fn append_objects(
         } else {
             append_object(packfile, &entry, git_dir)?;
         }
-        objects_in_packfile.push((entry, offset)); // initial position of the object in the packfile
+        objects_in_packfile.push((entry, offset));
     }
     let mut hasher = Sha1::new();
     hasher.update(&packfile);
@@ -322,6 +334,16 @@ fn append_objects(
     Ok(())
 }
 
+/// Finds the base object for a given object.
+///
+/// # Arguments
+///
+/// * `object` - The object to find the base object for.
+/// * `objects` - The objects in the packfile.
+///
+/// # Returns
+///
+/// Returns a base object if found a valid candidate, or `None` if not.
 fn find_base_object_index<'a>(
     object: &'a PackfileEntry,
     objects: &'a Vec<(PackfileEntry, usize)>,
@@ -332,40 +354,69 @@ fn find_base_object_index<'a>(
         .iter()
         .min_by_key(|(obj, _)| object.size.abs_diff(obj.size))
     {
-        if (object.size.abs_diff(candidate.0.size) / object.size) > toleration / 100 {
-            return None;
-        }
         if object.obj_type != candidate.0.obj_type {
             return None;
         }
-        let mut total_lines = 0;
-        let mut coincidences = 0;
-        let mut skip_lines = 0;
-        for line in object.content.split(|&c| c == b'\n') {
-            let mut lines_read = 0;
-            total_lines += 1;
-            if candidate
-                .0
-                .content
-                .split(|&c| c == b'\n')
-                .skip(skip_lines)
-                .any(|line2| {
-                    lines_read += 1;
-                    line == line2
-                })
-            {
-                skip_lines += lines_read;
-                coincidences += 1;
-            }
+        if (object.size.abs_diff(candidate.0.size) / object.size) > toleration / 100 {
+            return None;
         }
-
-        if coincidences > total_lines * ((100 - toleration) / 100) {
+        if enough_candidate_coincidences(&object, &candidate.0, toleration) {
             return Some(candidate);
         }
     }
     None
 }
 
+/// Checks if two objects have enough coincidences to be considered a valid candidate.
+///
+/// # Arguments
+///
+/// * `object` - The object to check.
+/// * `candidate` - The candidate object.
+/// * `toleration` - The toleration percentage.
+///
+/// # Returns
+///
+/// Returns `true` if the objects have enough coincidences, or `false` if not.
+fn enough_candidate_coincidences(
+    object: &PackfileEntry,
+    candidate: &PackfileEntry,
+    toleration: usize,
+) -> bool {
+    let mut total_lines = 0;
+    let mut coincidences = 0;
+    let mut skip_lines = 0;
+    for line in object.content.split(|&c| c == b'\n') {
+        let mut lines_read = 0;
+        total_lines += 1;
+        if candidate
+            .content
+            .split(|&c| c == b'\n')
+            .skip(skip_lines)
+            .any(|line2| {
+                lines_read += 1;
+                line == line2
+            })
+        {
+            skip_lines += lines_read;
+            coincidences += 1;
+        }
+    }
+
+    if coincidences > total_lines * ((100 - toleration) / 100) {
+        return true;
+    }
+    false
+}
+
+/// Appends a delta object to the given `packfile` vector.
+///
+/// # Arguments
+///
+/// * `packfile` - The packfile vector.
+/// * `base_object` - The base object.
+/// * `object` - The delta object.
+/// * `git_dir` - The path to the Git directory.
 fn append_delta_object(
     packfile: &mut Vec<u8>,
     base_object: &(PackfileEntry, usize),
@@ -373,22 +424,16 @@ fn append_delta_object(
     _git_dir: &str,
 ) -> io::Result<()> {
     let offset = packfile.len() - base_object.1;
-    println!(
-        "\nAppend delta object. Offset: {}. Base obj in: {}",
-        offset, base_object.1
-    );
-
     let encoded_header = object_header(ObjectType::OfsDelta, 7);
     packfile.extend(encoded_header);
 
     let encoded_offset = delta_utils::encode_offset(offset);
     packfile.extend(encoded_offset);
 
-
     let encoded_base_size = delta_utils::encode_size(base_object.0.size);
-    let encoded_result_size = delta_utils::encode_size(object.size);    
+    let encoded_result_size = delta_utils::encode_size(object.size);
     let commands =
-    delta_utils::delta_commands_from_objects(&base_object.0.content, &object.content);
+        delta_utils::delta_commands_from_objects(&base_object.0.content, &object.content);
     let mut encoder = ZlibEncoder::new(packfile, Compression::default());
     encoder.write_all(&encoded_base_size)?;
     encoder.write_all(&encoded_result_size)?;
@@ -402,9 +447,11 @@ fn append_delta_object(
 }
 /// Appends a single object to the given `packfile` vector.
 ///
-/// The `object` parameter is a tuple containing an `ObjectType` and the hash of the object.
-///
-/// The `git_dir` parameter is the path to the Git directory.
+/// # Arguments
+/// 
+/// * `packfile` - The packfile vector.
+/// * `object` - The object to append.
+/// * `git_dir` - The path to the Git directory.
 ///
 /// # Errors
 ///
@@ -422,6 +469,16 @@ fn append_object(packfile: &mut Vec<u8>, object: &PackfileEntry, _git_dir: &str)
     Ok(())
 }
 
+/// Creates the header for a packfile object.
+/// 
+/// # Arguments
+/// 
+/// * `obj_type` - The object type.
+/// * `obj_size` - The object size.
+/// 
+/// # Returns
+/// 
+/// Returns a vector containing the encoded header.
 fn object_header(obj_type: ObjectType, obj_size: usize) -> Vec<u8> {
     let mut encoded_header: Vec<u8> = Vec::new();
     let mut c = (obj_type.as_byte() << 4) | ((obj_size & 0x0F) as u8);

@@ -1,5 +1,6 @@
 use std::{fmt::Display, io::{self, Error}};
 
+/// Possible object types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObjectType {
     Commit,
@@ -11,6 +12,7 @@ pub enum ObjectType {
 }
 
 impl ObjectType {
+    /// Get the byte representation of the object type.
     pub fn as_byte(&self) -> u8 {
         match self {
             ObjectType::Commit => 1,
@@ -24,6 +26,7 @@ impl ObjectType {
 }
 
 impl Display for ObjectType {
+    /// Get the string representation of the object type.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ObjectType::Commit => write!(f, "commit"),
@@ -38,7 +41,7 @@ impl Display for ObjectType {
 
 impl TryFrom<&str> for ObjectType {
     type Error = io::Error;
-
+    /// Try to get the object type from a string.
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
             "commit" => Ok(Self::Commit),
@@ -56,6 +59,7 @@ impl TryFrom<&str> for ObjectType {
 impl TryFrom<u8> for ObjectType {
     type Error = io::Error;
 
+    /// Try to get the object type from a byte.
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             1 => Ok(Self::Commit),

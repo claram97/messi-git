@@ -1,20 +1,18 @@
 use std::io::{self, Read};
 
-const COPY_COMMAND_FLAG: u8 = 1 << 7;
+const COPY_COMMAND_FLAG: u8 = 0x80;
 const COPY_OFFSET_BYTES: u8 = 4;
 const COPY_SIZE_BYTES: u8 = 3;
 const COPY_ZERO_SIZE: usize = 0x10000;
 const MAX_INSERT_SIZE: usize = 0x7F;
 const MAX_COPY_SIZE: usize = 0xFFFFFF;
-const MAX_COPY_OFFSET: usize = 0xFFFFFFFF;
 
-// Read an integer of up to `bytes` bytes.
-// `present_bytes` indicates which bytes are provided. The others are 0.
-fn read_partial_int<R: Read>(
-    stream: &mut R,
-    bytes: u8,
-    encoded_bits: u8,
-) -> io::Result<usize> {
+// Helper function to read offset and size from a delta copy instruction
+// The offset and size are encoded in the first byte of the instruction
+// The offset is encoded in the first 4 bits
+// The size is encoded in the last 3 bits
+// The offset and size are encoded in little endian
+fn read_encoded_copy_int<R: Read>(stream: &mut R, bytes: u8, encoded_bits: u8) -> io::Result<usize> {
     let mut value = 0;
     let mut encoded_bits = encoded_bits;
     for byte_index in 0..bytes {
@@ -28,9 +26,16 @@ fn read_partial_int<R: Read>(
     Ok(value)
 }
 
-// Reads a single delta instruction from a stream
-// and appends the relevant bytes to `result`.
-// Returns whether the delta stream still had instructions.
+/// Read a sequence of delta commands from a packfile
+/// The sequence ends when an EOF is reached
+///
+/// # Arguments
+///
+/// * `packfile` - A mutable reference to a packfile
+///
+/// # Returns
+///
+/// A vector of commands
 pub fn read_delta_commands<R: Read>(packfile: &mut R) -> io::Result<Vec<Command>> {
     let mut commands = Vec::new();
     loop {
@@ -41,14 +46,18 @@ pub fn read_delta_commands<R: Read>(packfile: &mut R) -> io::Result<Vec<Command>
         };
         if command & COPY_COMMAND_FLAG == 0 {
             if command == 0 {
-                return Err(make_error("Invalid data command"));
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Invalid data command",
+                ));
             }
             let mut data = vec![0; command as usize];
             packfile.read_exact(&mut data)?;
             commands.push(Command::Insert(data));
         } else {
-            let offset = read_partial_int(packfile, COPY_OFFSET_BYTES, command)?;
-            let mut size = read_partial_int(packfile, COPY_SIZE_BYTES, command >> COPY_OFFSET_BYTES )?;
+            let offset = read_encoded_copy_int(packfile, COPY_OFFSET_BYTES, command)?;
+            let mut size =
+                read_encoded_copy_int(packfile, COPY_SIZE_BYTES, command >> COPY_OFFSET_BYTES)?;
             if size == 0 {
                 size = COPY_ZERO_SIZE;
             }
@@ -57,26 +66,42 @@ pub fn read_delta_commands<R: Read>(packfile: &mut R) -> io::Result<Vec<Command>
     }
 }
 
-pub fn make_error(message: &str) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidData, message.to_string())
-}
-
+// Helper function to read exactly N bytes from a stream
 fn read_bytes<R: Read, const N: usize>(stream: &mut R) -> io::Result<[u8; N]> {
     let mut bytes = [0; N];
     stream.read_exact(&mut bytes)?;
     Ok(bytes)
 }
 
+/// Read an usize from a stream encoded with the variable length encoding
+///
+/// # Arguments
+///
+/// * `stream` - A mutable reference to a stream
+///
+/// # Returns
+///
+/// An usize
 pub fn read_size_encoding<R: Read>(stream: &mut R) -> io::Result<usize> {
     let size_bytes = read_encoding_bytes(stream)?;
     Ok(decode_size(&size_bytes))
 }
 
+/// Read an usize from a stream encoded with the offset encoding
+///
+/// # Arguments
+///
+/// * `stream` - A mutable reference to a stream
+///
+/// # Returns
+///
+/// An usize
 pub fn read_offset_encoding<R: Read>(stream: &mut R) -> io::Result<u64> {
     let offset_bytes = read_encoding_bytes(stream)?;
     Ok(decode_offset(&offset_bytes))
 }
 
+// Helper function to read a variable length encoding from a stream
 fn read_encoding_bytes<R: Read>(stream: &mut R) -> io::Result<Vec<u8>> {
     let mut size_bytes = Vec::new();
     loop {
@@ -89,6 +114,15 @@ fn read_encoding_bytes<R: Read>(stream: &mut R) -> io::Result<Vec<u8>> {
     Ok(size_bytes)
 }
 
+/// Encode an usize with the offset encoding
+///
+/// # Arguments
+///
+/// * `n` - An usize
+///
+/// # Returns
+///
+/// A vector of bytes
 pub fn encode_offset(n: usize) -> Vec<u8> {
     let mut encoded = Vec::new();
     let mut n = n + 1;
@@ -102,6 +136,7 @@ pub fn encode_offset(n: usize) -> Vec<u8> {
     encoded
 }
 
+// Helper function to decode an offset from a vector of bytes
 fn decode_offset(bytes: &[u8]) -> u64 {
     let mut value = 0;
     for byte in bytes {
@@ -111,6 +146,15 @@ fn decode_offset(bytes: &[u8]) -> u64 {
     value - 1
 }
 
+/// Encode an usize with the variable length encoding
+///
+/// # Arguments
+///
+/// * `n` - An usize
+///
+/// # Returns
+///
+/// A vector of bytes
 pub fn encode_size(n: usize) -> Vec<u8> {
     let mut n = n;
     let mut encoded_size = Vec::new();
@@ -122,6 +166,7 @@ pub fn encode_size(n: usize) -> Vec<u8> {
     encoded_size
 }
 
+// Helper function to decode an usize from a vector of bytes
 fn decode_size(bytes: &[u8]) -> usize {
     let mut n = 0;
     for (i, byte) in bytes.iter().enumerate() {
@@ -130,6 +175,12 @@ fn decode_size(bytes: &[u8]) -> usize {
     n
 }
 
+/// A delta command
+///  
+/// # Variants
+///
+/// * `Copy` - A copy command
+/// * `Insert` - An insert command
 #[derive(Debug, Clone)]
 pub enum Command {
     Copy { offset: usize, size: usize },
@@ -137,43 +188,64 @@ pub enum Command {
 }
 
 impl Command {
+    /// Encode a command into a vector of bytes
     pub fn encode(&self) -> Vec<u8> {
         match self {
-            Command::Copy { offset, size } => {
-                println!("Encoding copy: offset {} size {}", offset, size);
-                let mut encoded = vec![0x80];
-                let offset = offset.to_le_bytes();
-                let size = size.to_le_bytes();
+            Command::Copy { offset, size } => Self::encode_copy(*offset, *size),
+            Command::Insert(bytes) => Self::encode_insert(bytes),
+        }
+    }
 
-                for i in 0..4 {
-                    if offset[i] != 0 {
-                        encoded.push(offset[i]);
-                        encoded[0] |= 1 << i;
-                    }
-                }
-                for i in 0..3 {
-                    if size[i] != 0 {
-                        encoded.push(size[i]);
-                        encoded[0] |= 1 << (i + 4);
-                    }
-                }
-                encoded
-            }
-            Command::Insert(bytes) => {
-                let mut encoded = Vec::new();
-                println!("Encoding insert: {} bytes", bytes.len());
-                bytes.chunks(MAX_INSERT_SIZE).for_each(|chunk| {
-                    println!("Encoding insert chunk: {} bytes", chunk.len());
-                    let header = 0x7F & chunk.len() as u8;
-                    encoded.push(header);
-                    encoded.extend_from_slice(chunk);
-                });
-                encoded
+    fn encode_copy(offset: usize, size: usize) -> Vec<u8> {
+        if size > MAX_COPY_SIZE {
+            let size_1 = MAX_COPY_SIZE;
+            let size_2 = size - MAX_COPY_SIZE;
+            let offset_2 = offset + MAX_COPY_SIZE;
+            let mut encoded = Self::encode_copy(offset, size_1);
+            let mut encoded_2 = Self::encode_copy(offset_2, size_2);
+            encoded.append(&mut encoded_2);
+            return encoded;
+        }
+        let mut encoded = vec![0x80];
+        let offset = offset.to_le_bytes();
+        let size = size.to_le_bytes();
+
+        for i in 0..4 {
+            if offset[i] != 0 {
+                encoded.push(offset[i]);
+                encoded[0] |= 1 << i;
             }
         }
+        for i in 0..3 {
+            if size[i] != 0 {
+                encoded.push(size[i]);
+                encoded[0] |= 1 << (i + 4);
+            }
+        }
+        encoded
+    }
+
+    fn encode_insert(bytes: &[u8]) -> Vec<u8> {
+        let mut encoded = Vec::new();
+        bytes.chunks(MAX_INSERT_SIZE).for_each(|chunk| {
+            let header = 0x7F & chunk.len() as u8;
+            encoded.push(header);
+            encoded.extend_from_slice(chunk);
+        });
+        encoded
     }
 }
 
+/// Create a sequence of delta commands from two objects
+///
+/// # Arguments
+///
+/// * `base` - The base object
+/// * `object` - The object to be created
+///
+/// # Returns
+///
+/// A vector of commands that can be used to recreate the object from the base
 pub fn delta_commands_from_objects(base: &[u8], object: &[u8]) -> Vec<Command> {
     let blines = base.split_inclusive(|&c| c == b'\n').collect::<Vec<_>>();
     let olines = object.split_inclusive(|&c| c == b'\n').collect::<Vec<_>>();
@@ -202,13 +274,11 @@ pub fn delta_commands_from_objects(base: &[u8], object: &[u8]) -> Vec<Command> {
             commands.push(Command::Insert(oline.to_vec()));
         }
     }
-
-    let commands = optimize_delta_commands(commands.as_slice());
-    println!("asserting");
-    assert_eq!(recreate_from_commands(base, &commands), object);
-    commands
+    optimize_delta_commands(commands.as_slice())
 }
 
+// Helper function to optimize a sequence of delta commands
+// This function merges consecutive copy commands and consecutive insert commands
 fn optimize_delta_commands(commands: &[Command]) -> Vec<Command> {
     let mut optimized = vec![commands[0].clone()];
     let mut i = 0;
@@ -224,7 +294,7 @@ fn optimize_delta_commands(commands: &[Command]) -> Vec<Command> {
                     size: s2,
                 },
             ) => {
-                if *o1 + *s1 == *o2 && *s1 + *s2 <= MAX_COPY_SIZE {
+                if *o1 + *s1 == *o2 {
                     optimized[i] = Command::Copy {
                         offset: *o1,
                         size: *s1 + *s2,
@@ -246,18 +316,25 @@ fn optimize_delta_commands(commands: &[Command]) -> Vec<Command> {
     optimized
 }
 
+/// Recreate an object from a base and a sequence of commands
+/// 
+/// # Arguments
+/// 
+/// * `base` - The base object
+/// * `commands` - The sequence of commands
+/// 
+/// # Returns
+/// 
+/// A vector of bytes representing the recreated object
 pub fn recreate_from_commands(base: &[u8], commands: &[Command]) -> Vec<u8> {
     let mut recreated = Vec::new();
-    println!("\nRecreating from {} commands", commands.len());
     for c in commands {
         match c {
             Command::Copy { offset, size } => {
-                println!("Copying: offset {} size {}", offset, size);
                 let copied = &base[*offset..offset + size];
                 recreated.extend_from_slice(copied);
             }
             Command::Insert(bytes) => {
-                println!("Inserting: {} bytes", bytes.len());
                 recreated.extend_from_slice(bytes);
             }
         }
