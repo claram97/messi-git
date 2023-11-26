@@ -6,20 +6,13 @@ use std::{
     path::PathBuf,
 };
 
-use crate::{logger, packfile, server_utils::*, utils::get_current_time};
+use crate::{packfile, server_utils::*};
 
 const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
 const GIT_RECEIVE_PACK: &str = "git-receive-pack";
 const CAPABILITIES_UPLOAD: &str = "multi_ack side-band-64k ofs-delta";
 const ZERO_HASH: &str = "0000000000000000000000000000000000000000";
-
-fn log(message: &str) -> io::Result<()> {
-    let mut logger = logger::Logger::new("logs/client.log")?;
-    let message = format!("{} - {}", get_current_time(), message);
-    write!(logger, "{}", message)?;
-    logger.flush()
-}
 
 #[derive(Debug, Default)]
 pub struct Client {
@@ -152,7 +145,6 @@ impl Client {
     }
 
     fn receive_pack_do(&mut self, branch: &str, git_dir: &str) -> io::Result<()> {
-        log(&format!("Receive pack requested. Branch: {}", branch))?;
         self.clear();
         self.connect()?;
         self.initiate_connection(GIT_RECEIVE_PACK)?;
@@ -215,9 +207,6 @@ impl Client {
     // Should be called only aftes: initiate_connection
     fn wait_server_refs(&mut self) -> io::Result<()> {
         let (_, _) = read_pkt_line(self.socket()?)?;
-        // let (mut size, mut line) = read_pkt_line(self.socket()?)?;
-
-
         loop {
             let (size, line) = read_pkt_line(self.socket()?)?;
             if size == 0 {

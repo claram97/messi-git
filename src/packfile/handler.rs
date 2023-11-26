@@ -8,16 +8,9 @@ use flate2::{bufread::ZlibDecoder, write::ZlibEncoder, Compression};
 use sha1::Digest;
 use sha1::Sha1;
 
-use crate::{hash_object, logger, utils::get_current_time};
+use crate::{hash_object, server_utils::*};
 
 use super::{delta_utils, entry::PackfileEntry, object_type::ObjectType};
-
-fn log(message: &str) -> io::Result<()> {
-    let mut logger = logger::Logger::new("logs/packfile.log")?;
-    let message = format!("{} - {}", get_current_time(), message);
-    write!(logger, "{}", message)?;
-    logger.flush()
-}
 
 /// A packfile reader.
 #[derive(Debug)]

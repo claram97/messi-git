@@ -1,6 +1,5 @@
 use crate::packfile::handler::{create_packfile, unpack_packfile};
-use crate::utils::get_current_time;
-use crate::{logger, server_utils::*};
+use crate::server_utils::*;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -10,15 +9,9 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::{fs, thread};
 
-const CAPABILITIES_UPLOAD: &str = "multi_ack side-band-64k ofs-delta";
+const CAPABILITIES_UPLOAD: &str = "side-band-64k ofs-delta quiet atomic no-progress delete-refs";
 const ZERO_HASH: &str = "0000000000000000000000000000000000000000";
 
-fn log(message: &str) -> io::Result<()> {
-    let mut logger = logger::Logger::new("logs/server.log")?;
-    let message = format!("{} - {}", get_current_time(), message);
-    write!(logger, "{}", message)?;
-    logger.flush()
-}
 enum Command {
     UploadPack,
     ReceivePack,
@@ -74,7 +67,10 @@ impl ServerInstace {
         };
         match result {
             Ok(_) => Ok(()),
-            Err(e) => self.send(&pkt_line(&format!("ERR {}\n", e))),
+            Err(e) => {
+                self.send(&pkt_line(&format!("ERR {}\n", e)))?;
+                Err(e)
+            }
         }
     }
 
@@ -163,7 +159,10 @@ impl ServerInstace {
         );
 
         if refs.is_empty() {
-            let empty = format!("{} refs/heads/master\0{}", ZERO_HASH, CAPABILITIES_UPLOAD);
+            let empty = format!(
+                "{} {}\0{}",
+                ZERO_HASH, "capabilities^{}", CAPABILITIES_UPLOAD
+            );
             self.send(&pkt_line(&empty))?;
             return self.flush();
         }
@@ -368,7 +367,14 @@ pub fn run(domain: &str, port: &str, path: &str, git_dir: &str) -> io::Result<()
         let dir = git_dir.to_string();
         let path_clone = path.clone();
         let handle = thread::spawn(move || {
-            ServerInstace::new(client_stream, path_clone, &dir)?.handle_client()
+            let mut server = ServerInstace::new(client_stream, path_clone, &dir)?;
+            match server.handle_client() {
+                Ok(_) => Ok(()),
+                Err(err) => {
+                    println!("Error: {}", err);
+                    Err(err)
+                }
+            }
         });
         handles.push(handle);
     }
