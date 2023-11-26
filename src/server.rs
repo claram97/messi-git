@@ -1,5 +1,6 @@
 use crate::packfile::handler::{create_packfile, unpack_packfile};
-use crate::server_utils::*;
+use crate::utils::get_current_time;
+use crate::{server_utils::*, logger};
 
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -12,6 +13,12 @@ use std::{fs, thread};
 const CAPABILITIES_UPLOAD: &str = "multi_ack side-band-64k ofs-delta";
 const ZERO_HASH: &str = "0000000000000000000000000000000000000000";
 
+fn log(message: &str) -> io::Result<()> {
+    let mut logger = logger::Logger::new("logs/server.log")?;
+    let message = format!("{} - {}", get_current_time() ,message);
+    write!(logger, "{}", message)?;
+    logger.flush()
+}
 enum Command {
     UploadPack,
     ReceivePack,
@@ -43,6 +50,7 @@ impl ServerInstace {
     // Creates a new instance of the server changing the current dir where the repositories are stored
     fn new(stream: TcpStream, path: Arc<String>, git_dir: &str) -> io::Result<Self> {
         env::set_current_dir(path.clone().as_ref())?;
+        log(&format!("New connection from {}", stream.peer_addr()?))?;
         Ok(Self {
             socket: stream,
             path: path.to_string(),
@@ -86,7 +94,7 @@ impl ServerInstace {
         if !Path::new(&self.git_dir_path).exists() {
             self.git_dir_path = format!("{}{}", self.path, repo);
         }
-        dbg!(&self.git_dir_path);
+        log(&format!("Command: {}", git_command))?;
         Command::try_from(git_command)
     }
 
@@ -97,11 +105,9 @@ impl ServerInstace {
         self.send_refs()?;
         let (wants, haves) = self.read_wants_haves()?;
         if wants.is_empty() {
+            log("No wants")?;
             return Ok(());
         }
-        dbg!(&wants);
-        dbg!(&haves);
-
         let mut missing = HashSet::new();
         for want in wants {
             let m = get_missing_objects_from(&want, &haves, &self.git_dir_path)?;
@@ -112,9 +118,7 @@ impl ServerInstace {
 
         let packfile = create_packfile(&missing, &self.git_dir_path)?;
         let packfile: Vec<u8> = [vec![1], packfile].concat();
-        self.send_bytes(&pkt_line_bytes(&packfile))?;
-
-        Ok(())
+        self.send_bytes(&pkt_line_bytes(&packfile))
     }
 
     // Receives the packfile from the client
@@ -137,6 +141,7 @@ impl ServerInstace {
 
     // Sends the server refs to the client
     fn send_refs(&mut self) -> io::Result<()> {
+        log("Sending refs...")?;
         let mut refs = vec![];
         let server_refs_heads = get_head_refs(&self.git_dir_path)?;
 
@@ -181,13 +186,15 @@ impl ServerInstace {
     fn read_wants_haves(&mut self) -> io::Result<(HashSet<String>, HashSet<String>)> {
         let mut wants = HashSet::new();
         let mut haves = HashSet::new();
+        let mut total_read = 0;
         loop {
             let (size, line) = read_pkt_line(&mut self.socket)?;
+            total_read += size;
+            if total_read == 0 || line == "done\n" {
+                break;
+            }
             if size < 4 {
                 continue;
-            }
-            if line == "done\n" {
-                break;
             }
             let (t, hash) = parse_line_want_have(&line)?;
             match t {
@@ -195,12 +202,14 @@ impl ServerInstace {
                 WantHave::Have => haves.insert(hash),
             };
         }
+        log(&format!("Wants: {:?}. Haves: {:?}", wants, haves))?;
         Ok((wants, haves))
     }
 
     // Waits for the client to send a packfile
     // After receiving it, it is unpacked and stored in the git_dir
     fn wait_and_unpack_packfile(&mut self) -> io::Result<()> {
+        log("Waiting for packfile...")?;
         loop {
             let (size, bytes) = read_pkt_line_bytes(&mut self.socket)?;
             if size < 4 {
@@ -218,6 +227,7 @@ impl ServerInstace {
 
     // Updates the refs with the new ones received from the client
     fn make_refs_changes(&mut self, new_refs: HashMap<String, (String, String)>) -> io::Result<()> {
+        log("Updating refs...")?;
         for (ref_name, (old, new)) in &new_refs {
             match (old, new) {
                 (old, new) if old == ZERO_HASH => self.create_ref(ref_name, new)?,
@@ -231,6 +241,7 @@ impl ServerInstace {
     // Creates a new ref with the given name and hash
     // The ref must not exist
     fn create_ref(&mut self, ref_name: &str, new: &str) -> io::Result<()> {
+        log(&format!("Creating ref: {} -> {}", ref_name, new))?;
         let ref_path = PathBuf::from(&self.git_dir_path).join(ref_name);
         if ref_path.exists() {
             return Err(io::Error::new(
@@ -247,6 +258,7 @@ impl ServerInstace {
     // The old hash must be the same as the one stored in the ref
     // The ref must exist
     fn update_ref(&mut self, ref_name: &str, old: &str, new: &str) -> io::Result<()> {
+        log(&format!("Updating ref: {} -> {}", ref_name, new))?;
         let ref_path = PathBuf::from(&self.git_dir_path).join(ref_name);
         if !ref_path.exists() {
             return Err(io::Error::new(
@@ -268,6 +280,7 @@ impl ServerInstace {
 
     // Deletes a ref with the given name
     fn delete_ref(&mut self, ref_name: &str) -> io::Result<()> {
+        log(&format!("Deleting ref: {}", ref_name))?;
         let ref_path = PathBuf::from(&self.git_dir).join(ref_name);
         fs::remove_file(ref_path)
     }
@@ -315,18 +328,19 @@ impl ServerInstace {
             }
             new_refs.insert(ref_name, (old, new));
         }
+        log(&format!("New refs: {:?}", new_refs))?;
         Ok(new_refs)
     }
 
     // Sends a message through the socket
     fn send(&mut self, message: &str) -> io::Result<()> {
-        dbg!(message);
+        log(&format!("Sending: {}", message.replace('\0', "\\0")))?;
         write!(self.socket, "{}", message)
     }
 
     // Sends a message through the socket as bytes
     fn send_bytes(&mut self, content: &[u8]) -> io::Result<()> {
-        dbg!("Sending bytes...");
+        log(&format!("Sending bytes: {:?}", content))?;
         self.socket.write_all(content)
     }
 

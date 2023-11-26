@@ -6,13 +6,20 @@ use std::{
     path::PathBuf,
 };
 
-use crate::{packfile, server_utils::*};
+use crate::{logger, packfile, server_utils::*, utils::get_current_time};
 
 const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
 const GIT_RECEIVE_PACK: &str = "git-receive-pack";
 const CAPABILITIES_UPLOAD: &str = "multi_ack side-band-64k ofs-delta";
 const ZERO_HASH: &str = "0000000000000000000000000000000000000000";
+
+fn log(message: &str) -> io::Result<()> {
+    let mut logger = logger::Logger::new("logs/client.log")?;
+    let message = format!("{} - {}", get_current_time(), message);
+    write!(logger, "{}", message)?;
+    logger.flush()
+}
 
 #[derive(Debug, Default)]
 pub struct Client {
@@ -39,6 +46,10 @@ impl Client {
         client.repository = repository.to_owned();
         client.host = host.to_owned();
         client.address = address.to_owned();
+        let _ = log(&format!(
+            "New client. Address: {}. Host: {}. Repository: {}",
+            address, host, repository
+        ));
         client
     }
 
@@ -48,6 +59,7 @@ impl Client {
     // Leaves the connection opened
     // May fail due to I/O errors
     pub fn get_server_refs(&mut self) -> io::Result<HashMap<String, String>> {
+        log("Getting server refs...")?;
         self.clear();
         self.connect()?;
         self.initiate_connection(GIT_UPLOAD_PACK)?;
@@ -71,6 +83,10 @@ impl Client {
         git_dir: &str,
         remote: &str,
     ) -> io::Result<()> {
+        log(&format!(
+            "Upload pack requested. Remote: {}. Wanted branchs: {:?}",
+            remote, wanted_branchs
+        ))?;
         self.clear();
         self.git_dir = git_dir.to_string();
         self.remote = remote.to_string();
@@ -80,6 +96,8 @@ impl Client {
 
         let fetched_remotes_refs = self.want_branchs(wanted_branchs)?;
         if fetched_remotes_refs.is_empty() {
+            log("Already up to date.")?;
+            self.end_connection()?;
             println!("Already up to date.");
             return Ok(());
         }
@@ -99,6 +117,7 @@ impl Client {
     ///   - branch: name of the branch to push
     ///   - git_dir: path to the git directory
     pub fn receive_pack(&mut self, branch: &str, git_dir: &str) -> io::Result<()> {
+        log(&format!("Receive pack requested. Branch: {}", branch))?;
         self.clear();
         self.connect()?;
         self.initiate_connection(GIT_RECEIVE_PACK)?;
@@ -109,10 +128,11 @@ impl Client {
         let new_hash = match client_heads_refs.get(branch) {
             Some(hash) => hash,
             None => {
+                log(&format!("Ref not found in local: {}", pushing_ref))?;
                 return Err(Error::new(
                     io::ErrorKind::NotFound,
                     format!("Ref not found in local: {}", pushing_ref),
-                ))
+                ));
             }
         };
         let prev_hash = match self.server_refs.get(&pushing_ref) {
@@ -120,6 +140,7 @@ impl Client {
             None => String::new(),
         };
         if &prev_hash == new_hash {
+            log("Already up to date.")?;
             println!("Already up to date.");
             return Ok(());
         }
@@ -139,6 +160,7 @@ impl Client {
 
     // Connects to the server and returns a Tcp socket
     fn connect(&mut self) -> io::Result<()> {
+        log(&format!("Connecting to {}...", self.address))?;
         self.socket = Some(TcpStream::connect(&self.address)?);
         Ok(())
     }
@@ -173,6 +195,7 @@ impl Client {
             }
             (size, line) = read_pkt_line(self.socket()?)?;
         }
+        log(&format!("Server refs: {:?}", self.server_refs))?;
         Ok(())
     }
 
@@ -190,10 +213,11 @@ impl Client {
             let hash = match self.server_refs.get(&wanted_ref) {
                 Some(hash) => hash.clone(),
                 None => {
+                    log(&format!("Ref not found in remote: {}", wanted_ref))?;
                     return Err(Error::new(
                         io::ErrorKind::NotFound,
                         format!("Ref not found in remote: {}", wanted_ref),
-                    ))
+                    ));
                 }
             };
             if let Some(local_hash) = client_remotes_refs.get(&branch) {
@@ -241,6 +265,7 @@ impl Client {
     // Waits for the server to send a packfile
     // After receiving it, it is unpacked and stored in the git_dir
     fn wait_and_unpack_packfile(&mut self) -> io::Result<()> {
+        log("Waiting for packfile...")?;
         let socket = self.socket()?;
         while let Ok((size, bytes)) = read_pkt_line_bytes(socket) {
             if size < 4 {
@@ -250,12 +275,17 @@ impl Client {
                 return packfile::handler::unpack_packfile(&bytes[..], &self.git_dir);
             }
         }
+        log("Packfile not found")?;
         Err(Error::new(io::ErrorKind::NotFound, "Packfile not found"))
     }
 
     // Updates remote ref with the fetched hash
     // If the ref does not exist, then it is created
     fn update_remote(&self, remote_ref: &str, hash: &str) -> io::Result<()> {
+        log(&format!(
+            "Updating remote ref: {} with hash: {}",
+            remote_ref, hash
+        ))?;
         let pathbuf = PathBuf::from(&self.git_dir);
         let remote = pathbuf.join("refs").join("remotes").join(&self.remote);
         fs::create_dir_all(&remote)?;
@@ -301,6 +331,7 @@ impl Client {
 
     /// Ends the connection by flushing the socket and setting it to `None`.
     fn end_connection(&mut self) -> io::Result<()> {
+        log("Ending connection...")?;
         self.flush()?;
         self.socket = None;
         Ok(())
@@ -308,13 +339,13 @@ impl Client {
 
     // Sends a message through the socket
     fn send(&mut self, message: &str) -> io::Result<()> {
-        dbg!(message);
+        log(&format!("Sending message: {}", message.replace('\0', "\\0")))?;
         write!(self.socket()?, "{}", message)
     }
 
     // Sends a message through the socket as bytes
     fn send_bytes(&mut self, content: &[u8]) -> io::Result<()> {
-        dbg!("Sending bytes...");
+        log(&format!("Sending bytes:\n{:?}", content))?;
         self.socket()?.write_all(content)
     }
 
@@ -329,8 +360,8 @@ impl Client {
     }
 }
 
-impl Drop for Client {
-    fn drop(&mut self) {
-        let _ = self.end_connection();
-    }
-}
+// impl Drop for Client {
+//     fn drop(&mut self) {
+//         let _ = self.end_connection();
+//     }
+// }

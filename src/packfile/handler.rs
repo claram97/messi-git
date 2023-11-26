@@ -330,7 +330,6 @@ fn append_objects(packfile: &mut Vec<u8>, objects: &[String], git_dir: &str) -> 
     hasher.update(&packfile);
     let checksum = hasher.finalize();
     packfile.extend(checksum);
-    dbg!(packfile.len());
     Ok(())
 }
 

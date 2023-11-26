@@ -7,7 +7,7 @@ use std::{
     str::from_utf8,
 };
 
-use crate::{cat_file, packfile::object_type::ObjectType};
+use crate::cat_file;
 
 // HELPER MODULE
 
@@ -35,7 +35,7 @@ pub fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
     if line.starts_with("ERR") {
         return Err(Error::new(
             io::ErrorKind::Other,
-            format!("Error from server: {}", line),
+            format!("Error: {}", line),
         ));
     }
     Ok((size, line))
@@ -50,7 +50,7 @@ pub fn read_pkt_line_bytes(socket: &mut TcpStream) -> io::Result<(usize, Vec<u8>
     let size = from_utf8(&buf).unwrap_or_default();
     let size = usize::from_str_radix(size, 16).unwrap_or(0);
 
-    if size < 4 {
+    if size <= 4 {
         return Ok((size, vec![]));
     }
 
