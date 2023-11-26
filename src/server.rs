@@ -1,4 +1,4 @@
-use crate::packfile::handler::{create_packfile_from_set, unpack_packfile};
+use crate::packfile::handler::{create_packfile, unpack_packfile};
 use crate::server_utils::*;
 
 use std::collections::{HashMap, HashSet};
@@ -107,8 +107,10 @@ impl ServerInstace {
             let m = get_missing_objects_from(&want, &haves, &self.git_dir_path)?;
             missing.extend(m);
         }
+        let mut missing = missing.into_iter().collect::<Vec<String>>();
+        missing.sort();
 
-        let packfile = create_packfile_from_set(missing, &self.git_dir_path)?;
+        let packfile = create_packfile(&missing, &self.git_dir_path)?;
         let packfile: Vec<u8> = [vec![1], packfile].concat();
         self.send_bytes(&pkt_line_bytes(&packfile))?;
 

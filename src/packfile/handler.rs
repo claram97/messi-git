@@ -249,8 +249,8 @@ impl<R: Read + Seek> Iterator for Packfile<R> {
 /// `Ok(packfile)` is returned, where `packfile` is the binary representation of the packfile;
 /// otherwise, an error is returned.
 ///
-pub fn create_packfile_from_set(
-    objects: HashSet<(ObjectType, String)>,
+pub fn create_packfile(
+    objects: &[String],
     git_dir: &str,
 ) -> io::Result<Vec<u8>> {
     dbg!("Creating packfile");
@@ -260,7 +260,7 @@ pub fn create_packfile_from_set(
     packfile.extend(version);
     let obj_count: [u8; 4] = (objects.len() as u32).to_be_bytes();
     packfile.extend(obj_count);
-    append_objects(&mut packfile, objects, git_dir)?;
+    append_objects(&mut packfile, &objects, git_dir)?;
     Ok(packfile)
 }
 
@@ -299,11 +299,11 @@ pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
 ///
 fn append_objects(
     packfile: &mut Vec<u8>,
-    objects: HashSet<(ObjectType, String)>,
+    objects: &[String],
     git_dir: &str,
 ) -> io::Result<()> {
     let mut objects_in_packfile = Vec::new();
-    for (_obj_type, hash) in objects {
+    for hash in objects {
         let entry = PackfileEntry::from_hash(&hash, git_dir)?;
         let offset = packfile.len();
         if let Some(base_obj) = find_base_object_index(&entry, &objects_in_packfile) {

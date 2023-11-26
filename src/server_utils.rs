@@ -169,15 +169,15 @@ pub fn get_missing_objects_from(
     want: &str,
     haves: &HashSet<String>,
     git_dir: &str,
-) -> io::Result<HashSet<(ObjectType, String)>> {
-    let mut missing: HashSet<(ObjectType, String)> = HashSet::new();
-
+) -> io::Result<Vec<String>> {
+    
     if haves.contains(want) {
-        return Ok(missing);
+        return Ok(vec![]);
     }
 
+    let mut missing: HashSet<String> = HashSet::new();
     if let Ok(commit) = CommitHashes::new(want, git_dir) {
-        missing.insert((ObjectType::Commit, commit.hash.to_string()));
+        missing.insert(commit.hash.to_string());
 
         let tree_objects = get_objects_tree_objects(&commit.tree, git_dir)?;
         missing.extend(tree_objects);
@@ -187,8 +187,9 @@ pub fn get_missing_objects_from(
             missing.extend(_missing);
         }
     }
-
-    Ok(missing)
+    let mut v: Vec<String> = missing.into_iter().collect();
+    v.sort();
+    Ok(v)
 }
 
 #[derive(Debug, Default)]
@@ -268,9 +269,9 @@ impl CommitHashes {
 fn get_objects_tree_objects(
     hash: &str,
     git_dir: &str,
-) -> io::Result<HashSet<(ObjectType, String)>> {
-    let mut objects: HashSet<(ObjectType, String)> = HashSet::new();
-    objects.insert((ObjectType::Tree, hash.to_string()));
+) -> io::Result<HashSet<String>> {
+    let mut objects: HashSet<String> = HashSet::new();
+    objects.insert(hash.to_string());
     let content = cat_file::cat_tree(hash, git_dir)?;
 
     for (mode, _, hash) in content {
@@ -278,7 +279,7 @@ fn get_objects_tree_objects(
             let tree_objects = get_objects_tree_objects(&hash, git_dir)?;
             objects.extend(tree_objects);
         } else {
-            objects.insert((ObjectType::Blob, hash.to_string()));
+            objects.insert(hash.to_string());
         };
     }
 

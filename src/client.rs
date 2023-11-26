@@ -285,7 +285,7 @@ impl Client {
         haves.insert(prev_hash.to_string());
 
         let missing_objects = get_missing_objects_from(new_hash, &haves, &self.git_dir)?;
-        let packfile = packfile::handler::create_packfile_from_set(missing_objects, &self.git_dir)?;
+        let packfile = packfile::handler::create_packfile(&missing_objects, &self.git_dir)?;
         let packfile: Vec<u8> = [vec![1], packfile].concat();
         self.send_bytes(&pkt_line_bytes(&packfile))?;
         Ok(())
