@@ -1,6 +1,6 @@
 use std::io::{self, Read};
 
-const COPY_INSTRUCTION_FLAG: u8 = 1 << 7;
+const COPY_COMMAND_FLAG: u8 = 1 << 7;
 const COPY_OFFSET_BYTES: u8 = 4;
 const COPY_SIZE_BYTES: u8 = 3;
 const COPY_ZERO_SIZE: usize = 0x10000;
@@ -13,16 +13,17 @@ const MAX_COPY_OFFSET: usize = 0xFFFFFFFF;
 fn read_partial_int<R: Read>(
     stream: &mut R,
     bytes: u8,
-    present_bytes: &mut u8,
+    encoded_bits: u8,
 ) -> io::Result<usize> {
     let mut value = 0;
+    let mut encoded_bits = encoded_bits;
     for byte_index in 0..bytes {
-        // Use one bit of `present_bytes` to determine if the byte exists
-        if *present_bytes & 1 != 0 {
+        // Use one bit of `encoded_bits` to determine if the byte exists
+        if encoded_bits & 1 != 0 {
             let [byte] = read_bytes(stream)?;
             value |= (byte as usize) << (byte_index * 8);
         }
-        *present_bytes >>= 1;
+        encoded_bits >>= 1;
     }
     Ok(value)
 }
@@ -41,7 +42,7 @@ pub fn read_delta_commands<R: Read>(packfile: &mut R) -> io::Result<Vec<Command>
         };
         i+=1;
         println!("Reading command {} with value {}", i, command);
-        if command & COPY_INSTRUCTION_FLAG == 0 {
+        if command & COPY_COMMAND_FLAG == 0 {
             if command == 0 {
                 return Err(make_error("Invalid data command"));
             }
@@ -49,9 +50,8 @@ pub fn read_delta_commands<R: Read>(packfile: &mut R) -> io::Result<Vec<Command>
             packfile.read_exact(&mut data)?;
             commands.push(Command::Insert(data));
         } else {
-            let mut encoded_bytes = command;
-            let offset = read_partial_int(packfile, COPY_OFFSET_BYTES, &mut encoded_bytes)?;
-            let mut size = read_partial_int(packfile, COPY_SIZE_BYTES, &mut encoded_bytes)?;
+            let offset = read_partial_int(packfile, COPY_OFFSET_BYTES, command)?;
+            let mut size = read_partial_int(packfile, COPY_SIZE_BYTES, command >> COPY_OFFSET_BYTES )?;
             if size == 0 {
                 size = COPY_ZERO_SIZE;
             }
@@ -164,19 +164,13 @@ impl Command {
             }
             Command::Insert(bytes) => {
                 let mut encoded = Vec::new();
-                if bytes.len() > MAX_INSERT_SIZE {
-                    let first_slice = &bytes[..MAX_INSERT_SIZE];
-                    let second_slice = &bytes[MAX_INSERT_SIZE..];
-                    let command = Command::Insert(first_slice.to_vec());
-                    encoded.extend(command.encode());
-                    let command = Command::Insert(second_slice.to_vec());
-                    encoded.extend(command.encode());
-                } else {
-                    println!("Encoding insert: {} bytes", bytes.len());
-                    let header = 0x7F & bytes.len() as u8;
+                println!("Encoding insert: {} bytes", bytes.len());
+                bytes.chunks(MAX_INSERT_SIZE).for_each(|chunk| {
+                    println!("Encoding insert chunk: {} bytes", chunk.len());
+                    let header = 0x7F & chunk.len() as u8;
                     encoded.push(header);
-                    encoded.extend_from_slice(bytes);
-                }
+                    encoded.extend_from_slice(chunk);
+                });
                 encoded
             }
         }
@@ -211,7 +205,11 @@ pub fn delta_commands_from_objects(base: &[u8], object: &[u8]) -> Vec<Command> {
             commands.push(Command::Insert(oline.to_vec()));
         }
     }
-    optimize_delta_commands(commands.as_slice())
+
+    let commands = optimize_delta_commands(commands.as_slice());
+    println!("asserting");
+    assert_eq!(recreate_from_commands(base, &commands), object);
+    commands
 }
 
 fn optimize_delta_commands(commands: &[Command]) -> Vec<Command> {
