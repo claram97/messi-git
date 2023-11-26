@@ -17,7 +17,7 @@ const TREE_MODE_0: &str = "040000";
 
 //Tree structure
 //files is a vector of tuples (file_name, hash)
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Tree {
     pub name: String,
     pub files: Vec<(String, String)>,

@@ -1624,7 +1624,8 @@ Set your name and email :)</property>
                     </child>
                     <child>
                       <object class="GtkButton" id="rebase-button">
-                        <property name="label" translatable="yes">Ok!</property>
+                        <property name="label" translatable="yes">Actualizar archivo</property>
+                        <property name="width-request">100</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
@@ -1633,6 +1634,21 @@ Set your name and email :)</property>
                         <property name="expand">False</property>
                         <property name="fill">True</property>
                         <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="rebase-ok-all-button">
+                        <property name="label" translatable="yes">Ok!</property>
+                        <property name="width-request">40</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="margin-left">1</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
                       </packing>
                     </child>
                   </object>

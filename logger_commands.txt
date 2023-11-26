@@ -1364,3 +1364,1308 @@ Command 'git status': 2023-11-25 17:20:29.273657483 -03:00
 Untracked files 1
 Command 'git status': 2023-11-25 17:20:29.276084883 -03:00
 Unstaged files 0
+Command 'git init': Initialized repository at '/home/claram97/23C2-messi/.mgit'2023-11-26 18:16:30.822480067 -03:00
+Command 'git status': 2023-11-26 18:16:30.882592585 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.882965387 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.883258588 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.883682489 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.883995290 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.884359092 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.884626893 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.884979794 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.885227895 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.885499796 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.885796697 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.886211098 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.886451299 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.886716300 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.887019301 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.887308302 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.887553803 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.887791404 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.888083505 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.888334106 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.888613507 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.888885308 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.889258209 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.889539810 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.889849512 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.890138813 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.890497314 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.890764315 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.891041016 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.891301817 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.891612018 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.891881219 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.892221020 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.892472621 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.892744322 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.892997423 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.893329924 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.893625025 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.893899826 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.894163627 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.894494228 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.894799330 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.895028530 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.895243531 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.895460332 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.895697033 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.895943134 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.896172135 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.896403435 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.896644736 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.896906437 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.897254438 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.897529039 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.897869841 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.898210842 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.899146245 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.899515747 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.899804848 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.900057149 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.900362150 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.900660051 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.901162453 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.901493954 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.902235357 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.903666562 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.904296764 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.904622465 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:16:30.904937966 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:16:30.905768069 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.906215971 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.906508072 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.906783573 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.907112374 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.907680476 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.907997078 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.908396679 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.908849681 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.909159182 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.909454683 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.910161385 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.910429186 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.910773588 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.911121889 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.911427790 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.911702491 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.912061992 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.912336893 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.912615794 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.912878995 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.913179496 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.913796399 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.914218300 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.914738402 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.915394804 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.915883906 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.916466308 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.916896210 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.917273011 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.917566612 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.917923814 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.919465719 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.920444323 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.921002225 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.921478226 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.921993428 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.922329630 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.922755631 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.923163033 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.923534534 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.923962236 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.924367837 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.924700438 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.925093740 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:16:30.925547741 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:16:30.925926743 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:16:30.926394544 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.926795346 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.927148647 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.927536349 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.927891450 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.928239151 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:16:30.928701253 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.928995154 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:16:30.929273355 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:16:30.929575656 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.929941157 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.930418759 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.930905761 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:16:30.931376662 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:16:30.935013876 -03:00
+Unstaged files 0
+Command 'git init': Initialized repository at '/home/claram97/23C2-messi/.mgit'2023-11-26 18:17:28.015073022 -03:00
+Command 'git status': 2023-11-26 18:17:28.078388951 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.079049053 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.079464355 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.079932557 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.080406958 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.080853160 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.081306662 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.081763463 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.082205465 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.082605766 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.083005968 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.083400969 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.083824771 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.084200572 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.084586673 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.084962875 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.085320476 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.085672877 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.085997479 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.086284480 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.086630381 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.086912182 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.087192083 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.087538284 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.087819185 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.088104586 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.088398387 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.088741188 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.089081190 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.089410091 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.089724192 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.090024893 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.090373494 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.090744796 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.092120301 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.092756803 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.093146104 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.093416405 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.093740507 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.096049215 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.096616217 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.097129019 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.097556720 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.098204023 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.098573424 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.098913825 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.099349827 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.099756028 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.100101030 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.100397431 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.100716732 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.101157233 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.101641035 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.101949636 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.102304738 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.102650539 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.103013840 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.103319341 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.103711043 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.104071944 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.104448045 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.104791047 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.105163448 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.105500449 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.105882050 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.106520853 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.107834958 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:28.108222759 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:28.108686761 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.109088562 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.109478163 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.109892865 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.110303766 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.110786668 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.111192970 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.111552471 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.111959872 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.113277977 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.114134480 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.114824783 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.115328385 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.115806686 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.116346288 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.116847790 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.117301592 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.117857294 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.118359896 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.118836797 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.119405999 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.119910901 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.120468003 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.120923705 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.121350506 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.121703408 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.122017409 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.122449410 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.122993912 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.123495614 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.124081016 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.124576118 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.125103220 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.125577022 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.126089624 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.126558025 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.127145627 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.127632729 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.127966230 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.128274431 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.128648333 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.129004234 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.129389735 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.130234239 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.130802341 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:28.131331943 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:28.131890445 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:28.132408346 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.132955248 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.133468150 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.133964252 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.134461554 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.134987956 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:28.135501758 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.135973859 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:28.136371061 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:28.136721862 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.137058763 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.137452865 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.137878466 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:28.138258968 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:28.139460072 -03:00
+Unstaged files 0
+Command 'git init': Initialized repository at '/home/claram97/23C2-messi/.mgit'2023-11-26 18:17:50.259103958 -03:00
+Command 'git status': 2023-11-26 18:17:50.317025768 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.317734870 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.318176272 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.319351876 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.321693584 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.322107086 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.322416087 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.322785488 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.323153590 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.323461091 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.323857392 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.324147693 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.324442894 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.324793396 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.325064397 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.325353898 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.325605099 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.325934500 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.326306401 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.326607802 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.326849903 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.327149604 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.327420805 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.327712006 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.327959007 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.328262408 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.328497609 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.328851810 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.329119211 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.329428012 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.329753414 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.330067015 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.330419516 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.330801517 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.331310319 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.331639220 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.331998722 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.332289523 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.332649524 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.333075626 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.333422427 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.333769728 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.334097929 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.334506031 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.338770546 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.340473252 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.343491663 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.344325566 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.344716068 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.345073069 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.345907572 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.346294374 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.346624175 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.346874776 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.347132877 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.347518378 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.348462481 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.351957194 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.352693197 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.353054098 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.353419399 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.353754401 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.354169102 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.354591604 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.355009305 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.355332006 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.355639707 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:50.356089609 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:50.356525611 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.356864712 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.357186913 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.357498514 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.357772915 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.358110016 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.358670418 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.360515225 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.362212331 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.362534732 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.362832733 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.363205935 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.363460636 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.363774437 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.364056338 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.367648451 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.368053252 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.368490954 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.368811355 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.369476658 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.369712158 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.369968159 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.370268560 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.370497661 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.370732862 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.370969663 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.371237564 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.371497665 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.371725066 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.371970367 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.372211867 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.372463268 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.372760769 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.373021170 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.373302971 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.373598372 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.373971074 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.374252375 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.374555876 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.374950477 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.376428883 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.377314686 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.377562387 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.377814788 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.378050989 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:50.378290589 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:50.378520290 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:50.378760491 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.379011192 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.379249793 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.379489894 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.379716495 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.379951396 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:50.380204996 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.380454997 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:50.386388719 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:50.386748020 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.387056721 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.387347022 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.387646923 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:17:50.387920724 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:17:50.389193529 -03:00
+Unstaged files 0
+Command 'git init': Initialized repository at '/home/claram97/23C2-messi/.mgit'2023-11-26 18:18:12.384365324 -03:00
+Command 'git status': 2023-11-26 18:18:12.429882886 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.430413988 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.430900189 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.431329491 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.431687292 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.431906893 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.432155694 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.432405095 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.432657296 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.432958697 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.433273898 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.433539699 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.433874 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.434176401 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.434479002 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.434806703 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.435129005 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.435468606 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.435920607 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.436294709 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.436686410 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.438330216 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.439312419 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.439568120 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.439792521 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.440010022 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.440238323 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.440471624 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.440718424 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.440945925 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.441170926 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.441390427 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.441618928 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.441859928 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.442095129 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.442343830 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.442577031 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.447980050 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.448305551 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.448567652 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.448824253 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.449083154 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.449318655 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.449552556 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.449814157 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.450045558 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.450278558 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.450505159 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.450759160 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.451022761 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.451302962 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.451577663 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.451830864 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.452139165 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.452445266 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.452728067 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.453014768 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.453365569 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.454824875 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.456335980 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.457179983 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.457438584 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.457665585 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.457910586 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.458144786 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.458374687 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.458587688 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:12.458808589 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:12.459220290 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.459608892 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.460076093 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.461135997 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.461615399 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.462033200 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.463050304 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.464163708 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.464494009 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.464761910 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.464999111 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.465435612 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.465851414 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.466173815 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.466484716 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.466804417 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.467061818 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.467359419 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.467703620 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.468122522 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.468522923 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.468862324 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.469234626 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.469842528 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.470123629 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.470409430 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.470751331 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.472186036 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.473684842 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.474493144 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.474756745 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.474993246 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.475290447 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.475601248 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.476064050 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.476493452 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.477555555 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.477938857 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.478205758 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.478487959 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.478773660 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.479100661 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.479355862 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.479662963 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.479998064 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:12.480292865 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:12.480540166 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:12.480831767 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.481079568 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.481317569 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.481549670 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.481779070 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.482026871 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:12.482310772 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.482533373 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:12.482776874 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:12.483014475 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.483246576 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.483475776 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.483730277 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:12.483968778 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:12.485246383 -03:00
+Unstaged files 0
+Command 'git init': Initialized repository at '/home/claram97/23C2-messi/.mgit'2023-11-26 18:18:33.807762800 -03:00
+Command 'git status': 2023-11-26 18:18:33.863803399 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.865736906 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.869334219 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.869819820 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.870925724 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.872072328 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.872487230 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.873025032 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.873557034 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.873914435 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.874335436 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.875098239 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.875736141 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.876256443 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.876597144 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.876900646 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.877314247 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.877608048 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.877938849 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.878360451 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.878654552 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.878919053 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.879182854 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.879443055 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.879739456 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.880475958 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.881605062 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.882080364 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.882464265 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.883408969 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.885925478 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.886433779 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.887927485 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.888558587 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.888941688 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.889462490 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.889879292 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.890257493 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.890595794 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.890880495 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.891139196 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.891391397 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.891642898 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.891879099 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.892100999 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.892529301 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.893884906 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.894836309 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.895807713 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.897468218 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.898956924 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.899413825 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.905705348 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.908953959 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.909904663 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.910179164 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.910424564 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.910768366 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.911249167 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.911810569 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.912311371 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.912879673 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.913868177 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.915239081 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.917029688 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.920487800 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.921290803 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:33.922001305 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:33.923131009 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.924222413 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.924778715 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.925116116 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.925459218 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.925909719 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.926253121 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.926702422 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.927523525 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.928544629 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.929603032 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.932302142 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.933171445 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.935692954 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.936165456 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.936493657 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.936830458 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.937173859 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.937492060 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.937777461 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.938078662 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.938452264 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.939178166 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.940245170 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.940779272 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.941101573 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.941415074 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.941785176 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.942145677 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.942529878 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.942949880 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.943447281 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.943881383 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.944162884 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.944401285 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.944752686 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.945070387 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.945310388 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.945593989 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.945804690 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.946036391 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.946329092 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.946712293 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.947017594 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.947367695 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:33.947686897 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:33.948079398 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:33.948445899 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.948799 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.949098202 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.949493403 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.951761811 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.952765515 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:33.953127616 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.953379817 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:33.953649418 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:33.953922819 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.954201320 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.954464321 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.955032323 -03:00
+Untracked files 0
+Command 'git status': 2023-11-26 18:18:33.955377124 -03:00
+Untracked files 1
+Command 'git status': 2023-11-26 18:18:33.957312831 -03:00
+Unstaged files 0

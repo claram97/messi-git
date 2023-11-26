@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io};
+use std::{collections::HashMap, io::{self, Write}, fs::{File, self}, rc::Rc, cell::RefCell};
 
 use gtk::{
     prelude::BuilderExtManual, Button, ButtonExt, ComboBoxExt, ComboBoxText, ComboBoxTextExt,
@@ -8,7 +8,7 @@ use gtk::{
 use crate::{
     branch, commit, diff, merge,
     tree_handler::{self, Tree},
-    utils::{self, obtain_git_dir},
+    utils::{self, obtain_git_dir}, hash_object,
 };
 
 fn update_files_to_change(
@@ -60,25 +60,18 @@ fn combo_box_connect_changed(
 ) {
     let combo_box_cloned = combo_box.clone();
     let text_view_cloned = text_view.clone();
-    let files_to_change_clone = files_to_change.clone();
     combo_box.connect_changed(move |_| {
-        // Acción a realizar cuando el usuario elige una opción
         if let Some(active_text) = combo_box_cloned.get_active_text() {
             let path = active_text.to_string();
-            let diff = match files_to_change_clone.get(&path) {
-                Some(diff) => diff,
-                None => return,
+            let path = format!("{}_temp",path);
+            let diff = match fs::read_to_string(path) {
+                Ok(content) => content,
+                Err(_e) => {eprintln!("No se pudo obtener el diff"); return}
             };
             if let Some(buffer) = text_view_cloned.get_buffer() {
-                // Obtener el contenido actual del TextView y guardarlo en una variable
-                // Limpiar el contenido actual del TextView
                 buffer.set_text("");
-
-                // Insertar el contenido de diff en el TextView
-                buffer.insert_at_cursor(diff);
-
-                // Hacer algo con la variable current_text
-            } // Aquí puedes realizar la acción que desees con la opción seleccionada
+                buffer.insert_at_cursor(&diff);
+            } 
         }
     });
 }
@@ -87,27 +80,118 @@ fn rebase_button_on_clicked(
     button: &Button,
     combo_box: &ComboBoxText,
     text_view: &TextView,
-    files_to_change: &mut HashMap<String, String>,
 ) {
     let path = match combo_box.get_active_text() {
         Some(path) => path,
         None => {return}
     };
+    let path = format!("{}_temp", path);
     let text_buffer = match text_view.get_buffer() {
         Some(buff) => buff,
         None => {return}
     };
     let text = match text_buffer.get_text(&text_buffer.get_start_iter(), &text_buffer.get_end_iter(), false) {
-        Some(text) => text,
+        Some(text) => text.to_string(),
         None => {return}
     };
+    
+    button.connect_clicked(move |_| {
+        let mut file = match File::open(&path) {
+            Ok(file) => file,
+            Err(_e) => {eprintln!("No se pudo abrir el archivo."); return}
+        };
+        match file.write_all(text.as_bytes()) {
+            Ok(_) => {},
+            Err(_e) => {eprintln!("No se pudo actualizar el archivo"); return}
+        }   
+        match file.flush() {
+            Ok(_) => {},
+            Err(_e) => {eprintln!("No se pudo flushear el archivo"); return}
+        } 
+    });
+}
 
-    // let text_view_cloned = text_view.clone();
-    // let mut files_to_change_clone = files_to_change.clone();
-    // button.connect_clicked(move |_| {
-    //     files_to_change_clone.remove(&(path.to_string()));
-    //     files_to_change_clone.insert(path.to_string(), text.to_string());
-    // });
+fn write_diffs_in_files(files_to_change : &HashMap<String, String>) -> io::Result<()> {
+    for (path, diff) in files_to_change {
+        let file_name = format!("{}_temp", path);
+        let mut file = File::create(file_name)?;
+        file.write_all(diff.as_bytes())?;
+        file.flush()?;
+    }
+    Ok(())
+}
+
+fn update_files_to_change_from_files(files_to_change : &HashMap<String, String>) -> io::Result<(HashMap<String,String>)> {
+    let mut new_hash_map : HashMap<String, String> = HashMap::new();
+    for (path, _) in files_to_change {
+        let temp_path = format!("{}_temp", path);
+        let content = fs::read_to_string(&temp_path)?;
+        new_hash_map.insert(path.to_string(), content);
+        fs::remove_file(temp_path)?;
+    }
+    Ok(new_hash_map)
+}
+
+fn update_rebase_tree(rebased_tree : &Tree, updated : &HashMap<String, String>) -> Tree {
+    let mut rebased_new = rebased_tree.clone();
+    for (path, hash) in updated {
+        rebased_new.update_tree(path, hash);    
+    }
+    return rebased_new
+}
+
+fn  get_our_commit(our_commit : &str) -> String {
+    return our_commit.clone().to_string();
+}
+
+fn rebase_ok_all_button_on_clicked(button : &gtk::Button, our_commit: String, parent_hash: &str, rebased_tree : &mut Tree, files_to_change : &mut HashMap<String, String>) -> io::Result<String> {
+    //let mut new_commit_hash = String::new();
+    let files_to_change_cloned: HashMap<String, String> = files_to_change.clone();
+    let cloned_git_dir = obtain_git_dir(".mgit")?;
+    let rebased_tree_cloned = rebased_tree.clone();
+    button.connect_clicked(move |_| {
+        let files_to_change_updated : HashMap<String,String> = match update_files_to_change_from_files(&files_to_change_cloned) {
+            Ok(hash_map) => hash_map,
+            Err(_e) => {eprintln!("Update error"); return}
+        };
+        let mut updated : HashMap<String, String> = HashMap::new();
+        for (path, diff) in files_to_change_updated {
+            let hash = match hash_object::store_string_to_file(&diff, &cloned_git_dir, "blob") {
+                Ok(hash) => hash,
+                Err(_e) => {eprintln!("No se pudo hashear"); return}
+        
+            };
+            updated.insert(path, hash);            
+        }
+
+        let updated_tree = update_rebase_tree(&rebased_tree_cloned, &updated);
+        let message = format!("Rebasing commit: {}", our_commit);
+        let new_commit_hash = match commit::new_rebase_commit(&cloned_git_dir, &message, &our_commit, &updated_tree) {
+            Ok(commit) => commit,
+            Err(_e) => {eprintln!("No se pudo commitear"); return}
+        };
+        let temp_file_path = format!("{}/rebase_temp_file", &cloned_git_dir);
+        let mut file = match File::create(temp_file_path) {
+            Ok(file) => file,
+            Err(_e) => {eprintln!("No se pudo guardar el new commit hash"); return}
+        };
+        match file.write_all(new_commit_hash.as_bytes()) {
+            Ok(file) => file,
+            Err(_e) => {eprintln!("No se pudo guardar el new commit hash"); return}
+        };
+        match file.flush() {
+            Ok(file) => file,
+            Err(_e) => {eprintln!("No se pudo guardar el new commit hash"); return}
+        };
+        
+    });
+    let cloned_git_dir = obtain_git_dir(".mgit")?;
+    let temp_file_path = format!("{}/rebase_temp_file", &cloned_git_dir);
+    let new_commit_hash = match fs::read_to_string(&temp_file_path) {
+        Ok(commit) => commit,
+        Err(_) => {eprintln!("Error leyendo el commit."); return Ok("err".to_string())} //Devolver error acá
+    };
+    Ok(new_commit_hash)
 }
 
 /// Grabs the hashes from the common ancestor, our branch and their branch. Creates a new commit applied to the common ancestor, and then rebase the commits from our branch on top of the new commit.
@@ -153,6 +237,13 @@ pub fn create_rebasing_commit(
         }
     };
 
+    let ok_all_button = match builder.get_object::<Button>("rebase-ok-all-button") {
+        Some(combo_box) => combo_box,
+        None => {
+            println!("No se pudo encontrar el TextView con ID rebase-button");
+            return Ok("err".to_string()); //Devolver error acá
+        }
+    };
     // For each file changed this commit, we should check if it wasn't changed between the ancestor and rebase.
     // If so, we should simply update the hash.
     for (hash, path) in files_changed_this_commit {
@@ -167,15 +258,14 @@ pub fn create_rebasing_commit(
                 }
             };
             update_files_to_change(&hash, &hash2, &path, &mut files_to_change)?;
-            update_combo_box_text(builder, &combo_box, &files_to_change);
-            combo_box_connect_changed(&combo_box, &text_view, &files_to_change);
-            rebase_button_on_clicked(&button, &combo_box, &text_view, &mut files_to_change);
         }
     }
-
-    let message = format!("Rebasing commit: {our_commit}");
-    let new_commit_hash = commit::new_rebase_commit(git_dir, &message, parent_hash, &rebased_tree)?;
-
+    update_combo_box_text(builder, &combo_box, &files_to_change);
+    write_diffs_in_files(&files_to_change)?;
+    combo_box_connect_changed(&combo_box, &text_view, &files_to_change);
+    rebase_button_on_clicked(&button, &combo_box, &text_view);
+    let new_commit_hash = rebase_ok_all_button_on_clicked(&ok_all_button, our_commit.to_string(), parent_hash, &mut rebased_tree, &mut files_to_change)?;
+    
     Ok(new_commit_hash)
 }
 
@@ -212,3 +302,4 @@ pub fn rebase(
 
     Ok(())
 }
+
