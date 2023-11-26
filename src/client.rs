@@ -90,6 +90,24 @@ impl Client {
             "Upload pack requested. Remote: {}. Wanted branchs: {:?}",
             remote, wanted_branchs
         ))?;
+        match self.upload_pack_do(wanted_branchs, git_dir, remote) {
+            Ok(_) => {
+                log("Upload pack finished.")?;
+                Ok(())
+            }
+            Err(err) => {
+                log(&format!("Upload pack failed: {}", err))?;
+                Err(err)
+            }
+        }
+    }
+
+    fn upload_pack_do(
+        &mut self,
+        wanted_branchs: Vec<String>, // recibir vector con varias branchs
+        git_dir: &str,
+        remote: &str,
+    ) -> io::Result<()> {
         self.clear();
         self.git_dir = git_dir.to_string();
         self.remote = remote.to_string();
@@ -120,6 +138,20 @@ impl Client {
     /// * `branch` - The name of the branch to push.
     /// * `git_dir` - The path to the git directory.
     pub fn receive_pack(&mut self, branch: &str, git_dir: &str) -> io::Result<()> {
+        log(&format!("Receive pack requested. Branch: {}", branch))?;
+        match self.receive_pack_do(branch, git_dir) {
+            Ok(_) => {
+                log("Receive pack finished.")?;
+                Ok(())
+            }
+            Err(err) => {
+                log(&format!("Receive pack failed: {}", err))?;
+                Err(err)
+            }
+        }
+    }
+
+    fn receive_pack_do(&mut self, branch: &str, git_dir: &str) -> io::Result<()> {
         log(&format!("Receive pack requested. Branch: {}", branch))?;
         self.clear();
         self.connect()?;
@@ -183,17 +215,24 @@ impl Client {
     // Should be called only aftes: initiate_connection
     fn wait_server_refs(&mut self) -> io::Result<()> {
         let (_, _) = read_pkt_line(self.socket()?)?;
-        let (mut size, mut line) = read_pkt_line(self.socket()?)?;
+        // let (mut size, mut line) = read_pkt_line(self.socket()?)?;
 
-        while size > 0 {
+
+        loop {
+            let (size, line) = read_pkt_line(self.socket()?)?;
+            if size == 0 {
+                break;
+            }
             if let Some((hash, mut ref_path)) = line.split_once(' ') {
                 if let Some((head, _capabilities)) = ref_path.split_once('\0') {
                     ref_path = head;
                 }
-                self.server_refs
-                    .insert(ref_path.trim().to_string(), hash.to_string());
+                if hash != ZERO_HASH {
+                    self.server_refs
+                        .insert(ref_path.trim().to_string(), hash.to_string());
+                }
             }
-            (size, line) = read_pkt_line(self.socket()?)?;
+            
         }
         log(&format!("Server refs: {:?}", self.server_refs))?;
         Ok(())
