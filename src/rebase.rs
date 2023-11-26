@@ -89,18 +89,18 @@ fn rebase_button_on_clicked(
     text_view: &TextView,
     files_to_change: &mut HashMap<String, String>,
 ) {
-    // let path = match combo_box.get_active_text() {
-    //     Some(path) => &path.to_string(),
-    //     None => {return}
-    // };
-    // let text_buffer = match text_view.get_buffer() {
-    //     Some(buff) => buff,
-    //     None => {return}
-    // };
-    // let text = match text_buffer.get_text(&text_buffer.get_start_iter(), &text_buffer.get_end_iter(), false) {
-    //     Some(text) => &text.to_string(),
-    //     None => {return}
-    // };
+    let path = match combo_box.get_active_text() {
+        Some(path) => path,
+        None => {return}
+    };
+    let text_buffer = match text_view.get_buffer() {
+        Some(buff) => buff,
+        None => {return}
+    };
+    let text = match text_buffer.get_text(&text_buffer.get_start_iter(), &text_buffer.get_end_iter(), false) {
+        Some(text) => text,
+        None => {return}
+    };
 
     // let text_view_cloned = text_view.clone();
     // let mut files_to_change_clone = files_to_change.clone();
