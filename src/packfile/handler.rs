@@ -324,11 +324,12 @@ pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
     let packfile = Packfile::reader(Cursor::new(packfile), git_dir)?;
     for entry in packfile {
         let entry = entry?;
-        hash_object::store_bytes_array_to_file(
+        let hash = hash_object::store_bytes_array_to_file(
             entry.content,
             git_dir,
             &entry.obj_type.to_string(),
         )?;
+        log(&format!("Object {} of type {} unpacked", hash, entry.obj_type))?;
     }
     Ok(())
 }
