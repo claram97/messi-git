@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::{self, Write}, fs::{File, self}, rc::Rc, cell::RefCell};
+use std::{collections::HashMap, io::{self, Write}, fs::{File, self}};
 
 use gtk::{
     prelude::BuilderExtManual, Button, ButtonExt, ComboBoxExt, ComboBoxText, ComboBoxTextExt,
@@ -27,13 +27,13 @@ fn update_files_to_change(
 }
 
 fn update_combo_box_text(
-    builder: &gtk::Builder,
+    _builder: &gtk::Builder,
     combo_box: &gtk::ComboBoxText,
     options: &std::collections::HashMap<String, String>,
 ) {
     combo_box.remove_all();
 
-    for (key, _value) in options {
+    for key in options.keys() {
         combo_box.append_text(key);
     }
 }
@@ -56,7 +56,7 @@ let current_text = match buffer.get_text(&buffer.get_start_iter(), &buffer.get_e
 fn combo_box_connect_changed(
     combo_box: &gtk::ComboBoxText,
     text_view: &gtk::TextView,
-    files_to_change: &HashMap<String, String>,
+    _files_to_change: &HashMap<String, String>,
 ) {
     let combo_box_cloned = combo_box.clone();
     let text_view_cloned = text_view.clone();
@@ -106,7 +106,7 @@ fn rebase_button_on_clicked(
         }   
         match file.flush() {
             Ok(_) => {},
-            Err(_e) => {eprintln!("No se pudo flushear el archivo"); return}
+            Err(_e) => {eprintln!("No se pudo flushear el archivo");}
         } 
     });
 }
@@ -121,7 +121,7 @@ fn write_diffs_in_files(files_to_change : &HashMap<String, String>) -> io::Resul
     Ok(())
 }
 
-fn update_files_to_change_from_files(files_to_change : &HashMap<String, String>) -> io::Result<(HashMap<String,String>)> {
+fn update_files_to_change_from_files(files_to_change : &HashMap<String, String>) -> io::Result<HashMap<String,String>> {
     let mut new_hash_map : HashMap<String, String> = HashMap::new();
     for (path, _) in files_to_change {
         let temp_path = format!("{}_temp", path);
@@ -137,14 +137,10 @@ fn update_rebase_tree(rebased_tree : &Tree, updated : &HashMap<String, String>) 
     for (path, hash) in updated {
         rebased_new.update_tree(path, hash);    
     }
-    return rebased_new
+    rebased_new
 }
 
-fn  get_our_commit(our_commit : &str) -> String {
-    return our_commit.clone().to_string();
-}
-
-fn rebase_ok_all_button_on_clicked(button : &gtk::Button, our_commit: String, parent_hash: &str, rebased_tree : &mut Tree, files_to_change : &mut HashMap<String, String>) -> io::Result<String> {
+fn rebase_ok_all_button_on_clicked(button : &gtk::Button, our_commit: String, _parent_hash: &str, rebased_tree : &mut Tree, files_to_change : &mut HashMap<String, String>) -> io::Result<String> {
     //let mut new_commit_hash = String::new();
     let files_to_change_cloned: HashMap<String, String> = files_to_change.clone();
     let cloned_git_dir = obtain_git_dir(".mgit")?;
@@ -181,13 +177,13 @@ fn rebase_ok_all_button_on_clicked(button : &gtk::Button, our_commit: String, pa
         };
         match file.flush() {
             Ok(file) => file,
-            Err(_e) => {eprintln!("No se pudo guardar el new commit hash"); return}
-        };
+            Err(_e) => {eprintln!("No se pudo guardar el new commit hash");}
+        }
         
     });
     let cloned_git_dir = obtain_git_dir(".mgit")?;
     let temp_file_path = format!("{}/rebase_temp_file", &cloned_git_dir);
-    let new_commit_hash = match fs::read_to_string(&temp_file_path) {
+    let new_commit_hash = match fs::read_to_string(temp_file_path) {
         Ok(commit) => commit,
         Err(_) => {eprintln!("Error leyendo el commit."); return Ok("err".to_string())} //Devolver error acá
     };
@@ -279,10 +275,10 @@ pub fn rebase(
     let their_branch_hash = branch::get_branch_commit_hash(their_branch, git_dir)?;
 
     let common_commit_ancestor =
-        merge::find_common_ancestor(&our_branch_hash, &their_branch_hash, &git_dir)?;
+        merge::find_common_ancestor(&our_branch_hash, &their_branch_hash, git_dir)?;
     let mut our_branch_commits = utils::get_branch_commit_history_until(
         &our_branch_hash,
-        &git_dir,
+        git_dir,
         &common_commit_ancestor,
     )?;
     our_branch_commits.reverse();
@@ -295,7 +291,7 @@ pub fn rebase(
             &commit_hash,
             &their_branch_hash,
             &common_commit_ancestor,
-            &git_dir,
+            git_dir,
             &our_new_branch_hash,
         )?;
     }

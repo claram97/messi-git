@@ -9,6 +9,7 @@ use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
 use crate::git_config::git_config;
+use crate::rebase::rebase;
 use crate::tag::git_tag;
 use crate::utils::obtain_git_dir;
 
@@ -152,6 +153,9 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
 
     let builder_clone_for_git_config = builder.clone();
     config_window(&builder_clone_for_git_config);
+
+    let builder_clone_for_rebase = builder.clone();
+    rebase_window(&builder_clone_for_rebase);
 
     setup_buttons(builder)?;
 
@@ -4136,6 +4140,19 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
     show_current_branch_on_merge_window(&merge_text_view)?;
 
     set_merge_button_behavior(&merge_button, &merge_input_branch_entry, &merge_text_view)?;
+    Ok(())
+}
+
+fn rebase_window(builder : &gtk::Builder) -> io::Result<()> {
+    let button = get_button(builder, "make-rebase-button");
+    let builder_clone = builder.clone();
+    button.connect_clicked(move |_| {
+        let git_dir = obtain_git_dir(".mgit").unwrap();
+        let current_branch = get_branch_name(&git_dir).unwrap();
+        let their_branch = "master";
+        rebase(&builder_clone, &current_branch, their_branch, &git_dir);
+
+    });
     Ok(())
 }
 
