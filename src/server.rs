@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::{fs, thread};
 
-const CAPABILITIES_UPLOAD: &str = "side-band-64k ofs-delta quiet atomic no-progress delete-refs";
+const CAPABILITIES: &str = "multi_ack side-band-64k ofs-delta";
 const ZERO_HASH: &str = "0000000000000000000000000000000000000000";
 
 enum Command {
@@ -161,13 +161,13 @@ impl ServerInstace {
         if refs.is_empty() {
             let empty = format!(
                 "{} {}\0{}",
-                ZERO_HASH, "capabilities^{}", CAPABILITIES_UPLOAD
+                ZERO_HASH, "capabilities^{}", CAPABILITIES
             );
             self.send(&pkt_line(&empty))?;
             return self.flush();
         }
 
-        refs[0] = format!("{}\0{}", refs[0], CAPABILITIES_UPLOAD);
+        refs[0] = format!("{}\0{}", refs[0], CAPABILITIES);
 
         let version = "version 1";
         let version = pkt_line(version);
@@ -333,7 +333,7 @@ impl ServerInstace {
 
     // Sends a message through the socket
     fn send(&mut self, message: &str) -> io::Result<()> {
-        log(&format!("Sending: {}", message.replace('\0', "\\0")))?;
+        log(&format!("Sending: {}", message))?;
         write!(self.socket, "{}", message)
     }
 

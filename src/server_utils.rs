@@ -12,7 +12,7 @@ use crate::{cat_file, logger, utils::get_current_time};
 pub fn log(message: &str) -> io::Result<()> {
     let mut logger = logger::Logger::new("logs/log.log")?;
     let message = format!("{} - {}", get_current_time(), message);
-    write!(logger, "{}", message)?;
+    write!(logger, "{}", message.escape_debug().to_string())?;
     logger.flush()
 }
 
@@ -42,7 +42,7 @@ pub fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
     if line.starts_with("ERR") {
         return Err(Error::new(io::ErrorKind::Other, format!("Error: {}", line)));
     }
-    log(&format!("Reading line of size {}\n\t{}", size, line.replace('\0', "\\0")))?;
+    log(&format!("Reading line of size {} -> {}", size, line.replace('\0', "\\0")))?;
     Ok((size, line))
 }
 
@@ -61,7 +61,7 @@ pub fn read_pkt_line_bytes(socket: &mut TcpStream) -> io::Result<(usize, Vec<u8>
 
     let mut buf = vec![0u8; size - 4];
     socket.read_exact(&mut buf)?;
-    log(&format!("Reading bytes of size {}\n\t{:?}", size, buf))?;
+    log(&format!("Reading bytes of size {} -> {:?}", size, buf))?;
     Ok((size, buf))
 }
 

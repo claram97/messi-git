@@ -322,7 +322,10 @@ pub fn unpack_packfile(packfile: &[u8], git_dir: &str) -> io::Result<()> {
             git_dir,
             &entry.obj_type.to_string(),
         )?;
-        log(&format!("Object {} of type {} unpacked", hash, entry.obj_type))?;
+        log(&format!(
+            "Object {} of type {} unpacked",
+            hash, entry.obj_type
+        ))?;
     }
     Ok(())
 }
@@ -344,16 +347,20 @@ fn append_objects(packfile: &mut Vec<u8>, objects: &[String], git_dir: &str) -> 
     for hash in objects {
         let entry = PackfileEntry::from_hash(hash, git_dir)?;
         let offset = packfile.len();
-        let mut t = entry.obj_type;
-        if let Some(base_obj) = find_base_object_index(&entry, &objects_in_packfile) {
-            append_delta_object(packfile, base_obj, &entry, git_dir)?;
-            t = ObjectType::OfsDelta;
-        } else {
-            append_object(packfile, &entry, git_dir)?;
-        }
+
+        let obj_type = match find_base_object_index(&entry, &objects_in_packfile) {
+            Some(base_obj) => {
+                append_delta_object(packfile, base_obj, &entry, git_dir)?;
+                ObjectType::OfsDelta
+            }
+            None => {
+                append_object(packfile, &entry, git_dir)?;
+                entry.obj_type
+            }
+        };
         log(&format!(
             "Object {} of type {} appended at offset {}",
-            hash, t, offset
+            hash, obj_type, offset
         ))?;
         objects_in_packfile.push((entry, offset));
     }
@@ -492,15 +499,14 @@ fn append_delta_object(
 /// Returns an `io::Error` if there is an issue reading, compressing, or appending the object.
 ///
 fn append_object(packfile: &mut Vec<u8>, object: &PackfileEntry, _git_dir: &str) -> io::Result<()> {
-    let obj_size = object.size;
-    let encoded_header = object_header(object.obj_type, obj_size);
+    let encoded_header = object_header(object.obj_type, object.size);
     packfile.extend(encoded_header);
 
     let mut compressor = ZlibEncoder::new(Vec::<u8>::new(), Compression::default());
     compressor.write_all(&object.content)?;
     let compressed_content = compressor.finish()?;
     packfile.extend(compressed_content);
-    log(&format!("Object appended. Size: {}", obj_size))?;
+    log(&format!("Object appended. Size: {}", object.size))?;
     Ok(())
 }
 

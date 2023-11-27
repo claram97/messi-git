@@ -164,15 +164,22 @@ impl Client {
             Some(hash) => hash.clone(),
             None => String::new(),
         };
-        if &prev_hash == new_hash {
-            log("Already up to date.")?;
-            return Ok(());
-        }
+        // if &prev_hash == new_hash {
+        //     log("Already up to date.")?;
+        //     return Ok(());
+        // }
         if prev_hash.is_empty() {
-            self.receive_pack_create(&pushing_ref, new_hash)
+            self.receive_pack_create(&pushing_ref, new_hash)?;
         } else {
-            self.receive_pack_update(&pushing_ref, &prev_hash, new_hash)
+            self.receive_pack_update(&pushing_ref, &prev_hash, new_hash)?;
         }
+        while let Ok((size, line)) = read_pkt_line(self.socket()?) {
+            if size < 4 {
+                break;
+            }
+            log(&format!("Server response after packfile: {}", line))?;
+        }
+        Ok(())
     }
 
     // Clears the client state
@@ -221,7 +228,6 @@ impl Client {
                         .insert(ref_path.trim().to_string(), hash.to_string());
                 }
             }
-            
         }
         log(&format!("Server refs: {:?}", self.server_refs))?;
         Ok(())
@@ -334,7 +340,7 @@ impl Client {
         prev_hash: &str,
         new_hash: &str,
     ) -> io::Result<()> {
-        let update = format!("{} {} {}\0", prev_hash, new_hash, pushing_ref);
+        let update = format!("{} {} {}\n", prev_hash, new_hash, pushing_ref);
         self.send(&pkt_line(&update))?;
         self.flush()?;
 
@@ -367,16 +373,13 @@ impl Client {
 
     // Sends a message through the socket
     fn send(&mut self, message: &str) -> io::Result<()> {
-        log(&format!(
-            "Sending message: {}",
-            message.replace('\0', "\\0")
-        ))?;
+        log(&format!("Sending message: {}", message))?;
         write!(self.socket()?, "{}", message)
     }
 
     // Sends a message through the socket as bytes
     fn send_bytes(&mut self, content: &[u8]) -> io::Result<()> {
-        log(&format!("Sending bytes:\n{:?}", content))?;
+        log(&format!("Sending bytes: {:?}", content))?;
         self.socket()?.write_all(content)
     }
 
