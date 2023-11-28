@@ -11,7 +11,8 @@ use crate::{packfile, server_utils::*};
 const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
 const GIT_RECEIVE_PACK: &str = "git-receive-pack";
-const CAPABILITIES_UPLOAD: &str = "multi_ack side-band-64k ofs-delta";
+const CAPABILITIES_UPLOAD: &str = "multi_ack include-tag side-band-64k ofs-delta";
+// const CAPABILITIES_RECEIVE: &str = "side-band-64k ofs-delta";
 const ZERO_HASH: &str = "0000000000000000000000000000000000000000";
 
 #[derive(Debug, Default)]
@@ -164,10 +165,9 @@ impl Client {
             Some(hash) => hash.clone(),
             None => String::new(),
         };
-        // if &prev_hash == new_hash {
-        //     log("Already up to date.")?;
-        //     return Ok(());
-        // }
+        if &prev_hash == new_hash {
+            log("Already up to date.")?;
+        }
         if prev_hash.is_empty() {
             self.receive_pack_create(&pushing_ref, new_hash)?;
         } else {
@@ -241,7 +241,8 @@ impl Client {
     fn want_branchs(&mut self, branchs: Vec<String>) -> io::Result<HashMap<String, String>> {
         let mut fetched_remotes_refs = HashMap::new();
 
-        let client_remotes_refs = get_remote_refs(&self.git_dir, &self.remote)?;
+        let client_refs = get_client_refs(&self.git_dir, &self.remote)?;
+        log(&format!("Client refs: {:?}", client_refs))?;
         for branch in branchs {
             let wanted_ref = get_head_from_branch(&self.git_dir, &branch)?;
             let hash = match self.server_refs.get(&wanted_ref) {
@@ -252,7 +253,7 @@ impl Client {
                     return Err(Error::new(io::ErrorKind::NotFound, message));
                 }
             };
-            if let Some(local_hash) = client_remotes_refs.get(&branch) {
+            if let Some(local_hash) = client_refs.get(&branch) {
                 if &hash == local_hash {
                     continue;
                 }
@@ -261,7 +262,7 @@ impl Client {
         }
         if !fetched_remotes_refs.is_empty() {
             self.send_wants(fetched_remotes_refs.values().collect())?;
-            self.send_haves(client_remotes_refs)?;
+            self.send_haves(client_refs)?;
             self.done()?;
         }
         Ok(fetched_remotes_refs)

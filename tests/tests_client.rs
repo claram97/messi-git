@@ -44,11 +44,21 @@ fn test_refs_has_head() -> io::Result<()> {
 
 #[test]
 #[ignore]
+fn test_refs_has_tags() -> io::Result<()> {
+    let address = "localhost:".to_owned() + PORT;
+    let mut client = Client::new(&address, "repo2", "localhost");
+    let refs = client.get_server_refs()?;
+    dbg!(refs);
+    Ok(())
+}
+
+#[test]
+#[ignore]
 fn test_upload_pack() -> io::Result<()> {
     let address = "localhost:".to_owned() + PORT;
-    let mut client = Client::new(&address, "repo", "localhost");
+    let mut client = Client::new(&address, "repo2", "localhost");
     client.upload_pack(
-        vec!["master".to_string()],
+        vec!["v1.0".to_string()],
         "tests/packfiles/.mgit",
         "origin",
     )?;

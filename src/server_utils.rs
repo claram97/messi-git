@@ -92,17 +92,27 @@ pub fn pkt_line_bytes(content: &[u8]) -> Vec<u8> {
 /// Gets the ref name of a branch
 /// If branch is HEAD, then it gets the ref name of the branch pointed by HEAD
 pub fn get_head_from_branch(git_dir: &str, branch: &str) -> io::Result<String> {
-    if branch != "HEAD" {
+    if branch == "HEAD" {
+        let head = PathBuf::from(git_dir).join("HEAD");
+        let content = fs::read_to_string(head)?;
+        let (_, head) = content.rsplit_once(": ").ok_or(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("Invalid data HEAD. Must have ref for fetch: {}", content),
+        ))?;
+        return Ok(head.trim().to_string())
+    }
+    let pathbuf = PathBuf::from(git_dir).join("refs").join("heads").join(branch);
+    if pathbuf.exists() {
         return Ok(format!("refs/heads/{}", branch));
     }
-
-    let head = PathBuf::from(git_dir).join("HEAD");
-    let content = fs::read_to_string(head)?;
-    let (_, head) = content.rsplit_once(": ").ok_or(io::Error::new(
+    let pathbuf = PathBuf::from(git_dir).join("refs").join("tags").join(branch);
+    if pathbuf.exists() {
+        return Ok(format!("refs/tags/{}", branch));
+    }
+    Err(io::Error::new(
         io::ErrorKind::InvalidData,
-        format!("Invalid data HEAD. Must have ref for fetch: {}", content),
-    ))?;
-    Ok(head.trim().to_string())
+        format!("Invalid branch: {}", branch),
+    ))
 }
 
 /// Auxiliar function which get refs under refs/heads
@@ -113,10 +123,14 @@ pub fn get_head_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
 }
 
 /// Auxiliar function which get refs under refs/heads
-pub fn get_remote_refs(git_dir: &str, remote: &str) -> io::Result<HashMap<String, String>> {
+pub fn get_client_refs(git_dir: &str, remote: &str) -> io::Result<HashMap<String, String>> {
     let pathbuf = PathBuf::from(git_dir);
     let remotes = pathbuf.join("refs").join("remotes").join(remote);
-    get_refs(remotes)
+    let tags = pathbuf.join("refs").join("tags");
+    let mut refs = get_refs(remotes)?;
+    let tags = get_refs(tags)?;
+    refs.extend(tags);
+    Ok(refs)
 }
 
 // Auxiliar function which get refs under refs_path
@@ -286,4 +300,17 @@ fn get_objects_tree_objects(hash: &str, git_dir: &str) -> io::Result<HashSet<Str
     }
 
     Ok(objects)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_client_refs() -> io::Result<()> {
+        let refs = get_client_refs("tests/packfiles/.mgit", "origin")?;
+        assert!(refs.contains_key(&"master".to_string()));
+        assert!(refs.contains_key(&"v1.0".to_string()));
+        Ok(())
+    }
 }
