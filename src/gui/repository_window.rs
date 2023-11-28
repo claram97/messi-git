@@ -4148,10 +4148,12 @@ fn rebase_window(builder : &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
     button.connect_clicked(move |_| {
         let git_dir = obtain_git_dir(".mgit").unwrap();
+        println!("Git dir is {:?}",git_dir);
         let current_branch = get_branch_name(&git_dir).unwrap();
+        println!("Current branch is {:?}", current_branch);
         let their_branch = "master";
+        println!("Their branch is {:?}", their_branch);
         rebase(&builder_clone, &current_branch, their_branch, &git_dir);
-
     });
     Ok(())
 }

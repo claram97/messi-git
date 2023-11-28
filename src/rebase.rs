@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::{self, Write}, fs::{File, self}};
+use std::{collections::HashMap, io::{self, Write}, fs::{File, self}, thread, time::Duration};
 
 use gtk::{
     prelude::BuilderExtManual, Button, ButtonExt, ComboBoxExt, ComboBoxText, ComboBoxTextExt,
@@ -27,13 +27,14 @@ fn update_files_to_change(
 }
 
 fn update_combo_box_text(
-    _builder: &gtk::Builder,
     combo_box: &gtk::ComboBoxText,
     options: &std::collections::HashMap<String, String>,
 ) {
+    println!("Updating como box text");
     combo_box.remove_all();
 
     for key in options.keys() {
+        println!("Key");
         combo_box.append_text(key);
     }
 }
@@ -117,6 +118,7 @@ fn write_diffs_in_files(files_to_change : &HashMap<String, String>) -> io::Resul
         let mut file = File::create(file_name)?;
         file.write_all(diff.as_bytes())?;
         file.flush()?;
+        println!("File written");
     }
     Ok(())
 }
@@ -185,8 +187,9 @@ fn rebase_ok_all_button_on_clicked(button : &gtk::Button, our_commit: String, _p
     let temp_file_path = format!("{}/rebase_temp_file", &cloned_git_dir);
     let new_commit_hash = match fs::read_to_string(temp_file_path) {
         Ok(commit) => commit,
-        Err(_) => {eprintln!("Error leyendo el commit."); return Ok("err".to_string())} //Devolver error acá
+        Err(_) => {eprintln!("Error leyendo el commit.");  return Ok("ok".to_string())}
     };
+
     Ok(new_commit_hash)
 }
 
@@ -209,59 +212,103 @@ pub fn create_rebasing_commit(
             .into_iter()
             .collect();
     let files_changed_this_commit = tree_handler::get_files_with_changes(&ancestor_tree, &our_tree);
+    for (a, b) in &files_changed_this_commit {
+        println!("Files changed: ({},{})", a, b);
+    }
+    for (a, b) in &files_without_changes_in_rebased {
+        println!("Files withouth changed: ({},{})", a, b);
+    }
     let mut files_to_change: HashMap<String, String> = HashMap::new();
     let combo_box = match builder.get_object::<ComboBoxText>("rebase-text-list") {
         Some(combo_box) => combo_box,
         None => {
             println!("No se pudo encontrar el ComboBoxText con ID rebase-text-list");
-            return Ok("err".to_string()); //Devolver error acá
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo encontrar el ComboBoxText con ID rebase-text-list",
+            ));
         }
     };
+    println!("Obtained combo box");
     let text_view = match builder.get_object::<TextView>("rebase-view") {
         Some(combo_box) => combo_box,
         None => {
             println!("No se pudo encontrar el TextView con ID rebase-view");
-            return Ok("err".to_string()); //Devolver error acá
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo encontrar el TextView con ID rebase-view",
+            ));
         }
     };
+    println!("Obtained text view");
 
     let button = match builder.get_object::<Button>("rebase-button") {
         Some(combo_box) => combo_box,
         None => {
-            println!("No se pudo encontrar el TextView con ID rebase-button");
-            return Ok("err".to_string()); //Devolver error acá
+            println!("No se pudo encontrar el botón con ID rebase-button");
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo encontrar el botón con ID rebase-button",
+            ));
         }
     };
-
-    let ok_all_button = match builder.get_object::<Button>("rebase-ok-all-button") {
+    println!("Obtained update button");
+    let ok_all_button: Button = match builder.get_object::<Button>("rebase-ok-all-button") {
         Some(combo_box) => combo_box,
         None => {
-            println!("No se pudo encontrar el TextView con ID rebase-button");
-            return Ok("err".to_string()); //Devolver error acá
+            println!("No se pudo encontrar el botón con ID rebase-ok-all-button");
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo encontrar el botón con ID rebase-ok-all-button",
+            ));
         }
     };
+    
+    println!("Obtained ok all button");
     // For each file changed this commit, we should check if it wasn't changed between the ancestor and rebase.
     // If so, we should simply update the hash.
-    for (hash, path) in files_changed_this_commit {
+    for (path, hash) in files_changed_this_commit {
+        println!("Estoy en el for");
         if files_without_changes_in_rebased.contains_key(&path) {
+            println!("Entré al if");
             rebased_tree.update_tree(&path, &hash);
+            println!("Updated!");
         } else {
+            println!("Entré al else");
             let hash2 = match rebased_tree.get_hash_from_path(&path) {
                 Some(hash) => hash,
                 None => {
-                    return Ok("ok".to_string());
-                    //Acá en realidad voy a devolver error
+                    return Err(io::Error::new(
+                        io::ErrorKind::NotFound,
+                        "No se pudo obtener el hash del path del rebased tree",
+                    ));
                 }
             };
+            println!("Obtuve el hash {}", hash2);
             update_files_to_change(&hash, &hash2, &path, &mut files_to_change)?;
+            println!("Updated files to change");
         }
     }
-    update_combo_box_text(builder, &combo_box, &files_to_change);
+    for (path, diff) in &files_to_change {
+        println!("Files to change path : {} and diff : {}", path, diff);
+    }
+    update_combo_box_text(&combo_box, &files_to_change);
     write_diffs_in_files(&files_to_change)?;
     combo_box_connect_changed(&combo_box, &text_view, &files_to_change);
     rebase_button_on_clicked(&button, &combo_box, &text_view);
-    let new_commit_hash = rebase_ok_all_button_on_clicked(&ok_all_button, our_commit.to_string(), parent_hash, &mut rebased_tree, &mut files_to_change)?;
-    
+    let mut new_commit_hash = rebase_ok_all_button_on_clicked(&ok_all_button, our_commit.to_string(), parent_hash, &mut rebased_tree, &mut files_to_change)?;
+     // Esperar hasta que new_commit_hash sea distinto de "ok"
+    while new_commit_hash == "ok" {
+        thread::sleep(Duration::from_secs(100)); // Puedes ajustar el tiempo de espera según tus necesidades
+        new_commit_hash = rebase_ok_all_button_on_clicked(
+            &ok_all_button,
+            our_commit.to_string(),
+            parent_hash,
+            &mut rebased_tree,
+            &mut files_to_change,
+        )?;
+    }
+
     Ok(new_commit_hash)
 }
 
@@ -272,19 +319,23 @@ pub fn rebase(
     git_dir: &str,
 ) -> io::Result<()> {
     let our_branch_hash = branch::get_branch_commit_hash(our_branch, git_dir)?;
+    println!("Our branch hash {:?}", our_branch_hash);
     let their_branch_hash = branch::get_branch_commit_hash(their_branch, git_dir)?;
-
+    println!("Their branch hash {:?}", their_branch_hash);
     let common_commit_ancestor =
         merge::find_common_ancestor(&our_branch_hash, &their_branch_hash, git_dir)?;
+    println!("Common commit ancestor {}", common_commit_ancestor);
     let mut our_branch_commits = utils::get_branch_commit_history_until(
         &our_branch_hash,
         git_dir,
         &common_commit_ancestor,
     )?;
+    println!("Our branch commits:");
+    println!("{:?}", our_branch_commits);
     our_branch_commits.reverse();
 
     let mut our_new_branch_hash = their_branch_hash.clone();
-
+    println!("Our new branch hash {:?}", our_new_branch_hash);
     while let Some(commit_hash) = our_branch_commits.pop() {
         our_new_branch_hash = create_rebasing_commit(
             builder,
