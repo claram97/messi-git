@@ -254,6 +254,18 @@ pub fn read_head_commit_hash(git_dir: &str) -> io::Result<String> {
     }
 }
 
+pub fn get_commit_time(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
+    let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
+    let time: String = match commit_file.split('\n').nth(3) {
+        Some(time) => {
+            let time: Vec<&str> = time.split(' ').collect();
+            time[3..].join(" ")
+        }
+        None => return Err(io::Error::new(io::ErrorKind::NotFound, "Time not found")),
+    };
+    Ok(time)
+}
+
 #[cfg(test)]
 mod tests {
     fn create_git_dir(git_dir_path: &str) {
