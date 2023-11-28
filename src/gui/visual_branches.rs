@@ -1,6 +1,7 @@
 use crate::commit;
 use crate::{branch, utils};
 use gtk::{prelude::BuilderExtManual, WidgetExt};
+use std::f64::consts;
 use std::{
     collections::{HashMap, HashSet},
     io,
@@ -64,7 +65,7 @@ fn define_branch_colors(
 ) -> HashMap<i32, (f64, f64, f64)> {
     let mut branch_colors: HashMap<i32, (f64, f64, f64)> = HashMap::new();
     let mut color_index = 0;
-    let colors = vec![
+    let colors = [
         (0.2, 0.22, 0.95),
         (0.23, 0.65, 0.62),
         (0.43, 0.12, 0.7),
@@ -72,7 +73,7 @@ fn define_branch_colors(
         (0.96, 0.24, 0.82),
     ];
     for branch in branches {
-        let x_pos = branches_pos.get(branch).unwrap_or(&20).clone();
+        let x_pos = *branches_pos.get(branch).unwrap_or(&20);
         branch_colors.insert(x_pos, colors[color_index]);
         color_index += 1;
         if color_index == colors.len() {
@@ -90,8 +91,8 @@ fn draw_branch_names(
     let mut y_pos = 10;
     for branch in branches {
         let name = branch.clone();
-        let x_pos = x_positions.get(&name).unwrap_or(&20).clone();
-        y_pos = y_pos + 20;
+        let x_pos = *x_positions.get(&name).unwrap_or(&20);
+        y_pos += 20;
         drawing_area.connect_draw(move |_, context| {
             context.set_source_rgb(0.0, 0.0, 0.0);
             context.move_to(x_pos as f64 - COMMIT_RADIUS, y_pos as f64);
@@ -104,31 +105,35 @@ fn draw_branch_names(
 
 fn draw_commit_node_w_message_side(
     drawing_area: &gtk::DrawingArea,
-    x: i32,
-    y: i32,
-    message_x: i32,
-    message_y: i32,
+    node_pos: (i32, i32),
+    message_pos: (i32, i32),
     color: (f64, f64, f64),
     hash: String,
     message: String,
 ) {
     drawing_area.connect_draw(move |_, context| {
         context.set_source_rgb(color.0, color.1, color.2);
-        context.arc(x as f64, y as f64, COMMIT_RADIUS, 0.0, 2.0 * 3.14);
+        context.arc(
+            node_pos.0 as f64,
+            node_pos.1 as f64,
+            COMMIT_RADIUS,
+            0.0,
+            2.0 * consts::PI,
+        );
         context.fill();
         context.set_source_rgb(0.0, 0.0, 0.0);
-        context.move_to(message_x as f64 + 5.0, message_y as f64 - 5.0 );
+        context.move_to(message_pos.0 as f64 + 5.0, message_pos.1 as f64 - 5.0);
         context.show_text(&hash[..7]);
-        context.move_to(message_x as f64 + 5.0, message_y as f64 + 10.0);
+        context.move_to(message_pos.0 as f64 + 5.0, message_pos.1 as f64 + 10.0);
         context.show_text(&message);
         context.set_source_rgb(color.0, color.1, color.2);
-        context.move_to(message_x as f64, message_y as f64 - 15.0);
-        context.line_to(message_x as f64, message_y as f64 + 15.0);
+        context.move_to(message_pos.0 as f64, message_pos.1 as f64 - 15.0);
+        context.line_to(message_pos.0 as f64, message_pos.1 as f64 + 15.0);
         context.stroke();
 
         context.set_source_rgba(color.0, color.1, color.2, 0.25);
-        context.move_to(message_x as f64, message_y as f64);
-        context.line_to(x as f64, y as f64);
+        context.move_to(message_pos.0 as f64, message_pos.1 as f64);
+        context.line_to(node_pos.0 as f64, node_pos.1 as f64);
         context.set_line_width(COMMIT_RADIUS * 2.0);
         context.stroke();
 
@@ -155,20 +160,26 @@ fn draw_commit_nodes_messages(
 
     for commit in commits {
         let branch = commit.branch.clone();
-        let branch_x = branches_pos.get(&branch).unwrap_or(&20).clone();
-        let color = branch_colors.get(&branch_x).unwrap_or(&(0.0, 1.0, 0.22)).clone();
+        let branch_x = *branches_pos.get(&branch).unwrap_or(&20);
+        let color = *branch_colors.get(&branch_x).unwrap_or(&(0.0, 1.0, 0.22));
         let hash = commit.hash.clone();
         let message = commit.message.clone();
         let message_x = BRANCHES_DISTANCE * branches_len;
         let message_y = y;
-        draw_commit_node_w_message_side(drawing_area, branch_x, y, message_x, message_y, color, hash.clone(), message.clone());
+        draw_commit_node_w_message_side(
+            drawing_area,
+            (branch_x, y),
+            (message_x, message_y),
+            color,
+            hash.clone(),
+            message.clone(),
+        );
         node_positions.insert(hash, (branch_x, y));
         y -= 50;
     }
 
     node_positions
 }
-
 
 fn draw_line(
     drawing_area: &gtk::DrawingArea,
@@ -182,17 +193,9 @@ fn draw_line(
 
     drawing_area.connect_draw(move |_, context| {
         context.set_source_rgb(color.0, color.1, color.2);
-        let offset = if source.0 == dest.0 {
-            0.0
-        } else if source.0 > dest.0 {
-            COMMIT_RADIUS
-        } else {
-            -COMMIT_RADIUS
-        };
-        
         context.move_to(source.0 as f64, source.1 as f64);
         context.line_to(source.0 as f64, dest.1 as f64);
-        context.line_to((dest.0 as f64) + offset, dest.1 as f64);
+        context.line_to(dest.0 as f64, dest.1 as f64);
         context.set_line_width(2.0);
 
         context.stroke();
@@ -210,7 +213,7 @@ fn draw_commits_connections(
     for node in commits {
         let parent = node.parent.clone();
         let hash = node.hash.clone();
-        if parent != "" {
+        if !parent.is_empty() {
             let connection = (parent.clone(), hash.clone());
             connections.push(connection);
         }
@@ -221,16 +224,9 @@ fn draw_commits_connections(
         let ancestor_commit = connection.0.clone();
         let branch = node_positions.get(&branch_commit).unwrap_or(&(0, 0));
         let ancestor = node_positions.get(&ancestor_commit).unwrap_or(&(0, 0));
-        let color = branch_colors
-            .get(&branch.0)
-            .unwrap_or(&(0.0, 1.0, 0.22))
-            .clone();
+        let color = *branch_colors.get(&branch.0).unwrap_or(&(0.0, 1.0, 0.22));
 
-        draw_line(
-            drawing_area,
-            branch.clone(),
-            ancestor.clone(),
-            color,)
+        draw_line(drawing_area, *branch, *ancestor, color)
     }
 }
 
@@ -262,18 +258,13 @@ pub fn handle_show_visual_branches_tree(builder: &gtk::Builder) -> io::Result<()
     for node in &commits {
         let parent: String = node.parent.clone();
         let hash = node.hash.clone();
-        if parent != "" {
+        if !parent.is_empty() {
             let connection = (parent.clone(), hash.clone());
             connections.push(connection);
         }
     }
 
-    draw_commits_connections(
-        &drawing_area,
-        &commits,
-        &branch_colors,
-        &node_positions,
-    );
+    draw_commits_connections(&drawing_area, &commits, &branch_colors, &node_positions);
 
     drawing_area.queue_draw();
     Ok(())
@@ -291,7 +282,7 @@ fn process_commit(
         return Ok(());
     }
 
-    match commit::get_commit_message(&commit_hash, &git_dir) {
+    match commit::get_commit_message(&commit_hash, git_dir) {
         Ok(_) => {}
         Err(_e) => return Ok(()),
     }
