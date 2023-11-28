@@ -3454,3 +3454,4 @@ Command 'git status': 2023-11-27 21:47:33.428065009 -03:00
 Untracked files 1
 Command 'git status': 2023-11-27 21:47:33.431503109 -03:00
 Unstaged files 0
+Command 'git init': Initialized repository at '/home/claram97/repo/.mgit'2023-11-28 11:34:39.403455971 -03:00

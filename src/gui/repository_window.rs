@@ -4146,6 +4146,7 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
 fn rebase_window(builder : &gtk::Builder) -> io::Result<()> {
     let button = get_button(builder, "make-rebase-button");
     let builder_clone = builder.clone();
+    apply_button_style(&button);
     button.connect_clicked(move |_| {
         let git_dir = obtain_git_dir(".mgit").unwrap();
         println!("Git dir is {:?}",git_dir);

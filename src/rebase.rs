@@ -2,13 +2,13 @@ use std::{collections::HashMap, io::{self, Write}, fs::{File, self}, thread, tim
 
 use gtk::{
     prelude::BuilderExtManual, Button, ButtonExt, ComboBoxExt, ComboBoxText, ComboBoxTextExt,
-    TextBufferExt, TextView, TextViewExt,
+    TextBufferExt, TextView, TextViewExt, WidgetExt,
 };
 
 use crate::{
     branch, commit, diff, merge,
     tree_handler::{self, Tree},
-    utils::{self, obtain_git_dir}, hash_object,
+    utils::{self, obtain_git_dir}, hash_object, gui::style::{self, apply_button_style},
 };
 
 fn update_files_to_change(
@@ -31,10 +31,11 @@ fn update_combo_box_text(
     options: &std::collections::HashMap<String, String>,
 ) {
     println!("Updating como box text");
+    
     combo_box.remove_all();
 
     for key in options.keys() {
-        println!("Key");
+        println!("Key is {:?}", key);
         combo_box.append_text(key);
     }
 }
@@ -82,22 +83,26 @@ fn rebase_button_on_clicked(
     combo_box: &ComboBoxText,
     text_view: &TextView,
 ) {
-    let path = match combo_box.get_active_text() {
-        Some(path) => path,
-        None => {return}
-    };
-    let path = format!("{}_temp", path);
-    let text_buffer = match text_view.get_buffer() {
-        Some(buff) => buff,
-        None => {return}
-    };
-    let text = match text_buffer.get_text(&text_buffer.get_start_iter(), &text_buffer.get_end_iter(), false) {
-        Some(text) => text.to_string(),
-        None => {return}
-    };
-    
+    let combo_box_cloned = combo_box.clone();
+    let text_view_cloned = text_view.clone();
     button.connect_clicked(move |_| {
-        let mut file = match File::open(&path) {
+        println!("Se tocó el botón");
+
+        let path = match combo_box_cloned.get_active_text() {
+            Some(path) => path,
+            None => {return}
+        };
+        let path = format!("{}_temp", path);
+        let text_buffer = match text_view_cloned.get_buffer() {
+            Some(buff) => buff,
+            None => {return}
+        };
+        let text = match text_buffer.get_text(&text_buffer.get_start_iter(), &text_buffer.get_end_iter(), false) {
+            Some(text) => text.to_string(),
+            None => {return}
+        };
+        println!("Path que se actualizará: {:?}", path);
+        let mut file = match File::create(&path) {
             Ok(file) => file,
             Err(_e) => {eprintln!("No se pudo abrir el archivo."); return}
         };
@@ -109,12 +114,15 @@ fn rebase_button_on_clicked(
             Ok(_) => {},
             Err(_e) => {eprintln!("No se pudo flushear el archivo");}
         } 
+        println!("Se escribió el archivo");
     });
 }
 
 fn write_diffs_in_files(files_to_change : &HashMap<String, String>) -> io::Result<()> {
     for (path, diff) in files_to_change {
+        println!("path is {:?}", path);
         let file_name = format!("{}_temp", path);
+        println!("filename is {:?}", file_name);
         let mut file = File::create(file_name)?;
         file.write_all(diff.as_bytes())?;
         file.flush()?;
@@ -252,6 +260,9 @@ pub fn create_rebasing_commit(
             ));
         }
     };
+
+    apply_button_style(&button);
+
     println!("Obtained update button");
     let ok_all_button: Button = match builder.get_object::<Button>("rebase-ok-all-button") {
         Some(combo_box) => combo_box,
@@ -264,6 +275,8 @@ pub fn create_rebasing_commit(
         }
     };
     
+    apply_button_style(&ok_all_button);
+
     println!("Obtained ok all button");
     // For each file changed this commit, we should check if it wasn't changed between the ancestor and rebase.
     // If so, we should simply update the hash.
@@ -299,7 +312,7 @@ pub fn create_rebasing_commit(
     let mut new_commit_hash = rebase_ok_all_button_on_clicked(&ok_all_button, our_commit.to_string(), parent_hash, &mut rebased_tree, &mut files_to_change)?;
      // Esperar hasta que new_commit_hash sea distinto de "ok"
     while new_commit_hash == "ok" {
-        thread::sleep(Duration::from_secs(100)); // Puedes ajustar el tiempo de espera según tus necesidades
+        thread::sleep(Duration::from_secs(1)); // Puedes ajustar el tiempo de espera según tus necesidades
         new_commit_hash = rebase_ok_all_button_on_clicked(
             &ok_all_button,
             our_commit.to_string(),
@@ -308,7 +321,8 @@ pub fn create_rebasing_commit(
             &mut files_to_change,
         )?;
     }
-
+    //let new_commit_hash = String::from("ok");
+    println!("New commit hash is {:?}", new_commit_hash);
     Ok(new_commit_hash)
 }
 
