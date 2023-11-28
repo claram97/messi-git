@@ -31,6 +31,10 @@ impl Commit {
     }
 }
 
+/// Sets up the canvas for drawing the graph.
+/// Sets the size of the canvas to fit the graph.
+/// Sets the background color of the canvas.
+/// Returns the canvas.
 fn setup_canvas(builder: &gtk::Builder) -> io::Result<gtk::DrawingArea> {
     let drawing_area: gtk::DrawingArea = builder
         .get_object("visual-branches-area")
@@ -43,6 +47,8 @@ fn setup_canvas(builder: &gtk::Builder) -> io::Result<gtk::DrawingArea> {
     Ok(drawing_area)
 }
 
+/// Defines the x positions of the branches.
+/// Returns a HashMap with the branch name as key and the x position as value.
 fn define_branch_positions(branches: &Vec<String>) -> HashMap<String, i32> {
     let mut branch_positions: HashMap<String, i32> = HashMap::new();
     let mut x_pos = 20;
@@ -59,6 +65,8 @@ fn define_branch_positions(branches: &Vec<String>) -> HashMap<String, i32> {
     branch_positions
 }
 
+/// Defines the colors of the branches.
+/// Returns a HashMap with the x position as key and the color as value.
 fn define_branch_colors(
     branches: &Vec<String>,
     branches_pos: &HashMap<String, i32>,
@@ -83,6 +91,8 @@ fn define_branch_colors(
     branch_colors
 }
 
+/// Draws the branch names on the canvas.
+/// The branch names are drawn on the top of the canvas.
 fn draw_branch_names(
     drawing_area: &gtk::DrawingArea,
     branches: &Vec<String>,
@@ -103,6 +113,9 @@ fn draw_branch_names(
     }
 }
 
+/// Draws a commit node with its message on the canvas.
+/// The commit node is drawn in the x corresponding to its branch.
+/// The message is drawn on the right side of the canvas. In a column with all the other messages.
 fn draw_commit_node_w_message_side(
     drawing_area: &gtk::DrawingArea,
     node_pos: (i32, i32),
@@ -141,7 +154,9 @@ fn draw_commit_node_w_message_side(
     });
 }
 
-fn draw_commit_nodes_messages(
+/// Draws all the commit nodes on the canvas.
+/// Returns a HashMap with the commit hash as key and the node position as value.
+fn draw_nodes(
     drawing_area: &gtk::DrawingArea,
     commits: &Vec<Commit>,
     branches: &Vec<String>,
@@ -181,6 +196,10 @@ fn draw_commit_nodes_messages(
     node_positions
 }
 
+/// Draws a line between two nodes.
+/// The line is drawn from the source node to the destination node.
+/// The color of the line is the color of the branch of the source node.+
+/// The line is an L shape.
 fn draw_line(
     drawing_area: &gtk::DrawingArea,
     source: (i32, i32),
@@ -203,6 +222,7 @@ fn draw_line(
     });
 }
 
+/// Draws all the connections between the commit nodes.
 fn draw_commits_connections(
     drawing_area: &gtk::DrawingArea,
     commits: &Vec<Commit>,
@@ -230,6 +250,12 @@ fn draw_commits_connections(
     }
 }
 
+/// Draws the graph of the git in a visual way.
+/// It uses circles to represent the commits and lines to represent the connections between the commits.
+/// Each branch is represented by a different color.
+///
+/// It searches for the git directory in the current directory.
+/// If it finds it, it builds the graph of the git.
 pub fn handle_show_visual_branches_tree(builder: &gtk::Builder) -> io::Result<()> {
     let current_dir = std::env::current_dir()?;
     let git_dir = utils::find_git_directory(&mut current_dir.clone(), ".mgit")
@@ -246,7 +272,7 @@ pub fn handle_show_visual_branches_tree(builder: &gtk::Builder) -> io::Result<()
     let mut commits: Vec<Commit> = graph.values().cloned().collect();
     commits.sort_by(|a, b| a.time.cmp(&b.time));
 
-    let node_positions = draw_commit_nodes_messages(
+    let node_positions = draw_nodes(
         &drawing_area,
         &commits,
         &branches,
@@ -270,6 +296,7 @@ pub fn handle_show_visual_branches_tree(builder: &gtk::Builder) -> io::Result<()
     Ok(())
 }
 
+/// Inserts a commit in the graph.
 fn process_commit(
     commit_hash: String,
     branch_name: String,
@@ -306,6 +333,10 @@ fn process_commit(
     Ok(())
 }
 
+/// Builds the graph of the git dir.
+/// It returns a HashMap with the commit hash as key and the commit as value.
+/// The commit contains the commit hash, the commit message, the commit time, the branch name and the parent hash.
+/// The graph is built from the heads of the branches.
 fn build_git_graph(git_dir: &str) -> io::Result<HashMap<String, Commit>> {
     let mut graph: HashMap<String, Commit> = HashMap::new();
     let mut queue: Vec<(String, String)> = Vec::new();
