@@ -152,7 +152,7 @@ impl Client {
         self.git_dir = git_dir.to_string();
         let pushing_ref = get_head_from_branch(git_dir, branch)?;
         self.wait_server_refs()?;
-        let client_heads_refs = get_head_refs(&self.git_dir)?;
+        let client_heads_refs = get_head_tags_refs(&self.git_dir)?;
         let new_hash = match client_heads_refs.get(branch) {
             Some(hash) => hash,
             None => {

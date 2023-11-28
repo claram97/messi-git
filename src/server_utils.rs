@@ -116,10 +116,14 @@ pub fn get_head_from_branch(git_dir: &str, branch: &str) -> io::Result<String> {
 }
 
 /// Auxiliar function which get refs under refs/heads
-pub fn get_head_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
+pub fn get_head_tags_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
     let pathbuf = PathBuf::from(git_dir);
     let heads = pathbuf.join("refs").join("heads");
-    get_refs(heads)
+    let tags = pathbuf.join("refs").join("tags");
+    let mut refs = get_refs(heads)?;
+    let tags = get_refs(tags)?;
+    refs.extend(tags);
+    Ok(refs)
 }
 
 /// Auxiliar function which get refs under refs/heads
@@ -307,10 +311,59 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_pkt_line() {
+        assert_eq!(pkt_line("hello"), "0009hello");
+        assert_eq!(pkt_line("git-upload-pack /repo\0host=localhost\0\0version=1\0"), "0034git-upload-pack /repo\0host=localhost\0\0version=1\0");
+        assert_eq!(pkt_line("want 86135720c1283d83f2744781a915aba3d74da37b multi_ack include-tag side-band-64k ofs-delta\n"), "0060want 86135720c1283d83f2744781a915aba3d74da37b multi_ack include-tag side-band-64k ofs-delta\n");
+        
+    }
+
+    #[test]
+    fn test_get_head_from_branch() -> io::Result<()> {
+        let head = get_head_from_branch("tests/packfiles/.mgit", "master")?;
+        assert_eq!(head, "refs/heads/master");
+        let head = get_head_from_branch("tests/packfiles/.mgit", "v1.0")?;
+        assert_eq!(head, "refs/tags/v1.0");
+        let head = get_head_from_branch("tests/packfiles/.mgit", "HEAD")?;
+        assert_eq!(head, "refs/heads/master");
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_refs() -> io::Result<()> {
+        let refs = get_refs(PathBuf::from("tests/packfiles/.mgit").join("refs").join("heads"))?;
+        assert!(refs.contains_key(&"master".to_string()));
+        let refs = get_refs(PathBuf::from("tests/packfiles/.mgit").join("refs").join("tags"))?;
+        assert!(refs.contains_key(&"v1.0".to_string()));
+        let refs = get_refs(PathBuf::from("tests/packfiles/.mgit").join("refs").join("remotes").join("origin"))?;
+        assert!(refs.contains_key(&"master".to_string()));
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_head_tags_refs() -> io::Result<()> {
+        let refs = get_head_tags_refs("tests/packfiles/.mgit")?;
+        assert!(refs.contains_key(&"master".to_string()));
+        assert!(refs.contains_key(&"v1.0".to_string()));
+        Ok(())
+    }
+
+    #[test]
     fn test_client_refs() -> io::Result<()> {
         let refs = get_client_refs("tests/packfiles/.mgit", "origin")?;
         assert!(refs.contains_key(&"master".to_string()));
         assert!(refs.contains_key(&"v1.0".to_string()));
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_line_want_have() -> io::Result<()> {
+        let (want_have, hash) = parse_line_want_have("want 86135720c1283d83f2744781a915aba3d74da37b multi_ack include-tag side-band-64k ofs-delta\n")?;
+        assert_eq!(want_have, WantHave::Want);
+        assert_eq!(hash, "86135720c1283d83f2744781a915aba3d74da37b");
+        let (want_have, hash) = parse_line_want_have("have 86135720c1283d83f2744781a915aba3d74da37b multi_ack include-tag side-band-64k ofs-delta\n")?;
+        assert_eq!(want_have, WantHave::Have);
+        assert_eq!(hash, "86135720c1283d83f2744781a915aba3d74da37b");
         Ok(())
     }
 }

@@ -139,7 +139,7 @@ impl ServerInstace {
     fn send_refs(&mut self) -> io::Result<()> {
         log("Sending refs...")?;
         let mut refs = vec![];
-        let server_refs_heads = get_head_refs(&self.git_dir_path)?;
+        let server_refs_heads = get_head_tags_refs(&self.git_dir_path)?;
 
         let head_path = PathBuf::from(&self.git_dir_path).join("HEAD");
         if head_path.exists() {
