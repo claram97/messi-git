@@ -8,10 +8,12 @@ use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
+use crate::configuration::GIT_DIR;
+use crate::configuration::GIT_IGNORE;
+use crate::configuration::INDEX;
 use crate::git_config::git_config;
 use crate::tag::git_tag;
 use crate::utils::obtain_git_dir;
-
 use std::str;
 //use crate::fetch::git_fetch_for_gui;
 use crate::branch::git_branch;
@@ -228,7 +230,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
 fn handle_git_pull() -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+    let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
         Some(dir) => dir,
         None => {
             return Err(io::Error::new(
@@ -267,7 +269,7 @@ fn handle_git_pull() -> io::Result<()> {
 ///
 fn handle_git_push() -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+    let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
         Some(dir) => dir,
         None => {
             return Err(io::Error::new(
@@ -1241,6 +1243,7 @@ fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
 
     let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
+    
     let index_path = format!("{}/index", git_dir);
     match add(
         "None",
@@ -1318,7 +1321,7 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
 /// A `Result` indicating whether the operation was successful or resulted in an error.
 ///
 pub fn obtain_text_from_remote_add(name: &str, url: &str) -> Result<String, io::Error> {
-    let git_dir = utils::obtain_git_dir(".mgit")?;
+    let git_dir = utils::obtain_git_dir()?;
 
     let mut config = Config::load(&git_dir)?;
 
@@ -1351,7 +1354,7 @@ pub fn obtain_text_from_remote_add(name: &str, url: &str) -> Result<String, io::
 /// A `Result` indicating whether the operation was successful or resulted in an error.
 ///
 pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
-    let git_dir = obtain_git_dir(".mgit")?;
+    let git_dir = obtain_git_dir()?;
 
     let mut config = Config::load(&git_dir)?;
 
@@ -1385,7 +1388,7 @@ pub fn obtain_text_from_remote_rm(text: &str) -> Result<String, io::Error> {
 /// A `Result` indicating whether the operation was successful or resulted in an error.
 ///
 pub fn obtain_text_from_remote_set_url(name: &str, url: &str) -> Result<String, io::Error> {
-    let git_dir = obtain_git_dir(".mgit")?;
+    let git_dir = obtain_git_dir()?;
 
     let mut config = Config::load(&git_dir)?;
 
@@ -1419,7 +1422,7 @@ pub fn obtain_text_from_remote_set_url(name: &str, url: &str) -> Result<String, 
 /// otherwise an error indicating the failure.
 ///
 pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> {
-    let git_dir = utils::obtain_git_dir(".mgit")?;
+    let git_dir = utils::obtain_git_dir()?;
 
     let mut config = Config::load(&git_dir)?;
 
@@ -1453,7 +1456,7 @@ pub fn obtain_text_from_remote_get_url(text: &str) -> Result<String, io::Error> 
 /// indicating the failure.
 ///
 pub fn obtain_text_from_remote_rename(old_name: &str, new_name: &str) -> Result<String, io::Error> {
-    let git_dir = obtain_git_dir(".mgit")?;
+    let git_dir = obtain_git_dir()?;
 
     let mut config = Config::load(&git_dir)?;
 
@@ -1597,7 +1600,7 @@ pub fn add_normal_tag(builder: &gtk::Builder, git_dir: &str, tag_name: &str) -> 
 ///
 fn handle_tag_add_normal(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
-    let git_dir = obtain_git_dir(".mgit")?;
+    let git_dir = obtain_git_dir()?;
 
     let result = create_text_entry_window("Enter tag name", move |tag_name| {
         match add_normal_tag(&builder_clone, &git_dir, &tag_name) {
@@ -1631,7 +1634,7 @@ fn handle_tag_add_normal(builder: &gtk::Builder) -> io::Result<()> {
 /// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation.
 ///
 pub fn remove_tag(builder: &Builder, name: &str) -> io::Result<()> {
-    let git_dir = obtain_git_dir(".mgit")?;
+    let git_dir = obtain_git_dir()?;
 
     let line = vec![
         String::from("git"),
@@ -1756,7 +1759,7 @@ fn update_view_with_verified_tag(builder: &Builder, output: &mut [u8]) -> io::Re
 /// Returns the verified tag information as a `Result<String, io::Error>`.
 ///
 pub fn verify_tag(builder: &Builder, tag_name: &str) -> Result<String, io::Error> {
-    let git_dir = obtain_git_dir(".mgit")?;
+    let git_dir = obtain_git_dir()?;
 
     let line = vec![
         String::from("git"),
@@ -1832,7 +1835,7 @@ fn handle_tag_verify(builder: &gtk::Builder) -> io::Result<()> {
 /// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation.
 ///
 pub fn add_annotated_tag(builder: &gtk::Builder, name: &str, message: &str) -> io::Result<()> {
-    let git_dir = obtain_git_dir(".mgit")?;
+    let git_dir = obtain_git_dir()?;
 
     let line = vec![
         String::from("git"),
@@ -1926,7 +1929,7 @@ pub fn create_tag_from_other_tag(
     new_name: &str,
     old_name: &str,
 ) -> io::Result<()> {
-    let git_dir = obtain_git_dir(".mgit")?;
+    let git_dir = obtain_git_dir()?;
 
     let line = vec![
         String::from("git"),
@@ -2009,7 +2012,7 @@ fn handle_tag_from_tag(builder: &gtk::Builder) -> io::Result<()> {
 /// * `builder` - A reference to the GTK builder containing the text view to be updated.
 ///
 fn call_ls_trees(option: &str, hash: &str, builder: &gtk::Builder) {
-    let git_dir = match obtain_git_dir(".mgit") {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(_) => {
             eprintln!("No se encontró el directorio git.");
@@ -2366,7 +2369,7 @@ fn update_remote_view(builder: &gtk::Builder, output: &mut [u8]) -> io::Result<(
 /// otherwise, an error message is shown.
 ///
 fn handle_remote(builder: &gtk::Builder) -> io::Result<()> {
-    let git_dir = obtain_git_dir(".mgit")?;
+    let git_dir = obtain_git_dir()?;
 
     let mut config = Config::load(&git_dir)?;
 
@@ -2454,7 +2457,7 @@ fn update_tag_view(builder: &gtk::Builder, output: &mut [u8]) -> io::Result<()> 
 /// Returns `Ok(())` on success or an `io::Error` if there are issues with the Git operation or updating the view.
 ///
 fn handle_list_tags(builder: &gtk::Builder) -> io::Result<()> {
-    let git_dir = obtain_git_dir(".mgit")?;
+    let git_dir = obtain_git_dir()?;
 
     let line = vec![String::from("git"), String::from("tag"), String::from("-l")];
 
@@ -2593,16 +2596,15 @@ pub fn obtain_text_from_add(texto: &str) -> Result<String, io::Error> {
 /// Searches for the Git directory and Git ignore file in the given current directory.
 /// Returns a tuple containing the Git directory path and Git ignore file path if found.
 pub fn find_git_directory_and_ignore() -> Result<(String, String), io::Error> {
-    let current_dir = std::env::current_dir()?;
-    let mut current_dir_buf = current_dir.to_path_buf();
-    let git_dir = find_git_directory(&mut current_dir_buf, ".mgit")
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found"))?;
-
-    let git_dir_parent = current_dir
-        .parent()
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found"))?;
-
-    let git_ignore_path = format!("{}/.mgitignore", git_dir_parent.to_string_lossy());
+    let git_dir = obtain_git_dir()?;
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Working dir not found\n",
+        ))
+    };
+    let git_ignore_path = format!("{}/{}", working_dir, GIT_IGNORE);
 
     Ok((git_dir, git_ignore_path))
 }
@@ -2656,9 +2658,9 @@ fn stage_changes(git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<St
 ///
 pub fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit")
+    let git_dir = find_git_directory(&mut current_dir, GIT_DIR)
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
-    let index_path = format!("{}/{}", git_dir, "index");
+    let index_path = format!("{}/{}", git_dir, INDEX);
     let git_dir_parent = Path::new(&git_dir)
         .parent()
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
@@ -2686,7 +2688,7 @@ pub fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
 ///
 pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir: PathBuf = match find_git_directory(&mut current_dir, ".mgit") {
+    let git_dir: PathBuf = match find_git_directory(&mut current_dir, GIT_DIR) {
         Some(git_dir) => git_dir.into(),
         None => {
             return Err(io::Error::new(
@@ -2723,7 +2725,7 @@ pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error>
 ///
 pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit")
+    let git_dir = find_git_directory(&mut current_dir, GIT_DIR)
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
     let git_dir_parent = Path::new(&git_dir)
         .parent()
@@ -2771,7 +2773,7 @@ pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, 
 ///
 pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit")
+    let git_dir = find_git_directory(&mut current_dir, GIT_DIR)
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
     let git_dir_parent = Path::new(&git_dir)
         .parent()
@@ -2817,7 +2819,7 @@ pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io
 ///
 pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit")
+    let git_dir = find_git_directory(&mut current_dir, GIT_DIR)
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
     let git_dir_parent = Path::new(&git_dir)
         .parent()
@@ -2864,7 +2866,7 @@ pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String
 ///
 pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit")
+    let git_dir = find_git_directory(&mut current_dir, GIT_DIR)
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
     let git_dir_parent = Path::new(&git_dir)
         .parent()
@@ -2910,17 +2912,15 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
 ///
 pub fn obtain_text_from_log() -> Result<String, std::io::Error> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(git_dir) => git_dir,
-        None => {
+    let git_dir = match obtain_git_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                "Git directory not found\n",
-            ))
+                "Not a git dir\n",
+            ));
         }
     };
-
     let log_iter = log(None, &git_dir, 10, 0, true);
     let log_iter = log_iter?;
     let log_text = get_logs_as_string(log_iter);
@@ -2962,7 +2962,7 @@ pub fn get_logs_as_string(log_iter: impl Iterator<Item = Log>) -> String {
 /// Returns an `io::Result<()>` indicating success or an error.
 ///
 pub fn call_git_merge(their_branch: &str) -> io::Result<Vec<String>> {
-    let git_dir = obtain_git_dir(".mgit")?;
+    let git_dir = obtain_git_dir()?;
     let root_dir = match Path::new(&git_dir).parent() {
         Some(dir) => dir,
         None => {
@@ -3051,7 +3051,7 @@ pub fn set_merge_button_behavior(
     text_view: &gtk::TextView,
 ) -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+    let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
         Some(dir) => dir,
         None => {
             return Err(io::Error::new(
@@ -3082,7 +3082,7 @@ pub fn set_merge_button_behavior(
 /// or resulted in an error.
 ///
 fn show_current_branch_on_merge_window(merge_text_view: &TextView) -> io::Result<()> {
-    let git_dir = obtain_git_dir(".mgit")?;
+    let git_dir = obtain_git_dir()?;
 
     let buffer = match merge_text_view.get_buffer() {
         Some(buff) => buff,
@@ -3129,7 +3129,7 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
                 return;
             }
         };
-        let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
             Some(dir) => dir,
             None => {
                 eprintln!("No se pudo obtener el git dir.");
@@ -3155,8 +3155,8 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
         };
         let current_dir = &current_dir.to_string_lossy().to_string();
         let line = vec!["git".to_string(), "ls-files".to_string(), "-m".to_string()];
-        let index_path = format!("{}/{}", git_dir, "index");
-        let gitignore_path = format!("{}/{}", git_dir, ".mgitignore");
+        let index_path = format!("{}/{}", git_dir, INDEX);
+        let gitignore_path = format!("{}/{}", git_dir, GIT_IGNORE);
         let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
             Ok(index) => index,
             Err(_e) => {
@@ -3236,7 +3236,7 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
                 return;
             }
         };
-        let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
             Some(dir) => dir,
             None => {
                 eprintln!("No se pudo obtener el git dir.");
@@ -3262,8 +3262,8 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         };
         let current_dir = &current_dir.to_string_lossy().to_string();
         let line = vec!["git".to_string(), "ls-files".to_string()];
-        let index_path = format!("{}/{}", git_dir, "index");
-        let gitignore_path = format!("{}/{}", git_dir, ".mgitignore");
+        let index_path = format!("{}/{}", git_dir, INDEX);
+        let gitignore_path = format!("{}/{}", git_dir, GIT_IGNORE);
         let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
             Ok(index) => index,
             Err(_e) => {
@@ -3343,7 +3343,7 @@ pub fn list_untracked_button_on_clicked(button: &Button, text_view: &gtk::TextVi
                 return;
             }
         };
-        let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+        let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
             Some(dir) => dir,
             None => {
                 eprintln!("No se pudo obtener el git dir.");
@@ -3369,8 +3369,8 @@ pub fn list_untracked_button_on_clicked(button: &Button, text_view: &gtk::TextVi
         };
         let current_dir = &current_dir.to_string_lossy().to_string();
         let line = vec!["git".to_string(), "ls-files".to_string(), "-o".to_string()];
-        let index_path = format!("{}/{}", git_dir, "index");
-        let gitignore_path = format!("{}/{}", git_dir, ".mgitignore");
+        let index_path = format!("{}/{}", git_dir, INDEX);
+        let gitignore_path = format!("{}/{}", git_dir, GIT_IGNORE);
         let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
             Ok(index) => index,
             Err(_e) => {
@@ -3562,7 +3562,7 @@ pub fn check_ignore_button_on_clicked(
     let cloned_entry = entry.clone();
     let cloned_switch = switch.clone();
     button.connect_clicked(move |_| {
-        let git_dir = match obtain_git_dir(".mgit") {
+        let git_dir = match obtain_git_dir() {
             Ok(dir) => dir,
             Err(_error) => {
                 eprintln!("No se pudo obtener el git dir");
@@ -3716,7 +3716,7 @@ fn update_show_ref_view(cloned_text_view: &gtk::TextView, output: Vec<u8>) {
 pub fn show_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
-        let git_dir = match obtain_git_dir(".mgit") {
+        let git_dir = match obtain_git_dir() {
             Ok(dir) => dir,
             Err(_e) => {
                 eprintln!("No se pudo obtener el git dir.");
@@ -3758,7 +3758,7 @@ pub fn show_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
 pub fn show_heads_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
-        let git_dir = match obtain_git_dir(".mgit") {
+        let git_dir = match obtain_git_dir() {
             Ok(dir) => dir,
             Err(_e) => {
                 eprintln!("No se pudo obtener el git dir.");
@@ -3803,7 +3803,7 @@ pub fn show_heads_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
 pub fn show_tags_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
-        let git_dir = match obtain_git_dir(".mgit") {
+        let git_dir = match obtain_git_dir() {
             Ok(dir) => dir,
             Err(_) => {
                 eprintln!("Git dir not found.");
@@ -3845,7 +3845,7 @@ pub fn show_tags_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
 pub fn show_hash_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     button.connect_clicked(move |_| {
-        let git_dir = match obtain_git_dir(".mgit") {
+        let git_dir = match obtain_git_dir() {
             Ok(dir) => dir,
             Err(_e) => {
                 eprintln!("No se pudo obtener el git dir.");
@@ -3893,7 +3893,7 @@ pub fn verify_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView, 
     let cloned_text_view = text_view.clone();
     let cloned_entry = entry.clone();
     button.connect_clicked(move |_| {
-        let git_dir = match obtain_git_dir(".mgit") {
+        let git_dir = match obtain_git_dir() {
             Ok(dir) => dir,
             Err(_e) => {
                 eprintln!("No se pudo obtener el git dir.");
@@ -3994,7 +3994,7 @@ pub fn show_ref_window(builder: &Builder) {
 /// * `email` - The new user email to be set in the Git configuration.
 ///
 fn call_git_config(name: String, email: String) {
-    let git_dir = match obtain_git_dir(".mgit") {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(_e) => {
             eprintln!("No se pudo obtener el git dir.");
@@ -4199,13 +4199,23 @@ fn get_not_staged_text() -> io::Result<String> {
         "Failed to convert current directory to string",
     ))?;
 
-    let git_dir = find_git_directory(&mut current_dir.clone(), ".mgit").ok_or(io::Error::new(
+    let git_dir = find_git_directory(&mut current_dir.clone(), GIT_DIR).ok_or(io::Error::new(
         io::ErrorKind::Other,
         "Failed to find git directory",
     ))?;
 
-    let index_file = format!("{}{}", git_dir, "/index");
-    let gitignore_path = format!("{}{}", current_dir.to_str().unwrap(), "/.gitignore");
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Failed to convert current directory to string",
+            ))
+        }
+    };
+
+    let index_file = format!("{}/{}", git_dir, INDEX);
+    let gitignore_path = format!("{}/{}", working_dir, GIT_IGNORE);
     let index = index::Index::load(&index_file, &git_dir, &gitignore_path)?;
 
     let not_staged_files = status::get_unstaged_changes(&index, current_dir_str)
@@ -4237,12 +4247,16 @@ fn get_not_staged_text() -> io::Result<String> {
 /// - `Ok(String)`: If the operation is successful, it returns the text for staged changes.
 /// - `Err(std::io::Error)`: If an error occurs during the process, it returns an `std::io::Error`.
 fn get_staged_text() -> io::Result<String> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, ".mgit").ok_or(io::Error::new(
-        io::ErrorKind::Other,
-        "Failed to find git directory",
-    ))?;
-    println!("LLEGUE");
+    let git_dir = obtain_git_dir()?;
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Failed to convert current directory to string",
+            ))
+        }
+    };
     let last_commit = match branch::get_current_branch_commit(&git_dir) {
         Ok(commit) => commit,
         Err(_) => "0000000000000000000000000000000000000000".to_string(),
@@ -4253,7 +4267,7 @@ fn get_staged_text() -> io::Result<String> {
             Err(_) => None,
         };
     let index_file = format!("{}{}", git_dir, "/index");
-    let gitignore_path = format!("{}{}", current_dir.to_str().unwrap(), "/.gitignore");
+    let gitignore_path = format!("{}/{}", working_dir, GIT_IGNORE);
     let index = index::Index::load(&index_file, &git_dir, &gitignore_path)?;
     let staged_files = status::get_staged_changes(&index, last_commit_tree)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
@@ -4338,7 +4352,7 @@ pub fn set_commit_history_view(builder: &gtk::Builder) -> io::Result<()> {
     let mut current_dir = std::env::current_dir()?;
     let binding = current_dir.clone();
     let _current_dir_str = binding.to_str().unwrap();
-    let git_dir_path_result = utils::find_git_directory(&mut current_dir, ".mgit");
+    let git_dir_path_result = utils::find_git_directory(&mut current_dir, GIT_DIR);
     let git_dir_path = match git_dir_path_result {
         Some(path) => path,
         None => {
@@ -4380,7 +4394,7 @@ fn get_current_dir_string() -> io::Result<String> {
 }
 
 fn get_git_directory_path(current_dir: &Path) -> io::Result<String> {
-    match utils::find_git_directory(&mut current_dir.to_path_buf(), ".mgit") {
+    match utils::find_git_directory(&mut current_dir.to_path_buf(), GIT_DIR) {
         Some(path) => Ok(path),
         None => Err(io::Error::new(
             io::ErrorKind::Other,

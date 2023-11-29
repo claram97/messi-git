@@ -1,3 +1,4 @@
+use crate::configuration::GIT_DIR;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use crate::{client::Client, config};
@@ -222,7 +223,7 @@ pub fn log_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) ->
 /// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
 ///
 pub fn git_fetch(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) -> io::Result<()> {
-    let git_dir = local_dir.to_string() + "/.mgit";
+    let git_dir = local_dir.to_string() + "/" + GIT_DIR;
     let config_file = config::Config::load(&git_dir)?;
     let remote_name = "origin";
     let remote_url = config_file.get_url(remote_name, &mut io::stdout())?;
@@ -267,7 +268,7 @@ pub fn git_fetch_for_gui(
     _host: &str,
     local_dir: &str,
 ) -> io::Result<Vec<String>> {
-    let git_dir = local_dir.to_string() + "/.mgit";
+    let git_dir = local_dir.to_string() + "/" + GIT_DIR;
     let config_file = config::Config::load(&git_dir)?;
     let remote_name = "origin";
     let remote_url = config_file.get_url(remote_name, &mut io::stdout())?;
