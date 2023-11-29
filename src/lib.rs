@@ -25,6 +25,7 @@ pub mod packfile_handler;
 pub mod parse_commands;
 pub mod pull;
 pub mod push;
+pub mod rebase_new;
 pub mod rebase;
 pub mod remote;
 pub mod remote_handler;

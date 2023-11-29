@@ -9,10 +9,15 @@ use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
 use crate::git_config::git_config;
+use crate::rebase;
 use crate::rebase::rebase;
+use crate::rebase_new;
+use crate::rebase_new::Rebase;
 use crate::tag::git_tag;
 use crate::utils::obtain_git_dir;
 
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::str;
 //use crate::fetch::git_fetch_for_gui;
 use crate::branch::git_branch;
@@ -4144,18 +4149,35 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
 }
 
 fn rebase_window(builder : &gtk::Builder) -> io::Result<()> {
-    let button = get_button(builder, "make-rebase-button");
+    let rebase_button = get_button(builder, "make-rebase-button");
+    apply_button_style(&rebase_button);
+    let ok_button = get_button(builder, "rebase-ok-all-button");
+    apply_button_style(&ok_button);
+
     let builder_clone = builder.clone();
-    apply_button_style(&button);
-    button.connect_clicked(move |_| {
+    rebase_button.connect_clicked(move |_| {
         let git_dir = obtain_git_dir(".mgit").unwrap();
         println!("Git dir is {:?}",git_dir);
         let current_branch = get_branch_name(&git_dir).unwrap();
         println!("Current branch is {:?}", current_branch);
         let their_branch = "master";
         println!("Their branch is {:?}", their_branch);
-        rebase(&builder_clone, &current_branch, their_branch, &git_dir);
+        let rebase_object =  match rebase_new::start_rebase_gui(&git_dir, &current_branch, &their_branch) {
+            Ok(rebase) => rebase,
+            Err(e) => {
+                eprintln!("Error starting rebase: {}", e);
+                return;
+            }
+        };
+        rebase_new::write_rebase_step_into_gui(&builder_clone, rebase_object, &git_dir);
     });
+
+    let builder_clone = builder.clone();
+    ok_button.connect_clicked(move |_| {
+        let git_dir = obtain_git_dir(".mgit").unwrap();
+        rebase_new::next_rebase_iteration(&builder_clone, &git_dir);
+    });
+
     Ok(())
 }
 
