@@ -1,9 +1,9 @@
+use crate::configuration::GIT_DIR;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
-const GIT_DIR: &str = ".mgit";
 
 /// Logs the 'git init' command with the specified Git directory.
 ///

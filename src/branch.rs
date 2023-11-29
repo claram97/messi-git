@@ -1,4 +1,6 @@
-use crate::logger::Logger;
+use crate::commit::get_branch_name;
+use crate::{configuration, commit};
+use crate::{logger::Logger, utils::obtain_git_dir};
 use crate::utils::get_current_time;
 use std::{
     fs::{self, File},
@@ -6,10 +8,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{
-    commit::{self, get_branch_name},
-    utils,
-};
 
 /// Returns the path inside the HEAD file.
 /// The one that contains the path to the current branch.
@@ -377,16 +375,7 @@ pub fn git_branch(
     new_name: Option<&str>,
     output: &mut impl Write,
 ) -> io::Result<()> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = match utils::find_git_directory(&mut current_dir, ".mgit") {
-        Some(git_dir) => git_dir,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found\n",
-            ))
-        }
-    };
+    let git_dir = obtain_git_dir()?;
 
     if let Some(name) = name {
         if let Some(option) = option {
@@ -727,9 +716,6 @@ mod tests {
         let path = "tests/branch_test_delete_repo_3";
         let git_dir = format!("{}/{}", path, ".mgit");
         init::git_init(path, "current_branch", None)?;
-        //let current_branch_path = format!("{}/{}",git_dir,"/refs/heads/current_branch");
-        // let mut current_branch_file = File::create(current_branch_path)?;
-        // current_branch_file.write_all("12345678910".as_bytes())?;
         let mut output: Vec<u8> = vec![];
         delete_branch(&git_dir, "current_branch", &mut output)?;
         let string = String::from_utf8(output).unwrap();

@@ -1,5 +1,6 @@
 use std::io::{self, Write};
 
+use crate::configuration::GIT_DIR;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use crate::{fetch, merge};
@@ -62,7 +63,7 @@ pub fn git_pull(
     host: &str,
 ) -> io::Result<()> {
     let result = fetch::git_fetch(remote_repo_name, host, local_dir);
-    let git_dir = local_dir.to_string() + "/.mgit";
+    let git_dir = local_dir.to_string() + "/" + GIT_DIR;
 
     if result.is_err() {
         return Err(io::Error::new(
