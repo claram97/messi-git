@@ -320,3 +320,5 @@ Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/b.txt', Git Dire
 
 Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/b.txt, Time: 2023-11-24 02:03:35.159464929 +00:00
 Command 'git rm': File 'file.txt', 2023-11-24 02:03:48.332196426 +00:00
+Command 'git init': Initialized repository at '/home/claram97/taller/23C2-messi/.mgit'2023-11-29 10:24:04.328969560 -03:00
+Command 'git init': Initialized repository at '/home/claram97/repo/.mgit'2023-11-29 10:57:42.007514799 -03:00
