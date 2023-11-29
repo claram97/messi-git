@@ -623,7 +623,8 @@ mod tests {
         let before = (!non_existing_branch_path.exists()) & (!new_branch_path.exists());
         let new_branch_name = "new_branch";
         let mut output: Vec<u8> = vec![];
-        modify_branch(&git_dir, "branch", new_branch_name, &mut output)?;
+        let result = modify_branch(&git_dir, "branch", new_branch_name, &mut output);
+        assert!(result.is_err());
         let after = (!non_existing_branch_path.exists()) & (!new_branch_path.exists());
         assert!(before & after);
         std::fs::remove_dir_all(path)?;
@@ -644,7 +645,8 @@ mod tests {
         let before = (existing_branch_path.exists()) & (new_branch_path.exists());
         let new_branch_name = "new_branch";
         let mut output: Vec<u8> = vec![];
-        modify_branch(&git_dir, "branch", new_branch_name, &mut output)?;
+        let result = modify_branch(&git_dir, "branch", new_branch_name, &mut output);
+        assert!(result.is_err());
         let after = (existing_branch_path.exists()) & (new_branch_path.exists());
         assert!(before & after);
         std::fs::remove_dir_all(path)?;
@@ -747,12 +749,13 @@ mod tests {
             false,
         )?;
         let mut output: Vec<u8> = vec![];
-        create_new_branch(
+        let result = create_new_branch(
             "tests/test_list_branches_3/.mgit",
             "current_branch",
             None,
             &mut output,
-        )?;
+        );
+        assert!(result.is_err());
         assert!(!output.is_empty());
         let result = String::from_utf8(output);
         if result.is_ok() {
@@ -808,12 +811,13 @@ mod tests {
         create_if_not_exists("tests/test_list_branches_5", true)?;
         init::git_init("tests/test_list_branches_5", "current_branch", None)?;
         let mut output: Vec<u8> = vec![];
-        create_new_branch(
+        let result = create_new_branch(
             "tests/test_list_branches_5/.mgit",
             "my_branch",
             None,
             &mut output,
-        )?;
+        );
+        assert!(result.is_err());
         assert!(!output.is_empty());
         let result = String::from_utf8(output);
         if result.is_ok() {
