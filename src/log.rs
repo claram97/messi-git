@@ -345,7 +345,6 @@ pub fn log(
     skip: usize,
     oneline: bool,
 ) -> io::Result<impl Iterator<Item = Log>> {
-
     log_log(Path::new(git_dir), commit)?;
     println!(
         "Calling git log with commit {:?} and git_dir {:?}",
