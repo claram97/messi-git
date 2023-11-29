@@ -1,3 +1,0 @@
-Command 'init': Command executed
-Command 'branch': Command executed
-Command 'init': Command executed

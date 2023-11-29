@@ -1,6 +1,40 @@
 use std::io::{self, Write};
 
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use crate::{fetch, merge};
+
+/// Logs the 'git push' command with the specified branch, local directory, and remote repository name.
+///
+/// This function logs the 'git push' command with the provided branch, local directory, and remote repository name
+/// to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `branch` - A string representing the name of the branch to push.
+/// * `local_dir` - A string representing the path to the local directory.
+/// * `remote_repo_name` - An optional string representing the name of the remote repository. If not provided, "origin" is used.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_push(branch: &str, local_dir: &str, remote_repo_name: Option<&str>) -> io::Result<()> {
+    let log_file_path = "logger_commands.txt";
+    let mut logger = Logger::new(log_file_path)?;
+
+    let remote_name = remote_repo_name.unwrap_or("origin");
+    let full_message = format!(
+        "Command 'git push': Branch '{}', Local Directory '{}', Remote Repository Name '{}', {}",
+        branch,
+        local_dir,
+        remote_name,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Perform a Git pull operation to update a local branch from a remote repository.
 ///
@@ -54,6 +88,7 @@ pub fn git_pull(
     }
     let hash = branch_remotes.commit_hash.clone();
     merge::merge_remote_branch(branch, &hash, &git_dir)?;
+    log_push(branch, local_dir, remote_repo_name)?;
     Ok(())
 }
 
