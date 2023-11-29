@@ -1,13 +1,12 @@
+use crate::commit;
 use crate::commit::get_branch_name;
-use crate::{configuration, commit};
-use crate::{logger::Logger, utils::obtain_git_dir};
 use crate::utils::get_current_time;
+use crate::{logger::Logger, utils::obtain_git_dir};
 use std::{
     fs::{self, File},
     io::{self, Read, Write},
     path::{Path, PathBuf},
 };
-
 
 /// Returns the path inside the HEAD file.
 /// The one that contains the path to the current branch.

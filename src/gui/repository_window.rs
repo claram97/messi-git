@@ -1241,7 +1241,7 @@ fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
 
     let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
-    
+
     let index_path = format!("{}/index", git_dir);
     match add(
         "None",
@@ -2593,10 +2593,12 @@ pub fn find_git_directory_and_ignore() -> Result<(String, String), io::Error> {
     let git_dir = obtain_git_dir()?;
     let working_dir = match Path::new(&git_dir).parent() {
         Some(dir) => dir.to_string_lossy().to_string(),
-        None => return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Working dir not found\n",
-        ))
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Working dir not found\n",
+            ))
+        }
     };
     let git_ignore_path = format!("{}/{}", working_dir, GIT_IGNORE);
 
@@ -2908,11 +2910,8 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
 pub fn obtain_text_from_log() -> Result<String, std::io::Error> {
     let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
-        Err(err) => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Not a git dir\n",
-            ));
+        Err(_) => {
+            return Err(io::Error::new(io::ErrorKind::NotFound, "Not a git dir\n"));
         }
     };
     let log_iter = log(None, &git_dir, 10, 0, true);
