@@ -1009,10 +1009,8 @@ fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result
         eprintln!("Error creating text entry window: {}", err);
     }
 
-
     Ok(())
 }
-
 
 /// Deletes a Git branch with the specified name.
 ///
@@ -1243,7 +1241,7 @@ fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
 
     let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
-    
+
     let index_path = format!("{}/index", git_dir);
     match add(
         "None",
@@ -1542,7 +1540,6 @@ fn handle_remote_rm(builder: &gtk::Builder) -> io::Result<()> {
     }
     Ok(())
 }
-
 
 /// Adds a normal Git tag with the specified name.
 ///
@@ -1906,7 +1903,6 @@ fn handle_tag_add_annotated(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
-
 /// Creates a new Git tag with a specified name based on an existing Git tag.
 ///
 /// This function utilizes the `git_tag` operation to create a new Git tag with the provided name (`new_name`)
@@ -1937,7 +1933,6 @@ pub fn create_tag_from_other_tag(
         new_name.to_string(),
         old_name.to_string(),
     ];
-
 
     let mut output: Vec<u8> = vec![];
     match git_tag(&git_dir, line, &mut output) {
@@ -2056,7 +2051,6 @@ fn handle_ls_trees(builder: &gtk::Builder) -> io::Result<()> {
             call_ls_trees("", &hash, &builder_clone);
         }
     });
-
 
     if result.is_err() {
         eprintln!("Error creating text entry window.");
@@ -2599,10 +2593,12 @@ pub fn find_git_directory_and_ignore() -> Result<(String, String), io::Error> {
     let git_dir = obtain_git_dir()?;
     let working_dir = match Path::new(&git_dir).parent() {
         Some(dir) => dir.to_string_lossy().to_string(),
-        None => return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Working dir not found\n",
-        ))
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Working dir not found\n",
+            ))
+        }
     };
     let git_ignore_path = format!("{}/{}", working_dir, GIT_IGNORE);
 
@@ -2914,11 +2910,8 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
 pub fn obtain_text_from_log() -> Result<String, std::io::Error> {
     let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
-        Err(err) => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Not a git dir\n",
-            ));
+        Err(_) => {
+            return Err(io::Error::new(io::ErrorKind::NotFound, "Not a git dir\n"));
         }
     };
     let log_iter = log(None, &git_dir, 10, 0, true);

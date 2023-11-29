@@ -291,7 +291,7 @@ mod tests {
         let mut head_file = fs::File::create("tests/utils/parents2/HEAD").unwrap();
         head_file.write_all(b"ref: refs/heads/main").unwrap();
 
-        let _ = fs::create_dir("tests/utils/parents2/objects").unwrap();
+        let _ = fs::create_dir("tests/utils/parents2/objects");
         let result = commit::new_commit("tests/utils/parents2", "Mensaje", "").unwrap();
 
         let git_dir = "tests/utils/parents2";

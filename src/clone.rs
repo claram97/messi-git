@@ -1,4 +1,4 @@
-use crate::configuration::{GIT_DIR, REMOTE, INITIAL_BRANCH, INITIAL_BRANCH_REF};
+use crate::configuration::{GIT_DIR, INITIAL_BRANCH, INITIAL_BRANCH_REF, REMOTE};
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use crate::{client::Client, config, init, tree_handler};
