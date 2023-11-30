@@ -28,11 +28,34 @@ pub fn process_file_name(index: &mut Index, file_name: &str) -> io::Result<()> {
             let entry = entry?;
             let file_path = entry.path();
             if file_path.is_file() {
-                index.add_path(file_path.to_str().unwrap())?;
+                let file_path_str = &file_path.to_string_lossy().to_string();
+                match index.add_path(file_path_str) {
+                    Ok(_) => {}
+                    Err(error) => {
+                        if error
+                            .to_string()
+                            .contains("The path is ignored by ignore file")
+                        {
+                        } else {
+                            return Err(error);
+                        }
+                    }
+                }
             }
         }
     } else {
-        index.add_path(file_name)?;
+        match index.add_path(file_name) {
+            Ok(_) => {}
+            Err(error) => {
+                if error
+                    .to_string()
+                    .contains("The path is ignored by ignore file")
+                {
+                } else {
+                    return Err(error);
+                }
+            }
+        }
     }
 
     Ok(())
@@ -99,11 +122,13 @@ pub fn add(
                     .collect();
 
                 for file_name in file_names {
-                    if file_name.eq(GIT_IGNORE) || (!file_name.eq(GIT_IGNORE) && !file_name.starts_with(GIT_DIR)){
+                    if file_name.eq(GIT_IGNORE)
+                        || (!file_name.eq(GIT_IGNORE) && !file_name.starts_with(GIT_DIR))
+                    {
                         let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
                         process_file_name(&mut index, &file_name)?;
-                        let _ = index.write_file();
-               
+                        index.write_file()?;
+
                         log_add("all", &file_name, &PathBuf::from(&path))?;
                     }
                 }
@@ -113,7 +138,7 @@ pub fn add(
         if !path.starts_with(GIT_DIR) {
             let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
             process_file_name(&mut index, path)?;
-            let _ = index.write_file();
+            index.write_file()?;
             log_add("single", path, &PathBuf::from(&path))?;
         }
     }

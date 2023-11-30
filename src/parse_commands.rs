@@ -9,7 +9,7 @@ use crate::checkout::force_checkout;
 use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
-use crate::configuration::{INDEX, GIT_IGNORE};
+use crate::configuration::{GIT_IGNORE, INDEX};
 use crate::fetch::git_fetch;
 use crate::hash_object::store_file;
 use crate::index::Index;
@@ -766,8 +766,7 @@ fn handle_add(args: Vec<String>) {
             &git_ignore_path,
             Some(vec![".".to_string()]),
         ) {
-            Ok(_) => {
-            }
+            Ok(_) => {}
             Err(_err) => {
                 println!("Hubo un error");
                 println!("{:?}", _err);
