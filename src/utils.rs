@@ -2,9 +2,9 @@ use std::{collections::HashSet, io, path::PathBuf};
 
 use chrono::{DateTime, FixedOffset, Offset, Utc};
 
-use crate::commit;
+use crate::{commit, configuration::GIT_DIR};
 
-pub fn obtain_git_dir(name: &str) -> Result<String, io::Error> {
+pub fn obtain_git_dir() -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
@@ -16,7 +16,7 @@ pub fn obtain_git_dir(name: &str) -> Result<String, io::Error> {
         }
     };
 
-    let git_dir = match find_git_directory(&mut current_dir, name) {
+    let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
         Some(dir) => dir,
         None => {
             eprintln!("Error obtaining git dir");
@@ -309,7 +309,7 @@ mod tests {
         let mut head_file = fs::File::create("tests/utils/parents2/HEAD").unwrap();
         head_file.write_all(b"ref: refs/heads/main").unwrap();
 
-        let _ = fs::create_dir("tests/utils/parents2/objects").unwrap();
+        let _ = fs::create_dir("tests/utils/parents2/objects");
         let result = commit::new_commit("tests/utils/parents2", "Mensaje", "").unwrap();
 
         let git_dir = "tests/utils/parents2";

@@ -9,6 +9,7 @@ use crate::checkout::force_checkout;
 use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
+use crate::configuration::{GIT_DIR, GIT_IGNORE, INDEX};
 use crate::fetch::git_fetch;
 use crate::hash_object::store_file;
 use crate::index::Index;
@@ -22,15 +23,13 @@ use crate::rm::git_rm;
 use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
-use crate::utils::find_git_directory;
-use crate::{add, git_config, log, ls_tree, push, rebase, tree_handler};
+use crate::utils::{find_git_directory, obtain_git_dir};
+use crate::{add, git_config, log, ls_tree, push, tag, tree_handler};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use std::{env, io};
-
-const GIT_DIR: &str = ".mgit";
 
 /// Enumeration representing Git commands.
 ///
@@ -196,18 +195,10 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
 /// * `args` - A vector of strings containing the command-line arguments.
 ///
 fn handle_config(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -238,7 +229,7 @@ fn handle_ls_files(args: Vec<String>) {
         }
     };
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+    let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
         Some(dir) => dir,
         None => {
             eprintln!("Error al obtener el git dir");
@@ -350,18 +341,10 @@ fn handle_ls_tree_with_option(tree_ish: &str, git_dir: PathBuf, option: &str) {
 ///
 /// * `args` - The arguments passed to the "check-ignore" command.
 fn handle_check_ignore(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -390,18 +373,10 @@ fn handle_check_ignore(args: Vec<String>) {
 ///
 /// * `args` - The arguments passed to the "show-ref" command.
 fn handle_show_ref(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -420,18 +395,10 @@ fn handle_rebase(args: Vec<String>) {
         return;
     }
 
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
-        Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+        Err(error) => {
+            eprintln!("{:?}", error);
             return;
         }
     };
@@ -455,8 +422,21 @@ fn handle_rebase(args: Vec<String>) {
     }
 }
 
-fn handle_tag(_args: Vec<String>) {
-    // Implementación para el comando "Tag"
+fn handle_tag(args: Vec<String>) {
+    let git_dir = match obtain_git_dir() {
+        Ok(dir) => dir,
+        Err(error) => {
+            eprintln!("{:?}", error.to_string());
+            return;
+        }
+    };
+    match tag::git_tag(&git_dir, args, &mut io::stdout()) {
+        Ok(_) => {}
+        Err(error) => {
+            eprintln!("{:?}", error.to_string());
+            return;
+        }
+    };
 }
 
 /// Handles the 'hash-object' Git command.
@@ -817,7 +797,7 @@ fn handle_add(args: Vec<String>) {
                 return;
             }
         };
-    let index_path = git_dir.to_string() + "/index";
+    let index_path: String = git_dir.to_string() + "/" + INDEX;
     if &args[2] == "." {
         match add::add(
             "None",
@@ -827,7 +807,10 @@ fn handle_add(args: Vec<String>) {
             Some(vec![".".to_string()]),
         ) {
             Ok(_) => {}
-            Err(_err) => {}
+            Err(_err) => {
+                println!("Hubo un error");
+                println!("{:?}", _err);
+            }
         };
     } else {
         match add::add(&args[2], &index_path, &git_dir, &git_ignore_path, None) {
@@ -847,23 +830,15 @@ fn handle_add(args: Vec<String>) {
 /// * `args` - A vector of command-line arguments, where the second element is the file or directory to remove.
 ///
 fn handle_rm(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
-            return;
-        }
-    };
-
-    let index_path = format!("{}/{}", git_dir, "index");
+    let index_path = format!("{}/{}", git_dir, INDEX);
     let git_dir_parent = match Path::new(&git_dir).parent() {
         Some(dir) => dir,
         None => {
@@ -872,7 +847,7 @@ fn handle_rm(args: Vec<String>) {
         }
     };
 
-    let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), ".mgitignore");
+    let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), GIT_IGNORE);
 
     match git_rm(&args[2], &index_path, &git_dir, &git_ignore_path) {
         Ok(_) => {}
@@ -965,18 +940,10 @@ fn handle_checkout_option(
 ///            ('-b', '-B', '--detach', '-f') and the fourth element is the branch or commit to checkout.
 ///
 pub fn handle_checkout(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -1125,18 +1092,10 @@ fn handle_fetch(_args: Vec<String>) {
 ///            expected to be the name of the branch to be merged.
 ///
 fn handle_merge(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -1177,18 +1136,10 @@ fn handle_merge(args: Vec<String>) {
 ///            representing the 'git remote' subcommand and its options.
 ///
 fn handle_remote(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -1218,18 +1169,10 @@ fn handle_remote(args: Vec<String>) {
 /// from the specified remote repository.
 ///
 fn handle_pull() {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -1265,17 +1208,10 @@ fn handle_pull() {
 /// It then calls the 'git push' function to push changes to the remote repository associated with the current branch.
 ///
 fn handle_push() {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Can't find git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };

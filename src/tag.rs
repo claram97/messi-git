@@ -1,3 +1,4 @@
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use crate::{branch, cat_file, config::Config, hash_object, utils};
@@ -341,7 +342,7 @@ fn verify_tag(
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 pub fn log_tag(git_dir: &str, tag: &str) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

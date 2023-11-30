@@ -1,3 +1,4 @@
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use crate::{hash_object, index::Index};
@@ -191,7 +192,7 @@ pub fn log_ls_files(
     current_directory: &str,
     line: &[String],
 ) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

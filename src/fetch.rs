@@ -1,3 +1,4 @@
+use crate::configuration::{GIT_DIR, HOST, LOGGER_COMMANDS_FILE, REMOTE};
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use crate::{client::Client, config};
@@ -187,10 +188,10 @@ fn get_clean_refs(refs: &HashMap<String, String>) -> Vec<String> {
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 pub fn log_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
-    let repo_name = remote_repo_name.unwrap_or("origin");
+    let repo_name = remote_repo_name.unwrap_or(REMOTE);
 
     let full_message = format!(
         "Command 'git fetch': Remote Repo Name '{}', Host '{}', Local Dir '{}', {}",
@@ -222,9 +223,9 @@ pub fn log_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) ->
 /// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
 ///
 pub fn git_fetch(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) -> io::Result<()> {
-    let git_dir = local_dir.to_string() + "/.mgit";
+    let git_dir = local_dir.to_string() + "/" + GIT_DIR;
     let config_file = config::Config::load(&git_dir)?;
-    let remote_name = "origin";
+    let remote_name = REMOTE;
     let remote_url = config_file.get_url(remote_name, &mut io::stdout())?;
     let (address, repo_name) = match remote_url.rsplit_once('/') {
         Some((address, repo_name)) => (address, repo_name),
@@ -235,12 +236,12 @@ pub fn git_fetch(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) 
             ))
         }
     };
-    let mut client = Client::new(address, repo_name, "localhost");
+    let mut client = Client::new(address, repo_name, HOST);
     let refs = client.get_server_refs()?;
     let clean_refs = get_clean_refs(&refs);
     let fetch_head_path = git_dir.to_string() + "/FETCH_HEAD";
     let mut fetch_head_file = FetchHead::new();
-    client.upload_pack(clean_refs.clone(), &git_dir, "origin")?;
+    client.upload_pack(clean_refs.clone(), &git_dir, REMOTE)?;
     for server_ref in clean_refs {
         if server_ref != "HEAD" {
             let hash = match refs.get(&server_ref) {
@@ -267,7 +268,7 @@ pub fn git_fetch_for_gui(
     _host: &str,
     local_dir: &str,
 ) -> io::Result<Vec<String>> {
-    let git_dir = local_dir.to_string() + "/.mgit";
+    let git_dir = local_dir.to_string() + "/" + GIT_DIR;
     let config_file = config::Config::load(&git_dir)?;
     let remote_name = "origin";
     let remote_url = config_file.get_url(remote_name, &mut io::stdout())?;

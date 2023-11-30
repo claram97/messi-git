@@ -1,14 +1,15 @@
-use crate::cat_file;
-use crate::logger::Logger;
-use crate::utils::get_current_time;
-use std::io::Write;
+use crate::{
+    cat_file, configuration::LOGGER_COMMANDS_FILE, logger::Logger, utils::get_current_time,
+};
+use chrono::{TimeZone, Utc};
 use std::{
     fmt::Display,
     fs,
-    io::{self, Error},
+    io::{self, Error, Write},
     path::Path,
 };
 
+const DATE_ZERO: &str = "Thu Jan 1 00:00:00 1970 +0000";
 /// LogIter is a structure that will help to iterate
 /// through commit logs in the correct way.
 ///
@@ -88,12 +89,9 @@ impl Log {
     ///
     /// The load of the Log may fail because of I/O errors.
     pub fn load(commit: Option<&str>, git_dir: &str) -> io::Result<Self> {
-        if let Some(hash) = commit {
-            println!("Loading form hash {:?}", hash);
-            Self::load_from_hash(hash, git_dir)
-        } else {
-            println!("Loading from head {:?}", git_dir);
-            Self::load_from_head(git_dir)
+        match commit {
+            Some(hash) => Self::load_from_hash(hash, git_dir),
+            None => Self::load_from_head(git_dir),
         }
     }
 
@@ -224,23 +222,23 @@ impl Log {
         Ok(())
     }
 
-    /// Set the online mode for formatting and return a new instance with the updated configuration.
+    /// Set the oneline mode for formatting and return a new instance with the updated configuration.
     ///
-    /// This method modifies the current configuration by toggling the online mode, which affects
-    /// how the formatter outputs information. After setting the online mode, it returns a new
+    /// This method modifies the current configuration by toggling the oneline mode, which affects
+    /// how the formatter outputs information. After setting the oneline mode, it returns a new
     /// instance of the configuration with the updated setting.
     ///
     /// # Arguments
     ///
-    /// * `oneline` - A boolean value indicating whether the online mode should be enabled (`true`)
+    /// * `oneline` - A boolean value indicating whether the oneline mode should be enabled (`true`)
     ///               or disabled (`false`).
     ///
     /// # Returns
     ///
-    /// Returns a new instance of the configuration with the online mode updated according to the
+    /// Returns a new instance of the configuration with the oneline mode updated according to the
     /// provided boolean value.
     ///
-    fn set_online(mut self, oneline: bool) -> Self {
+    fn set_oneline(mut self, oneline: bool) -> Self {
         self.oneline = oneline;
         self
     }
@@ -248,21 +246,34 @@ impl Log {
     /// Retrieve the parent log of the current commit.
     ///
     /// This method attempts to load the log of the commit's parent, if it exists. If successful,
-    /// it returns an `Option<Log>` containing the parent log with an updated online mode, otherwise
+    /// it returns an `Option<Log>` containing the parent log with an updated oneline mode, otherwise
     /// it returns `None`.
     ///
     /// # Returns
     ///
-    /// Returns an `Option<Log>` containing the parent log with an updated online mode if the parent
+    /// Returns an `Option<Log>` containing the parent log with an updated oneline mode if the parent
     /// commit exists and can be loaded successfully. Returns `None` otherwise.
     ///
     fn get_parent_log(&self) -> Option<Self> {
         if let Some(parent) = &self.parent_hash {
             if let Ok(log) = Log::load_from_hash(parent, &self.git_dir) {
-                return Some(log.set_online(self.oneline));
+                return Some(log.set_oneline(self.oneline));
             }
         }
         None
+    }
+
+    fn get_formatted_date(&self) -> String {
+        let (secs, offset) = &self.date.split_once(' ').unwrap_or(("0", "0"));
+        let secs = secs.parse::<i64>().unwrap_or(0);
+        let offset_int = offset.parse::<i64>().unwrap_or(0) * 36;
+        match Utc.timestamp_opt(secs + offset_int, 0) {
+            chrono::LocalResult::Single(date) => {
+                let date = date.format("%a %b %e %T %Y");
+                format!("{} {}", date, offset)
+            }
+            _ => DATE_ZERO.to_string(),
+        }
     }
 
     /// Returns an iterator starting in 'self'
@@ -289,7 +300,8 @@ impl Display for Log {
         }
 
         let author = format!("Author: {}", &self.author);
-        let date = format!("Date: {}", &self.date);
+        let date = self.get_formatted_date();
+        let date = format!("Date: {}", date);
         writeln!(f, "{}\n{}\n{}\n\n{}", commit, author, date, message)
     }
 }
@@ -309,7 +321,7 @@ impl Display for Log {
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 fn log_log(git_dir: &Path, commit: Option<&str>) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(
@@ -340,7 +352,7 @@ pub fn log(
         "Calling git log with commit {:?} and git_dir {:?}",
         commit, git_dir
     );
-    let log = Log::load(commit, git_dir)?.set_online(oneline);
+    let log = Log::load(commit, git_dir)?.set_oneline(oneline);
     Ok(log.iter().skip(skip).take(amount))
 }
 
@@ -386,6 +398,8 @@ pub fn accumulate_logs(log_iter: impl Iterator<Item = Log>) -> String {
 
 #[cfg(test)]
 mod tests {
+    use crate::{add, commit, init};
+
     use super::*;
 
     #[test]
@@ -425,5 +439,34 @@ mod tests {
         assert!(log_iter.is_ok());
         let log_iter = log_iter.unwrap();
         print_logs(log_iter)
+    }
+
+    #[test]
+    fn test_commits_date() -> io::Result<()> {
+        let git_dir_path = "tests/log/";
+        init::git_init(git_dir_path, "master", None)?;
+        let git_dir_path = &format!("{}/.mgit", git_dir_path);
+
+        let index = format!("{}/index", git_dir_path);
+        let filepath = format!("{}/test_file", git_dir_path);
+        fs::File::create(Path::new(&filepath))?;
+        add::add(&filepath, &index, git_dir_path, "", None)?;
+
+        let message = "test commit";
+        commit::new_commit(git_dir_path, message, "")?;
+        // ------------------------------------------------
+        let filepath = format!("{}/test_file2", git_dir_path);
+        fs::File::create(Path::new(&filepath))?;
+        add::add(&filepath, &index, git_dir_path, "", None)?;
+
+        let message = "test commit 2";
+        commit::new_commit(git_dir_path, message, "")?;
+
+        let log_iter = log(None, git_dir_path, 2, 0, false)?;
+
+        let logs = accumulate_logs(log_iter);
+        println!("{}", logs);
+
+        std::fs::remove_dir_all(git_dir_path)
     }
 }

@@ -1,9 +1,21 @@
-use std::{io::{self}, collections::HashMap, rc::Rc, cell::RefCell};
-use gtk::{prelude::{BuilderExtManual, ComboBoxExtManual}, TextView, TextViewExt, TextBufferExt, ComboBoxTextExt, ComboBoxExt, ButtonExt, WidgetExt};
+use gtk::{
+    prelude::{BuilderExtManual, ComboBoxExtManual},
+    ButtonExt, ComboBoxExt, ComboBoxTextExt, TextBufferExt, TextView, TextViewExt, WidgetExt,
+};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    io::{self},
+    rc::Rc,
+};
 
-use crate::{commit, branch, merge, utils, tree_handler, hash_object, diff};
+use crate::{branch, commit, diff, hash_object, merge, tree_handler, utils};
 
-fn files_that_changed_between_commits(commit1: &str, commit2: &str, git_dir: &str) -> io::Result<Vec<(String, String)>> {
+fn files_that_changed_between_commits(
+    commit1: &str,
+    commit2: &str,
+    git_dir: &str,
+) -> io::Result<Vec<(String, String)>> {
     let commit1_tree = tree_handler::load_tree_from_commit(commit1, git_dir)?;
     let commit2_tree = tree_handler::load_tree_from_commit(commit2, git_dir)?;
     let changed_files = tree_handler::get_files_with_changes(&commit1_tree, &commit2_tree);
@@ -100,7 +112,11 @@ fn obtain_ok_all_button_from_builder(builder: &gtk::Builder) -> io::Result<gtk::
     Ok(button)
 }
 
-fn load_file_diffs (commit_to_rebase: &str, active_commit: &str, git_dir: &str) -> io::Result<HashMap<String, String>> {
+fn load_file_diffs(
+    commit_to_rebase: &str,
+    active_commit: &str,
+    git_dir: &str,
+) -> io::Result<HashMap<String, String>> {
     let tree_to_rebase = tree_handler::load_tree_from_commit(commit_to_rebase, git_dir)?;
     let tree_active_commit = tree_handler::load_tree_from_commit(active_commit, git_dir)?;
 
@@ -125,7 +141,7 @@ fn load_file_diffs (commit_to_rebase: &str, active_commit: &str, git_dir: &str) 
         match diff {
             Ok(diff) => {
                 diffs.insert(file.clone(), diff);
-            },
+            }
             Err(_) => {
                 println!("No se pudo obtener el diff para el archivo {}", file);
             }
@@ -134,7 +150,11 @@ fn load_file_diffs (commit_to_rebase: &str, active_commit: &str, git_dir: &str) 
     Ok(diffs)
 }
 
-pub fn write_rebase_step_into_gui(builder: &gtk::Builder, rebase: Rc<RefCell<Rebase>>, git_dir: &str) -> io::Result<()>{
+pub fn write_rebase_step_into_gui(
+    builder: &gtk::Builder,
+    rebase: Rc<RefCell<Rebase>>,
+    git_dir: &str,
+) -> io::Result<()> {
     let text_view = obtain_text_view_from_builder(builder)?;
     let combo_box = obtain_combo_box_from_builder(builder)?;
     let text_buffer = match text_view.get_buffer() {
@@ -152,8 +172,12 @@ pub fn write_rebase_step_into_gui(builder: &gtk::Builder, rebase: Rc<RefCell<Reb
 
     text_buffer.set_text("");
     combo_box.remove_all();
-    
-    let diffs = match load_file_diffs(&rebase.borrow().commit_to_rebase, &rebase.borrow().active_commit, git_dir) {
+
+    let diffs = match load_file_diffs(
+        &rebase.borrow().commit_to_rebase,
+        &rebase.borrow().active_commit,
+        git_dir,
+    ) {
         Ok(diffs) => diffs,
         Err(_) => {
             return Err(io::Error::new(
@@ -166,7 +190,9 @@ pub fn write_rebase_step_into_gui(builder: &gtk::Builder, rebase: Rc<RefCell<Reb
     let changed_files = diffs.keys().cloned().collect::<Vec<String>>();
 
     if changed_files.len() == 0 {
-        text_buffer.set_text("No hay problemas con los archivos\n Presione Ok para continuar al siguiente commit");
+        text_buffer.set_text(
+            "No hay problemas con los archivos\n Presione Ok para continuar al siguiente commit",
+        );
         return Ok(());
     }
 
@@ -217,11 +243,15 @@ pub fn write_rebase_step_into_gui(builder: &gtk::Builder, rebase: Rc<RefCell<Reb
         };
         text_buffer_clone.set_text(&diff);
     });
-    
+
     let text_buffer_clone = text_buffer.clone();
     let rebase_step_clone = Rc::clone(&rebase);
     update_button.connect_clicked(move |_| {
-        let text = match text_buffer_clone.get_text(&text_buffer_clone.get_start_iter(), &text_buffer_clone.get_end_iter(), false) {
+        let text = match text_buffer_clone.get_text(
+            &text_buffer_clone.get_start_iter(),
+            &text_buffer_clone.get_end_iter(),
+            false,
+        ) {
             Some(text) => text.to_string(),
             None => {
                 return;
@@ -233,7 +263,7 @@ pub fn write_rebase_step_into_gui(builder: &gtk::Builder, rebase: Rc<RefCell<Reb
                 return;
             }
         };
-        
+
         {
             let mut rebase_step = rebase_step_clone.borrow_mut();
             rebase_step.rebase_step.diffs.insert(file, text);
@@ -246,17 +276,21 @@ pub fn write_rebase_step_into_gui(builder: &gtk::Builder, rebase: Rc<RefCell<Reb
     ok_button.connect_clicked(move |_| {
         let rebase_clone = rebase_rf.borrow().clone();
         match next_rebase_iteration(&builder_clone, rebase_clone, &git_dir_clone) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(_) => {
                 return ();
             }
         }
     });
-    
+
     Ok(())
 }
 
-pub fn next_rebase_iteration(builder: &gtk::Builder, rebase: Rebase, git_dir: &str) -> io::Result<()> {
+pub fn next_rebase_iteration(
+    builder: &gtk::Builder,
+    rebase: Rebase,
+    git_dir: &str,
+) -> io::Result<()> {
     let commit_to_rebase = &rebase.commit_to_rebase;
     let tree_to_rebase = tree_handler::load_tree_from_commit(commit_to_rebase, git_dir)?;
 
@@ -268,10 +302,14 @@ pub fn next_rebase_iteration(builder: &gtk::Builder, rebase: Rebase, git_dir: &s
     }
 
     let commit_message = format!("Rebase commit {}", rebase.active_commit);
-    let new_commit_hash = commit::new_rebase_commit(git_dir, &commit_message, &rebase.commit_to_rebase, &tree_with_changes)?;
+    let new_commit_hash = commit::new_rebase_commit(
+        git_dir,
+        &commit_message,
+        &rebase.commit_to_rebase,
+        &tree_with_changes,
+    )?;
 
     let text_view = obtain_text_view_from_builder(builder)?;
-    
 
     let mut new_rebase = rebase;
     println!("{:#?}", new_rebase);
@@ -286,10 +324,9 @@ pub fn next_rebase_iteration(builder: &gtk::Builder, rebase: Rebase, git_dir: &s
             match text_view.get_buffer() {
                 Some(buffer) => {
                     buffer.set_text("Rebase finalizado");
-                },
+                }
                 None => {
                     println!("No se pudo obtener el buffer del TextView");
-
                 }
             };
             let combo_box = obtain_combo_box_from_builder(builder)?;
@@ -311,12 +348,18 @@ pub fn next_rebase_iteration(builder: &gtk::Builder, rebase: Rebase, git_dir: &s
     Ok(())
 }
 
-pub fn start_rebase_gui(git_dir: &str, our_branch: &str, branch_to_rebase: &str) -> io::Result<Rc<RefCell<Rebase>>> {
+pub fn start_rebase_gui(
+    git_dir: &str,
+    our_branch: &str,
+    branch_to_rebase: &str,
+) -> io::Result<Rc<RefCell<Rebase>>> {
     let our_branch_hash = branch::get_branch_commit_hash(&our_branch, git_dir)?;
     let their_branch_hash = branch::get_branch_commit_hash(&branch_to_rebase, git_dir)?;
-    let common_ancestor = merge::find_common_ancestor(&our_branch_hash, &their_branch_hash, git_dir)?;
+    let common_ancestor =
+        merge::find_common_ancestor(&our_branch_hash, &their_branch_hash, git_dir)?;
 
-    let mut our_commits = utils::get_branch_commit_history_until(&our_branch_hash, git_dir, &common_ancestor)?;
+    let mut our_commits =
+        utils::get_branch_commit_history_until(&our_branch_hash, git_dir, &common_ancestor)?;
     let active_commit = match our_commits.pop() {
         Some(commit) => commit,
         None => {
@@ -327,14 +370,15 @@ pub fn start_rebase_gui(git_dir: &str, our_branch: &str, branch_to_rebase: &str)
         }
     };
 
-    let files_with_changes = files_that_changed_between_commits(&our_branch_hash, &their_branch_hash, git_dir)?;
+    let files_with_changes =
+        files_that_changed_between_commits(&our_branch_hash, &their_branch_hash, git_dir)?;
     if files_with_changes.len() == 0 {
         return Err(io::Error::new(
             io::ErrorKind::Other,
             "No hay cambios entre los commits",
         ));
     }
-        // We need to do a rebase
+    // We need to do a rebase
     let rebase = Rebase {
         our_commits,
         active_commit,

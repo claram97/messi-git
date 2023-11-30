@@ -1,9 +1,11 @@
 use crate::cat_file;
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::hash_object;
 use crate::logger::Logger;
 use crate::tree_handler;
 use crate::tree_handler::has_tree_changed_since_last_commit;
 use crate::tree_handler::Tree;
+use crate::utils;
 use crate::utils::get_current_time;
 use std::fs;
 use std::io;
@@ -30,7 +32,7 @@ const INDEX_FILE_NAME: &str = "index";
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 pub fn log_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(
@@ -64,7 +66,8 @@ fn create_new_commit_file(
         return Err(io::Error::new(io::ErrorKind::Other, "No changes were made"));
     }
 
-    let time = chrono::Local::now();
+    let (timestamp, offset) = utils::get_timestamp()?;
+    let time = format!("{} {}", timestamp, offset);
     let commit_content = format!(
         "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0","user", "email@email", "user", "email@email"
     );
@@ -170,7 +173,8 @@ pub fn new_merge_commit(
     let commit_tree =
         tree_handler::build_tree_from_index(&index_path, git_dir_path, git_ignore_path)?;
     let (tree_hash, _) = tree_handler::write_tree(&commit_tree, git_dir_path)?;
-    let time = chrono::Local::now();
+    let (timestamp, offset) = utils::get_timestamp()?;
+    let time = format!("{} {}", timestamp, offset);
     let commit_content = format!("tree {tree_hash}\nparent {parent_hash}\nparent {parent_hash2}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0", "user", "email@email", "user", "email@email"
     );
     let commit_hash = hash_object::store_string_to_file(&commit_content, git_dir_path, "commit")?;
