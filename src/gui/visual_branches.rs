@@ -1,4 +1,4 @@
-use crate::commit;
+use crate::commit::{self, is_merge_commit};
 use crate::{branch, utils};
 use gtk::{prelude::BuilderExtManual, WidgetExt};
 use std::f64::consts;
@@ -16,17 +16,17 @@ struct Commit {
     message: String,
     time: String,
     branch: String,
-    parent: String,
+    parents: Vec<String>,
 }
 
 impl Commit {
-    fn new(hash: String, message: String, time: String, branch: String, parent: String) -> Commit {
+    fn new(hash: String, message: String, time: String, branch: String, parents: Vec<String>) -> Commit {
         Commit {
             hash,
             message,
             time,
             branch,
-            parent,
+            parents,
         }
     }
 }
@@ -210,11 +210,19 @@ fn draw_line(
         return;
     }
 
+    let offset = if source.0 == dest.0 {
+        0.0
+    } else if source.0 > dest.0 {
+        COMMIT_RADIUS
+    } else {
+        -COMMIT_RADIUS
+    };
+
     drawing_area.connect_draw(move |_, context| {
         context.set_source_rgb(color.0, color.1, color.2);
         context.move_to(source.0 as f64, source.1 as f64);
         context.line_to(source.0 as f64, dest.1 as f64);
-        context.line_to(dest.0 as f64, dest.1 as f64);
+        context.line_to(dest.0 as f64 + offset, dest.1 as f64);
         context.set_line_width(2.0);
 
         context.stroke();
@@ -225,20 +233,10 @@ fn draw_line(
 /// Draws all the connections between the commit nodes.
 fn draw_commits_connections(
     drawing_area: &gtk::DrawingArea,
-    commits: &Vec<Commit>,
     branch_colors: &HashMap<i32, (f64, f64, f64)>,
     node_positions: &HashMap<String, (i32, i32)>,
+    connections: &Vec<(String, String)>,
 ) {
-    let mut connections: Vec<(String, String)> = Vec::new();
-    for node in commits {
-        let parent = node.parent.clone();
-        let hash = node.hash.clone();
-        if !parent.is_empty() {
-            let connection = (parent.clone(), hash.clone());
-            connections.push(connection);
-        }
-    }
-
     for connection in connections {
         let branch_commit = connection.1.clone();
         let ancestor_commit = connection.0.clone();
@@ -271,6 +269,7 @@ pub fn handle_show_visual_branches_tree(builder: &gtk::Builder) -> io::Result<()
     let graph = build_git_graph(&git_dir)?;
     let mut commits: Vec<Commit> = graph.values().cloned().collect();
     commits.sort_by(|a, b| a.time.cmp(&b.time));
+    println!("{:#?}", commits);
 
     let node_positions = draw_nodes(
         &drawing_area,
@@ -282,15 +281,17 @@ pub fn handle_show_visual_branches_tree(builder: &gtk::Builder) -> io::Result<()
 
     let mut connections: Vec<(String, String)> = Vec::new();
     for node in &commits {
-        let parent: String = node.parent.clone();
+        let parents = node.parents.clone();
         let hash = node.hash.clone();
-        if !parent.is_empty() {
-            let connection = (parent.clone(), hash.clone());
-            connections.push(connection);
+        if !parents.is_empty() {
+            for parent in parents {
+                let connection = (parent.clone(), hash.clone());
+                connections.push(connection);
+            }
         }
     }
 
-    draw_commits_connections(&drawing_area, &commits, &branch_colors, &node_positions);
+    draw_commits_connections(&drawing_area, &branch_colors, &node_positions, &connections);
 
     drawing_area.queue_draw();
     Ok(())
@@ -317,14 +318,21 @@ fn process_commit(
     visited.insert(commit_hash.clone());
     let commit_msg = commit::get_commit_message(&commit_hash, git_dir)?;
     let commit_time = commit::get_commit_time(&commit_hash, git_dir)?;
-    let commit_parent = commit::get_parent_hash(&commit_hash, git_dir)?;
+
+    let parents = if commit::is_merge_commit(&commit_hash, git_dir)? {
+        commit::get_merge_parents(&commit_hash, git_dir)?
+    } else {
+        let mut parents = Vec::new();
+        parents.push(commit::get_parent_hash(&commit_hash, git_dir)?);
+        parents
+    };
 
     let commit = Commit::new(
         commit_hash.clone(),
         commit_msg,
         commit_time,
         branch_name.clone(),
-        commit_parent.clone(),
+        parents,
     );
     graph.insert(commit_hash.clone(), commit);
 
@@ -368,7 +376,15 @@ fn build_git_graph(git_dir: &str) -> io::Result<HashMap<String, Commit>> {
     }
 
     while let Some((current_hash, branch_name)) = queue.pop() {
-        if let Ok(parent) = commit::get_parent_hash(&current_hash, git_dir) {
+        let parents = if is_merge_commit(&current_hash, git_dir)? {
+            commit::get_merge_parents(&current_hash, git_dir)?
+        } else {
+            let mut parents = Vec::new();
+            parents.push(commit::get_parent_hash(&current_hash, git_dir)?);
+            parents
+        };
+
+        for parent in parents {
             process_commit(
                 parent.clone(),
                 branch_name.clone(),
