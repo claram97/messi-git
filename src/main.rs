@@ -116,7 +116,7 @@ fn handle_init_command(args: Vec<String>) -> io::Result<()> {
         if args.len() == 2 {
             handle_git_command(git_command, args);
         } else {
-            env::set_current_dir(&args[2]).unwrap();
+            env::set_current_dir(&args[2])?;
             handle_git_command(git_command, args);
         }
     }

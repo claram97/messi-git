@@ -24,7 +24,7 @@ use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
 use crate::utils::{find_git_directory, obtain_git_dir};
-use crate::{add, git_config, log, ls_tree, push, tree_handler};
+use crate::{add, git_config, log, ls_tree, push, tag, tree_handler};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -395,8 +395,21 @@ fn handle_rebase(_args: Vec<String>) {
     // Implementación para el comando "Rebase"
 }
 
-fn handle_tag(_args: Vec<String>) {
-    // Implementación para el comando "Tag"
+fn handle_tag(args: Vec<String>) {
+    let git_dir = match obtain_git_dir() {
+        Ok(dir) => dir,
+        Err(error) => {
+            eprintln!("{:?}", error.to_string());
+            return;
+        }
+    };
+    match tag::git_tag(&git_dir, args, &mut io::stdout()) {
+        Ok(_) => {}
+        Err(error) => {
+            eprintln!("{:?}", error.to_string());
+            return;
+        }
+    };
 }
 
 /// Handles the 'hash-object' Git command.
