@@ -9,6 +9,7 @@ use crate::checkout::force_checkout;
 use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
+use crate::configuration::{INDEX, GIT_IGNORE};
 use crate::fetch::git_fetch;
 use crate::hash_object::store_file;
 use crate::index::Index;
@@ -756,7 +757,7 @@ fn handle_add(args: Vec<String>) {
                 return;
             }
         };
-    let index_path = git_dir.to_string() + "/index";
+    let index_path: String = git_dir.to_string() + "/" + INDEX;
     if &args[2] == "." {
         match add::add(
             "None",
@@ -765,8 +766,12 @@ fn handle_add(args: Vec<String>) {
             &git_ignore_path,
             Some(vec![".".to_string()]),
         ) {
-            Ok(_) => {}
-            Err(_err) => {}
+            Ok(_) => {
+            }
+            Err(_err) => {
+                println!("Hubo un error");
+                println!("{:?}", _err);
+            }
         };
     } else {
         match add::add(&args[2], &index_path, &git_dir, &git_ignore_path, None) {
@@ -794,7 +799,7 @@ fn handle_rm(args: Vec<String>) {
         }
     };
 
-    let index_path = format!("{}/{}", git_dir, "index");
+    let index_path = format!("{}/{}", git_dir, INDEX);
     let git_dir_parent = match Path::new(&git_dir).parent() {
         Some(dir) => dir,
         None => {
@@ -803,7 +808,7 @@ fn handle_rm(args: Vec<String>) {
         }
     };
 
-    let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), ".mgitignore");
+    let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), GIT_IGNORE);
 
     match git_rm(&args[2], &index_path, &git_dir, &git_ignore_path) {
         Ok(_) => {}
