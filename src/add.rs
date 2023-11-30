@@ -53,7 +53,7 @@ pub fn process_file_name(index: &mut Index, file_name: &str) -> io::Result<()> {
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 fn log_add(add_type: &str, file: &str, _git_dir: &Path) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = ".logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

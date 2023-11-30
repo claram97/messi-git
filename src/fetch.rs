@@ -188,7 +188,7 @@ fn get_clean_refs(refs: &HashMap<String, String>) -> Vec<String> {
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 pub fn log_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = ".logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
 
     let repo_name = remote_repo_name.unwrap_or("origin");

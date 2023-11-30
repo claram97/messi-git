@@ -24,7 +24,7 @@ use std::io::prelude::*;
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 pub fn log_show_ref(git_dir: &str, line: Vec<String>) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = ".logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(
