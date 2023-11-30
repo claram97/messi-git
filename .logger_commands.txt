@@ -1,0 +1,13 @@
+Command 'git init': Initialized repository at '/home/claram97/taller/23C2-messi/.mgit'2023-11-30 02:40:39.910621801 -03:00
+Command 'git hash-object': Path 'file', Git Directory '/home/claram97/taller/23C2-messi/.mgit', 2023-11-30 02:40:44.680435770 -03:00
+Command 'git add': Add type: single, File: file, Time: 2023-11-30 02:40:44.681371170 -03:00
+Command 'git init': Initialized repository at '/home/claram97/taller/23C2-messi/.mgit'2023-11-30 02:40:55.495682007 -03:00
+Command 'git hash-object': Path 'file', Git Directory '/home/claram97/taller/23C2-messi/.mgit', 2023-11-30 02:40:56.952066562 -03:00
+Command 'git add': Add type: single, File: file, Time: 2023-11-30 02:40:56.952658462 -03:00
+Command 'git commit': Git Directory '/home/claram97/taller/23C2-messi/.mgit', Message '"my', Git Ignore Path '/home/claram97/taller/23C2-messi/.mgitignore', 2023-11-30 02:41:03.636565001 -03:00
+Command 'git init': Initialized repository at '/home/claram97/taller/23C2-messi/.mgit'2023-11-30 02:41:56.300828609 -03:00
+Command 'git init': Initialized repository at '/home/claram97/taller/23C2-messi/.mgit'2023-11-30 02:45:21.612100995 -03:00
+Command 'git tag': Git Directory '/home/claram97/taller/23C2-messi/.mgit', Tag '"\"git"', 2023-11-30 02:45:36.908076947 -03:00
+Command 'git tag': Git Directory '/home/claram97/taller/23C2-messi/.mgit', Tag '"git"', 2023-11-30 02:45:44.641045104 -03:00
+Command 'git tag': Git Directory '/home/claram97/taller/23C2-messi/.mgit', Tag '"v0"', 2023-11-30 02:45:55.615021700 -03:00
+Command 'git tag': Git Directory '/home/claram97/taller/23C2-messi/.mgit', Tag '"v1"', 2023-11-30 02:46:01.566002451 -03:00
