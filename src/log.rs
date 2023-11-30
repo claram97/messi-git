@@ -309,7 +309,7 @@ impl Display for Log {
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 fn log_log(git_dir: &Path, commit: Option<&str>) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = ".logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

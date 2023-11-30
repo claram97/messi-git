@@ -19,7 +19,7 @@ const GIT_DIR: &str = ".mgit";
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 pub fn log_init(git_dir: &Path) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = ".logger_commands.txt";
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(
