@@ -1,4 +1,6 @@
-use crate::{cat_file, logger::Logger, utils::get_current_time};
+use crate::{
+    cat_file, configuration::LOGGER_COMMANDS_FILE, logger::Logger, utils::get_current_time,
+};
 use chrono::{TimeZone, Utc};
 use std::{
     fmt::Display,
@@ -319,7 +321,7 @@ impl Display for Log {
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 fn log_log(git_dir: &Path, commit: Option<&str>) -> io::Result<()> {
-    let log_file_path = ".logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

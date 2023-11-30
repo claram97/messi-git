@@ -1,5 +1,5 @@
-use crate::logger::Logger;
 use crate::utils::get_current_time;
+use crate::{configuration::LOGGER_COMMANDS_FILE, logger::Logger};
 use flate2::bufread::ZlibDecoder;
 use std::{
     fs::File,
@@ -21,7 +21,7 @@ use std::{
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 pub fn log_cat_file(hash: &str, directory: &str) -> io::Result<()> {
-    let log_file_path = ".logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

@@ -1,5 +1,6 @@
 use crate::commit;
 use crate::commit::get_branch_name;
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::utils::get_current_time;
 use crate::{logger::Logger, utils::obtain_git_dir};
 use std::{
@@ -434,7 +435,7 @@ pub fn git_branch(
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 fn log_command(command: &str, option: &str, _git_dir: &Path) -> io::Result<()> {
-    let log_file_path = ".logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!("Command '{}': {} {}", command, option, get_current_time());

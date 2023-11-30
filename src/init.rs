@@ -1,4 +1,4 @@
-use crate::configuration::GIT_DIR;
+use crate::configuration::{GIT_DIR, LOGGER_COMMANDS_FILE};
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use std::fs;
@@ -19,7 +19,7 @@ use std::path::Path;
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 pub fn log_init(git_dir: &Path) -> io::Result<()> {
-    let log_file_path = ".logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

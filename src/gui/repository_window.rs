@@ -1242,7 +1242,7 @@ fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
 
     let (git_dir, git_ignore_path) = find_git_directory_and_ignore()?;
 
-    let index_path = format!("{}/index", git_dir);
+    let index_path = format!("{}/{}", git_dir, INDEX);
     match add(
         "None",
         &index_path,
