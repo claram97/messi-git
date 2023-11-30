@@ -3,6 +3,7 @@ use std::io;
 
 use crate::configuration::GIT_DIR;
 use crate::configuration::GIT_IGNORE;
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::ignorer::is_subpath;
 use crate::index::Index;
 use crate::logger::Logger;
@@ -77,7 +78,7 @@ pub fn process_file_name(index: &mut Index, file_name: &str) -> io::Result<()> {
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 fn log_add(add_type: &str, file: &str, _git_dir: &Path) -> io::Result<()> {
-    let log_file_path = ".logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

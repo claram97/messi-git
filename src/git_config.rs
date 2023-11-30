@@ -1,6 +1,7 @@
 use std::io::{self, Error, ErrorKind};
 
 use crate::config::Config;
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use std::io::Write;
@@ -20,7 +21,7 @@ use std::io::Write;
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 pub fn log_config(git_dir: &str, line: &[String]) -> io::Result<()> {
-    let log_file_path = ".logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

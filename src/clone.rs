@@ -1,4 +1,6 @@
-use crate::configuration::{GIT_DIR, INITIAL_BRANCH, INITIAL_BRANCH_REF, REMOTE};
+use crate::configuration::{
+    GIT_DIR, INITIAL_BRANCH, INITIAL_BRANCH_REF, LOGGER_COMMANDS_FILE, REMOTE,
+};
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use crate::{client::Client, config, init, tree_handler};
@@ -23,7 +25,7 @@ use std::{
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 pub fn log_clone(repo_url: &str, destination: &str) -> io::Result<()> {
-    let log_file_path = ".logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

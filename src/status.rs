@@ -1,4 +1,5 @@
 const BLOB: &str = "blob";
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::hash_object;
 use crate::index::Index;
 use crate::logger::Logger;
@@ -28,7 +29,7 @@ pub fn log_status(
     unstaged_count: Option<i32>,
     staged_count: Option<i32>,
 ) -> io::Result<()> {
-    let log_file_path = ".logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
     let mut full_message: String = String::new();
     if let Some(untracked_count) = untracked_count {
