@@ -1,7 +1,7 @@
-use std::{io::{self, Write}, hash, collections::HashMap, rc::Rc, cell::RefCell};
-use gtk::{prelude::{BuilderExtManual, ComboBoxExtManual}, TextView, TextViewExt, TextBufferExt, ComboBoxTextExt, ComboBoxExt, TreeModelExt, ButtonExt};
+use std::{io::{self}, collections::HashMap, rc::Rc, cell::RefCell};
+use gtk::{prelude::{BuilderExtManual, ComboBoxExtManual}, TextView, TextViewExt, TextBufferExt, ComboBoxTextExt, ComboBoxExt, ButtonExt, WidgetExt};
 
-use crate::{commit, branch, merge, utils, tree_handler, rebase, hash_object, cat_file, diff};
+use crate::{commit, branch, merge, utils, tree_handler, hash_object, diff};
 
 fn files_that_changed_between_commits(commit1: &str, commit2: &str, git_dir: &str) -> io::Result<Vec<(String, String)>> {
     let commit1_tree = tree_handler::load_tree_from_commit(commit1, git_dir)?;
@@ -23,89 +23,6 @@ pub struct Rebase {
     commit_to_rebase: String,
     original_our_branch_hash: String,
     rebase_step: RebaseStep,
-}
-
-impl Rebase {
-    // this function will save the Rebase in its current state to the disk
-    pub fn save_rebase(&self, git_dir: &str) -> io::Result<()> {
-        let rebase_path = format!("{}/rebase_status", git_dir);
-        let mut rebase_file = std::fs::File::create(rebase_path)?;
-        let mut rebase_content = String::new();
-        rebase_content.push_str(&self.active_commit);
-        rebase_content.push_str("\n");
-        rebase_content.push_str(&self.commit_to_rebase);
-        rebase_content.push_str("\n");
-        rebase_content.push_str(&self.original_our_branch_hash);
-        rebase_content.push_str("\n");
-        // Print our commits vector
-        for commit in &self.our_commits {
-            rebase_content.push_str(&commit);
-            rebase_content.push_str("\n");
-        }
-        // Print a separator to separate the data from the diffs
-        rebase_content.push_str("====================================\n");
-
-        for (file, diff) in &self.rebase_step.diffs {
-            rebase_content.push_str(&file);
-            rebase_content.push_str("\n");
-            rebase_content.push_str(&diff);
-            rebase_content.push_str("\n");
-        }
-        rebase_file.write_all(rebase_content.as_bytes())?;
-        Ok(())
-    }
-
-    pub fn load_rebase(git_dir: &str) -> io::Result<Rebase> {
-        let rebase_path = format!("{}/rebase_status", git_dir);
-        let rebase_content = std::fs::read_to_string(rebase_path)?;
-        let mut lines = rebase_content.lines();
-        let active_commit = lines.next().unwrap().to_string();
-        let commit_to_rebase = lines.next().unwrap().to_string();
-        let original_our_branch_hash = lines.next().unwrap().to_string();
-        let mut our_commits: Vec<String> = Vec::new();
-        let mut commit = lines.next().unwrap().to_string();
-        while commit != "====================================" {
-            our_commits.push(commit);
-            commit = lines.next().unwrap().to_string();
-        }
-
-        let mut commit = lines.next().unwrap().to_string();
-        let mut diffs: HashMap<String, String> = HashMap::new();
-        //The format is file\ncontent\nfile\ncontent\n
-        while commit != "" {
-            println!("commit: {}", commit);
-            let file = commit.clone();
-            let diff = match lines.next() {
-                Some(diff) => diff.to_string(),
-                None => {
-                    println!("Error al leer el archivo de rebase");
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "Error al leer el archivo de rebase",
-                    ));
-                }
-            };
-            diffs.insert(file, diff);
-            commit = match lines.next() {
-                Some(commit) => commit.to_string(),
-                None => {
-                    break;
-                }
-            };
-        }
-
-        let rebase_step = RebaseStep {
-            diffs,
-        };
-        let rebase = Rebase {
-            our_commits,
-            active_commit,
-            commit_to_rebase,
-            original_our_branch_hash,
-            rebase_step,
-        };
-        Ok(rebase)
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -155,26 +72,55 @@ fn obtain_update_button_from_builder(builder: &gtk::Builder) -> io::Result<gtk::
     Ok(button)
 }
 
-pub fn write_rebase_step_into_gui(builder: &gtk::Builder, rebase: Rc<RefCell<Rebase>>, git_dir: &str) -> io::Result<()>{
-    let text_view = obtain_text_view_from_builder(builder).unwrap();
-    let combo_box = obtain_combo_box_from_builder(builder).unwrap();
-    let text_buffer = text_view.get_buffer().unwrap();
-    let update_button = obtain_update_button_from_builder(builder).unwrap();
+fn obtain_rebase_button_from_builder(builder: &gtk::Builder) -> io::Result<gtk::Button> {
+    let button = match builder.get_object::<gtk::Button>("make-rebase-button") {
+        Some(button) => button,
+        None => {
+            println!("No se pudo encontrar el Button con ID make-rebase-button");
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo encontrar el Button con ID make-rebase-button",
+            ));
+        }
+    };
+    Ok(button)
+}
 
-    text_buffer.set_text("");
-    combo_box.remove_all();
-    
-    let commit_to_rebase: &str = &rebase.borrow().commit_to_rebase.clone();
+fn obtain_ok_all_button_from_builder(builder: &gtk::Builder) -> io::Result<gtk::Button> {
+    let button = match builder.get_object::<gtk::Button>("rebase-ok-all-button") {
+        Some(button) => button,
+        None => {
+            println!("No se pudo encontrar el Button con ID rebase-ok-all-button");
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo encontrar el Button con ID rebase-ok-all-button",
+            ));
+        }
+    };
+    Ok(button)
+}
+
+fn load_file_diffs (commit_to_rebase: &str, active_commit: &str, git_dir: &str) -> io::Result<HashMap<String, String>> {
     let tree_to_rebase = tree_handler::load_tree_from_commit(commit_to_rebase, git_dir)?;
-    let active_commit = &rebase.borrow().active_commit.clone();
     let tree_active_commit = tree_handler::load_tree_from_commit(active_commit, git_dir)?;
 
     let changed_files = tree_handler::get_files_with_changes(&tree_to_rebase, &tree_active_commit);
-    // For every file that changed, we need its diff. We will store the diff in a vector of tuples (path, diff)
     let mut diffs: HashMap<String, String> = HashMap::new();
-    for (file, hash) in &changed_files {
-        let hash_active_commit = tree_active_commit.get_hash_from_path(&file).unwrap();
-        let hash_to_rebase = tree_to_rebase.get_hash_from_path(&file).unwrap();
+    for (file, _) in &changed_files {
+        let hash_active_commit = match tree_active_commit.get_hash_from_path(&file) {
+            Some(hash) => hash,
+            None => {
+                println!("Couldn't obtain hash for file {}", file);
+                continue;
+            }
+        };
+        let hash_to_rebase = match tree_to_rebase.get_hash_from_path(&file) {
+            Some(hash) => hash,
+            None => {
+                println!("Couldn't obtain hash for file {}", file);
+                continue;
+            }
+        };
         let diff = diff::return_object_diff_string(&hash_active_commit, &hash_to_rebase, &git_dir);
         match diff {
             Ok(diff) => {
@@ -185,25 +131,73 @@ pub fn write_rebase_step_into_gui(builder: &gtk::Builder, rebase: Rc<RefCell<Reb
             }
         }
     }
+    Ok(diffs)
+}
+
+pub fn write_rebase_step_into_gui(builder: &gtk::Builder, rebase: Rc<RefCell<Rebase>>, git_dir: &str) -> io::Result<()>{
+    let text_view = obtain_text_view_from_builder(builder)?;
+    let combo_box = obtain_combo_box_from_builder(builder)?;
+    let text_buffer = match text_view.get_buffer() {
+        Some(text_buffer) => text_buffer,
+        None => {
+            println!("No se pudo obtener el buffer del TextView");
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo obtener el buffer del TextView",
+            ));
+        }
+    };
+    let update_button = obtain_update_button_from_builder(builder)?;
+    let ok_button = obtain_ok_all_button_from_builder(builder)?;
+
+    text_buffer.set_text("");
+    combo_box.remove_all();
+    
+    let diffs = match load_file_diffs(&rebase.borrow().commit_to_rebase, &rebase.borrow().active_commit, git_dir) {
+        Ok(diffs) => diffs,
+        Err(_) => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo obtener los diffs para el rebase",
+            ));
+        }
+    };
+
+    let changed_files = diffs.keys().cloned().collect::<Vec<String>>();
 
     if changed_files.len() == 0 {
-        // Print a message in the text view
         text_buffer.set_text("No hay problemas con los archivos\n Presione Ok para continuar al siguiente commit");
         return Ok(());
-    } else
+    }
 
     {
         let mut rebase_step = rebase.borrow_mut();
         rebase_step.rebase_step.diffs = diffs;
     }
 
-    for (file, _) in changed_files {
+    for file in changed_files {
         combo_box.append_text(&file);
     }
 
     combo_box.set_active(Some(0));
-    let file = combo_box.get_active_text().unwrap().to_string();
-    let diff = rebase.borrow().rebase_step.diffs.get(&file).unwrap().clone();
+    let file = match combo_box.get_active_text() {
+        Some(file) => file.to_string(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo encontrar el archivo seleccionado",
+            ));
+        }
+    };
+    let diff = match rebase.borrow().rebase_step.diffs.get(&file) {
+        Some(diff) => diff.clone(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo encontrar el diff para el archivo",
+            ));
+        }
+    };
     text_buffer.set_text(&diff);
 
     let rebase_step_clone = Rc::clone(&rebase);
@@ -215,39 +209,56 @@ pub fn write_rebase_step_into_gui(builder: &gtk::Builder, rebase: Rc<RefCell<Reb
                 return;
             }
         };
-        let diff = rebase_step_clone.borrow().rebase_step.diffs.get(&file).unwrap().clone();
+        let diff = match rebase_step_clone.borrow().rebase_step.diffs.get(&file) {
+            Some(diff) => diff.clone(),
+            None => {
+                return;
+            }
+        };
         text_buffer_clone.set_text(&diff);
     });
     
-    let git_dir_clone = git_dir.to_string().clone();
     let text_buffer_clone = text_buffer.clone();
     let rebase_step_clone = Rc::clone(&rebase);
     update_button.connect_clicked(move |_| {
-        let text = text_buffer_clone.get_text(&text_buffer_clone.get_start_iter(), &text_buffer_clone.get_end_iter(), false).unwrap().to_string();
-        let file = combo_box.get_active_text().unwrap().to_string();
+        let text = match text_buffer_clone.get_text(&text_buffer_clone.get_start_iter(), &text_buffer_clone.get_end_iter(), false) {
+            Some(text) => text.to_string(),
+            None => {
+                return;
+            }
+        };
+        let file = match combo_box.get_active_text() {
+            Some(file) => file.to_string(),
+            None => {
+                return;
+            }
+        };
         
         {
             let mut rebase_step = rebase_step_clone.borrow_mut();
             rebase_step.rebase_step.diffs.insert(file, text);
         }
-        rebase_step_clone.borrow().save_rebase(&git_dir_clone).unwrap();
     });
+
+    let builder_clone = builder.clone();
+    let git_dir_clone = git_dir.to_string().clone();
+    let rebase_rf = Rc::clone(&rebase);
+    ok_button.connect_clicked(move |_| {
+        let rebase_clone = rebase_rf.borrow().clone();
+        match next_rebase_iteration(&builder_clone, rebase_clone, &git_dir_clone) {
+            Ok(_) => {},
+            Err(_) => {
+                return ();
+            }
+        }
+    });
+    
     Ok(())
 }
 
-pub fn next_rebase_iteration(builder: &gtk::Builder, git_dir: &str) -> io::Result<()> {
-    let rebase = match Rebase::load_rebase(git_dir) {
-        Ok(rebase) => rebase,
-        Err(_) => {
-            println!("No hay rebase en progreso");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "No hay rebase en progreso",
-            ));
-        }
-    };
+pub fn next_rebase_iteration(builder: &gtk::Builder, rebase: Rebase, git_dir: &str) -> io::Result<()> {
     let commit_to_rebase = &rebase.commit_to_rebase;
-    let tree_to_rebase = tree_handler::load_tree_from_commit(commit_to_rebase, git_dir).unwrap();
+    let tree_to_rebase = tree_handler::load_tree_from_commit(commit_to_rebase, git_dir)?;
 
     let mut tree_with_changes = tree_to_rebase.clone();
     let rebase_step = &rebase.rebase_step;
@@ -259,33 +270,46 @@ pub fn next_rebase_iteration(builder: &gtk::Builder, git_dir: &str) -> io::Resul
     let commit_message = format!("Rebase commit {}", rebase.active_commit);
     let new_commit_hash = commit::new_rebase_commit(git_dir, &commit_message, &rebase.commit_to_rebase, &tree_with_changes)?;
 
-    let mut rebase = rebase;
-    let next_commit = match rebase.our_commits.pop() {
-        Some(commit) => commit,
+    let text_view = obtain_text_view_from_builder(builder)?;
+    
+
+    let mut new_rebase = rebase;
+    println!("{:#?}", new_rebase);
+    match new_rebase.our_commits.pop() {
+        Some(commit) => {
+            new_rebase.active_commit = commit;
+            new_rebase.commit_to_rebase = new_commit_hash;
+            new_rebase.rebase_step.diffs = HashMap::new();
+            write_rebase_step_into_gui(builder, Rc::new(RefCell::new(new_rebase)), git_dir)?;
+        }
         None => {
-            // Delete the rebase file
-            let rebase_path = format!("{}/rebase_status", git_dir);
-            std::fs::remove_file(rebase_path)?;
-            return Ok(());
+            match text_view.get_buffer() {
+                Some(buffer) => {
+                    buffer.set_text("Rebase finalizado");
+                },
+                None => {
+                    println!("No se pudo obtener el buffer del TextView");
+
+                }
+            };
+            let combo_box = obtain_combo_box_from_builder(builder)?;
+            let update_button = obtain_update_button_from_builder(builder)?;
+            let ok_button = obtain_ok_all_button_from_builder(builder)?;
+            combo_box.set_sensitive(false);
+            update_button.set_sensitive(false);
+            ok_button.set_sensitive(false);
+
+            let rebase_button = obtain_rebase_button_from_builder(builder)?;
+            rebase_button.set_sensitive(true);
+
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "No hay más commits para rebase",
+            ));
         }
     };
-    println!("Next commit: {}", next_commit);
-    println!("New commit: {}", new_commit_hash);
-    rebase.active_commit = next_commit;
-    rebase.commit_to_rebase = new_commit_hash;
-    let commit_to_rebase = &rebase.commit_to_rebase;
-    let tree_to_rebase = tree_handler::load_tree_from_commit(commit_to_rebase, git_dir).unwrap();
-    let active_commit = &rebase.active_commit.clone();
-    let tree_active_commit = tree_handler::load_tree_from_commit(active_commit, git_dir).unwrap();
-    let changed_files = tree_handler::get_files_with_changes(&tree_to_rebase, &tree_active_commit);
-    rebase.rebase_step.diffs = HashMap::new();
-    rebase.save_rebase(git_dir)?;
-    println!("{:#?}", rebase);
-    write_rebase_step_into_gui(builder, Rc::new(RefCell::new(rebase)), git_dir)?;
     Ok(())
 }
-
-
 
 pub fn start_rebase_gui(git_dir: &str, our_branch: &str, branch_to_rebase: &str) -> io::Result<Rc<RefCell<Rebase>>> {
     let our_branch_hash = branch::get_branch_commit_hash(&our_branch, git_dir)?;
@@ -293,7 +317,15 @@ pub fn start_rebase_gui(git_dir: &str, our_branch: &str, branch_to_rebase: &str)
     let common_ancestor = merge::find_common_ancestor(&our_branch_hash, &their_branch_hash, git_dir)?;
 
     let mut our_commits = utils::get_branch_commit_history_until(&our_branch_hash, git_dir, &common_ancestor)?;
-    let active_commit = our_commits.pop().unwrap();
+    let active_commit = match our_commits.pop() {
+        Some(commit) => commit,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "No hay commits con los que hacer rebase",
+            ));
+        }
+    };
 
     let files_with_changes = files_that_changed_between_commits(&our_branch_hash, &their_branch_hash, git_dir)?;
     if files_with_changes.len() == 0 {

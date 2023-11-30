@@ -160,7 +160,7 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
     config_window(&builder_clone_for_git_config);
 
     let builder_clone_for_rebase = builder.clone();
-    rebase_window(&builder_clone_for_rebase);
+    rebase_window(&builder_clone_for_rebase)?;
 
     setup_buttons(builder)?;
 
@@ -4150,18 +4150,26 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
 
 fn rebase_window(builder : &gtk::Builder) -> io::Result<()> {
     let rebase_button = get_button(builder, "make-rebase-button");
-    apply_button_style(&rebase_button);
+    match apply_button_style(&rebase_button) {
+        Ok(_) => {}
+        Err(_e) => {
+            eprintln!("Couldn't apply button style");
+        }
+    }
     let ok_button = get_button(builder, "rebase-ok-all-button");
-    apply_button_style(&ok_button);
+    match apply_button_style(&ok_button) {
+        Ok(_) => {}
+        Err(_e) => {
+            eprintln!("Couldn't apply button style");
+        }
+    }
 
     let builder_clone = builder.clone();
+    let rebase_button_clone = rebase_button.clone();
     rebase_button.connect_clicked(move |_| {
         let git_dir = obtain_git_dir(".mgit").unwrap();
-        println!("Git dir is {:?}",git_dir);
         let current_branch = get_branch_name(&git_dir).unwrap();
-        println!("Current branch is {:?}", current_branch);
         let their_branch = "master";
-        println!("Their branch is {:?}", their_branch);
         let rebase_object =  match rebase_new::start_rebase_gui(&git_dir, &current_branch, &their_branch) {
             Ok(rebase) => rebase,
             Err(e) => {
@@ -4169,15 +4177,17 @@ fn rebase_window(builder : &gtk::Builder) -> io::Result<()> {
                 return;
             }
         };
-        rebase_new::write_rebase_step_into_gui(&builder_clone, rebase_object, &git_dir);
-    });
+        // Disable the rebase button
+        rebase_button_clone.set_sensitive(false);
 
-    let builder_clone = builder.clone();
-    ok_button.connect_clicked(move |_| {
-        let git_dir = obtain_git_dir(".mgit").unwrap();
-        rebase_new::next_rebase_iteration(&builder_clone, &git_dir);
+        match rebase_new::write_rebase_step_into_gui(&builder_clone, rebase_object, &git_dir) {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("Error writing rebase step into GUI: {}", e);
+                return;
+            }
+        }
     });
-
     Ok(())
 }
 
