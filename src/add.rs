@@ -1,8 +1,7 @@
-const MGIT: &str = ".mgit";
-
 use std::fs;
 use std::io;
 
+use crate::configuration::GIT_DIR;
 use crate::ignorer::is_subpath;
 use crate::index::Index;
 use crate::logger::Logger;
@@ -86,7 +85,7 @@ pub fn add(
     gitignore_path: &str,
     options: Option<Vec<String>>,
 ) -> io::Result<()> {
-    if is_subpath(path, MGIT) {
+    if is_subpath(path, GIT_DIR) {
         return Ok(());
     }
 

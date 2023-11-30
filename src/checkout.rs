@@ -814,7 +814,7 @@ mod tests {
         file.read_to_string(&mut content).unwrap();
         assert_eq!(content, old_commmit);
 
-        create_and_checkout_branch(git_dir_path, "", "master").unwrap();
+        checkout_branch(git_dir_path, "", "master").unwrap();
 
         let branch_ref_file = git_dir_path.join("refs").join("heads").join("master");
         let mut file = fs::File::open(&branch_ref_file).unwrap();
@@ -846,7 +846,7 @@ mod tests {
 
         prepare_commit_2("tests/checkout4");
         let new_commit = commit::new_commit("tests/checkout4/.mgit", "Hola", "").unwrap();
-        create_and_checkout_branch(git_dir_path, "", "master").unwrap();
+        checkout_branch(git_dir_path, "", "master").unwrap();
 
         let branch_ref_file = git_dir_path.join("refs").join("heads").join("master");
         let mut file = fs::File::open(&branch_ref_file).unwrap();

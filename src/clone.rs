@@ -1,3 +1,4 @@
+use crate::configuration::{GIT_DIR, INITIAL_BRANCH, INITIAL_BRANCH_REF, REMOTE};
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use crate::{client::Client, config, init, tree_handler};
@@ -151,26 +152,26 @@ pub fn git_clone(
 ) -> io::Result<()> {
     log_clone(remote_repo_url, working_dir)?;
 
-    init::git_init(working_dir, "master", None)?;
+    init::git_init(working_dir, INITIAL_BRANCH, None)?;
 
-    let local_git_dir = working_dir.to_string() + "/.mgit";
+    let local_git_dir = working_dir.to_string() + "/" + GIT_DIR;
     let mut client = Client::new(remote_repo_url, remote_repo_name, host);
     let refs = client.get_server_refs()?;
     let clean_refs = get_clean_refs(refs);
     create_remote_dir(&local_git_dir)?;
-    let _ = client.upload_pack(clean_refs, &local_git_dir, "origin");
+    let _ = client.upload_pack(clean_refs, &local_git_dir, REMOTE);
     create_working_dir(&local_git_dir, working_dir)?;
     let mut config_file = config::Config::load(&local_git_dir)?;
     config_file.add_remote(
-        "origin".to_string(),
+        REMOTE.to_string(),
         remote_repo_url.to_string() + "/" + remote_repo_name,
         remote_repo_url.to_string(),
         &mut io::stdout(),
     )?;
     config_file.add_branch(
-        "master".to_string(),
-        "origin".to_string(),
-        "/refs/heads/master".to_string(),
+        INITIAL_BRANCH.to_string(),
+        REMOTE.to_string(),
+        INITIAL_BRANCH_REF.to_string(),
         &mut io::stdout(),
     )?;
 
