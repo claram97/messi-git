@@ -135,13 +135,11 @@ pub fn add(
                 }
             }
         }
-    } else {
-        if !path.starts_with(GIT_DIR) {
-            let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
-            process_file_name(&mut index, path)?;
-            index.write_file()?;
-            log_add("single", path, &PathBuf::from(&path))?;
-        }
+    } else if !path.starts_with(GIT_DIR) {
+        let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
+        process_file_name(&mut index, path)?;
+        index.write_file()?;
+        log_add("single", path, &PathBuf::from(&path))?;
     }
 
     Ok(())
