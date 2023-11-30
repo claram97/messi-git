@@ -2,6 +2,7 @@ use std::fs;
 use std::io;
 
 use crate::configuration::GIT_DIR;
+use crate::configuration::GIT_IGNORE;
 use crate::ignorer::is_subpath;
 use crate::index::Index;
 use crate::logger::Logger;
@@ -27,11 +28,34 @@ pub fn process_file_name(index: &mut Index, file_name: &str) -> io::Result<()> {
             let entry = entry?;
             let file_path = entry.path();
             if file_path.is_file() {
-                index.add_path(file_path.to_str().unwrap())?;
+                let file_path_str = &file_path.to_string_lossy().to_string();
+                match index.add_path(file_path_str) {
+                    Ok(_) => {}
+                    Err(error) => {
+                        if error
+                            .to_string()
+                            .contains("The path is ignored by ignore file")
+                        {
+                        } else {
+                            return Err(error);
+                        }
+                    }
+                }
             }
         }
     } else {
-        index.add_path(file_name)?;
+        match index.add_path(file_name) {
+            Ok(_) => {}
+            Err(error) => {
+                if error
+                    .to_string()
+                    .contains("The path is ignored by ignore file")
+                {
+                } else {
+                    return Err(error);
+                }
+            }
+        }
     }
 
     Ok(())
@@ -88,33 +112,35 @@ pub fn add(
     if is_subpath(path, GIT_DIR) {
         return Ok(());
     }
-
     if let Some(params) = options {
         if params.len() == 1 && params[0] == "." {
             let current_dir = std::env::current_dir()?;
-            let current_dir_str = current_dir.to_str().unwrap();
+            let current_dir_str = &current_dir.to_string_lossy().to_string();
+            if !current_dir_str.starts_with(GIT_DIR) {
+                let file_names: Vec<String> = fs::read_dir(current_dir_str)?
+                    .filter_map(|entry| entry.ok().and_then(|e| e.file_name().into_string().ok()))
+                    .collect();
 
-            let file_names: Vec<String> = fs::read_dir(current_dir_str)?
-                .filter_map(|entry| entry.ok().and_then(|e| e.file_name().into_string().ok()))
-                .collect();
+                for file_name in file_names {
+                    if file_name.eq(GIT_IGNORE)
+                        || (!file_name.eq(GIT_IGNORE) && !file_name.starts_with(GIT_DIR))
+                    {
+                        let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
+                        process_file_name(&mut index, &file_name)?;
+                        index.write_file()?;
 
-            for file_name in file_names {
-                let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
-                process_file_name(&mut index, &file_name)?;
-                index.write_file()?;
-
-                // Log the added file and current time
-                log_add("all", &file_name, &PathBuf::from(&path))?;
+                        log_add("all", &file_name, &PathBuf::from(&path))?;
+                    }
+                }
             }
         }
     } else {
-        let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
-        process_file_name(&mut index, path)?;
-        index.write_file()?;
-
-        // Log the added file and current time
-
-        log_add("single", path, &PathBuf::from(&path))?;
+        if !path.starts_with(GIT_DIR) {
+            let mut index = Index::load(index_path, git_dir_path, gitignore_path)?;
+            process_file_name(&mut index, path)?;
+            index.write_file()?;
+            log_add("single", path, &PathBuf::from(&path))?;
+        }
     }
 
     Ok(())
