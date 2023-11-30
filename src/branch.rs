@@ -443,6 +443,14 @@ fn log_command(command: &str, option: &str, _git_dir: &Path) -> io::Result<()> {
     Ok(())
 }
 
+/// Returns a vector with the names of all the branches in the repo.
+///
+/// ## Arguments
+/// * `git_dir` - The path to the repo directory.
+///
+/// ## Errors
+/// If the git directory is not found, an error is returned.
+/// If the branches directory is not found, an error is returned.
 pub fn get_all_branches(git_dir: &str) -> io::Result<Vec<String>> {
     let mut branches = vec![];
     let heads_dir = (&git_dir).to_string() + "/refs/heads";

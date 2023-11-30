@@ -20,7 +20,13 @@ struct Commit {
 }
 
 impl Commit {
-    fn new(hash: String, message: String, time: String, branch: String, parents: Vec<String>) -> Commit {
+    fn new(
+        hash: String,
+        message: String,
+        time: String,
+        branch: String,
+        parents: Vec<String>,
+    ) -> Commit {
         Commit {
             hash,
             message,
@@ -210,12 +216,10 @@ fn draw_line(
         return;
     }
 
-    let offset = if source.0 == dest.0 {
-        0.0
-    } else if source.0 > dest.0 {
-        COMMIT_RADIUS
-    } else {
-        -COMMIT_RADIUS
+    let offset = match source.0.cmp(&dest.0) {
+        std::cmp::Ordering::Equal => 0.0,
+        std::cmp::Ordering::Greater => COMMIT_RADIUS,
+        std::cmp::Ordering::Less => -COMMIT_RADIUS,
     };
 
     drawing_area.connect_draw(move |_, context| {
@@ -322,8 +326,7 @@ fn process_commit(
     let parents = if commit::is_merge_commit(&commit_hash, git_dir)? {
         commit::get_merge_parents(&commit_hash, git_dir)?
     } else {
-        let mut parents = Vec::new();
-        parents.push(commit::get_parent_hash(&commit_hash, git_dir)?);
+        let parents = vec![commit::get_parent_hash(&commit_hash, git_dir)?];
         parents
     };
 
@@ -379,8 +382,7 @@ fn build_git_graph(git_dir: &str) -> io::Result<HashMap<String, Commit>> {
         let parents = if is_merge_commit(&current_hash, git_dir)? {
             commit::get_merge_parents(&current_hash, git_dir)?
         } else {
-            let mut parents = Vec::new();
-            parents.push(commit::get_parent_hash(&current_hash, git_dir)?);
+            let parents = vec![commit::get_parent_hash(&current_hash, git_dir)?];
             parents
         };
 
