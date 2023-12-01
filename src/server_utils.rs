@@ -132,6 +132,9 @@ pub fn get_head_tags_refs(git_dir: &str) -> io::Result<HashMap<String, String>> 
 pub fn get_client_refs(git_dir: &str, remote: &str) -> io::Result<HashMap<String, String>> {
     let pathbuf = PathBuf::from(git_dir);
     let remotes = pathbuf.join("refs").join("remotes").join(remote);
+    if !remotes.exists() {
+        fs::create_dir_all(&remotes)?;
+    }
     let tags = pathbuf.join("refs").join("tags");
     let mut refs = get_refs(remotes)?;
     let tags = get_refs(tags)?;
