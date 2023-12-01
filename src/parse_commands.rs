@@ -434,7 +434,6 @@ fn handle_tag(args: Vec<String>) {
         Ok(_) => {}
         Err(error) => {
             eprintln!("{:?}", error.to_string());
-            return;
         }
     };
 }
