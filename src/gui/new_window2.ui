@@ -895,13 +895,12 @@
                     <property name="can-focus">False</property>
                     <child>
                       <object class="GtkEntry" id="show-ref-entry">
-                        <property name="width-request">500</property>
                         <property name="height-request">70</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
+                        <property name="expand">True</property>
                         <property name="fill">True</property>
                         <property name="position">0</property>
                       </packing>
@@ -918,6 +917,7 @@
                       <packing>
                         <property name="expand">False</property>
                         <property name="fill">True</property>
+                        <property name="pack-type">end</property>
                         <property name="position">1</property>
                       </packing>
                     </child>
@@ -1604,10 +1604,37 @@ Set your name and email :)</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEntry" id="rebase-branch-entry">
-                    <property name="height-request">60</property>
+                  <object class="GtkBox">
                     <property name="visible">True</property>
-                    <property name="can-focus">True</property>
+                    <property name="can-focus">False</property>
+                    <child>
+                      <object class="GtkEntry" id="rebase-branch-entry">
+                        <property name="height-request">60</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="placeholder-text" translatable="yes">Enter the branch to rebase</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="make-rebase-button">
+                        <property name="label" translatable="yes">Rebase</property>
+                        <property name="width-request">200</property>
+                        <property name="height-request">60</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -1627,15 +1654,15 @@ Set your name and email :)</property>
                         <property name="can-focus">False</property>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">False</property>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
                         <property name="position">0</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkButton" id="rebase-button">
                         <property name="label" translatable="yes">Actualizar archivo</property>
-                        <property name="width-request">100</property>
+                        <property name="width-request">200</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
@@ -1643,6 +1670,7 @@ Set your name and email :)</property>
                       <packing>
                         <property name="expand">False</property>
                         <property name="fill">True</property>
+                        <property name="pack-type">end</property>
                         <property name="position">1</property>
                       </packing>
                     </child>
@@ -1654,28 +1682,13 @@ Set your name and email :)</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkBox">
+                  <object class="GtkButtonBox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <child>
-                      <object class="GtkButton" id="make-rebase-button">
-                        <property name="label" translatable="yes">Rebase</property>
-                        <property name="width-request">216</property>
-                        <property name="height-request">60</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
+                    <property name="layout-style">expand</property>
                     <child>
                       <object class="GtkButton" id="abort-rebase-button">
                         <property name="label" translatable="yes">Abort</property>
-                        <property name="width-request">216</property>
                         <property name="height-request">60</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -1684,13 +1697,12 @@ Set your name and email :)</property>
                       <packing>
                         <property name="expand">False</property>
                         <property name="fill">True</property>
-                        <property name="position">1</property>
+                        <property name="position">2</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkButton" id="rebase-ok-all-button">
-                        <property name="label" translatable="yes">Ok!</property>
-                        <property name="width-request">216</property>
+                        <property name="label" translatable="yes">Next step</property>
                         <property name="height-request">60</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -1706,7 +1718,7 @@ Set your name and email :)</property>
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
-                    <property name="position">3</property>
+                    <property name="position">4</property>
                   </packing>
                 </child>
               </object>
@@ -1714,6 +1726,67 @@ Set your name and email :)</property>
                 <property name="name">rebase</property>
                 <property name="title" translatable="yes">Rebase</property>
                 <property name="position">15</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkScrolledWindow" id="branches-view-scroll">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="shadow-type">in</property>
+                    <child>
+                      <object class="GtkViewport">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <child>
+                          <object class="GtkDrawingArea" id="visual-branches-area">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButtonBox">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="layout-style">expand</property>
+                    <child>
+                      <object class="GtkButton" id="visual-branches-button">
+                        <property name="label" translatable="yes">Show tree</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="name">git_tree</property>
+                <property name="title" translatable="yes">Git tree</property>
+                <property name="position">16</property>
               </packing>
             </child>
           </object>

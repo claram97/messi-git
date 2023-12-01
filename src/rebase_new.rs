@@ -122,6 +122,20 @@ fn obtain_ok_all_button_from_builder(builder: &gtk::Builder) -> io::Result<gtk::
     Ok(button)
 }
 
+fn obtain_abort_button_from_builder(builder: &gtk::Builder) -> io::Result<gtk::Button> {
+    let button = match builder.get_object::<gtk::Button>("abort-rebase-button") {
+        Some(button) => button,
+        None => {
+            println!("No se pudo encontrar el Button con ID abort-rebase-button");
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo encontrar el Button con ID abort-rebase-button",
+            ));
+        }
+    };
+    Ok(button)
+}
+
 fn load_file_diffs(
     commit_to_rebase: &str,
     active_commit: &str,
@@ -161,12 +175,13 @@ fn load_file_diffs(
 }
 
 fn abort_rebase_button_on_click(
-    button: &gtk::Button,
+    builder: &gtk::Builder,
     original_our_branch_hash: String,
 ) -> io::Result<()> {
     let git_dir = obtain_git_dir()?;
     let current_branch_path = get_current_branch_path(&git_dir)?;
     let complete_branch_path = format!("{}/{}", git_dir, current_branch_path);
+    println!("complete_branch_path: {}", complete_branch_path);
     let branch_name = get_branch_name(&git_dir)?;
     let root_dir = match Path::new(&git_dir).parent() {
         Some(dir) => dir.to_string_lossy().to_string(),
@@ -177,37 +192,57 @@ fn abort_rebase_button_on_click(
             ));
         }
     };
-    button.connect_clicked(move |_| {
-        let mut file = match File::open(&complete_branch_path) {
-            Ok(file) => file,
-            Err(_error) => {
-                eprintln!("Error opening file");
-                return;
-            }
-        };
-        match file.write_all(original_our_branch_hash.as_bytes()) {
-            Ok(_) => {}
-            Err(_error) => {
-                show_message_dialog("Error inesperado", "No se pudo completar el abort");
-            }
+    println!("root_dir: {}", root_dir);
+    let mut file = match File::create(&complete_branch_path) {
+        Ok(file) => file,
+        Err(_error) => {
+            eprintln!("Error creating file");
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo crear el archivo",
+            ));
         }
+    };
+    println!("File: {:?}", file);
+    match file.write_all(original_our_branch_hash.as_bytes()) {
+        Ok(_) => {}
+        Err(_error) => {
+            println!("Error writing to file");
+        }
+    }
 
-        match file.flush() {
-            Ok(_) => {}
-            Err(_error) => {
-                show_message_dialog("Error inesperado", "No se pudo completar el abort");
-            }
+    let git_dir_path = Path::new(&git_dir);
+    match checkout::checkout_branch(git_dir_path, &root_dir, &branch_name) {
+        Ok(_) => {
+            println!("Checkout to branch {} completed", branch_name);
         }
-        let git_dir_path = Path::new(&git_dir);
-        match checkout::checkout_branch(git_dir_path, &root_dir, &branch_name) {
-            Ok(_) => {
-                show_message_dialog("Éxito", "Abortion completed successfully");
-            }
-            Err(_e) => {
-                show_message_dialog("Error inesperado", "No se pudo completar el abort");
-            }
+        Err(_e) => {
+            println!("Error checking out to branch {}", branch_name);
         }
-    });
+    }
+
+    // Set the text view to notify the user that the rebase was aborted
+    let text_view = obtain_text_view_from_builder(&builder)?;
+    match text_view.get_buffer() {
+        Some(buffer) => {
+            buffer.set_text("Rebase abortado");
+        }
+        None => {
+            println!("No se pudo obtener el buffer del TextView");
+        }
+    };
+
+    let rebase_button = obtain_rebase_button_from_builder(&builder)?;
+    rebase_button.set_sensitive(true);
+    let ok_button = obtain_ok_all_button_from_builder(&builder)?;
+    ok_button.set_sensitive(false);
+    let abort_button = obtain_abort_button_from_builder(&builder)?;
+    abort_button.set_sensitive(false);
+    let combo_box = obtain_combo_box_from_builder(&builder)?;
+    combo_box.set_sensitive(false);
+    let update_button = obtain_update_button_from_builder(&builder)?;
+    update_button.set_sensitive(false);
+
     Ok(())
 }
 
@@ -230,6 +265,15 @@ pub fn write_rebase_step_into_gui(
     };
     let update_button = obtain_update_button_from_builder(builder)?;
     let ok_button = obtain_ok_all_button_from_builder(builder)?;
+    let abort_button = obtain_abort_button_from_builder(builder)?;
+
+    // Set buttons
+    let rebase_button = obtain_rebase_button_from_builder(builder)?;
+    rebase_button.set_sensitive(false);
+    ok_button.set_sensitive(true);
+    abort_button.set_sensitive(true);
+    combo_box.set_sensitive(true);
+    update_button.set_sensitive(true);
 
     text_buffer.set_text("");
     combo_box.remove_all();
@@ -329,6 +373,14 @@ pub fn write_rebase_step_into_gui(
             let mut rebase_step = rebase_step_clone.borrow_mut();
             rebase_step.rebase_step.diffs.insert(file, text);
         }
+    });
+
+    let rebase_step_clone = Rc::clone(&rebase);
+    let builder_clone = builder.clone();
+    abort_button.connect_clicked(move |_| {
+        let rebase_step = rebase_step_clone.borrow();
+        let original_our_branch_hash = rebase_step.original_our_branch_hash.clone();
+        abort_rebase_button_on_click(&builder_clone, original_our_branch_hash).unwrap();
     });
 
     let builder_clone = builder.clone();

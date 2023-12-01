@@ -74,6 +74,7 @@ pub fn checkout_branch(git_dir_path: &Path, root_dir: &str, branch_name: &str) -
         }
     };
 
+    println!("HACIENDO CHECKOUTTTTTT");
     let current_branch = match branch::get_current_branch_path(git_dir_path_str) {
         Ok(name) => name,
         Err(_) => "Unknown".to_string(),
