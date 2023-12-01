@@ -73,6 +73,7 @@ use super::style::apply_label_style;
 use super::style::create_text_entry_window_with_switch;
 use super::style::get_label;
 use super::style::get_switch;
+use super::visual_branches;
 
 /// Displays a repository window with various buttons and actions in a GTK application.
 ///
@@ -173,6 +174,7 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
 ///
 fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
     let button_ids = [
+        "visual-branches-button",
         "show-log-button",
         "pull",
         "push",
@@ -560,6 +562,14 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                 let result = make_commit(&builder_clone);
                 if result.is_err() {
                     eprintln!("Error in commit.");
+                }
+            });
+        }
+        "visual-branches-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_visual_branches_button(&builder_clone);
+                if result.is_err() {
+                    eprintln!("Error handling visual branches button.")
                 }
             });
         }
@@ -4449,4 +4459,9 @@ fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
     let message = message_view.get_text().to_string();
 
     perform_commit(builder, message)
+}
+
+fn handle_visual_branches_button(builder: &gtk::Builder) -> io::Result<()> {
+    visual_branches::handle_show_visual_branches_tree(builder)?;
+    Ok(())
 }

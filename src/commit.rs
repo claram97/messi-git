@@ -215,11 +215,26 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
     Ok(parent_hash.to_string())
 }
 
+/// Returns the commit message of the given commit hash.
+/// If the commit is not found, it returns an error.
+/// If the commit is a merge commit, it also returns a message.
+///
+/// ## Parameters
+///
+/// * `commit_hash` - The hash of the commit that you want the message of.
+/// * `git_dir_path` - The path to the git directory.
 pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
-    let message: &str = match commit_file.split('\n').nth(5) {
-        Some(message) => message,
-        None => return Err(io::Error::new(io::ErrorKind::NotFound, "Message not found")),
+    let message = if is_merge_commit(commit_hash, git_dir_path)? {
+        match commit_file.split('\n').nth(6) {
+            Some(message) => message,
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Message not found")),
+        }
+    } else {
+        match commit_file.split('\n').nth(5) {
+            Some(message) => message,
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Message not found")),
+        }
     };
     Ok(message.to_string())
 }
@@ -256,6 +271,84 @@ pub fn read_head_commit_hash(git_dir: &str) -> io::Result<String> {
             "Error in head file",
         )),
     }
+}
+
+/// Returns the commit time of the given commit hash.
+/// If the commit is not found, it returns an error.
+///
+/// ## Parameters
+///
+/// * `commit_hash` - The hash of the commit that you want the time of.
+/// * `git_dir_path` - The path to the git directory.
+pub fn get_commit_time(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
+    let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
+    let time = if is_merge_commit(commit_hash, git_dir_path)? {
+        match commit_file.split('\n').nth(4) {
+            Some(time) => {
+                let time: Vec<&str> = time.split(' ').collect();
+                time[3..].join(" ")
+            }
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Time not found")),
+        }
+    } else {
+        match commit_file.split('\n').nth(3) {
+            Some(time) => {
+                let time: Vec<&str> = time.split(' ').collect();
+                time[3..].join(" ")
+            }
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Time not found")),
+        }
+    };
+    Ok(time)
+}
+
+/// Returns true if the given commit hash is a merge commit. False otherwise.
+///
+/// ## Parameters
+///
+/// * `commit_hash` - The hash of the commit that you want to check.
+/// * `git_dir_path` - The path to the git directory.
+pub fn is_merge_commit(commit_hash: &str, git_dir_path: &str) -> io::Result<bool> {
+    let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
+    let lines: Vec<&str> = commit_file.split('\n').collect();
+    if lines[1].starts_with("parent") && lines[2].starts_with("parent") {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+/// Returns the parents of the given commit hash.
+/// If the commit is not found, it returns an error.
+///
+/// If the commit is not a merge commit, it will return an error.
+///
+/// ## Parameters
+///
+/// * `commit_hash` - The hash of a merge commit that you want the parents of.
+/// * `git_dir_path` - The path to the git directory.
+pub fn get_merge_parents(commit_hash: &str, git_dir_path: &str) -> io::Result<Vec<String>> {
+    let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
+    let lines: Vec<&str> = commit_file.split('\n').collect();
+    let parent1: &str = match lines[1].split(' ').nth(1) {
+        Some(parent1) => parent1,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Parent hash not found",
+            ))
+        }
+    };
+    let parent2: &str = match lines[2].split(' ').nth(1) {
+        Some(parent2) => parent2,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Parent hash not found",
+            ))
+        }
+    };
+    Ok(vec![parent1.to_string(), parent2.to_string()])
 }
 
 #[cfg(test)]

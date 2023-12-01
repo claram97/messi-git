@@ -444,6 +444,28 @@ fn log_command(command: &str, option: &str, _git_dir: &Path) -> io::Result<()> {
     Ok(())
 }
 
+/// Returns a vector with the names of all the branches in the repo.
+///
+/// ## Arguments
+/// * `git_dir` - The path to the repo directory.
+///
+/// ## Errors
+/// If the git directory is not found, an error is returned.
+/// If the branches directory is not found, an error is returned.
+pub fn get_all_branches(git_dir: &str) -> io::Result<Vec<String>> {
+    let mut branches = vec![];
+    let heads_dir = (&git_dir).to_string() + "/refs/heads";
+    let entries = fs::read_dir(&heads_dir)?;
+    if entries.count() > 0 {
+        let entries = fs::read_dir(&heads_dir)?;
+        for entry in entries {
+            let entry = entry?;
+            branches.push(entry.file_name().to_string_lossy().to_string());
+        }
+    }
+    Ok(branches)
+}
+
 /// Removes ANSI escape codes from the input string.
 ///
 /// This function takes an input string and removes ANSI escape codes used for color formatting.
