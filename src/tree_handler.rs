@@ -74,7 +74,7 @@ impl Tree {
             current_tree = current_tree.get_or_create_dir(path.remove(0));
         }
         println!("Acá llego");
-        match current_tree.files.iter().position(|(p, h)| p == file_name) {
+        match current_tree.files.iter().position(|(p, _)| p == file_name) {
             Some(index) => {
                 current_tree.files.remove(index);
                 current_tree.add_file(file_name, hash)

@@ -14,14 +14,8 @@ use crate::configuration::GIT_IGNORE;
 use crate::configuration::INDEX;
 use crate::git_config::git_config;
 use crate::rebase;
-use crate::rebase::rebase;
-use crate::rebase_new;
-use crate::rebase_new::Rebase;
 use crate::tag::git_tag;
 use crate::utils::obtain_git_dir;
-
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::str;
 //use crate::fetch::git_fetch_for_gui;
 use crate::branch::git_branch;
@@ -4160,7 +4154,7 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
 }
 
 fn apply_style_to_button(button: &gtk::Button) {
-    match apply_button_style(&button) {
+    match apply_button_style(button) {
         Ok(_) => {}
         Err(_e) => {
             eprintln!("Couldn't apply button style");
@@ -4222,7 +4216,7 @@ fn rebase_window(builder: &gtk::Builder) -> io::Result<()> {
                     }
                 };
                 let rebase_object =
-                    match rebase_new::start_rebase_gui(&git_dir, &current_branch, &their_branch) {
+                    match rebase::start_rebase_gui(&git_dir, &current_branch, &their_branch) {
                         Ok(rebase) => rebase,
                         Err(e) => {
                             eprintln!("Error starting rebase: {}", e);
@@ -4231,15 +4225,10 @@ fn rebase_window(builder: &gtk::Builder) -> io::Result<()> {
                     };
                 rebase_button_clone.set_sensitive(false);
 
-                match rebase_new::write_rebase_step_into_gui(
-                    &builder_clone,
-                    rebase_object,
-                    &git_dir,
-                ) {
+                match rebase::write_rebase_step_into_gui(&builder_clone, rebase_object, &git_dir) {
                     Ok(_) => {}
                     Err(e) => {
                         eprintln!("Error writing rebase step into GUI: {}", e);
-                        return;
                     }
                 }
             }

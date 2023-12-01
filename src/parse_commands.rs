@@ -403,7 +403,7 @@ fn handle_rebase(args: Vec<String>) {
         }
     };
 
-    let current_branch = match get_branch_name(&git_dir) {
+    let _ = match get_branch_name(&git_dir) {
         Ok(name) => name,
         Err(_) => {
             eprintln!("No se pudo obtener la rama actual");

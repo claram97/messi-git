@@ -27,7 +27,6 @@ pub mod parse_commands;
 pub mod pull;
 pub mod push;
 pub mod rebase;
-pub mod rebase_new;
 pub mod remote;
 pub mod remote_handler;
 pub mod rm;
