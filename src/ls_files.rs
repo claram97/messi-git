@@ -1,10 +1,12 @@
+use crate::configuration::LOGGER_COMMANDS_FILE;
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use crate::{hash_object, index::Index};
 use std::{
     fs,
     io::{self, Write},
     path::Path,
 };
-
-use crate::{hash_object, index::Index};
 const BLOB: &str = "blob";
 
 /// Lists files present in the provided index.
@@ -167,7 +169,44 @@ fn list_modified_files(
     }
     Ok(())
 }
-//let current_directory = std::env::current_dir()?;
+
+/// Logs the 'git ls-files' command with the specified working directory, Git directory, current directory, and line.
+///
+/// This function logs the 'git ls-files' command with the provided working directory, Git directory,
+/// current directory, and command line arguments to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `working_dir` - A string representing the root directory of the working tree.
+/// * `git_dir` - A string representing the path to the `.git` directory.
+/// * `current_directory` - A string representing the current directory to list files from.
+/// * `line` - A vector of strings representing the original command line arguments.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_ls_files(
+    working_dir: &str,
+    git_dir: &str,
+    current_directory: &str,
+    line: &[String],
+) -> io::Result<()> {
+    let log_file_path = LOGGER_COMMANDS_FILE;
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git ls-files': Working Directory '{}', Git Directory '{}', Current Directory '{}', Line '{:?}', {}",
+        working_dir,
+        git_dir,
+        current_directory,
+        line,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Lists files based on the provided command line arguments in a manner similar to the 'git ls-files' command.
 ///
@@ -199,13 +238,21 @@ pub fn git_ls_files(
         list_files_in_index(index, output)?;
     } else if line.len() == 3 {
         if line[2].eq("-o") {
-            list_untracked_files(working_dir, git_dir, current_directory, line, index, output)?;
+            list_untracked_files(
+                working_dir,
+                git_dir,
+                current_directory,
+                line.clone(),
+                index,
+                output,
+            )?;
         } else if line[2].eq("-m") {
             list_modified_files(working_dir, index, output)?;
         } else {
             return Err(io::Error::new(io::ErrorKind::Interrupted, "Fatal error.\n"));
         }
     }
+    log_ls_files(working_dir, git_dir, current_directory, &line)?;
     Ok(())
 }
 

@@ -9,6 +9,7 @@ use crate::checkout::force_checkout;
 use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
+use crate::configuration::{GIT_IGNORE, INDEX};
 use crate::fetch::git_fetch;
 use crate::hash_object::store_file;
 use crate::index::Index;
@@ -22,8 +23,8 @@ use crate::rm::git_rm;
 use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
-use crate::utils::find_git_directory;
-use crate::{add, git_config, log, ls_tree, push, tree_handler};
+use crate::utils::{find_git_directory, obtain_git_dir};
+use crate::{add, git_config, log, ls_tree, push, tag, tree_handler};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -196,18 +197,10 @@ pub fn handle_git_command(git_command: GitCommand, args: Vec<String>) {
 /// * `args` - A vector of strings containing the command-line arguments.
 ///
 fn handle_config(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -238,7 +231,7 @@ fn handle_ls_files(args: Vec<String>) {
         }
     };
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+    let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
         Some(dir) => dir,
         None => {
             eprintln!("Error al obtener el git dir");
@@ -350,18 +343,10 @@ fn handle_ls_tree_with_option(tree_ish: &str, git_dir: PathBuf, option: &str) {
 ///
 /// * `args` - The arguments passed to the "check-ignore" command.
 fn handle_check_ignore(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -390,18 +375,10 @@ fn handle_check_ignore(args: Vec<String>) {
 ///
 /// * `args` - The arguments passed to the "show-ref" command.
 fn handle_show_ref(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -418,8 +395,20 @@ fn handle_rebase(_args: Vec<String>) {
     // Implementación para el comando "Rebase"
 }
 
-fn handle_tag(_args: Vec<String>) {
-    // Implementación para el comando "Tag"
+fn handle_tag(args: Vec<String>) {
+    let git_dir = match obtain_git_dir() {
+        Ok(dir) => dir,
+        Err(error) => {
+            eprintln!("{:?}", error.to_string());
+            return;
+        }
+    };
+    match tag::git_tag(&git_dir, args, &mut io::stdout()) {
+        Ok(_) => {}
+        Err(error) => {
+            eprintln!("{:?}", error.to_string());
+        }
+    };
 }
 
 /// Handles the 'hash-object' Git command.
@@ -780,7 +769,7 @@ fn handle_add(args: Vec<String>) {
                 return;
             }
         };
-    let index_path = git_dir.to_string() + "/index";
+    let index_path: String = git_dir.to_string() + "/" + INDEX;
     if &args[2] == "." {
         match add::add(
             "None",
@@ -790,7 +779,10 @@ fn handle_add(args: Vec<String>) {
             Some(vec![".".to_string()]),
         ) {
             Ok(_) => {}
-            Err(_err) => {}
+            Err(_err) => {
+                println!("Hubo un error");
+                println!("{:?}", _err);
+            }
         };
     } else {
         match add::add(&args[2], &index_path, &git_dir, &git_ignore_path, None) {
@@ -810,23 +802,15 @@ fn handle_add(args: Vec<String>) {
 /// * `args` - A vector of command-line arguments, where the second element is the file or directory to remove.
 ///
 fn handle_rm(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
-            return;
-        }
-    };
-
-    let index_path = format!("{}/{}", git_dir, "index");
+    let index_path = format!("{}/{}", git_dir, INDEX);
     let git_dir_parent = match Path::new(&git_dir).parent() {
         Some(dir) => dir,
         None => {
@@ -835,7 +819,7 @@ fn handle_rm(args: Vec<String>) {
         }
     };
 
-    let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), ".mgitignore");
+    let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), GIT_IGNORE);
 
     match git_rm(&args[2], &index_path, &git_dir, &git_ignore_path) {
         Ok(_) => {}
@@ -928,18 +912,10 @@ fn handle_checkout_option(
 ///            ('-b', '-B', '--detach', '-f') and the fourth element is the branch or commit to checkout.
 ///
 pub fn handle_checkout(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -1088,18 +1064,10 @@ fn handle_fetch(_args: Vec<String>) {
 ///            expected to be the name of the branch to be merged.
 ///
 fn handle_merge(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -1140,18 +1108,10 @@ fn handle_merge(args: Vec<String>) {
 ///            representing the 'git remote' subcommand and its options.
 ///
 fn handle_remote(args: Vec<String>) {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -1181,18 +1141,10 @@ fn handle_remote(args: Vec<String>) {
 /// from the specified remote repository.
 ///
 fn handle_pull() {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Error al obtener el git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -1228,17 +1180,10 @@ fn handle_pull() {
 /// It then calls the 'git push' function to push changes to the remote repository associated with the current branch.
 ///
 fn handle_push() {
-    let mut current_dir = match std::env::current_dir() {
+    let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(err) => {
-            eprintln!("Error al obtener el directorio actual: {:?}", err);
-            return;
-        }
-    };
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
-        Some(dir) => dir,
-        None => {
-            eprintln!("Can't find git dir");
+            eprintln!("Error al obtener el git dir.\n {:?}", err);
             return;
         }
     };
@@ -1289,17 +1234,83 @@ fn handle_branch(args: Vec<String>) {
                 }
             }
         } else {
-            let name = args[2].to_string();
-            let result = git_branch(Some(name), None, None, &mut io::stdout());
+            let name = args[2];
+            let result = git_branch(Some(name.to_string()), None, None, &mut io::stdout());
             match result {
-                Ok(_) => {}
-                Err(_e) => {}
+                Ok(_) => {
+                    println!("Branch {name} successfully created!");
+                }
+                Err(_e) => {
+                    eprintln!("{}", _e)
+                }
             }
         }
-    } else if args.len() > 3 {
+    } else if args.len() == 4 {
+        if args[2] == "-m" {
+            match git_branch(None, Some("-m"), Some(args[3]), &mut io::stdout()) {
+                Ok(_) => {
+                    println!("Current branch name modified to {}", args[3]);
+                }
+                Err(e) => {
+                    eprintln!("{}", e)
+                }
+            }
+        } else if args[2] == "-c" {
+            match git_branch(
+                Some(args[3].to_string()),
+                Some("-c"),
+                None,
+                &mut io::stdout(),
+            ) {
+                Ok(_) => {
+                    println!("Branch {} successfully created!", args[3]);
+                }
+                Err(e) => {
+                    eprintln!("{}", e)
+                }
+            }
+        } else if args[2] == "-d" {
+            match git_branch(
+                Some(args[3].to_string()),
+                Some("-d"),
+                None,
+                &mut io::stdout(),
+            ) {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{}", e)
+                }
+            }
+        } else {
+            let name = args[2];
+            let new_name = &args[3].to_string();
+            let result = git_branch(
+                Some(name.to_string()),
+                None,
+                Some(new_name),
+                &mut io::stdout(),
+            );
+            match result {
+                Ok(_) => {
+                    println!("Branch {name} succesfully created from {new_name}");
+                }
+                Err(_e) => {
+                    eprintln!("{}", _e)
+                }
+            }
+        }
+    } else {
         handle_branch_options(args);
     }
 }
+
+//git branch
+//git branch -l
+//git branch -c branch
+//git branch new existent
+//git branch -m new_name
+//git branch -m branch new_name
+//git branch -d name
 
 /// Handles various options for Git branch operations.
 ///
@@ -1320,16 +1331,7 @@ fn handle_branch(args: Vec<String>) {
 fn handle_branch_options(args: Vec<&str>) {
     match args[2] {
         "-m" => {
-            if args.len() == 4 {
-                match git_branch(None, Some("-m"), Some(args[3]), &mut io::stdout()) {
-                    Ok(_) => {
-                        println!("Modified");
-                    }
-                    Err(e) => {
-                        eprintln!("{}", e)
-                    }
-                }
-            } else if args.len() == 5 {
+            if args.len() == 5 {
                 match git_branch(
                     Some(args[3].to_string()),
                     Some("-m"),
@@ -1337,7 +1339,7 @@ fn handle_branch_options(args: Vec<&str>) {
                     &mut io::stdout(),
                 ) {
                     Ok(_) => {
-                        println!("Modified")
+                        println!("Branch {} successfully modified to {}", args[3], args[4]);
                     }
                     Err(e) => {
                         eprintln!("{}", e)
@@ -1351,9 +1353,7 @@ fn handle_branch_options(args: Vec<&str>) {
             let new_args: Vec<&&str> = args.iter().skip(3).collect();
             for arg in new_args {
                 match git_branch(Some(arg.to_string()), Some("-d"), None, &mut io::stdout()) {
-                    Ok(_) => {
-                        println!("Deleted");
-                    }
+                    Ok(_) => {}
                     Err(e) => {
                         eprintln!("{}", e)
                     }
@@ -1365,7 +1365,7 @@ fn handle_branch_options(args: Vec<&str>) {
             for arg in new_args {
                 match git_branch(Some(arg.to_string()), Some("-c"), None, &mut io::stdout()) {
                     Ok(_) => {
-                        println!("Created");
+                        println!("Branch {arg} succesfully created!");
                     }
                     Err(e) => {
                         eprintln!("{}", e)

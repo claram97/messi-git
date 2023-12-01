@@ -2,7 +2,32 @@ use std::{collections::HashSet, io, path::PathBuf};
 
 use chrono::{DateTime, FixedOffset, Offset, Utc};
 
-use crate::commit;
+use crate::{commit, configuration::GIT_DIR};
+
+pub fn obtain_git_dir() -> Result<String, io::Error> {
+    let mut current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => {
+            eprintln!("Error obtaining actual directory: {:?}", err);
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining actual directory",
+            ));
+        }
+    };
+
+    let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error obtaining git dir");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error obtaining git dir",
+            ));
+        }
+    };
+    Ok(git_dir)
+}
 
 /// Recursively searches for a directory named "name_of_git_directory" in the file system
 /// starting from the location specified by "current_dir."
@@ -31,6 +56,11 @@ pub fn find_git_directory(
         }
     }
     None
+}
+
+pub fn get_current_time() -> String {
+    use chrono::Local;
+    Local::now().to_string()
 }
 
 /// Retrieves the commit history of a branch with corresponding commit messages.
@@ -261,7 +291,7 @@ mod tests {
         let mut head_file = fs::File::create("tests/utils/parents2/HEAD").unwrap();
         head_file.write_all(b"ref: refs/heads/main").unwrap();
 
-        let _ = fs::create_dir("tests/utils/parents2/objects").unwrap();
+        let _ = fs::create_dir("tests/utils/parents2/objects");
         let result = commit::new_commit("tests/utils/parents2", "Mensaje", "").unwrap();
 
         let git_dir = "tests/utils/parents2";

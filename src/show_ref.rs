@@ -4,8 +4,39 @@ use std::{
     path::Path,
 };
 
+use crate::utils::get_current_time;
+use crate::{configuration::LOGGER_COMMANDS_FILE, logger::Logger};
 use std::fs::File;
 use std::io::prelude::*;
+
+/// Logs the 'git show-ref' command with the specified Git directory and command line arguments.
+///
+/// This function logs the 'git show-ref' command with the provided Git directory and command line
+/// arguments to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir` - The path to the Git directory.
+/// * `line` - The command line arguments used with 'git show-ref'.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_show_ref(git_dir: &str, line: Vec<String>) -> io::Result<()> {
+    let log_file_path = LOGGER_COMMANDS_FILE;
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git show-ref': Git Directory '{}', Line '{:?}', {}",
+        git_dir,
+        line,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Displays information about Git references based on the provided command-line arguments.
 ///
@@ -45,10 +76,10 @@ pub fn git_show_ref(git_dir: &str, line: Vec<String>, output: &mut impl Write) -
     if line.len() == 2 {
         show_ref(git_dir, output)?;
     } else if line.len() == 3 {
-        show_ref_with_options(git_dir, line, output)?;
+        show_ref_with_options(git_dir, line.clone(), output)?;
     } else if line.len() >= 3 {
         if line[2].eq("--verify") {
-            verify_ref(git_dir, line, output)?;
+            verify_ref(git_dir, line.clone(), output)?;
         } else if line[2].starts_with("--") {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -61,6 +92,7 @@ pub fn git_show_ref(git_dir: &str, line: Vec<String>, output: &mut impl Write) -
             "Invalid number of arguments",
         ));
     }
+    log_show_ref(git_dir, line)?;
     Ok(())
 }
 
@@ -117,17 +149,24 @@ fn show_refs_in_remotes_folder(
     is_hash: bool,
     output: &mut impl Write,
 ) -> io::Result<()> {
-    for entry in fs::read_dir(remotes_path)? {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_dir() {
-            let string_path = path.to_string_lossy().to_string();
-            let splitted: Vec<&str> = string_path.split("remotes").collect();
-            let type_ = format!("{}{}", "remotes", splitted[1]);
-            process_files_in_directory(path.to_string_lossy().as_ref(), &type_, is_hash, output)?;
+    let path = Path::new(&remotes_path);
+    if path.exists() {
+        for entry in fs::read_dir(remotes_path)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                let string_path = path.to_string_lossy().to_string();
+                let splitted: Vec<&str> = string_path.split("remotes").collect();
+                let type_ = format!("{}{}", "remotes", splitted[1]);
+                process_files_in_directory(
+                    path.to_string_lossy().as_ref(),
+                    &type_,
+                    is_hash,
+                    output,
+                )?;
+            }
         }
     }
-
     Ok(())
 }
 
@@ -211,16 +250,29 @@ fn show_ref_with_options(
 ) -> io::Result<()> {
     if line[2].eq("--heads") {
         let heads_path = format!("{}/{}", git_dir, "refs/heads");
-        process_files_in_directory(&heads_path, "heads", false, output)?;
+        let path = Path::new(&heads_path);
+        if path.exists() {
+            process_files_in_directory(&heads_path, "heads", false, output)?;
+        }
     } else if line[2].eq("--tags") {
         let tags_path: String = format!("{}/{}", git_dir, "refs/tags");
-        process_files_in_directory(&tags_path, "tags", false, output)?;
+        let path = Path::new(&tags_path);
+        if path.exists() {
+            process_files_in_directory(&tags_path, "tags", false, output)?;
+        }
     } else if line[2].eq("--hash") {
         let heads_path = format!("{}/{}", git_dir, "refs/heads");
         let tags_path = format!("{}/{}", git_dir, "refs/tags");
         let remotes_path = format!("{}/{}", git_dir, "refs/remotes");
-        process_files_in_directory(&heads_path, "heads", true, output)?;
-        process_files_in_directory(&tags_path, "tags", true, output)?;
+        let path = Path::new(&heads_path);
+        if path.exists() {
+            process_files_in_directory(&heads_path, "heads", true, output)?;
+        }
+        let path = Path::new(&tags_path);
+        if path.exists() {
+            process_files_in_directory(&tags_path, "tags", true, output)?;
+        }
+
         show_refs_in_remotes_folder(&remotes_path, true, output)?;
     } else if line[2].eq("--verify") {
         writeln!(output, "fatal: --verify requires a reference")?;

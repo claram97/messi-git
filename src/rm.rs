@@ -1,6 +1,39 @@
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::index::Index;
+use crate::logger::Logger;
+use crate::utils::get_current_time;
 use std::fs;
 use std::io;
+use std::io::Write;
+
+/// Logs the 'git rm' command with the specified file name, Git directory path, and Git ignore path.
+///
+/// This function logs the 'git rm' command with the provided file name, Git directory path, and
+/// Git ignore path to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `file_name` - The name of the file to be removed.
+/// * `git_dir_path` - The path to the Git directory.
+/// * `git_ignore_path` - The path to the Git ignore file.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_rm(file_name: &str, _git_dir_path: &str, _git_ignore_path: &str) -> io::Result<()> {
+    let log_file_path = LOGGER_COMMANDS_FILE;
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git rm': File '{}', {}",
+        file_name,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Remove a file from both the index and the working directory.
 ///
@@ -61,7 +94,7 @@ pub fn git_rm(
     } else {
         eprintln!("Failed to load the index.");
     }
-
+    log_rm(file_name, git_dir_path, git_ignore_path)?;
     Ok(())
 }
 

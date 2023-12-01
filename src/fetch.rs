@@ -1,9 +1,11 @@
+use crate::configuration::{GIT_DIR, HOST, LOGGER_COMMANDS_FILE, REMOTE};
+use crate::logger::Logger;
+use crate::utils::get_current_time;
+use crate::{client::Client, config};
 use std::{
     collections::HashMap,
     io::{self, BufRead, Write},
 };
-
-use crate::{client::Client, config};
 
 /// Represents a single entry in the "FETCH_HEAD" file, typically created during Git fetch operations.
 ///
@@ -170,6 +172,39 @@ fn get_clean_refs(refs: &HashMap<String, String>) -> Vec<String> {
     clean_refs
 }
 
+/// Logs the 'git fetch' command with the specified remote repository name, host, and local directory.
+///
+/// This function logs the 'git fetch' command with the provided remote repository name, host, and
+/// local directory to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `remote_repo_name` - An optional name for the remote repository to fetch from. If not provided, "origin" is used.
+/// * `host` - The host associated with the remote repository.
+/// * `local_dir` - The path to the local directory where the repository is located.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) -> io::Result<()> {
+    let log_file_path = LOGGER_COMMANDS_FILE;
+    let mut logger = Logger::new(log_file_path)?;
+
+    let repo_name = remote_repo_name.unwrap_or(REMOTE);
+
+    let full_message = format!(
+        "Command 'git fetch': Remote Repo Name '{}', Host '{}', Local Dir '{}', {}",
+        repo_name,
+        host,
+        local_dir,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
+
 /// Perform a Git fetch operation to update the local repository with remote changes.
 ///
 /// This function carries out a Git fetch operation, which retrieves the most recent commit of each branch
@@ -188,9 +223,9 @@ fn get_clean_refs(refs: &HashMap<String, String>) -> Vec<String> {
 /// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
 ///
 pub fn git_fetch(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) -> io::Result<()> {
-    let git_dir = local_dir.to_string() + "/.mgit";
+    let git_dir = local_dir.to_string() + "/" + GIT_DIR;
     let config_file = config::Config::load(&git_dir)?;
-    let remote_name = "origin";
+    let remote_name = REMOTE;
     let remote_url = config_file.get_url(remote_name, &mut io::stdout())?;
     let (address, repo_name) = match remote_url.rsplit_once('/') {
         Some((address, repo_name)) => (address, repo_name),
@@ -201,12 +236,12 @@ pub fn git_fetch(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) 
             ))
         }
     };
-    let mut client = Client::new(address, repo_name, "localhost");
+    let mut client = Client::new(address, repo_name, HOST);
     let refs = client.get_server_refs()?;
     let clean_refs = get_clean_refs(&refs);
     let fetch_head_path = git_dir.to_string() + "/FETCH_HEAD";
     let mut fetch_head_file = FetchHead::new();
-    client.upload_pack(clean_refs.clone(), &git_dir, "origin")?;
+    client.upload_pack(clean_refs.clone(), &git_dir, REMOTE)?;
     for server_ref in clean_refs {
         if server_ref != "HEAD" {
             let hash = match refs.get(&server_ref) {
@@ -225,6 +260,7 @@ pub fn git_fetch(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) 
         }
     }
     fetch_head_file.write_file(&fetch_head_path)?;
+    log_fetch(_remote_repo_name, _host, local_dir)?;
     Ok(())
 }
 pub fn git_fetch_for_gui(
@@ -232,7 +268,7 @@ pub fn git_fetch_for_gui(
     _host: &str,
     local_dir: &str,
 ) -> io::Result<Vec<String>> {
-    let git_dir = local_dir.to_string() + "/.mgit";
+    let git_dir = local_dir.to_string() + "/" + GIT_DIR;
     let config_file = config::Config::load(&git_dir)?;
     let remote_name = "origin";
     let remote_url = config_file.get_url(remote_name, &mut io::stdout())?;

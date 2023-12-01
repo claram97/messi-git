@@ -1,7 +1,11 @@
 use crate::cat_file;
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::hash_object;
+use crate::logger::Logger;
 use crate::tree_handler;
 use crate::tree_handler::has_tree_changed_since_last_commit;
+use crate::utils;
+use crate::utils::get_current_time;
 use std::fs;
 use std::io;
 use std::io::Read;
@@ -10,6 +14,37 @@ use std::path::Path;
 
 const NO_PARENT: &str = "0000000000000000000000000000000000000000";
 const INDEX_FILE_NAME: &str = "index";
+
+/// Logs the 'git commit' command with the specified Git directory, commit message, and Git ignore path.
+///
+/// This function logs the 'git commit' command with the provided Git directory, commit message, and
+/// Git ignore path to a file named 'logger_commands.txt'.
+///
+/// # Arguments
+///
+/// * `git_dir_path` - The path to the Git directory.
+/// * `message` - The commit message.
+/// * `git_ignore_path` - The path to the Git ignore file.
+///
+/// # Errors
+///
+/// Returns an `io::Result` indicating whether the operation was successful.
+///
+pub fn log_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> io::Result<()> {
+    let log_file_path = LOGGER_COMMANDS_FILE;
+    let mut logger = Logger::new(log_file_path)?;
+
+    let full_message = format!(
+        "Command 'git commit': Git Directory '{}', Message '{}', Git Ignore Path '{}', {}",
+        git_dir_path,
+        message,
+        git_ignore_path,
+        get_current_time()
+    );
+    logger.write_all(full_message.as_bytes())?;
+    logger.flush()?;
+    Ok(())
+}
 
 /// Creates a new commit file.
 /// With the given tree hash, parent commit and message. Adds the author and date.
@@ -30,7 +65,8 @@ fn create_new_commit_file(
         return Err(io::Error::new(io::ErrorKind::Other, "No changes were made"));
     }
 
-    let time = chrono::Local::now();
+    let (timestamp, offset) = utils::get_timestamp()?;
+    let time = format!("{} {}", timestamp, offset);
     let commit_content = format!(
         "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0","user", "email@email", "user", "email@email"
     );
@@ -111,6 +147,7 @@ pub fn new_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> i
     let commit_hash = create_new_commit_file(git_dir_path, message, &parent_hash, git_ignore_path)?;
     let mut branch_file = std::fs::File::create(&branch_path)?;
     branch_file.write_all(commit_hash.as_bytes())?;
+    log_commit(git_dir_path, message, git_ignore_path)?;
     Ok(commit_hash)
 }
 
@@ -135,7 +172,8 @@ pub fn new_merge_commit(
     let commit_tree =
         tree_handler::build_tree_from_index(&index_path, git_dir_path, git_ignore_path)?;
     let (tree_hash, _) = tree_handler::write_tree(&commit_tree, git_dir_path)?;
-    let time = chrono::Local::now();
+    let (timestamp, offset) = utils::get_timestamp()?;
+    let time = format!("{} {}", timestamp, offset);
     let commit_content = format!("tree {tree_hash}\nparent {parent_hash}\nparent {parent_hash2}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0", "user", "email@email", "user", "email@email"
     );
     let commit_hash = hash_object::store_string_to_file(&commit_content, git_dir_path, "commit")?;
@@ -177,11 +215,26 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
     Ok(parent_hash.to_string())
 }
 
+/// Returns the commit message of the given commit hash.
+/// If the commit is not found, it returns an error.
+/// If the commit is a merge commit, it also returns a message.
+///
+/// ## Parameters
+///
+/// * `commit_hash` - The hash of the commit that you want the message of.
+/// * `git_dir_path` - The path to the git directory.
 pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
-    let message: &str = match commit_file.split('\n').nth(5) {
-        Some(message) => message,
-        None => return Err(io::Error::new(io::ErrorKind::NotFound, "Message not found")),
+    let message = if is_merge_commit(commit_hash, git_dir_path)? {
+        match commit_file.split('\n').nth(6) {
+            Some(message) => message,
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Message not found")),
+        }
+    } else {
+        match commit_file.split('\n').nth(5) {
+            Some(message) => message,
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Message not found")),
+        }
     };
     Ok(message.to_string())
 }
@@ -218,6 +271,84 @@ pub fn read_head_commit_hash(git_dir: &str) -> io::Result<String> {
             "Error in head file",
         )),
     }
+}
+
+/// Returns the commit time of the given commit hash.
+/// If the commit is not found, it returns an error.
+///
+/// ## Parameters
+///
+/// * `commit_hash` - The hash of the commit that you want the time of.
+/// * `git_dir_path` - The path to the git directory.
+pub fn get_commit_time(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
+    let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
+    let time = if is_merge_commit(commit_hash, git_dir_path)? {
+        match commit_file.split('\n').nth(4) {
+            Some(time) => {
+                let time: Vec<&str> = time.split(' ').collect();
+                time[3..].join(" ")
+            }
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Time not found")),
+        }
+    } else {
+        match commit_file.split('\n').nth(3) {
+            Some(time) => {
+                let time: Vec<&str> = time.split(' ').collect();
+                time[3..].join(" ")
+            }
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Time not found")),
+        }
+    };
+    Ok(time)
+}
+
+/// Returns true if the given commit hash is a merge commit. False otherwise.
+///
+/// ## Parameters
+///
+/// * `commit_hash` - The hash of the commit that you want to check.
+/// * `git_dir_path` - The path to the git directory.
+pub fn is_merge_commit(commit_hash: &str, git_dir_path: &str) -> io::Result<bool> {
+    let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
+    let lines: Vec<&str> = commit_file.split('\n').collect();
+    if lines[1].starts_with("parent") && lines[2].starts_with("parent") {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+/// Returns the parents of the given commit hash.
+/// If the commit is not found, it returns an error.
+///
+/// If the commit is not a merge commit, it will return an error.
+///
+/// ## Parameters
+///
+/// * `commit_hash` - The hash of a merge commit that you want the parents of.
+/// * `git_dir_path` - The path to the git directory.
+pub fn get_merge_parents(commit_hash: &str, git_dir_path: &str) -> io::Result<Vec<String>> {
+    let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
+    let lines: Vec<&str> = commit_file.split('\n').collect();
+    let parent1: &str = match lines[1].split(' ').nth(1) {
+        Some(parent1) => parent1,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Parent hash not found",
+            ))
+        }
+    };
+    let parent2: &str = match lines[2].split(' ').nth(1) {
+        Some(parent2) => parent2,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Parent hash not found",
+            ))
+        }
+    };
+    Ok(vec![parent1.to_string(), parent2.to_string()])
 }
 
 #[cfg(test)]
