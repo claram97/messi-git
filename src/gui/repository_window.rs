@@ -1,5 +1,6 @@
 use crate::add::add;
 use crate::branch;
+use crate::branch::is_an_existing_branch;
 use crate::check_ignore::git_check_ignore;
 use crate::checkout::checkout_branch;
 use crate::checkout::checkout_commit_detached;
@@ -4148,44 +4149,89 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
     Ok(())
 }
 
+fn apply_style_to_button(button: &gtk::Button) {
+    match apply_button_style(&button) {
+        Ok(_) => {}
+        Err(_e) => {
+            eprintln!("Couldn't apply button style");
+        }
+    }
+}
+
 fn rebase_window(builder: &gtk::Builder) -> io::Result<()> {
     let rebase_button = get_button(builder, "make-rebase-button");
-    match apply_button_style(&rebase_button) {
-        Ok(_) => {}
-        Err(_e) => {
-            eprintln!("Couldn't apply button style");
-        }
-    }
     let ok_button = get_button(builder, "rebase-ok-all-button");
-    match apply_button_style(&ok_button) {
-        Ok(_) => {}
-        Err(_e) => {
-            eprintln!("Couldn't apply button style");
-        }
-    }
+    let abort_button = get_button(builder, "abort-rebase-button");
+    let update_button = get_button(builder, "rebase-button");
+
+    apply_style_to_button(&rebase_button);
+    apply_style_to_button(&ok_button);
+    apply_style_to_button(&update_button);
+    apply_style_to_button(&abort_button);
 
     let builder_clone = builder.clone();
     let rebase_button_clone = rebase_button.clone();
+
+    let branch_entry = match get_entry(builder, "rebase-branch-entry") {
+        Some(branch) => branch,
+        None => {
+            eprintln!("Couldn't get rebase branch entry,");
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Couldn't get rebase branch entry.\n",
+            ));
+        }
+    };
+
     rebase_button.connect_clicked(move |_| {
-        let git_dir = obtain_git_dir().unwrap();
-        let current_branch = get_branch_name(&git_dir).unwrap();
-        let their_branch = "master";
-        let rebase_object =
-            match rebase_new::start_rebase_gui(&git_dir, &current_branch, &their_branch) {
-                Ok(rebase) => rebase,
-                Err(e) => {
-                    eprintln!("Error starting rebase: {}", e);
+        let their_branch = branch_entry.get_text().to_string();
+        if their_branch.is_empty() {
+            show_message_dialog(
+                "Error",
+                "Debe especificar la rama con la cual desea realizar el rebase.",
+            );
+        } else {
+            let git_dir = match obtain_git_dir() {
+                Ok(dir) => dir,
+                Err(error) => {
+                    eprintln!("{:?}", error.to_string());
                     return;
                 }
             };
-        // Disable the rebase button
-        rebase_button_clone.set_sensitive(false);
+            if !is_an_existing_branch(&their_branch, &git_dir) {
+                show_message_dialog(
+                    "Rama inválida",
+                    &format!("{:?} no es una rama existente", &their_branch),
+                );
+            } else {
+                let current_branch = match get_branch_name(&git_dir) {
+                    Ok(branch) => branch,
+                    Err(error) => {
+                        eprintln!("{:?}", error);
+                        return;
+                    }
+                };
+                let rebase_object =
+                    match rebase_new::start_rebase_gui(&git_dir, &current_branch, &their_branch) {
+                        Ok(rebase) => rebase,
+                        Err(e) => {
+                            eprintln!("Error starting rebase: {}", e);
+                            return;
+                        }
+                    };
+                rebase_button_clone.set_sensitive(false);
 
-        match rebase_new::write_rebase_step_into_gui(&builder_clone, rebase_object, &git_dir) {
-            Ok(_) => {}
-            Err(e) => {
-                eprintln!("Error writing rebase step into GUI: {}", e);
-                return;
+                match rebase_new::write_rebase_step_into_gui(
+                    &builder_clone,
+                    rebase_object,
+                    &git_dir,
+                ) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        eprintln!("Error writing rebase step into GUI: {}", e);
+                        return;
+                    }
+                }
             }
         }
     });

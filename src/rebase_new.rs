@@ -5,11 +5,21 @@ use gtk::{
 use std::{
     cell::RefCell,
     collections::HashMap,
-    io::{self},
+    fs::File,
+    io::{self, Write},
+    path::Path,
     rc::Rc,
 };
 
-use crate::{branch, commit, diff, hash_object, merge, tree_handler, utils};
+use crate::{
+    branch::{self, get_current_branch_path},
+    checkout,
+    commit::{self, get_branch_name},
+    diff,
+    gui::style::{get_button, show_message_dialog},
+    hash_object, merge, tree_handler,
+    utils::{self, obtain_git_dir},
+};
 
 fn files_that_changed_between_commits(
     commit1: &str,
@@ -148,6 +158,57 @@ fn load_file_diffs(
         }
     }
     Ok(diffs)
+}
+
+fn abort_rebase_button_on_click(
+    button: &gtk::Button,
+    original_our_branch_hash: String,
+) -> io::Result<()> {
+    let git_dir = obtain_git_dir()?;
+    let current_branch_path = get_current_branch_path(&git_dir)?;
+    let complete_branch_path = format!("{}/{}", git_dir, current_branch_path);
+    let branch_name = get_branch_name(&git_dir)?;
+    let root_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo encontrar el working dir",
+            ));
+        }
+    };
+    button.connect_clicked(move |_| {
+        let mut file = match File::open(&complete_branch_path) {
+            Ok(file) => file,
+            Err(_error) => {
+                eprintln!("Error opening file");
+                return;
+            }
+        };
+        match file.write_all(original_our_branch_hash.as_bytes()) {
+            Ok(_) => {}
+            Err(_error) => {
+                show_message_dialog("Error inesperado", "No se pudo completar el abort");
+            }
+        }
+
+        match file.flush() {
+            Ok(_) => {}
+            Err(_error) => {
+                show_message_dialog("Error inesperado", "No se pudo completar el abort");
+            }
+        }
+        let git_dir_path = Path::new(&git_dir);
+        match checkout::checkout_branch(git_dir_path, &root_dir, &branch_name) {
+            Ok(_) => {
+                show_message_dialog("Éxito", "Abortion completed successfully");
+            }
+            Err(_e) => {
+                show_message_dialog("Error inesperado", "No se pudo completar el abort");
+            }
+        }
+    });
+    Ok(())
 }
 
 pub fn write_rebase_step_into_gui(
@@ -302,7 +363,7 @@ pub fn next_rebase_iteration(
     }
 
     let commit_message = format!("Rebase commit {}", rebase.active_commit);
-    let new_commit_hash = commit::new_rebase_commit(
+    let new_commit_hash: String = commit::new_rebase_commit(
         git_dir,
         &commit_message,
         &rebase.commit_to_rebase,
@@ -323,6 +384,18 @@ pub fn next_rebase_iteration(
         None => {
             match text_view.get_buffer() {
                 Some(buffer) => {
+                    let branch_name = get_branch_name(&git_dir)?;
+                    let root_dir = match Path::new(&git_dir).parent() {
+                        Some(dir) => dir.to_string_lossy().to_string(),
+                        None => {
+                            return Err(io::Error::new(
+                                io::ErrorKind::NotFound,
+                                "No se pudo encontrar el working dir",
+                            ));
+                        }
+                    };
+                    let git_dir_path = Path::new(&git_dir);
+                    checkout::checkout_branch(git_dir_path, &root_dir, &branch_name)?;
                     buffer.set_text("Rebase finalizado");
                 }
                 None => {
@@ -378,7 +451,7 @@ pub fn start_rebase_gui(
             "No hay cambios entre los commits",
         ));
     }
-    // We need to do a rebase
+
     let rebase = Rebase {
         our_commits,
         active_commit,

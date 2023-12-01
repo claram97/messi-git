@@ -1,5 +1,6 @@
 use std::{env, io};
 
+use messi::branch::get_current_branch_path;
 use messi::configuration::GIT_DIR;
 use messi::gui::main_window::run_main_window;
 use messi::parse_commands::get_user_input;
