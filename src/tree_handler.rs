@@ -54,9 +54,12 @@ impl Tree {
         self.directories.iter().find(|&dir| dir.name == name)
     }
 
-    /// Adds the hash and name of a file to the tree
+    /// Adds the hash and name of a file to the tree. Keeps the files sorted by name.
     fn add_file(&mut self, name: &str, hash: &str) {
-        self.files.push((name.to_string(), hash.to_string()));
+        let item = (name.to_string(), hash.to_string());
+        match self.files.binary_search(&item) {
+            Ok(pos) | Err(pos) => self.files.insert(pos, item),
+        }
     }
 
     /// Given a hash and a path, it updates the tree with the new hash. If the path does not exist, it creates it. If the path exists, it updates the hash.
@@ -787,7 +790,8 @@ pub fn get_files_with_changes(our_tree: &Tree, their_tree: &Tree) -> Vec<(String
                         None
                     }
                 }
-                None => None,
+                // If it is in our tree but not in theirs, it means it was created by us.
+                None => Some((path.to_string(), hash.clone())),
             }
         })
         .collect::<Vec<(String, String)>>();

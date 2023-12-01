@@ -117,6 +117,7 @@ mod tests {
         .unwrap();
         tree.print_tree_recursive_no_trees(&mut output).unwrap();
         let output_string = String::from_utf8(output).unwrap();
+        println!("{:#?}", tree);
         // The output should be the same as the previous test, but with the subdirectory files as well
         let expected_output = "100644 blob 00000855bce90795f20fffff5242cc9235000000\ta.txt\n100644 blob 00000c0a42c61e70f66bfffff38fa653b7200000\tb.c\n100644 blob 000008afba902111fffffa8ebcc70522a3e00000\td.c\n100644 blob 00000128d8c22fc69fffff0d9620ab896b500000\te.c\n100644 blob 00000855bce90795f20fffff5242cc9235000000\tsubdir/a.txt\n100644 blob 00000c0a42c61e70f66bfffff38fa653b7200000\tsubdir/b.c\n100644 blob 000008afba902111fffffa8ebcc70522a3e00000\tsubdir/d.c\n100644 blob 00000128d8c22fc69fffff0d9620ab896b500000\tsubdir/e.c\n";
         assert_eq!(output_string, expected_output);

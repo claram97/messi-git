@@ -21,17 +21,6 @@ use crate::{
     utils::{self, obtain_git_dir},
 };
 
-fn files_that_changed_between_commits(
-    commit1: &str,
-    commit2: &str,
-    git_dir: &str,
-) -> io::Result<Vec<(String, String)>> {
-    let commit1_tree = tree_handler::load_tree_from_commit(commit1, git_dir)?;
-    let commit2_tree = tree_handler::load_tree_from_commit(commit2, git_dir)?;
-    let changed_files = tree_handler::get_files_with_changes(&commit1_tree, &commit2_tree);
-    Ok(changed_files)
-}
-
 pub enum RebaseState {
     RebaseStepInProgress,
     RebaseStepFinished,
@@ -50,6 +39,29 @@ pub struct Rebase {
 #[derive(Debug, Clone)]
 struct RebaseStep {
     diffs: HashMap<String, String>,
+}
+
+// This function will return the intersection between the files that changed between commit1 and commit2 and the files that changed between commit1 and commit3
+fn intersection_files_that_changed_between_commits(
+    commit1: &str,
+    commit2: &str,
+    commit3: &str,
+    git_dir: &str,
+) -> io::Result<Vec<String>> {
+    let commit1_tree = tree_handler::load_tree_from_commit(commit1, git_dir)?;
+    let commit2_tree = tree_handler::load_tree_from_commit(commit2, git_dir)?;
+    let commit3_tree = tree_handler::load_tree_from_commit(commit3, git_dir)?;
+    let changed_files1 = tree_handler::get_files_with_changes(&commit2_tree, &commit1_tree);
+    let changed_files2 = tree_handler::get_files_with_changes(&commit3_tree, &commit1_tree);
+    let mut intersection: Vec<String> = Vec::new();
+    for (file1, _) in &changed_files1 {
+        for (file2, _) in &changed_files2 {
+            if file1 == file2 {
+                intersection.push(file1.clone());
+            }
+        }
+    }
+    Ok(intersection)
 }
 
 fn obtain_combo_box_from_builder(builder: &gtk::Builder) -> io::Result<gtk::ComboBoxText> {
@@ -396,7 +408,12 @@ pub fn write_rebase_step_into_gui(
     combo_box.connect_changed(move |_| {
         let diff = rebase_step_clone.borrow().rebase_step.diffs.clone();
         let result = combo_box_on_change(&builder_clone, diff);
-        eprintln!("{:#?}", result);
+        match result {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("Error writing into TextView: {}", e);
+            }
+        }
     });
 
     setup_buttons(builder, Rc::clone(&rebase), git_dir);
@@ -493,6 +510,68 @@ pub fn next_rebase_iteration(
     Ok(())
 }
 
+fn fast_forward_rebase_commit(
+    our_commit: &str,
+    rebased_commit: &str,
+    common_ancestor: &str,
+    git_dir: &str,
+) -> io::Result<String> {
+    let rebased_tree = tree_handler::load_tree_from_commit(rebased_commit, git_dir)?;
+    let our_tree = tree_handler::load_tree_from_commit(our_commit, git_dir)?;
+    let common_ancestor_tree = tree_handler::load_tree_from_commit(common_ancestor, git_dir)?;
+
+    let mut new_tree = rebased_tree;
+
+    let files_changed_this_commit =
+        tree_handler::get_files_with_changes(&common_ancestor_tree, &our_tree);
+
+    for (path, hash) in files_changed_this_commit {
+        new_tree.update_tree(&path, &hash);
+    }
+
+    let commit_message = format!("Rebasing with commit {}", &our_commit[0..7]);
+    let new_commit_hash: String =
+        commit::new_rebase_commit(git_dir, &commit_message, rebased_commit, &new_tree)?;
+
+    Ok(new_commit_hash)
+}
+
+// Do a fast forward merge, this means that we simply put our branch commits on top of theirs.
+// For every commit in our branch since the common ancestor, we create a new commit with the updates
+// and point our branch to the last commit
+fn fast_forward_rebase(
+    our_branch_hash: &str,
+    their_branch_hash: &str,
+    git_dir: &str,
+) -> io::Result<()> {
+    let common_ancestor = merge::find_common_ancestor(our_branch_hash, their_branch_hash, git_dir)?;
+    let mut our_branch_commits =
+        utils::get_branch_commit_history_until(our_branch_hash, git_dir, &common_ancestor)?;
+
+    let mut our_new_branch_hash: String = their_branch_hash.to_string();
+
+    while let Some(commit) = our_branch_commits.pop() {
+        our_new_branch_hash =
+            fast_forward_rebase_commit(&commit, &our_new_branch_hash, &common_ancestor, git_dir)?;
+    }
+
+    let branch_name = get_branch_name(git_dir)?;
+    let root_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se pudo encontrar el working dir",
+            ));
+        }
+    };
+    write_hash_into_branch_file(&our_new_branch_hash, git_dir)?;
+    let git_dir_path = Path::new(&git_dir);
+    checkout::checkout_branch(git_dir_path, &root_dir, &branch_name)?;
+
+    Ok(())
+}
+
 pub fn start_rebase_gui(
     git_dir: &str,
     our_branch: &str,
@@ -515,12 +594,19 @@ pub fn start_rebase_gui(
         }
     };
 
-    let files_with_changes =
-        files_that_changed_between_commits(&our_branch_hash, &their_branch_hash, git_dir)?;
-    if files_with_changes.is_empty() {
+    // If there are no conflicts, we will do a fast forward rebase
+    let conflicting_files = intersection_files_that_changed_between_commits(
+        &common_ancestor,
+        &our_branch_hash,
+        &their_branch_hash,
+        git_dir,
+    )?;
+    println!("{:#?}", conflicting_files);
+    if conflicting_files.is_empty() {
+        fast_forward_rebase(&our_branch_hash, &their_branch_hash, git_dir)?;
         return Err(io::Error::new(
             io::ErrorKind::Other,
-            "No hay cambios entre los commits",
+            "No hay conflictos, se hizo un fast forward rebase",
         ));
     }
 
@@ -534,4 +620,29 @@ pub fn start_rebase_gui(
         },
     };
     Ok(Rc::new(RefCell::new(rebase)))
+}
+
+// A function to do a rebase without gui
+pub fn rebase(our_branch: &str, their_branch: &str, git_dir: &str) -> io::Result<()> {
+    // We will will only do a fast forward rebase. If the rebase is not fast forward, we will tell the user to go to the gui
+    let our_branch_hash = branch::get_branch_commit_hash(our_branch, git_dir)?;
+    let their_branch_hash = branch::get_branch_commit_hash(their_branch, git_dir)?;
+    let common_ancestor =
+        merge::find_common_ancestor(&our_branch_hash, &their_branch_hash, git_dir)?;
+
+    let conflicting_files = intersection_files_that_changed_between_commits(
+        &common_ancestor,
+        &our_branch_hash,
+        &their_branch_hash,
+        git_dir,
+    )?;
+    if conflicting_files.is_empty() {
+        fast_forward_rebase(&our_branch_hash, &their_branch_hash, git_dir)?;
+        Ok(())
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            "El rebase no es fast forward, por favor use la interfaz gráfica",
+        ))
+    }
 }

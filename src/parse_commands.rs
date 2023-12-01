@@ -1,4 +1,4 @@
-use crate::branch::{get_current_branch_path, git_branch};
+use crate::branch::{self, get_current_branch_path, git_branch};
 use crate::cat_file::cat_file;
 use crate::check_ignore::git_check_ignore;
 use crate::checkout::checkout_branch;
@@ -24,7 +24,7 @@ use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
 use crate::utils::{find_git_directory, obtain_git_dir};
-use crate::{add, git_config, log, ls_tree, push, tag, tree_handler};
+use crate::{add, git_config, log, ls_tree, push, rebase, tag, tree_handler};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -403,7 +403,7 @@ fn handle_rebase(args: Vec<String>) {
         }
     };
 
-    let _ = match get_branch_name(&git_dir) {
+    let our_branch = match get_branch_name(&git_dir) {
         Ok(name) => name,
         Err(_) => {
             eprintln!("No se pudo obtener la rama actual");
@@ -412,11 +412,24 @@ fn handle_rebase(args: Vec<String>) {
     };
 
     if args.len() == 3 {
-        println!("Rebase will be called here!")
-        // let result = rebase::rebase(&current_branch, &args[2], &git_dir);
-        // if result.is_err() {
-        //     eprintln!("{:?}", result);
-        // }
+        // Check if the branch given exists
+        let branch_name = &args[2];
+        match branch::get_branch_commit_hash(branch_name, &git_dir) {
+            Ok(_) => {
+                // Do the rebase
+                match rebase::rebase(&our_branch, branch_name, &git_dir) {
+                    Ok(_) => {
+                        println!("Rebase successful");
+                    }
+                    Err(error) => {
+                        eprintln!("{}", error);
+                    }
+                }
+            }
+            Err(_) => {
+                eprintln!("Branch {} does not exist", branch_name);
+            }
+        };
     } else {
         eprintln!("Usage: git rebase <branch>");
     }
