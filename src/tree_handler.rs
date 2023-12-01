@@ -361,7 +361,7 @@ impl Tree {
     pub fn print_tree_recursive_no_trees(&self, output: &mut impl Write) -> io::Result<()> {
         let paths = self.squash_tree_into_vec("");
         for (name, hash) in paths {
-            let string = format!("{} {} {} {}\n", BLOB_NORMAL_MODE, "blob", hash, name);
+            let string = format!("{} {} {}\t{}\n", BLOB_NORMAL_MODE, "blob", hash, name);
             output.write_all(string.as_bytes())?;
         }
         Ok(())
