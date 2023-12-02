@@ -57,6 +57,7 @@ use crate::tree_handler;
 use crate::tree_handler::Tree;
 use crate::utils;
 use crate::utils::find_git_directory;
+use gtk::ComboBoxText;
 use gtk::prelude::BuilderExtManual;
 use gtk::Builder;
 use gtk::Button;
@@ -3016,62 +3017,45 @@ pub fn call_git_merge(their_branch: &str) -> io::Result<Vec<String>> {
 /// - `git_directory`: A string containing the path to the Git directory.
 ///
 pub fn merge_button_connect_clicked(
-    button: &gtk::Button,
     entry: &gtk::Entry,
-    text_view: &gtk::TextView,
+    text_buffer: &gtk::TextBuffer,
     git_directory: String,
+    conflicts: Rc<RefCell<Vec<String>>>,
 ) -> io::Result<Vec<String>>
 {
-    let entry_clone = entry.clone();
-    // let text_view_clone = text_view.clone();
-    let git_dir = git_directory.clone();
-    let text_buffer = match text_view.get_buffer() {
-        Some(buff) => buff,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::Interrupted,
-                "Text view buffer can't be accessed.\n",
-            ));
-        }
-    };
-
-    let conflicts = Rc::new(RefCell::new(Vec::<String>::new()));
-    let conflicts_clone = conflicts.clone();
-
-    button.connect_clicked(move |_| {
-        let branch = entry_clone.get_text();
-        if branch.is_empty() {
-            show_message_dialog("Error", "Por favor, ingrese una rama.");
-        } else if !branch::is_an_existing_branch(&branch, &git_dir) {
-            show_message_dialog("Error", "Rama no encontrada.");
-        } else {
-            let result = call_git_merge(&branch);
-            match result {
-                Ok(conflicts_list) => {
-                    if conflicts_list.is_empty() {
-                        text_buffer.set_text("Merge exitoso.");
-                    } else {
-                        let mut conflicts_text = String::new();
-                        conflicts_text.push_str("Conflicto(s) detectado(s):\n");
-                        for conflict in &conflicts_list {
-                            conflicts_text.push_str(&conflict);
-                            conflicts_text.push('\n');
-                        }
-                        text_buffer.set_text(&conflicts_text);
-
-                        let mut conflicts_ref = conflicts_clone.borrow_mut();
-                        *conflicts_ref = conflicts_list;
+    let branch = entry.get_text().to_string();
+    if branch.is_empty() {
+        show_message_dialog("Error", "Por favor, ingrese una rama.");
+    } else if !branch::is_an_existing_branch(&branch, git_directory.as_str()) {
+        show_message_dialog("Error", "Rama no encontrada.");
+    } else {
+        let result = call_git_merge(&branch);
+        match result {
+            Ok(conflicts_list) => {
+                if conflicts_list.is_empty() {
+                    text_buffer.set_text("Merge exitoso.");
+                } else {
+                    let mut conflicts_text = String::new();
+                    conflicts_text.push_str("Conflicto(s) detectado(s):\n");
+                    for conflict in &conflicts_list {
+                        conflicts_text.push_str(&conflict);
+                        conflicts_text.push('\n');
                     }
-                }
-                Err(e) => {
-                    let error_message = e.to_string();
-                    show_message_dialog("Error", &error_message);
+                    text_buffer.set_text(&conflicts_text);
+
+                    let mut conflicts_ref = conflicts.borrow_mut();
+                    *conflicts_ref = conflicts_list;
                 }
 
-            }   
-        }
-    });
-    
+                
+            }
+            Err(e) => {
+                let error_message = e.to_string();
+                show_message_dialog("Error", &error_message);
+            }
+
+        }   
+    }
     let conflict_clone = conflicts.borrow();
     Ok(conflict_clone.clone())
 }
@@ -3093,30 +3077,57 @@ pub fn set_merge_button_behavior(
     ok_button: &Button,
     abort_button: &Button,
     update_button: &Button,
+    merge_combo_box_text: &ComboBoxText,
 ) -> io::Result<Vec<String>> {
     let git_dir = obtain_git_dir()?;
+    let conflicts = Rc::new(RefCell::new(Vec::<String>::new()));
+    let conflicts_clone = conflicts.clone();
 
-    let conflicts = match merge_button_connect_clicked(button, entry, text_view, git_dir) {
-        Ok(conflicts) => conflicts,
-        Err(e) => {
-            let error_message = e.to_string();
-            show_message_dialog("Error", &error_message);
-            return Err(e);
+    let text_buffer = match text_view.get_buffer() {
+        Some(buff) => buff,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Text view buffer can't be accessed.\n",
+            ));
         }
     };
 
-    if conflicts.is_empty() {
-        ok_button.set_sensitive(false);
-        abort_button.set_sensitive(false);
-        update_button.set_sensitive(false);
-    } else {
-        ok_button.set_sensitive(true);
-        abort_button.set_sensitive(true);
-        update_button.set_sensitive(true);
-    }
+    let entry_clone = entry.clone();
+    let merge_combo_box_text_clone = merge_combo_box_text.clone();
+    let ok_button_clone = ok_button.clone();
+    let abort_button_clone = abort_button.clone();
+    let update_button_clone = update_button.clone();
+    let text_view_clone = text_view.clone();
+
+    button.connect_clicked(move |button: &Button| {
+        merge_button_connect_clicked(
+            &entry_clone,
+            &text_buffer,
+            git_dir.clone(),
+            conflicts_clone.clone(),
+        );
+
+        if !conflicts_clone.borrow().is_empty() {
+            update_combo_box(&merge_combo_box_text_clone, conflicts_clone.borrow().clone());
+            set_abort_button_behavior(&abort_button_clone, &button);
+            set_done_button_behavior(&ok_button_clone, &button,&merge_combo_box_text_clone, conflicts_clone.borrow().clone());
+            set_combo_box_on_changed_behavior(&merge_combo_box_text_clone, &text_view_clone);
+            set_update_button_behavior(&update_button_clone, &merge_combo_box_text_clone, &text_view_clone);
+            // Set the buttons to be sensitive
+            ok_button_clone.set_sensitive(true);
+            abort_button_clone.set_sensitive(true);
+            update_button_clone.set_sensitive(true);
+        }
+
+        println!("{:?}", conflicts_clone.borrow());
+    });
 
 
-    Ok(conflicts)
+
+
+    let conflict_clone = conflicts.borrow();
+    Ok(conflict_clone.clone())
 }
 
 /// Shows the current Git branch on a merge window.
@@ -4244,8 +4255,17 @@ fn set_update_button_behavior(
             None => return,
         };
 
+        let content = match text_buffer.get_text(
+            &text_buffer.get_start_iter(),
+            &text_buffer.get_end_iter(),
+            false,
+        ) {
+            Some(content) => content.to_string(),
+            None => return,
+        };
+
         let cloned_path = path.clone();
-        let mut file = match File::open(&cloned_path) {
+        let mut file = match File::create(&cloned_path) {
             Ok(file) => file,
             Err(error) => {
                 eprintln!("{:?}", error);
@@ -4253,22 +4273,14 @@ fn set_update_button_behavior(
             }
         };
 
-        let content = match text_buffer.get_text(
-            &text_buffer.get_start_iter(),
-            &text_buffer.get_end_iter(),
-            false,
-        ) {
-            Some(content) => match file.write_all(content.as_bytes()) {
-                Ok(_) => {
-                    return;
-                }
-                Err(error) => {
-                    eprintln!("{:?}", error);
-                    return;
-                }
-            },
-            None => return,
-        };
+        match file.write_all(content.as_bytes()) {
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!("{:?}", error);
+                return;
+            }
+        }
+
     });
 }
 
@@ -4328,15 +4340,10 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
         &ok_button,
         &abort_button,
         &update_button,
+        &merge_combo_box_text
     )?;
     println!("{:?}", conflicts);
-    if !conflicts.is_empty() {
-        update_combo_box(&merge_combo_box_text, conflicts.clone());
-        set_abort_button_behavior(&abort_button, &merge_button);
-        set_done_button_behavior(&ok_button, &merge_button,&merge_combo_box_text, conflicts);
-        set_combo_box_on_changed_behavior(&merge_combo_box_text, &merge_text_view);
-        set_update_button_behavior(&update_button, &merge_combo_box_text, &merge_text_view);
-    }
+
 
     Ok(())
 }
