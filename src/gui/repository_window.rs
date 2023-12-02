@@ -168,8 +168,34 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
 
     let builder_clone_for_checkout_view = builder.clone();
     update_checkout_view(&builder_clone_for_checkout_view);
+
+    let builder_clone_for_config_window = builder.clone();
+    update_config_window(&builder_clone_for_config_window);
+
     setup_buttons(builder)?;
 
+    Ok(())
+}
+
+fn update_config_window(builder : &Builder) -> io::Result<()> {
+    let git_dir = obtain_git_dir()?;
+    let config = Config::load(&git_dir)?;
+    let label = match get_label(builder, "config-title-label", 13.0) {
+        Some(label) => label,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("No se encontró el config label!"),
+            ));
+        }
+    };
+    if let Ok((user, email)) = config.get_user_name_and_email() {
+        let text = format!("Bienvenido {user}!\nParece que el email {email} está guardado en nuestra\nbase de datos.\nRecuerda que puedes modificarlo aquí abajo siempre que desees :)");
+        label.set_text(&text);
+    }
+    else {
+        label.set_text("Bienvenido!\nAlgunas funciones podrían presentar fallos si no nos dices quién eres.\nPor favor, indicanos tus datos aquí abajo.");
+    }
     Ok(())
 }
 
@@ -178,7 +204,7 @@ fn apply_style_to_fetch(builder: &Builder) -> io::Result<()> {
         Some(entry) => entry,
         None => {
             return Err(io::Error::new(
-                io::ErrorKind::AlreadyExists,
+                io::ErrorKind::NotFound,
                 format!("No se encontró el fetch entry!"),
             ));
         }
@@ -675,31 +701,31 @@ fn update_checkout_view(builder : &gtk::Builder) {
         None => {
             eprintln!("No pudimos obtener el text view");
             return
-        }             
+        }
     };
 
     let scroll : gtk::ScrolledWindow = match builder.get_object("checkout-scrolled") {
         Some(scroll) => scroll,
         None => {
             eprintln!("No pudimos obtener el scroll");
-            return 
+            return
         }
     };
 
     if let Ok((result, output_string)) = show_branches() {
         match handle_show_branches_result(result, &text_view, &scroll, output_string) {
             Ok(_) => {
-                
+
             }
             Err(error) => {
                 eprintln!("{:?}", error);
                 return
             }
         }
-    } 
+    }
 
-    
-    
+
+
 }
 
 /// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
@@ -4109,9 +4135,10 @@ fn call_git_config(name: String, email: String) {
 /// * `name_entry` - A reference to the GTK entry widget for the user's name.
 /// * `email_entry` - A reference to the GTK entry widget for the user's email.
 ///
-fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entry: &gtk::Entry) {
+fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entry: &gtk::Entry, builder : &Builder) {
     let cloned_name_entry = name_entry.clone();
     let cloned_email_entry = email_entry.clone();
+    let builder_clone = builder.clone();
     button.connect_clicked(move |_| {
         let name = cloned_name_entry.get_text().to_string();
         let email = cloned_email_entry.get_text().to_string();
@@ -4121,6 +4148,7 @@ fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entr
         } else {
             call_git_config(name, email);
         }
+        update_config_window(&builder_clone);
     });
 }
 
@@ -4183,7 +4211,7 @@ fn config_window(builder: &gtk::Builder) {
     apply_label_style(&email_label);
     apply_label_style(&config_title);
 
-    config_button_on_clicked(&config_button, &name_entry, &email_entry);
+    config_button_on_clicked(&config_button, &name_entry, &email_entry, builder);
 }
 
 /// ## `merge_window`

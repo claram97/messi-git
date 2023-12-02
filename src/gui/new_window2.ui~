@@ -372,7 +372,7 @@
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkScrolledWindow" id="checkout_scrolled">
+                  <object class="GtkScrolledWindow" id="checkout-scrolled">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="shadow-type">in</property>
@@ -1651,7 +1651,6 @@
 Set your name and email :)</property>
                   </object>
                   <packing>
-                    <property name="x">200</property>
                     <property name="y">109</property>
                   </packing>
                 </child>
