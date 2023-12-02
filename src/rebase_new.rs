@@ -16,7 +16,7 @@ use crate::{
     checkout,
     commit::{self, get_branch_name},
     diff,
-    gui::style::{get_button, show_message_dialog},
+    gui::style::{get_button, get_combo_box, show_message_dialog},
     hash_object, merge, tree_handler,
     utils::{self, obtain_git_dir},
 };
@@ -64,20 +64,6 @@ fn obtain_text_view_from_builder(builder: &gtk::Builder) -> io::Result<gtk::Text
         }
     };
     Ok(text_view)
-}
-
-fn obtain_combo_box_from_builder(builder: &gtk::Builder) -> io::Result<gtk::ComboBoxText> {
-    let combo_box = match builder.get_object::<gtk::ComboBoxText>("rebase-text-list") {
-        Some(combo_box) => combo_box,
-        None => {
-            println!("No se pudo encontrar el ComboBoxText con ID rebase-text-list");
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "No se pudo encontrar el ComboBoxText con ID rebase-text-list",
-            ));
-        }
-    };
-    Ok(combo_box)
 }
 
 fn obtain_update_button_from_builder(builder: &gtk::Builder) -> io::Result<gtk::Button> {
@@ -238,7 +224,7 @@ fn abort_rebase_button_on_click(
     ok_button.set_sensitive(false);
     let abort_button = obtain_abort_button_from_builder(&builder)?;
     abort_button.set_sensitive(false);
-    let combo_box = obtain_combo_box_from_builder(&builder)?;
+    let combo_box = get_combo_box(&builder, "rebase-text-list")?;
     combo_box.set_sensitive(false);
     let update_button = obtain_update_button_from_builder(&builder)?;
     update_button.set_sensitive(false);
@@ -252,7 +238,7 @@ pub fn write_rebase_step_into_gui(
     git_dir: &str,
 ) -> io::Result<()> {
     let text_view = obtain_text_view_from_builder(builder)?;
-    let combo_box = obtain_combo_box_from_builder(builder)?;
+    let combo_box = get_combo_box(&builder, "rebase-text-list")?;
     let text_buffer = match text_view.get_buffer() {
         Some(text_buffer) => text_buffer,
         None => {
@@ -454,7 +440,7 @@ pub fn next_rebase_iteration(
                     println!("No se pudo obtener el buffer del TextView");
                 }
             };
-            let combo_box = obtain_combo_box_from_builder(builder)?;
+            let combo_box = get_combo_box(&builder, "rebase-text-list")?;
             let update_button = obtain_update_button_from_builder(builder)?;
             let ok_button = obtain_ok_all_button_from_builder(builder)?;
             combo_box.set_sensitive(false);
