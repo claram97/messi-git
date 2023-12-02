@@ -71,5 +71,12 @@ fn second_pull(git_dir: &str) -> io::Result<()> {
         return Err(io::Error::new(io::ErrorKind::Other, "File copied incorrectly"));
     };
 
+    let hola = fs::read(Path::new(git_dir).join("hola.txt"))?;
+    let hola2 = fs::read(Path::new(git_dir).join("hola2.txt"))?;
+
+    if hola == hola2 {
+        return Err(io::Error::new(io::ErrorKind::Other, "File copied incorrectly. Must be different"));
+    }
+
     Ok(())
 }
