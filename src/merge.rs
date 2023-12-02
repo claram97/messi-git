@@ -1,4 +1,3 @@
-use std::f32::consts::E;
 use std::{io, fs};
 
 use crate::configuration::LOGGER_COMMANDS_FILE;

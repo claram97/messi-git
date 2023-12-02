@@ -54,9 +54,12 @@ impl Tree {
         self.directories.iter().find(|&dir| dir.name == name)
     }
 
-    /// Adds the hash and name of a file to the tree
+    /// Adds the hash and name of a file to the tree. Keeps the files sorted by name.
     fn add_file(&mut self, name: &str, hash: &str) {
-        self.files.push((name.to_string(), hash.to_string()));
+        let item = (name.to_string(), hash.to_string());
+        match self.files.binary_search(&item) {
+            Ok(pos) | Err(pos) => self.files.insert(pos, item),
+        }
     }
 
     /// Given a hash and a path, it updates the tree with the new hash. If the path does not exist, it creates it. If the path exists, it updates the hash.
@@ -74,7 +77,7 @@ impl Tree {
             current_tree = current_tree.get_or_create_dir(path.remove(0));
         }
         println!("Acá llego");
-        match current_tree.files.iter().position(|(p, h)| p == file_name) {
+        match current_tree.files.iter().position(|(p, _)| p == file_name) {
             Some(index) => {
                 current_tree.files.remove(index);
                 current_tree.add_file(file_name, hash)
@@ -158,14 +161,11 @@ impl Tree {
     /// The path must be written with the same format as the index file of the directory.
     /// If the path does not exist, it returns None.
     pub fn get_hash_from_path(&self, path: &str) -> Option<String> {
-        println!("Obtaining hash from path {:?}", path);
         let mut path = path.split('/').collect::<Vec<&str>>();
-        println!("Path is {:?}", path);
         let file_name = match path.pop() {
             Some(file_name) => file_name,
             None => return None,
         };
-        println!("File name is {:?}", file_name);
         let mut current_tree = self;
         while !path.is_empty() {
             current_tree = match current_tree.get_subdir(path.remove(0)) {
@@ -230,19 +230,20 @@ impl Tree {
         }
         for file in &self.files {
             let path = dir_path.to_string() + "/" + &file.0;
-
             if Path::new(&path).exists() {
-                fs::remove_file(path)?;
+                fs::remove_file(&path)?;
             }
         }
-
         if dir_path.is_empty() {
             return Ok(());
         }
         let dir_path_buf = PathBuf::from(&dir_path);
-        let is_empty = dir_path_buf.read_dir()?.next().is_none();
-        if is_empty {
-            fs::remove_dir(dir_path)?;
+        let is_empty = match fs::read_dir(dir_path_buf) {
+            Ok(mut dir) => dir.next().is_none(),
+            Err(_) => false,
+        };
+        if is_empty && Path::new(&dir_path).exists() {
+            fs::remove_dir(&dir_path)?;
         }
         Ok(())
     }

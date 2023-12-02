@@ -1774,7 +1774,7 @@ Set your name and email :)</property>
                         <property name="receives-default">True</property>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
+                        <property name="expand">True</property>
                         <property name="fill">True</property>
                         <property name="position">2</property>
                       </packing>
@@ -1788,7 +1788,7 @@ Set your name and email :)</property>
                         <property name="receives-default">True</property>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
+                        <property name="expand">True</property>
                         <property name="fill">True</property>
                         <property name="position">2</property>
                       </packing>

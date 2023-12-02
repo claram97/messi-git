@@ -74,7 +74,6 @@ pub fn checkout_branch(git_dir_path: &Path, root_dir: &str, branch_name: &str) -
         }
     };
 
-    println!("HACIENDO CHECKOUTTTTTT");
     let current_branch = match branch::get_current_branch_path(git_dir_path_str) {
         Ok(name) => name,
         Err(_) => "Unknown".to_string(),
@@ -489,6 +488,9 @@ mod tests {
     fn test_create_and_checkout_branch_references() {
         // Create a test directory if it doesn't exist
         if !Path::new(TEST_CHECKOUT2).exists() {
+            fs::create_dir_all(TEST_CHECKOUT2).expect("Failed to create test directory");
+        } else {
+            fs::remove_dir_all(TEST_CHECKOUT2).expect("Failed to remove test directory");
             fs::create_dir_all(TEST_CHECKOUT2).expect("Failed to create test directory");
         }
 
