@@ -4134,7 +4134,8 @@ fn config_window(builder: &gtk::Builder) {
     config_button_on_clicked(&config_button, &name_entry, &email_entry);
 }
 
-fn set_abort_button_behavior(button: &Button) {
+fn set_abort_button_behavior(button: &Button, merge_button : &Button) {
+    merge_button.set_sensitive(true);
     button.connect_clicked(move |_| {
         show_message_dialog("Not implemented", "Not yet implemented");
     });
@@ -4298,7 +4299,7 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
     )?;
     // if !conflicts.is_empty() {
     // update_combo_box(merge_combo_box_text, conflicts);
-    // set_abort_button_behavior(&abort_button);
+    // set_abort_button_behavior(&abort_button, &merge_button);
     // set_done_button_behavior(&ok_button, &merge_combo_box_text &merge_button);
     // set_combo_box_on_changed_behavior(&merge_combo_box_text, &merge_text_view);
     // set_update_button_behavior(&update_button, &merge_combo_box_text, &merge_text_view);
