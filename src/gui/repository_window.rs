@@ -1,3 +1,4 @@
+use crate::add;
 use crate::add::add;
 use crate::branch;
 use crate::branch::is_an_existing_branch;
@@ -23,6 +24,7 @@ use crate::utils::obtain_git_dir;
 use std::cell::RefCell;
 use std::fs;
 use std::fs::File;
+use std::io::Read;
 use std::io::Write;
 use std::rc::Rc;
 use std::str;
@@ -4190,10 +4192,57 @@ fn set_done_button_behavior(
     combo_box: &gtk::ComboBoxText,
     conflicts: Vec<String>,
 ) {
-    merge_button.set_sensitive(true);
     let combo_box_cloned = combo_box.clone();
+    let git_dir = match obtain_git_dir() {
+        Ok(dir) => dir,
+        Err(_e) => {
+            eprintln!("No se pudo obtener el git dir.");
+            show_message_dialog(
+                "Fatal error",
+                "Algo sucedió mientras intentábamos obtener los datos :(",
+            );
+
+            return;
+        }
+    };
+    let index_path = format!("{}/{}", git_dir, INDEX);
+    let parent_hash = match branch::get_current_branch_commit(&git_dir) {
+        Ok(hash) => hash,
+        Err(_e) => {
+            eprintln!("No se pudo obtener el hash del commit actual.");
+            return;
+        }
+    };
+
+    // Get the second parent from MERGE_HEAD
+    let merge_head_path = format!("{}/MERGE_HEAD", git_dir);
+    let mut merge_head_file = match File::open(&merge_head_path) {
+        Ok(file) => file,
+        Err(_e) => {
+            eprintln!("No se pudo abrir el archivo MERGE_HEAD.");
+            return;
+        }
+    };
+    let mut parent_hash2 = String::new();
+    match merge_head_file.read_to_string(&mut parent_hash2) {
+        Ok(_) => {}
+        Err(_e) => {
+            eprintln!("No se pudo leer el archivo MERGE_HEAD.");
+            return;
+        }
+    };
+    let merge_button_cloned = merge_button.clone();
     button.connect_clicked(move |_| {
-        combo_box_cloned.clear();
+        // add the paths to the index file and then commit everything
+        for conflict in &conflicts {
+            let result = add::add(conflict, &index_path, &git_dir, "", None);
+            println!("{:?} while adding file {}", result, conflict);
+        }
+
+        let commit_message = "Merge commit".to_string();
+        let result = commit::new_merge_commit(&git_dir, &commit_message, &parent_hash, &parent_hash2, "");
+        println!("{:?}", result);
+        merge_button_cloned.set_sensitive(true);
     });
 }
 
