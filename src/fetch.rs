@@ -221,7 +221,11 @@ pub fn log_fetch(remote_repo_name: Option<&str>, host: &str, local_dir: &str) ->
 ///
 /// Returns a `Result` indicating success or failure. In case of success, an `io::Result<()>` is returned.
 ///
-pub fn git_fetch(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) -> io::Result<Vec<String>> {
+pub fn git_fetch(
+    _remote_repo_name: Option<&str>,
+    _host: &str,
+    local_dir: &str,
+) -> io::Result<Vec<String>> {
     let git_dir = local_dir.to_string() + "/.mgit";
     let config_file = config::Config::load(&git_dir)?;
     let remote_name = "origin";

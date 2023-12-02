@@ -1,5 +1,5 @@
-use messi::{pull::git_pull, init::git_init, remote::git_remote, config::Config};
-use std::{io, fs, path::Path};
+use messi::{config::Config, init::git_init, pull::git_pull, remote::git_remote};
+use std::{fs, io, path::Path};
 
 #[test]
 #[ignore]
@@ -17,7 +17,7 @@ fn test_pull_empty_repo() -> io::Result<()> {
     fs::remove_dir_all(git_dir)?;
     match result {
         Ok(_) => Ok(()),
-        Err(e) => Err(e)
+        Err(e) => Err(e),
     }
 }
 
@@ -29,7 +29,7 @@ fn test_pull_non_empty_repo() -> io::Result<()> {
     fs::remove_dir_all(git_dir)?;
     match result {
         Ok(_) => Ok(()),
-        Err(e) => Err(e)
+        Err(e) => Err(e),
     }
 }
 
@@ -40,12 +40,17 @@ fn first_pull(git_dir: &str) -> io::Result<()> {
     let mut config = Config::load(&repo_path)?;
     git_remote(&mut config, line, &mut vec![])?;
     git_pull("master", git_dir, None, "localhost")?;
-    
-    let has_file1 = fs::read_dir(git_dir)?.any(|x| x.unwrap().path() == Path::new(git_dir).join("hola.txt"));
-    let has_file2 = fs::read_dir(git_dir)?.any(|x| x.unwrap().path() == Path::new(git_dir).join("hola2.txt"));
-    
+
+    let has_file1 =
+        fs::read_dir(git_dir)?.any(|x| x.unwrap().path() == Path::new(git_dir).join("hola.txt"));
+    let has_file2 =
+        fs::read_dir(git_dir)?.any(|x| x.unwrap().path() == Path::new(git_dir).join("hola2.txt"));
+
     if !has_file1 || has_file2 {
-        return Err(io::Error::new(io::ErrorKind::Other, "Files copied incorrectly"));
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Files copied incorrectly",
+        ));
     }
 
     Ok(())
@@ -63,19 +68,27 @@ fn second_pull(git_dir: &str) -> io::Result<()> {
     git_remote(&mut config, line, &mut vec![])?;
 
     git_pull("master", git_dir, None, "localhost")?;
-    
-    let has_file1 = fs::read_dir(git_dir)?.any(|x| x.unwrap().path() == Path::new(git_dir).join("hola.txt"));
-    let has_file2 = fs::read_dir(git_dir)?.any(|x| x.unwrap().path() == Path::new(git_dir).join("hola2.txt"));
+
+    let has_file1 =
+        fs::read_dir(git_dir)?.any(|x| x.unwrap().path() == Path::new(git_dir).join("hola.txt"));
+    let has_file2 =
+        fs::read_dir(git_dir)?.any(|x| x.unwrap().path() == Path::new(git_dir).join("hola2.txt"));
 
     if !has_file1 || !has_file2 {
-        return Err(io::Error::new(io::ErrorKind::Other, "File copied incorrectly"));
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "File copied incorrectly",
+        ));
     };
 
     let hola = fs::read(Path::new(git_dir).join("hola.txt"))?;
     let hola2 = fs::read(Path::new(git_dir).join("hola2.txt"))?;
 
     if hola == hola2 {
-        return Err(io::Error::new(io::ErrorKind::Other, "File copied incorrectly. Must be different"));
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "File copied incorrectly. Must be different",
+        ));
     }
 
     Ok(())

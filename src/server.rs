@@ -159,10 +159,7 @@ impl ServerInstace {
         );
 
         if refs.is_empty() {
-            let empty = format!(
-                "{} {}\0{}",
-                ZERO_HASH, "capabilities^{}", CAPABILITIES
-            );
+            let empty = format!("{} {}\0{}", ZERO_HASH, "capabilities^{}", CAPABILITIES);
             self.send(&pkt_line(&empty))?;
             return self.flush();
         }

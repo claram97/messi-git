@@ -42,7 +42,11 @@ pub fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
     if line.starts_with("ERR") {
         return Err(Error::new(io::ErrorKind::Other, format!("Error: {}", line)));
     }
-    log(&format!("Reading line of size {} -> {}", size, line.replace('\0', "\\0")))?;
+    log(&format!(
+        "Reading line of size {} -> {}",
+        size,
+        line.replace('\0', "\\0")
+    ))?;
     Ok((size, line))
 }
 
@@ -99,13 +103,19 @@ pub fn get_head_from_branch(git_dir: &str, branch: &str) -> io::Result<String> {
             io::ErrorKind::InvalidData,
             format!("Invalid data HEAD. Must have ref for fetch: {}", content),
         ))?;
-        return Ok(head.trim().to_string())
+        return Ok(head.trim().to_string());
     }
-    let pathbuf = PathBuf::from(git_dir).join("refs").join("tags").join(branch);
+    let pathbuf = PathBuf::from(git_dir)
+        .join("refs")
+        .join("tags")
+        .join(branch);
     if pathbuf.exists() {
         return Ok(format!("refs/tags/{}", branch));
     }
-    let pathbuf = PathBuf::from(git_dir).join("refs").join("heads").join(branch);
+    let pathbuf = PathBuf::from(git_dir)
+        .join("refs")
+        .join("heads")
+        .join(branch);
     let heads = PathBuf::from(git_dir).join("refs").join("heads");
     if pathbuf.exists() || heads.read_dir()?.count() == 0 {
         return Ok(format!("refs/heads/{}", branch));
@@ -318,9 +328,11 @@ mod tests {
     #[test]
     fn test_pkt_line() {
         assert_eq!(pkt_line("hello"), "0009hello");
-        assert_eq!(pkt_line("git-upload-pack /repo\0host=localhost\0\0version=1\0"), "0034git-upload-pack /repo\0host=localhost\0\0version=1\0");
+        assert_eq!(
+            pkt_line("git-upload-pack /repo\0host=localhost\0\0version=1\0"),
+            "0034git-upload-pack /repo\0host=localhost\0\0version=1\0"
+        );
         assert_eq!(pkt_line("want 86135720c1283d83f2744781a915aba3d74da37b multi_ack include-tag side-band-64k ofs-delta\n"), "0060want 86135720c1283d83f2744781a915aba3d74da37b multi_ack include-tag side-band-64k ofs-delta\n");
-        
     }
 
     #[test]
@@ -336,11 +348,24 @@ mod tests {
 
     #[test]
     fn test_get_refs() -> io::Result<()> {
-        let refs = get_refs(PathBuf::from("tests/packfiles/.mgit").join("refs").join("heads"))?;
+        let refs = get_refs(
+            PathBuf::from("tests/packfiles/.mgit")
+                .join("refs")
+                .join("heads"),
+        )?;
         assert!(refs.contains_key(&"master".to_string()));
-        let refs = get_refs(PathBuf::from("tests/packfiles/.mgit").join("refs").join("tags"))?;
+        let refs = get_refs(
+            PathBuf::from("tests/packfiles/.mgit")
+                .join("refs")
+                .join("tags"),
+        )?;
         assert!(refs.contains_key(&"v1.0".to_string()));
-        let refs = get_refs(PathBuf::from("tests/packfiles/.mgit").join("refs").join("remotes").join("origin"))?;
+        let refs = get_refs(
+            PathBuf::from("tests/packfiles/.mgit")
+                .join("refs")
+                .join("remotes")
+                .join("origin"),
+        )?;
         assert!(refs.contains_key(&"master".to_string()));
         Ok(())
     }

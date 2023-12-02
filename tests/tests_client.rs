@@ -56,12 +56,8 @@ fn test_refs_has_tags() -> io::Result<()> {
 #[ignore]
 fn test_upload_pack() -> io::Result<()> {
     let address = "localhost:".to_owned() + PORT;
-    let mut client = Client::new(&address, "repo2", "localhost");
-    client.upload_pack(
-        vec!["v1.0".to_string()],
-        "tests/packfiles/.mgit",
-        "origin",
-    )?;
+    let mut client = Client::new(&address, "repo", "localhost");
+    client.upload_pack(vec!["master".to_string()], "tests/pull/.mgit", "origin")?;
     Ok(())
 }
 
