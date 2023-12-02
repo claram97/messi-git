@@ -1,6 +1,7 @@
 use std::io;
 
 use crate::logger::Logger;
+use crate::tree_handler::Tree;
 use crate::utils::get_current_time;
 use crate::{
     branch, commit, tree_handler,
@@ -200,7 +201,7 @@ pub fn git_merge(
 /// Returns an `io::Result` indicating whether the merge operation was successful. If successful,
 /// `Ok(())` is returned; otherwise, an error is returned.
 ///
-pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io::Result<()> {
+pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io::Result<Tree> {
     let our_commit = branch::get_branch_commit_hash(branch, git_dir)?;
     let our_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
     let remote_tree = tree_handler::load_tree_from_commit(remote_hash, git_dir)?;
@@ -209,7 +210,8 @@ pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io
     let new_index_file_contents =
         new_tree.build_index_file_from_tree(&index_path, git_dir, &get_git_ignore_path(git_dir))?;
     new_index_file_contents.write_file()?;
-    Ok(())
+
+    tree_handler::build_tree_from_index(&index_path, git_dir, &get_git_ignore_path(git_dir))
 }
 
 #[cfg(test)]

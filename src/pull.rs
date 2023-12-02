@@ -89,7 +89,8 @@ pub fn git_pull(
     };
     let head_ref = git_dir.to_string() + "/refs/heads/" + branch;
     if Path::new(&head_ref).exists() {
-        merge::merge_remote_branch(branch, &hash, &git_dir)?;
+        let tree = merge::merge_remote_branch(branch, &hash, &git_dir)?;
+        tree.create_directories(local_dir, &git_dir)?;
     } else {
         let commit_tree = tree_handler::load_tree_from_commit(&hash, &git_dir)?;
         commit_tree.create_directories(local_dir, &git_dir)?;
