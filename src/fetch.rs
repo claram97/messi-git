@@ -241,9 +241,11 @@ pub fn git_fetch(_remote_repo_name: Option<&str>, _host: &str, local_dir: &str) 
     let fetch_head_path = git_dir.to_string() + "/FETCH_HEAD";
     let mut fetch_head_file = FetchHead::new();
     client.upload_pack(clean_refs.clone(), &git_dir, "origin")?;
+
     for server_ref in clean_refs {
         if server_ref != "HEAD" {
-            let hash = match refs.get(&server_ref) {
+            let server_ref_head = "refs/heads/".to_string() + &server_ref;
+            let hash = match refs.get(&server_ref_head) {
                 Some(hash) => hash,
                 None => {
                     println!("Error: Could not find hash for {}", server_ref);
