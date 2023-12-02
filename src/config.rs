@@ -444,6 +444,15 @@ impl Config {
         Ok(())
     }
 
+    pub fn is_an_existing_remote(&self, remote_name: &str) -> bool {
+        for remote in &self.remotes {
+            if remote.name.eq(remote_name) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /// Retrieves and writes the URL of a remote repository to the specified output.
     ///
     /// This function retrieves the URL of a remote repository with the specified name and writes it

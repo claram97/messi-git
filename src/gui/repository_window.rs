@@ -11,6 +11,7 @@ use crate::commit::get_branch_name;
 use crate::configuration::GIT_DIR;
 use crate::configuration::GIT_IGNORE;
 use crate::configuration::INDEX;
+use crate::fetch::git_fetch;
 use crate::git_config::git_config;
 use crate::tag::git_tag;
 use crate::utils::obtain_git_dir;
@@ -156,7 +157,38 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
     let builder_clone_for_git_config = builder.clone();
     config_window(&builder_clone_for_git_config);
 
+    let builder_clone_for_fetch = builder.clone();
+    apply_style_to_fetch(&builder_clone_for_fetch);
+
     setup_buttons(builder)?;
+
+    Ok(())
+}
+
+fn apply_style_to_fetch(builder: &Builder) -> io::Result<()> {
+    let fetch_entry = match get_entry(builder, "fetch-entry") {
+        Some(entry) => entry,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                format!("No se encontró el fetch entry!"),
+            ));
+        }
+    };
+
+    apply_entry_style(&fetch_entry);
+
+    let fetch_label = match get_label(builder, "fetch-label", 14.0) {
+        Some(entry) => entry,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                format!("No se encontró el fetch label!"),
+            ));
+        }
+    };
+
+    apply_label_style(&fetch_label);
 
     Ok(())
 }
@@ -208,7 +240,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "r-trees",
         "d-trees",
         "rt-trees",
-        "show-fetch",
+        "fetch",
     ];
 
     for button_id in button_ids.iter() {
@@ -399,7 +431,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                 let _ = handle_remote_rename(&builder_clone);
             });
         }
-        "show-fetch" => {
+        "fetch" => {
             button.connect_clicked(move |_| {
                 handle_fetch_button(&builder_clone);
             });
@@ -578,58 +610,30 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub fn _obtain_text_from_fetch() -> Result<String, std::io::Error> {
-    // let current_dir = match std::env::current_dir() {
-    //     Ok(dir) => dir,
-    //     Err(err) => {
-    //         eprintln!("Error al obtener el directorio actual: {:?}", err);
+fn handle_fetch_button(builder: &gtk::Builder) -> io::Result<()> {
+    let fetch_entry = match get_entry(builder, "fetch-entry") {
+        Some(entry) => entry,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                format!("No se encontró el fetch entry!"),
+            ));
+        }
+    };
 
-    //     }
-    // };
-    // let url_text = &_args[2];//aca hay q poner la url
-    // //The remote repo url is the first part of the URL, up until the last '/'.
-    // let _remote_repo_url = match url_text.rsplit_once('/') {
-    //     Some((string, _)) => string,
-    //     None => "",
-    // };
-
-    // //The remote repository name is the last part of the URL.
-    // let remote_repo_name = url_text.split('/').last().unwrap_or("");
-    // let result = git_fetch_for_gui(
-    //     Some(remote_repo_name),
-    //     "localhost",
-    //     current_dir.to_str().expect("Error "),
-    // );
-    // let refs_text: String = result.join("\n");
-
-    // Ok(refs_text)
-    Ok("hola".to_string())
-}
-
-fn handle_fetch_button(_builder: &gtk::Builder) {
-    // let log_text_view_result: Option<gtk::TextView> = builder.get_object("fetch-text");
-
-    // if let Some(log_text_view) = log_text_view_result {
-    //     let text_from_function = obtain_text_from_fetch();
-
-    //     match text_from_function {
-    //         Ok(texto) => {
-    //             log_text_view.set_hexpand(true);
-    //             log_text_view.set_halign(gtk::Align::Start);
-
-    //             if let Some(buffer) = log_text_view.get_buffer() {
-    //                 buffer.set_text(texto.as_str());
-    //             } else {
-    //                 eprintln!("Fatal error in show repository window.");
-    //             }
-    //         }
-    //         Err(err) => {
-    //             eprintln!("Error al obtener el texto: {}", err);
-    //         }
-    //     }
-    // } else {
-    //     eprintln!("We couldn't find log text view 'log-text'");
-    // }
+    let remote_name = fetch_entry.get_text().to_string();
+    if remote_name.is_empty() {
+        show_message_dialog("Error", "Debe ingresar el nombre de un remote");
+    } else {
+        let git_dir = obtain_git_dir()?;
+        let config = Config::load(&git_dir)?;
+        if !config.is_an_existing_remote(&remote_name) {
+            show_message_dialog("Error", "El remoto no existe. Revise los remotos existentes o cree uno nuevo en la pestaña remote.");
+        } else {
+            //Llamar a fetch
+        }
+    }
+    Ok(())
 }
 
 /// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
