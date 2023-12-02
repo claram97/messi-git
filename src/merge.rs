@@ -1,4 +1,5 @@
-use std::io;
+use std::f32::consts::E;
+use std::{io, fs};
 
 use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::logger::Logger;
@@ -181,6 +182,37 @@ pub fn git_merge(
         log_merge(our_branch, their_branch, git_dir, root_dir)?;
 
         Ok(tuple)
+    }
+}
+
+pub fn git_merge_for_ui(
+    our_branch: &str,
+    their_branch: &str,
+    git_dir: &str,
+    root_dir: &str,
+) -> io::Result<Vec<String>> {
+    let our_commit = branch::get_branch_commit_hash(our_branch, git_dir)?;
+    let their_commit = branch::get_branch_commit_hash(their_branch, git_dir)?;
+
+    let common_ancestor = find_common_ancestor(&our_commit, &their_commit, git_dir)?;
+    if is_fast_forward(&our_commit, &common_ancestor) {
+        fast_forward_merge(our_branch, their_branch, git_dir, root_dir)?;
+        log_merge(our_branch, their_branch, git_dir, root_dir)?;
+        Ok(vec![])
+    } else {
+        let conflicting_paths = two_way_merge(our_branch, their_branch, git_dir, root_dir)?;
+        // Create a MERGE_HEAD file
+        let mut merge_head_file = fs::File::create(format!("{}/.mgit/MERGE_HEAD", root_dir))?;
+        merge_head_file.write_all(their_commit.as_bytes())?;
+
+        // Create a merge_index file where all the conflicts are written
+        let mut merge_index_file = fs::File::create(format!("{}/.mgit/MERGE_INDEX", root_dir))?;
+        for path in conflicting_paths.iter() {
+            merge_index_file.write_all(path.as_bytes())?;
+            merge_index_file.write_all(b"\n")?;
+        }
+        log_merge(our_branch, their_branch, git_dir, root_dir)?;
+        Ok(conflicting_paths)
     }
 }
 

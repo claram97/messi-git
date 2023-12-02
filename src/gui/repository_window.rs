@@ -77,6 +77,7 @@ use gtk::TextBufferExt;
 use gtk::TextView;
 use gtk::TextViewExt;
 use gtk::WidgetExt;
+use gtk::prelude::ComboBoxExtManual;
 use std::env;
 use std::io;
 use std::path::Path;
@@ -2994,13 +2995,13 @@ pub fn call_git_merge(their_branch: &str) -> io::Result<Vec<String>> {
         }
     };
     let our_branch = commit::get_branch_name(&git_dir)?;
-    let (_, conflicts) = merge::git_merge(
+    let result = merge::git_merge_for_ui(
         &our_branch,
         their_branch,
         &git_dir,
         root_dir.to_string_lossy().as_ref(),
     )?;
-    Ok(conflicts)
+    Ok(result)
 }
 
 /// ## `merge_button_connect_clicked`
@@ -3019,11 +3020,24 @@ pub fn merge_button_connect_clicked(
     entry: &gtk::Entry,
     text_view: &gtk::TextView,
     git_directory: String,
-) /*-> Vec<String>*/
+) -> io::Result<Vec<String>>
 {
     let entry_clone = entry.clone();
-    let text_view_clone = text_view.clone();
+    // let text_view_clone = text_view.clone();
     let git_dir = git_directory.clone();
+    let text_buffer = match text_view.get_buffer() {
+        Some(buff) => buff,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "Text view buffer can't be accessed.\n",
+            ));
+        }
+    };
+
+    let conflicts = Rc::new(RefCell::new(Vec::<String>::new()));
+    let conflicts_clone = conflicts.clone();
+
     button.connect_clicked(move |_| {
         let branch = entry_clone.get_text();
         if branch.is_empty() {
@@ -3031,30 +3045,35 @@ pub fn merge_button_connect_clicked(
         } else if !branch::is_an_existing_branch(&branch, &git_dir) {
             show_message_dialog("Error", "Rama no encontrada.");
         } else {
-            match call_git_merge(&branch) {
-                Ok(conflicts) => {
-                    match text_view_clone.get_buffer() {
-                        Some(buff) => {
-                            if conflicts.is_empty() {
-                                buff.set_text("Merged successfully!");
-                            } else {
-                                let text = "Conflicts on merge!\n".to_string()
-                                    + &conflicts.join("\n")
-                                    + "\nPlease resolve the conflicts and commit the changes.";
-                                buff.set_text(&text);
-                            }
+            let result = call_git_merge(&branch);
+            match result {
+                Ok(conflicts_list) => {
+                    if conflicts_list.is_empty() {
+                        text_buffer.set_text("Merge exitoso.");
+                    } else {
+                        let mut conflicts_text = String::new();
+                        conflicts_text.push_str("Conflicto(s) detectado(s):\n");
+                        for conflict in &conflicts_list {
+                            conflicts_text.push_str(&conflict);
+                            conflicts_text.push('\n');
                         }
-                        None => {
-                            eprintln!("Couldn't write the output on the text view.");
-                        }
-                    };
+                        text_buffer.set_text(&conflicts_text);
+
+                        let mut conflicts_ref = conflicts_clone.borrow_mut();
+                        *conflicts_ref = conflicts_list;
+                    }
                 }
-                Err(_e) => {
-                    show_message_dialog("Error", "Merge interrupted due to an error.");
+                Err(e) => {
+                    let error_message = e.to_string();
+                    show_message_dialog("Error", &error_message);
                 }
-            };
+
+            }   
         }
     });
+    
+    let conflict_clone = conflicts.borrow();
+    Ok(conflict_clone.clone())
 }
 
 /// ## `set_merge_button_behavior`
@@ -3074,17 +3093,30 @@ pub fn set_merge_button_behavior(
     ok_button: &Button,
     abort_button: &Button,
     update_button: &Button,
-) -> io::Result<()> {
+) -> io::Result<Vec<String>> {
     let git_dir = obtain_git_dir()?;
-    /*let conflicts : Vec<String> =*/
-    merge_button_connect_clicked(button, entry, text_view, git_dir);
-    /*if !conflicts.is_empty() {
+
+    let conflicts = match merge_button_connect_clicked(button, entry, text_view, git_dir) {
+        Ok(conflicts) => conflicts,
+        Err(e) => {
+            let error_message = e.to_string();
+            show_message_dialog("Error", &error_message);
+            return Err(e);
+        }
+    };
+
+    if conflicts.is_empty() {
+        ok_button.set_sensitive(false);
+        abort_button.set_sensitive(false);
+        update_button.set_sensitive(false);
+    } else {
         ok_button.set_sensitive(true);
         abort_button.set_sensitive(true);
         update_button.set_sensitive(true);
-        button.set_sensitive(false);
-    }*/
-    Ok(())
+    }
+
+
+    Ok(conflicts)
 }
 
 /// Shows the current Git branch on a merge window.
@@ -4158,6 +4190,7 @@ fn update_combo_box(combo_box: &gtk::ComboBoxText, conflicts: Vec<String>) {
     for conflict in &conflicts {
         combo_box.append_text(conflict);
     }
+    combo_box.set_active(Some(0));
 }
 
 fn set_combo_box_on_changed_behavior(combo_box: &gtk::ComboBoxText, text_view: &gtk::TextView) {
@@ -4288,8 +4321,7 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
     update_button.set_sensitive(false);
 
     show_current_branch_on_merge_window(&merge_text_view)?;
-    /*let conflicts : Vec<String> =*/
-    set_merge_button_behavior(
+    let conflicts = set_merge_button_behavior(
         &merge_button,
         &merge_input_branch_entry,
         &merge_text_view,
@@ -4297,13 +4329,14 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
         &abort_button,
         &update_button,
     )?;
-    // if !conflicts.is_empty() {
-    // update_combo_box(merge_combo_box_text, conflicts);
-    // set_abort_button_behavior(&abort_button, &merge_button);
-    // set_done_button_behavior(&ok_button, &merge_combo_box_text &merge_button);
-    // set_combo_box_on_changed_behavior(&merge_combo_box_text, &merge_text_view);
-    // set_update_button_behavior(&update_button, &merge_combo_box_text, &merge_text_view);
-    // }
+    println!("{:?}", conflicts);
+    if !conflicts.is_empty() {
+        update_combo_box(&merge_combo_box_text, conflicts.clone());
+        set_abort_button_behavior(&abort_button, &merge_button);
+        set_done_button_behavior(&ok_button, &merge_button,&merge_combo_box_text, conflicts);
+        set_combo_box_on_changed_behavior(&merge_combo_box_text, &merge_text_view);
+        set_update_button_behavior(&update_button, &merge_combo_box_text, &merge_text_view);
+    }
 
     Ok(())
 }
