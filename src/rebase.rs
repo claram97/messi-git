@@ -495,7 +495,7 @@ pub fn next_rebase_iteration(
 ) -> io::Result<()> {
     let new_commit_hash = create_rebase_commit(&rebase, git_dir)?;
     let mut new_rebase = rebase;
-    println!("{:#?}", new_rebase);
+
     match new_rebase.our_commits.pop() {
         Some(commit) => {
             new_rebase.active_commit = commit;
@@ -601,7 +601,7 @@ pub fn start_rebase_gui(
         &their_branch_hash,
         git_dir,
     )?;
-    println!("{:#?}", conflicting_files);
+
     if conflicting_files.is_empty() {
         fast_forward_rebase(&our_branch_hash, &their_branch_hash, git_dir)?;
         return Err(io::Error::new(
@@ -636,7 +636,9 @@ pub fn rebase(our_branch: &str, their_branch: &str, git_dir: &str) -> io::Result
         &their_branch_hash,
         git_dir,
     )?;
+
     if conflicting_files.is_empty() {
+        println!("El rebase es fast forward");
         fast_forward_rebase(&our_branch_hash, &their_branch_hash, git_dir)?;
         Ok(())
     } else {
@@ -644,5 +646,116 @@ pub fn rebase(our_branch: &str, their_branch: &str, git_dir: &str) -> io::Result
             io::ErrorKind::Other,
             "El rebase no es fast forward, por favor use la interfaz gráfica",
         ))
+    }
+}
+
+// Tests
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::add;
+    use std::fs;
+
+    const NAME_OF_GIT_DIRECTORY_1: &str = "tests/rebase_tests/test1/.mgit";
+
+    fn create_mock_git_dir(git_dir: &str) {
+        fs::create_dir_all(&git_dir).unwrap();
+        let objects_dir = format!("{}/objects", git_dir);
+        fs::create_dir_all(&objects_dir).unwrap();
+        let refs_dir = format!("{}/refs/heads", git_dir);
+        fs::create_dir_all(&refs_dir).unwrap();
+        let head_file_path = format!("{}/HEAD", git_dir);
+        let mut head_file = fs::File::create(&head_file_path).unwrap();
+        head_file.write_all(b"ref: refs/heads/master").unwrap();
+    }
+
+    #[test]
+    fn test_rebase_fast_forward() {
+        let git_dir = NAME_OF_GIT_DIRECTORY_1;
+        let test_dir = "tests/rebase_tests/test1";
+        if Path::new(test_dir).exists() {
+            fs::remove_dir_all(test_dir).unwrap();
+        }
+        create_mock_git_dir(git_dir);
+        let index_file_path = format!("{}/index", NAME_OF_GIT_DIRECTORY_1);
+        let _ = fs::File::create(&index_file_path).unwrap();
+        let src_dir = format!("{}/src", test_dir);
+        fs::create_dir_all(&src_dir).unwrap();
+
+        let file_path = "src/main.c";
+        let add_path = format!("{}/{}", test_dir, file_path);
+        let file_content = "int main() { return 0; }";
+        let _ = fs::write(format!("{}/{}", test_dir, file_path), file_content).unwrap();
+        let _ = add::add(&add_path, &index_file_path, git_dir, "", None);
+
+        let index_file_path = format!("{}/index", NAME_OF_GIT_DIRECTORY_1);
+        let index_file_content = fs::read_to_string(&index_file_path).unwrap();
+        println!("Index file content: {}", index_file_content);
+
+        let commit_message = "Initial commit".to_string();
+        let commit_1_hash = commit::new_commit(git_dir, &commit_message, "").unwrap();
+
+        let branch_name = "test";
+        let _ = branch::create_new_branch(&git_dir, "test", None, &mut io::stdout());
+
+        let head_file_path = format!("{}/HEAD", git_dir);
+        let mut head_file = fs::File::create(&head_file_path).unwrap();
+        head_file
+            .write_all(format!("ref: refs/heads/{}", branch_name).as_bytes())
+            .unwrap();
+
+        let file_path = "src/hello.c";
+        let add_path = format!("{}/{}", test_dir, file_path);
+        let file_content = "int hello() { return 0; }";
+        let _ = fs::write(format!("{}/{}", test_dir, file_path), file_content).unwrap();
+        let _ = add::add(&add_path, &index_file_path, git_dir, "", None);
+
+        let commit_message = "Second commit";
+        let _ = commit::new_commit(&git_dir, commit_message, "").unwrap();
+
+        let file_path = "src/bye.c";
+        let add_path = format!("{}/{}", test_dir, file_path);
+        let file_content = "int bye() { return 0; }";
+        let _ = fs::write(format!("{}/{}", test_dir, file_path), file_content).unwrap();
+        let _ = add::add(&add_path, &index_file_path, git_dir, "", None);
+
+        let commit_message = "Third commit";
+        let _ = commit::new_commit(&git_dir, commit_message, "").unwrap();
+
+        let head_file_path = format!("{}/HEAD", git_dir);
+        let mut head_file = fs::File::create(&head_file_path).unwrap();
+        head_file.write_all(b"ref: refs/heads/master").unwrap();
+
+        let file_path = "src/pizza.c";
+        let add_path = format!("{}/{}", test_dir, file_path);
+        let file_content = "int pizza() { return 0; }";
+        let _ = fs::write(format!("{}/{}", test_dir, file_path), file_content).unwrap();
+        let _ = add::add(&add_path, &index_file_path, git_dir, "", None);
+
+        let commit_message = "Fourth commit";
+        let _ = commit::new_commit(&git_dir, commit_message, "").unwrap();
+
+        let head_file_path = format!("{}/HEAD", git_dir);
+        let mut head_file = fs::File::create(&head_file_path).unwrap();
+        head_file
+            .write_all(format!("ref: refs/heads/test").as_bytes())
+            .unwrap();
+
+        let our_branch = "test";
+        let their_branch = "master";
+        let result = rebase(our_branch, their_branch, git_dir);
+        assert!(result.is_ok());
+
+        // Check if the amount of commits is correct
+        let test_hash = branch::get_branch_commit_hash("test", git_dir).unwrap();
+        let our_branch_commits = utils::get_branch_commit_history(&test_hash, git_dir).unwrap();
+
+        // The amount of commits in the vector should be 5, the 4 commits plus the 000000000... commit
+        assert_eq!(our_branch_commits.len(), 5);
+
+        // our_branch_commits[3] should be commit_hash_1
+        assert_eq!(our_branch_commits[3], commit_1_hash);
+
+        fs::remove_dir_all(test_dir).unwrap();
     }
 }

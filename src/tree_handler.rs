@@ -161,14 +161,11 @@ impl Tree {
     /// The path must be written with the same format as the index file of the directory.
     /// If the path does not exist, it returns None.
     pub fn get_hash_from_path(&self, path: &str) -> Option<String> {
-        println!("Obtaining hash from path {:?}", path);
         let mut path = path.split('/').collect::<Vec<&str>>();
-        println!("Path is {:?}", path);
         let file_name = match path.pop() {
             Some(file_name) => file_name,
             None => return None,
         };
-        println!("File name is {:?}", file_name);
         let mut current_tree = self;
         while !path.is_empty() {
             current_tree = match current_tree.get_subdir(path.remove(0)) {
@@ -233,19 +230,20 @@ impl Tree {
         }
         for file in &self.files {
             let path = dir_path.to_string() + "/" + &file.0;
-
             if Path::new(&path).exists() {
-                fs::remove_file(path)?;
+                fs::remove_file(&path)?;
             }
         }
-
         if dir_path.is_empty() {
             return Ok(());
         }
         let dir_path_buf = PathBuf::from(&dir_path);
-        let is_empty = dir_path_buf.read_dir()?.next().is_none();
-        if is_empty {
-            fs::remove_dir(dir_path)?;
+        let is_empty = match fs::read_dir(dir_path_buf) {
+            Ok(mut dir) => dir.next().is_none(),
+            Err(_) => false,
+        };
+        if is_empty && Path::new(&dir_path).exists() {
+            fs::remove_dir(&dir_path)?;
         }
         Ok(())
     }
@@ -790,8 +788,7 @@ pub fn get_files_with_changes(our_tree: &Tree, their_tree: &Tree) -> Vec<(String
                         None
                     }
                 }
-                // If it is in our tree but not in theirs, it means it was created by us.
-                None => Some((path.to_string(), hash.clone())),
+                None => None,
             }
         })
         .collect::<Vec<(String, String)>>();
