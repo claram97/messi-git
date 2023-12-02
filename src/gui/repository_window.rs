@@ -16,7 +16,6 @@ use crate::git_config::git_config;
 use crate::tag::git_tag;
 use crate::utils::obtain_git_dir;
 use std::str;
-//use crate::fetch::git_fetch_for_gui;
 use crate::branch::git_branch;
 use crate::config::Config;
 use crate::gui::main_window::add_to_open_windows;
@@ -158,8 +157,17 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
     config_window(&builder_clone_for_git_config);
 
     let builder_clone_for_fetch = builder.clone();
-    apply_style_to_fetch(&builder_clone_for_fetch);
+    match apply_style_to_fetch(&builder_clone_for_fetch) {
+        Ok(_) => {
 
+        }
+        Err(error) => {
+            eprintln!("{:?}", error);
+        }
+    }
+
+    let builder_clone_for_checkout_view = builder.clone();
+    update_checkout_view(&builder_clone_for_checkout_view);
     setup_buttons(builder)?;
 
     Ok(())
@@ -449,6 +457,11 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                     if result.is_err() {
                         eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
                     }
+                    let result = handle_show_branches_button(&builder_clone);
+                    if result.is_err() {
+                        eprintln!("No se pudo actualizar la rama actual en la ventana branch.");
+                    }
+                    update_checkout_view(&builder_clone);
                 } else {
                     eprintln!("Error handling checkout branch window.")
                 }
@@ -462,6 +475,11 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                     if result.is_err() {
                         eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
                     }
+                    let result = handle_show_branches_button(&builder_clone);
+                    if result.is_err() {
+                        eprintln!("No se pudo actualizar la rama actual en la ventana branch.");
+                    }
+                    update_checkout_view(&builder_clone);
                 } else {
                     eprintln!("Error handling create and checkout branch button.");
                 }
@@ -475,6 +493,11 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                     if result.is_err() {
                         eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
                     }
+                    let result = handle_show_branches_button(&builder_clone);
+                    if result.is_err() {
+                        eprintln!("No se pudo actualizar la rama actual en la ventana branch.");
+                    }
+                    update_checkout_view(&builder_clone);
                 } else {
                     eprintln!("Error handling create or reset branch button.");
                 }
@@ -488,6 +511,11 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                     if result.is_err() {
                         eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
                     }
+                    let result = handle_show_branches_button(&builder_clone);
+                    if result.is_err() {
+                        eprintln!("No se pudo actualizar la rama actual en la ventana branch.");
+                    }
+                    update_checkout_view(&builder_clone);
                 } else {
                     eprintln!("Error handling checkout commit detached button.");
                 }
@@ -501,6 +529,11 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                     if result.is_err() {
                         eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
                     }
+                    let result = handle_show_branches_button(&builder_clone);
+                    if result.is_err() {
+                        eprintln!("No se pudo actualizar la rama actual en la ventana branch.");
+                    }
+                    update_checkout_view(&builder_clone);
                 } else {
                     eprintln!("Error handling force checkout button.");
                 }
@@ -634,6 +667,39 @@ fn handle_fetch_button(builder: &gtk::Builder) -> io::Result<()> {
         }
     }
     Ok(())
+}
+
+fn update_checkout_view(builder : &gtk::Builder) {
+    let text_view = match get_text_view(builder, "checkout-text-view") {
+        Some(text_view) => text_view,
+        None => {
+            eprintln!("No pudimos obtener el text view");
+            return
+        }             
+    };
+
+    let scroll : gtk::ScrolledWindow = match builder.get_object("checkout-scrolled") {
+        Some(scroll) => scroll,
+        None => {
+            eprintln!("No pudimos obtener el scroll");
+            return 
+        }
+    };
+
+    if let Ok((result, output_string)) = show_branches() {
+        match handle_show_branches_result(result, &text_view, &scroll, output_string) {
+            Ok(_) => {
+                
+            }
+            Err(error) => {
+                eprintln!("{:?}", error);
+                return
+            }
+        }
+    } 
+
+    
+    
 }
 
 /// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
