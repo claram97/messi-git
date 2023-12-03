@@ -102,7 +102,6 @@ pub fn get_branch_commit_history_with_messages(
     parents.push((commit_hash.to_string(), commit_message.to_string()));
     let mut commit_parent = commit::get_parent_hash(commit_hash, git_dir);
     while let Ok(parent) = commit_parent {
-        println!("{}", parent);
         let commit_message = match commit::get_commit_message(&parent, git_dir) {
             Ok(message) => message,
             Err(_) => break,

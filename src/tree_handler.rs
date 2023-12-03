@@ -64,19 +64,15 @@ impl Tree {
 
     /// Given a hash and a path, it updates the tree with the new hash. If the path does not exist, it creates it. If the path exists, it updates the hash.
     pub fn update_tree(&mut self, path: &str, hash: &str) {
-        println!("Entré a update tree con path {} y hash {}", path, hash);
         let mut path = path.split('/').collect::<Vec<&str>>();
-        println!("Path is {:?}", path);
         let file_name = match path.pop() {
             Some(file_name) => file_name,
             None => return,
         };
-        println!("File name is {}", file_name);
         let mut current_tree = self;
         while !path.is_empty() {
             current_tree = current_tree.get_or_create_dir(path.remove(0));
         }
-        println!("Acá llego");
         match current_tree.files.iter().position(|(p, _)| p == file_name) {
             Some(index) => {
                 current_tree.files.remove(index);
@@ -84,7 +80,6 @@ impl Tree {
             }
             None => current_tree.add_file(file_name, hash),
         }
-        println!("Updated");
     }
 
     /// Returns the depth of the tree

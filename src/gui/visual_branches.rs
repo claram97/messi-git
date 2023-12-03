@@ -273,7 +273,6 @@ pub fn handle_show_visual_branches_tree(builder: &gtk::Builder) -> io::Result<()
     let graph = build_git_graph(&git_dir)?;
     let mut commits: Vec<Commit> = graph.values().cloned().collect();
     commits.sort_by(|a, b| a.time.cmp(&b.time));
-    println!("{:#?}", commits);
 
     let node_positions = draw_nodes(
         &drawing_area,
