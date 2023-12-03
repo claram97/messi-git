@@ -496,6 +496,21 @@ pub fn remove_ansi_escape_codes(input: &str) -> String {
     output
 }
 
+/// Checks if a Git branch exists in the specified Git directory.
+///
+/// This function determines the existence of a Git branch by checking if the corresponding
+/// branch file exists in the "refs/heads/" directory of the Git repository.
+///
+/// # Arguments
+///
+/// - `branch`: The name of the Git branch to check for existence.
+/// - `git_dir`: The path to the Git directory where the repository is located.
+///
+/// # Returns
+///
+/// - `true`: The specified Git branch exists in the provided Git directory.
+/// - `false`: The specified Git branch does not exist in the provided Git directory.
+///
 pub fn is_an_existing_branch(branch: &str, git_dir: &str) -> bool {
     let path = format!("{}/refs/heads/{}", git_dir, branch);
 

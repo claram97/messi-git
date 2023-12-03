@@ -145,6 +145,22 @@ impl Client {
         }
     }
 
+    /// Initiates a Git push operation using the "git-receive-pack" protocol.
+    ///
+    /// This method establishes a connection with the Git server, sends the necessary commands,
+    /// and performs the push operation. It is designed to interact with a Git server supporting
+    /// the "git-receive-pack" protocol.
+    ///
+    /// # Arguments
+    ///
+    /// - `branch`: The name of the local Git branch to push.
+    /// - `git_dir`: The path to the Git directory of the local repository.
+    ///
+    /// # Errors
+    ///
+    /// This method returns an `io::Result<()>`. The `Err` variant is used to represent various
+    /// error conditions, including communication failures or the absence of expected references.
+    ///
     fn receive_pack_do(&mut self, branch: &str, git_dir: &str) -> io::Result<()> {
         self.clear();
         self.connect()?;

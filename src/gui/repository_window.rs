@@ -81,7 +81,6 @@ use std::env;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
-
 use super::style::apply_entry_style;
 use super::style::apply_label_style;
 use super::style::create_text_entry_window_with_switch;
@@ -419,7 +418,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "show-fetch" => {
             button.connect_clicked(move |_| {
-                handle_fetch_button(&builder_clone);
+               
             });
         }
         "show-log-button" => {
@@ -596,59 +595,6 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub fn _obtain_text_from_fetch() -> Result<String, std::io::Error> {
-    // let current_dir = match std::env::current_dir() {
-    //     Ok(dir) => dir,
-    //     Err(err) => {
-    //         eprintln!("Error al obtener el directorio actual: {:?}", err);
-
-    //     }
-    // };
-    // let url_text = &_args[2];//aca hay q poner la url
-    // //The remote repo url is the first part of the URL, up until the last '/'.
-    // let _remote_repo_url = match url_text.rsplit_once('/') {
-    //     Some((string, _)) => string,
-    //     None => "",
-    // };
-
-    // //The remote repository name is the last part of the URL.
-    // let remote_repo_name = url_text.split('/').last().unwrap_or("");
-    // let result = git_fetch_for_gui(
-    //     Some(remote_repo_name),
-    //     "localhost",
-    //     current_dir.to_str().expect("Error "),
-    // );
-    // let refs_text: String = result.join("\n");
-
-    // Ok(refs_text)
-    Ok("hola".to_string())
-}
-
-fn handle_fetch_button(_builder: &gtk::Builder) {
-    // let log_text_view_result: Option<gtk::TextView> = builder.get_object("fetch-text");
-
-    // if let Some(log_text_view) = log_text_view_result {
-    //     let text_from_function = obtain_text_from_fetch();
-
-    //     match text_from_function {
-    //         Ok(texto) => {
-    //             log_text_view.set_hexpand(true);
-    //             log_text_view.set_halign(gtk::Align::Start);
-
-    //             if let Some(buffer) = log_text_view.get_buffer() {
-    //                 buffer.set_text(texto.as_str());
-    //             } else {
-    //                 eprintln!("Fatal error in show repository window.");
-    //             }
-    //         }
-    //         Err(err) => {
-    //             eprintln!("Error al obtener el texto: {}", err);
-    //         }
-    //     }
-    // } else {
-    //     eprintln!("We couldn't find log text view 'log-text'");
-    // }
-}
 
 /// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
 /// and attempts to create and checkout a new branch based on the provided path. It shows a success message
@@ -4294,6 +4240,18 @@ fn update_combo_box(combo_box: &gtk::ComboBoxText, conflicts: Vec<String>) {
     }
 }
 
+/// Sets the behavior for the `gtk::ComboBoxText` when its active item changes.
+///
+/// This function connects a callback to the `changed` signal of the provided `gtk::ComboBoxText`.
+/// When the active item in the combo box changes, the callback reads the content of the file
+/// associated with the selected item and sets the text of the provided `gtk::TextView` accordingly.
+///
+/// # Arguments
+///
+/// - `combo_box`: A reference to the `gtk::ComboBoxText` for which the behavior is being set.
+/// - `text_view`: A reference to the `gtk::TextView` whose content will be updated based on the
+///   selected item in the combo box.
+///
 fn set_combo_box_on_changed_behavior(combo_box: &gtk::ComboBoxText, text_view: &gtk::TextView) {
     let cloned_text_view = text_view.clone();
     let combo_box_cloned = combo_box.clone();
@@ -4323,6 +4281,18 @@ fn set_combo_box_on_changed_behavior(combo_box: &gtk::ComboBoxText, text_view: &
     });
 }
 
+/// Sets the behavior for an update button.
+///
+/// This function connects a callback to the `clicked` signal of the provided `Button`.
+/// When the button is clicked, the callback reads the content of the associated `gtk::TextView`
+/// and writes it into the file specified by the selected item in the associated `gtk::ComboBoxText`.
+///
+/// # Arguments
+///
+/// - `button`: A reference to the `Button` for which the behavior is being set.
+/// - `combo_box`: A reference to the `gtk::ComboBoxText` containing file paths.
+/// - `merge_text_view`: A reference to the `gtk::TextView` containing the content to be written into a file.
+///
 fn set_update_button_behavior(
     button: &Button,
     combo_box: &gtk::ComboBoxText,
@@ -4422,6 +4392,15 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
     Ok(())
 }
 
+/// Applies a custom style to a GTK button.
+///
+/// This function attempts to apply a custom style to the provided `gtk::Button` instance.
+/// If the style application is successful, no action is taken; otherwise, an error message is printed to the standard error.
+///
+/// # Arguments
+///
+/// - `button`: A reference to the `gtk::Button` instance to which the style is being applied.
+///
 fn apply_style_to_button(button: &gtk::Button) {
     match apply_button_style(button) {
         Ok(_) => {}
@@ -4753,6 +4732,21 @@ fn get_current_dir_string() -> io::Result<String> {
         })
 }
 
+/// Retrieves the path to the Git directory in the given current directory.
+///
+/// This function searches for the Git directory starting from the provided `current_dir` path.
+/// If the Git directory is found, the absolute path is returned as a `String`.
+/// If the Git directory is not found, an error is returned with a description.
+///
+/// # Arguments
+///
+/// - `current_dir`: A reference to the current directory path from which the search for the Git directory begins.
+///
+/// # Returns
+///
+/// - `Ok(String)`: The absolute path to the Git directory.
+/// - `Err(io::Error)`: An error indicating that the Git directory was not found.
+///
 fn get_git_directory_path(current_dir: &Path) -> io::Result<String> {
     match utils::find_git_directory(&mut current_dir.to_path_buf(), GIT_DIR) {
         Some(path) => Ok(path),
@@ -4823,6 +4817,20 @@ fn make_commit(builder: &gtk::Builder) -> io::Result<()> {
     perform_commit(builder, message)
 }
 
+/// Handles the button click event to show visual branches tree in the GUI.
+///
+/// This function is associated with a button in the GTK application. When the button is clicked,
+/// it triggers the visualization of the branches tree in the GUI using the provided `builder`.
+///
+/// # Arguments
+///
+/// - `builder`: A reference to the GTK builder containing the GUI components.
+///
+/// # Returns
+///
+/// - `Ok(())`: The operation was successful, and the visual branches tree is displayed in the GUI.
+/// - `Err(io::Error)`: An error occurred during the visualization process.
+///
 fn handle_visual_branches_button(builder: &gtk::Builder) -> io::Result<()> {
     visual_branches::handle_show_visual_branches_tree(builder)?;
     Ok(())
