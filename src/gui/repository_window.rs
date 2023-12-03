@@ -4549,7 +4549,6 @@ pub fn set_staging_area_texts(builder: &gtk::Builder) -> io::Result<()> {
         Ok(text) => {
             update_text_view(builder, "staged-view", &text)?;
             update_text_view(builder, "changes-to-be-commited-view", &text)?;
-
         }
         Err(err) => {
             Err(io::Error::new(
@@ -4561,9 +4560,7 @@ pub fn set_staging_area_texts(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
-fn handle_reload_staging_view_button (
-    builder: &gtk::Builder,
-) -> io::Result<()> {
+fn handle_reload_staging_view_button(builder: &gtk::Builder) -> io::Result<()> {
     match set_staging_area_texts(builder) {
         Ok(_) => Ok(()),
         Err(err) => Err(io::Error::new(
