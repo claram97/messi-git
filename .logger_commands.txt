@@ -3920,3 +3920,4 @@ Command 'git status': 2023-12-02 10:51:58.716144492 -03:00
 Untracked files 0
 Command 'git status': 2023-12-02 10:51:58.716927392 -03:00
 Unstaged files 0
+Command 'git init': Initialized repository at '/home/pau/Desktop/jabon/.mgit'2023-12-03 19:41:13.747036093 +00:00
