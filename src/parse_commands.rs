@@ -1088,7 +1088,7 @@ fn handle_fetch(_args: Vec<String>) {
 
     // Manejo del resultado (puede imprimir un mensaje o manejar errores según sea necesario).
     match result {
-        Ok(()) => println!("Fetch successful!"),
+        Ok(_) => println!("Fetch successful!"),
         Err(err) => eprintln!("Error during fetch: {:?}", err),
     }
 }

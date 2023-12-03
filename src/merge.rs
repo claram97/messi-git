@@ -1,7 +1,8 @@
-use std::io;
+use std::{fs, io};
 
 use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::logger::Logger;
+use crate::tree_handler::Tree;
 use crate::utils::get_current_time;
 use crate::{
     branch, commit, tree_handler,
@@ -184,6 +185,49 @@ pub fn git_merge(
     }
 }
 
+/// Given two branches, merges `our_branch` with `their_branch`.
+/// This function is used for the UI, where the user can choose to merge or not.
+/// It will try to do a fast forward merge, if it is not possible, it will do a two way merge.
+/// `our_branch` will point to a new commit that contains the changes of both branches.
+/// The working directory will be updated to match the changes.
+/// If there are conflicts, the user will have to resolve them.
+///
+/// # Arguments
+/// * `our_branch` - The name of the branch that will be updated.
+/// * `their_branch` - The name of the branch that will be merged with `our_branch`.
+/// * `git_dir` - The path to the git directory.
+/// * `root_dir` - The path to the root directory.
+pub fn git_merge_for_ui(
+    our_branch: &str,
+    their_branch: &str,
+    git_dir: &str,
+    root_dir: &str,
+) -> io::Result<Vec<String>> {
+    let our_commit = branch::get_branch_commit_hash(our_branch, git_dir)?;
+    let their_commit = branch::get_branch_commit_hash(their_branch, git_dir)?;
+
+    let common_ancestor = find_common_ancestor(&our_commit, &their_commit, git_dir)?;
+    if is_fast_forward(&our_commit, &common_ancestor) {
+        fast_forward_merge(our_branch, their_branch, git_dir, root_dir)?;
+        log_merge(our_branch, their_branch, git_dir, root_dir)?;
+        Ok(vec![])
+    } else {
+        let conflicting_paths = two_way_merge(our_branch, their_branch, git_dir, root_dir)?;
+        // Create a MERGE_HEAD file
+        let mut merge_head_file = fs::File::create(format!("{}/.mgit/MERGE_HEAD", root_dir))?;
+        merge_head_file.write_all(their_commit.as_bytes())?;
+
+        // Create a merge_index file where all the conflicts are written
+        let mut merge_index_file = fs::File::create(format!("{}/.mgit/MERGE_INDEX", root_dir))?;
+        for path in conflicting_paths.iter() {
+            merge_index_file.write_all(path.as_bytes())?;
+            merge_index_file.write_all(b"\n")?;
+        }
+        log_merge(our_branch, their_branch, git_dir, root_dir)?;
+        Ok(conflicting_paths)
+    }
+}
+
 /// Merge a remote branch into the current local branch in a Git repository.
 ///
 /// This function performs a merge operation by combining the changes from a remote branch into the
@@ -201,7 +245,7 @@ pub fn git_merge(
 /// Returns an `io::Result` indicating whether the merge operation was successful. If successful,
 /// `Ok(())` is returned; otherwise, an error is returned.
 ///
-pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io::Result<()> {
+pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io::Result<Tree> {
     let our_commit = branch::get_branch_commit_hash(branch, git_dir)?;
     let our_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
     let remote_tree = tree_handler::load_tree_from_commit(remote_hash, git_dir)?;
@@ -210,7 +254,8 @@ pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io
     let new_index_file_contents =
         new_tree.build_index_file_from_tree(&index_path, git_dir, &get_git_ignore_path(git_dir))?;
     new_index_file_contents.write_file()?;
-    Ok(())
+
+    tree_handler::build_tree_from_index(&index_path, git_dir, &get_git_ignore_path(git_dir))
 }
 
 #[cfg(test)]
