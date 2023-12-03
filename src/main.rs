@@ -1,5 +1,6 @@
 use std::{env, io};
 
+use messi::configuration::GIT_DIR;
 use messi::gui::main_window::run_main_window;
 use messi::parse_commands::get_user_input;
 use messi::parse_commands::{handle_git_command, parse_git_command};
@@ -115,7 +116,7 @@ fn handle_init_command(args: Vec<String>) -> io::Result<()> {
         if args.len() == 2 {
             handle_git_command(git_command, args);
         } else {
-            env::set_current_dir(&args[2]).unwrap();
+            env::set_current_dir(&args[2])?;
             handle_git_command(git_command, args);
         }
     }
@@ -185,7 +186,7 @@ fn main() -> io::Result<()> {
 
         run_with_gui()?;
     } else if args.len() == 5 && args[1] == "server" {
-        server::run(&args[2], &args[3], &args[4], ".mgit")?;
+        server::run(&args[2], &args[3], &args[4], GIT_DIR)?;
     } else if args.len() == 1 {
         run_without_gui()?;
     }

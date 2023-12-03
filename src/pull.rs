@@ -2,6 +2,7 @@ use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
 
+use crate::configuration::{GIT_DIR, LOGGER_COMMANDS_FILE};
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use crate::{fetch, merge, tree_handler};
@@ -22,7 +23,7 @@ use crate::{fetch, merge, tree_handler};
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 pub fn log_push(branch: &str, local_dir: &str, remote_repo_name: Option<&str>) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let remote_name = remote_repo_name.unwrap_or("origin");
@@ -64,7 +65,7 @@ pub fn git_pull(
     host: &str,
 ) -> io::Result<()> {
     let result = fetch::git_fetch(remote_repo_name, host, local_dir);
-    let git_dir = local_dir.to_string() + "/.mgit";
+    let git_dir = local_dir.to_string() + "/" + GIT_DIR;
 
     if result.is_err() {
         return Err(io::Error::new(

@@ -1,5 +1,6 @@
 use std::io;
 
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::logger::Logger;
 use crate::tree_handler::Tree;
 use crate::utils::get_current_time;
@@ -126,7 +127,7 @@ pub fn log_merge(
     git_dir: &str,
     root_dir: &str,
 ) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

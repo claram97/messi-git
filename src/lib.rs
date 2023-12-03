@@ -8,6 +8,7 @@ pub mod client;
 pub mod clone;
 pub mod commit;
 pub mod config;
+pub mod configuration;
 pub mod diff;
 pub mod fetch;
 pub mod git_config;

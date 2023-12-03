@@ -1,14 +1,12 @@
-use crate::logger::Logger;
+use crate::commit;
+use crate::commit::get_branch_name;
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::utils::get_current_time;
+use crate::{logger::Logger, utils::obtain_git_dir};
 use std::{
     fs::{self, File},
     io::{self, Read, Write},
     path::{Path, PathBuf},
-};
-
-use crate::{
-    commit::{self, get_branch_name},
-    utils,
 };
 
 /// Returns the path inside the HEAD file.
@@ -377,16 +375,7 @@ pub fn git_branch(
     new_name: Option<&str>,
     output: &mut impl Write,
 ) -> io::Result<()> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = match utils::find_git_directory(&mut current_dir, ".mgit") {
-        Some(git_dir) => git_dir,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found\n",
-            ))
-        }
-    };
+    let git_dir = obtain_git_dir()?;
 
     if let Some(name) = name {
         if let Some(option) = option {
@@ -446,13 +435,35 @@ pub fn git_branch(
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 fn log_command(command: &str, option: &str, _git_dir: &Path) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!("Command '{}': {} {}", command, option, get_current_time());
     logger.write_all(full_message.as_bytes())?;
     logger.flush()?;
     Ok(())
+}
+
+/// Returns a vector with the names of all the branches in the repo.
+///
+/// ## Arguments
+/// * `git_dir` - The path to the repo directory.
+///
+/// ## Errors
+/// If the git directory is not found, an error is returned.
+/// If the branches directory is not found, an error is returned.
+pub fn get_all_branches(git_dir: &str) -> io::Result<Vec<String>> {
+    let mut branches = vec![];
+    let heads_dir = (&git_dir).to_string() + "/refs/heads";
+    let entries = fs::read_dir(&heads_dir)?;
+    if entries.count() > 0 {
+        let entries = fs::read_dir(&heads_dir)?;
+        for entry in entries {
+            let entry = entry?;
+            branches.push(entry.file_name().to_string_lossy().to_string());
+        }
+    }
+    Ok(branches)
 }
 
 /// Removes ANSI escape codes from the input string.
@@ -623,7 +634,8 @@ mod tests {
         let before = (!non_existing_branch_path.exists()) & (!new_branch_path.exists());
         let new_branch_name = "new_branch";
         let mut output: Vec<u8> = vec![];
-        modify_branch(&git_dir, "branch", new_branch_name, &mut output)?;
+        let result = modify_branch(&git_dir, "branch", new_branch_name, &mut output);
+        assert!(result.is_err());
         let after = (!non_existing_branch_path.exists()) & (!new_branch_path.exists());
         assert!(before & after);
         std::fs::remove_dir_all(path)?;
@@ -644,7 +656,8 @@ mod tests {
         let before = (existing_branch_path.exists()) & (new_branch_path.exists());
         let new_branch_name = "new_branch";
         let mut output: Vec<u8> = vec![];
-        modify_branch(&git_dir, "branch", new_branch_name, &mut output)?;
+        let result = modify_branch(&git_dir, "branch", new_branch_name, &mut output);
+        assert!(result.is_err());
         let after = (existing_branch_path.exists()) & (new_branch_path.exists());
         assert!(before & after);
         std::fs::remove_dir_all(path)?;
@@ -727,9 +740,6 @@ mod tests {
         let path = "tests/branch_test_delete_repo_3";
         let git_dir = format!("{}/{}", path, ".mgit");
         init::git_init(path, "current_branch", None)?;
-        //let current_branch_path = format!("{}/{}",git_dir,"/refs/heads/current_branch");
-        // let mut current_branch_file = File::create(current_branch_path)?;
-        // current_branch_file.write_all("12345678910".as_bytes())?;
         let mut output: Vec<u8> = vec![];
         delete_branch(&git_dir, "current_branch", &mut output)?;
         let string = String::from_utf8(output).unwrap();
@@ -747,12 +757,13 @@ mod tests {
             false,
         )?;
         let mut output: Vec<u8> = vec![];
-        create_new_branch(
+        let result = create_new_branch(
             "tests/test_list_branches_3/.mgit",
             "current_branch",
             None,
             &mut output,
-        )?;
+        );
+        assert!(result.is_err());
         assert!(!output.is_empty());
         let result = String::from_utf8(output);
         if result.is_ok() {
@@ -808,12 +819,13 @@ mod tests {
         create_if_not_exists("tests/test_list_branches_5", true)?;
         init::git_init("tests/test_list_branches_5", "current_branch", None)?;
         let mut output: Vec<u8> = vec![];
-        create_new_branch(
+        let result = create_new_branch(
             "tests/test_list_branches_5/.mgit",
             "my_branch",
             None,
             &mut output,
-        )?;
+        );
+        assert!(result.is_err());
         assert!(!output.is_empty());
         let result = String::from_utf8(output);
         if result.is_ok() {

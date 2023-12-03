@@ -1,6 +1,7 @@
 use std::io::{self, Write};
 
 use crate::config::Config;
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 
@@ -17,7 +18,7 @@ use crate::utils::get_current_time;
 /// Returns an `io::Result` indicating whether the operation was successful.
 ///
 pub fn log_remote(line: &[&str]) -> io::Result<()> {
-    let log_file_path = "logger_commands.txt";
+    let log_file_path = LOGGER_COMMANDS_FILE;
     let mut logger = Logger::new(log_file_path)?;
 
     let full_message = format!(

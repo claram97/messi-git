@@ -740,7 +740,7 @@
                     <property name="can-focus">True</property>
                     <property name="shadow-type">in</property>
                     <child>
-                      <object class="GtkTextView">
+                      <object class="GtkTextView" id="tag-text">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="cursor-visible">False</property>
@@ -1578,6 +1578,67 @@ Set your name and email :)</property>
                 <property name="name">Config</property>
                 <property name="title" translatable="yes">Config</property>
                 <property name="position">14</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkScrolledWindow">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="shadow-type">in</property>
+                    <child>
+                      <object class="GtkViewport">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <child>
+                          <object class="GtkDrawingArea" id="visual-branches-area">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButtonBox">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="layout-style">expand</property>
+                    <child>
+                      <object class="GtkButton" id="visual-branches-button">
+                        <property name="label" translatable="yes">Show git tree</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="name">git_tree</property>
+                <property name="title" translatable="yes">Git Tree</property>
+                <property name="position">15</property>
               </packing>
             </child>
           </object>
