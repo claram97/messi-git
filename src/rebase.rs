@@ -677,6 +677,23 @@ fn finalize_rebase(builder: &gtk::Builder, git_dir: &str) -> io::Result<()> {
     ))
 }
 
+/// Initiates the next iteration of the rebase process.
+///
+/// This function performs the next iteration of the rebase process, creating a new commit
+/// with the changes from the current rebase step. If there are more commits to rebase,
+/// it updates the rebase information and writes the new rebase step into the GUI. Otherwise,
+/// it finalizes the rebase by checking out the rebased branch and displaying a completion message.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to the GTK builder containing the UI elements.
+/// * `rebase` - The current state of the rebase process.
+/// * `git_dir` - A string representing the path to the Git directory.
+///
+/// # Returns
+///
+/// An IO Result indicating the success of the next rebase iteration.
+///
 pub fn next_rebase_iteration(
     builder: &gtk::Builder,
     rebase: Rebase,
@@ -699,6 +716,24 @@ pub fn next_rebase_iteration(
     Ok(())
 }
 
+/// Performs a fast-forward rebase by updating the rebase commit with changes from the new commit.
+///
+/// This function updates the tree of the rebase commit with changes from the new commit.
+/// It calculates the differences between the new commit and the common ancestor commit.
+/// The resulting tree is used to create a new rebase commit, effectively fast-forwarding
+/// the rebase process.
+///
+/// # Arguments
+///
+/// * `our_commit` - The hash of the commit in the current branch before rebase.
+/// * `rebased_commit` - The hash of the commit in the rebased branch.
+/// * `common_ancestor` - The hash of the common ancestor commit of `our_commit` and `rebased_commit`.
+/// * `git_dir` - A string representing the path to the Git directory.
+///
+/// # Returns
+///
+/// A string representing the hash of the new rebase commit created through the fast-forward process.
+///
 fn fast_forward_rebase_commit(
     our_commit: &str,
     rebased_commit: &str,
@@ -761,6 +796,26 @@ fn fast_forward_rebase(
     Ok(())
 }
 
+/// Initializes and starts the interactive rebase process in a graphical user interface (GUI).
+///
+/// This function prepares the necessary data for rebase, including identifying the common ancestor
+/// of the source and target branches, determining the commits to rebase, and checking for conflicts.
+/// It then creates and returns a `Rebase` struct wrapped in a `RefCell` and `Rc` for GUI interaction.
+///
+/// # Arguments
+///
+/// * `git_dir` - A string representing the path to the Git directory.
+/// * `our_branch` - The name of the branch from which the rebase originates.
+/// * `branch_to_rebase` - The name of the branch to rebase onto the `our_branch`.
+///
+/// # Returns
+///
+/// An `io::Result` containing a reference-counted, mutable `Rebase` wrapped in a `RefCell`.
+///
+/// # Errors
+///
+/// Returns an error if there are no commits available for rebase or if a fast-forward rebase is performed.
+///
 pub fn start_rebase_gui(
     git_dir: &str,
     our_branch: &str,
