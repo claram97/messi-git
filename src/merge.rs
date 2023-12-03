@@ -1,4 +1,4 @@
-use std::io;
+use std::{fs, io};
 
 use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::logger::Logger;
@@ -33,7 +33,7 @@ pub fn is_fast_forward(our_branch_commit: &str, common_commit: &str) -> bool {
 
 //Given two commits, finds the first common ancestor between them.
 //Returns an error if no common ancestor is found. (Thing that should never happen)
-fn find_common_ancestor(
+pub fn find_common_ancestor(
     our_branch_commit: &str,
     their_branch_commit: &str,
     git_dir: &str,
@@ -182,6 +182,49 @@ pub fn git_merge(
         log_merge(our_branch, their_branch, git_dir, root_dir)?;
 
         Ok(tuple)
+    }
+}
+
+/// Given two branches, merges `our_branch` with `their_branch`.
+/// This function is used for the UI, where the user can choose to merge or not.
+/// It will try to do a fast forward merge, if it is not possible, it will do a two way merge.
+/// `our_branch` will point to a new commit that contains the changes of both branches.
+/// The working directory will be updated to match the changes.
+/// If there are conflicts, the user will have to resolve them.
+///
+/// # Arguments
+/// * `our_branch` - The name of the branch that will be updated.
+/// * `their_branch` - The name of the branch that will be merged with `our_branch`.
+/// * `git_dir` - The path to the git directory.
+/// * `root_dir` - The path to the root directory.
+pub fn git_merge_for_ui(
+    our_branch: &str,
+    their_branch: &str,
+    git_dir: &str,
+    root_dir: &str,
+) -> io::Result<Vec<String>> {
+    let our_commit = branch::get_branch_commit_hash(our_branch, git_dir)?;
+    let their_commit = branch::get_branch_commit_hash(their_branch, git_dir)?;
+
+    let common_ancestor = find_common_ancestor(&our_commit, &their_commit, git_dir)?;
+    if is_fast_forward(&our_commit, &common_ancestor) {
+        fast_forward_merge(our_branch, their_branch, git_dir, root_dir)?;
+        log_merge(our_branch, their_branch, git_dir, root_dir)?;
+        Ok(vec![])
+    } else {
+        let conflicting_paths = two_way_merge(our_branch, their_branch, git_dir, root_dir)?;
+        // Create a MERGE_HEAD file
+        let mut merge_head_file = fs::File::create(format!("{}/.mgit/MERGE_HEAD", root_dir))?;
+        merge_head_file.write_all(their_commit.as_bytes())?;
+
+        // Create a merge_index file where all the conflicts are written
+        let mut merge_index_file = fs::File::create(format!("{}/.mgit/MERGE_INDEX", root_dir))?;
+        for path in conflicting_paths.iter() {
+            merge_index_file.write_all(path.as_bytes())?;
+            merge_index_file.write_all(b"\n")?;
+        }
+        log_merge(our_branch, their_branch, git_dir, root_dir)?;
+        Ok(conflicting_paths)
     }
 }
 

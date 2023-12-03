@@ -127,6 +127,24 @@ pub fn get_branch_commit_history(commit_hash: &str, git_dir: &str) -> io::Result
     Ok(parents)
 }
 
+pub fn get_branch_commit_history_until(
+    commit_hash: &str,
+    git_dir: &str,
+    until: &str,
+) -> io::Result<Vec<String>> {
+    let mut parents = Vec::new();
+    parents.push(commit_hash.to_string());
+    let mut commit_parent = commit::get_parent_hash(commit_hash, git_dir);
+    while let Ok(parent) = commit_parent {
+        if parent == until {
+            break;
+        }
+        parents.push(parent.clone());
+        commit_parent = commit::get_parent_hash(&parent, git_dir);
+    }
+    Ok(parents)
+}
+
 /// Get the unique commit history for a given commit hash in a Git repository.
 ///
 /// This function retrieves the unique commit history for a specified commit hash by recursively

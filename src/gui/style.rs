@@ -290,6 +290,19 @@ pub fn filter_color_code(input: &str) -> String {
     result
 }
 
+pub fn get_combo_box(builder: &gtk::Builder, id: &str) -> io::Result<gtk::ComboBoxText> {
+    let combo_box = match builder.get_object::<gtk::ComboBoxText>(id) {
+        Some(combo_box) => combo_box,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("No se pudo encontrar el ComboBoxText con ID {id}"),
+            ));
+        }
+    };
+    Ok(combo_box)
+}
+
 /// Creates a GTK text entry window for user input with a message and a callback function.
 ///
 /// This function generates a new GTK window with a text entry field and an "OK" button. It allows users to input text and invokes a provided callback function when the "OK" button is clicked. The window can display a custom message as its title.

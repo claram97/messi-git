@@ -489,6 +489,9 @@ mod tests {
         // Create a test directory if it doesn't exist
         if !Path::new(TEST_CHECKOUT2).exists() {
             fs::create_dir_all(TEST_CHECKOUT2).expect("Failed to create test directory");
+        } else {
+            fs::remove_dir_all(TEST_CHECKOUT2).expect("Failed to remove test directory");
+            fs::create_dir_all(TEST_CHECKOUT2).expect("Failed to create test directory");
         }
 
         //Create a refs heads directory and write the old branch name

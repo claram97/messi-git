@@ -1,4 +1,4 @@
-use crate::branch::{get_current_branch_path, git_branch};
+use crate::branch::{self, get_current_branch_path, git_branch};
 use crate::cat_file::cat_file;
 use crate::check_ignore::git_check_ignore;
 use crate::checkout::checkout_branch;
@@ -9,7 +9,7 @@ use crate::checkout::force_checkout;
 use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
-use crate::configuration::{GIT_IGNORE, INDEX};
+use crate::configuration::{GIT_DIR, GIT_IGNORE, INDEX};
 use crate::fetch::git_fetch;
 use crate::hash_object::store_file;
 use crate::index::Index;
@@ -24,14 +24,12 @@ use crate::show_ref::git_show_ref;
 use crate::status::{changes_to_be_committed, find_unstaged_changes, find_untracked_files};
 use crate::tree_handler::Tree;
 use crate::utils::{find_git_directory, obtain_git_dir};
-use crate::{add, git_config, log, ls_tree, push, tag, tree_handler};
+use crate::{add, git_config, log, ls_tree, push, rebase, tag, tree_handler};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use std::{env, io};
-
-const GIT_DIR: &str = ".mgit";
 
 /// Enumeration representing Git commands.
 ///
@@ -391,8 +389,50 @@ fn handle_show_ref(args: Vec<String>) {
     }
 }
 
-fn handle_rebase(_args: Vec<String>) {
-    // Implementación para el comando "Rebase"
+fn handle_rebase(args: Vec<String>) {
+    if args.len() < 3 {
+        eprintln!("Usage: git rebase <branch>");
+        return;
+    }
+
+    let git_dir = match obtain_git_dir() {
+        Ok(dir) => dir,
+        Err(error) => {
+            eprintln!("{:?}", error);
+            return;
+        }
+    };
+
+    let our_branch = match get_branch_name(&git_dir) {
+        Ok(name) => name,
+        Err(_) => {
+            eprintln!("No se pudo obtener la rama actual");
+            return;
+        }
+    };
+
+    if args.len() == 3 {
+        // Check if the branch given exists
+        let branch_name = &args[2];
+        match branch::get_branch_commit_hash(branch_name, &git_dir) {
+            Ok(_) => {
+                // Do the rebase
+                match rebase::rebase(&our_branch, branch_name, &git_dir) {
+                    Ok(_) => {
+                        println!("Rebase successful");
+                    }
+                    Err(error) => {
+                        eprintln!("{}", error);
+                    }
+                }
+            }
+            Err(_) => {
+                eprintln!("Branch {} does not exist", branch_name);
+            }
+        };
+    } else {
+        eprintln!("Usage: git rebase <branch>");
+    }
 }
 
 fn handle_tag(args: Vec<String>) {
