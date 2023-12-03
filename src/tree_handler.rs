@@ -795,6 +795,22 @@ pub fn get_files_with_changes(our_tree: &Tree, their_tree: &Tree) -> Vec<(String
     result
 }
 
+/// Retrieves a list of files without changes between two Git trees.
+///
+/// This function takes two `Tree` instances, representing different commit snapshots, and returns
+/// a vector containing tuples of file paths and their corresponding hashes. The result includes
+/// only those files that exist in the first tree (`our_tree`) and have the same hash in both trees,
+/// indicating no changes between the snapshots.
+///
+/// # Arguments
+///
+/// - `our_tree`: The first `Tree` representing the commit snapshot for comparison.
+/// - `their_tree`: The second `Tree` representing another commit snapshot for comparison.
+///
+/// # Returns
+///
+/// Returns a vector of tuples containing file paths and hashes for files without changes.
+///
 pub fn get_files_without_changes(our_tree: &Tree, their_tree: &Tree) -> Vec<(String, String)> {
     let our_tree_entries = our_tree.squash_tree_into_vec("");
     let result = our_tree_entries
