@@ -1,5 +1,8 @@
 use crate::cat_file;
+use crate::config::Config;
+use crate::configuration::EMAIL;
 use crate::configuration::LOGGER_COMMANDS_FILE;
+use crate::configuration::USER;
 use crate::hash_object;
 use crate::logger::Logger;
 use crate::tree_handler;
@@ -68,8 +71,19 @@ fn create_new_commit_file(
 
     let (timestamp, offset) = utils::get_timestamp()?;
     let time = format!("{} {}", timestamp, offset);
+
+    let mut user = USER.to_string();
+    let mut email = EMAIL.to_string();
+    let config = Config::load(directory);
+
+    if let Ok(config) = config {
+        if let Ok(result) = config.get_user_name_and_email() {
+            (user, email) = result;
+        }
+    }
+
     let commit_content = format!(
-        "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0","user", "email@email", "user", "email@email"
+        "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0", user, email, user, email
     );
 
     let commit_hash = hash_object::store_string_to_file(&commit_content, directory, "commit")?;

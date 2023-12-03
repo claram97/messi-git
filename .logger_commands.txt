@@ -3920,3 +3920,9 @@ Command 'git status': 2023-12-02 10:51:58.716144492 -03:00
 Untracked files 0
 Command 'git status': 2023-12-02 10:51:58.716927392 -03:00
 Unstaged files 0
+Command 'git init': Initialized repository at '/home/claram97/taller/23C2-messi/.mgit'2023-12-03 16:42:20.604913739 -03:00
+Command 'git hash-object': Path 'file', Git Directory '/home/claram97/taller/23C2-messi/.mgit', 2023-12-03 16:42:45.754966511 -03:00
+Command 'git add': Add type: single, File: file, Time: 2023-12-03 16:42:45.755541111 -03:00
+Command 'git commit': Git Directory '/home/claram97/taller/23C2-messi/.mgit', Message '"commit"', Git Ignore Path '/home/claram97/taller/23C2-messi/.mgitignore', 2023-12-03 16:42:49.231915934 -03:00
+Command 'git init': Initialized repository at '/home/claram97/taller/23C2-messi/.mgit'2023-12-03 16:44:18.348339856 -03:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-03 16:44:31.027592908 -03:00
