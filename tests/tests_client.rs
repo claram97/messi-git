@@ -1,19 +1,9 @@
-use messi::cat_file::cat_file_return_content;
 use messi::client::Client;
 use std::io;
 const PORT: &str = "9418";
 
 #[test]
-#[ignore]
-fn test_111() -> io::Result<()> {
-    let content = cat_file_return_content("21245646a0ba0748560e90865e838ceafd8306f3", ".mgit2")?;
-    dbg!("DAS");
-    dbg!(content);
-    Ok(())
-}
-
-#[test]
-#[ignore]
+#[ignore = "This test only works if the server is running"]
 fn test_get_server_refs() -> io::Result<()> {
     let address = "localhost:".to_owned() + PORT;
     let mut client = Client::new(&address, "repo", "localhost");
@@ -22,7 +12,7 @@ fn test_get_server_refs() -> io::Result<()> {
 }
 
 #[test]
-#[ignore]
+#[ignore = "This test only works if the server is running"]
 fn test_get_server_refs2() -> io::Result<()> {
     let address = "localhost:".to_owned() + PORT;
     let mut client = Client::new(&address, "repo", "localhost");
@@ -33,7 +23,7 @@ fn test_get_server_refs2() -> io::Result<()> {
 }
 
 #[test]
-#[ignore]
+#[ignore = "This test only works if the server is running"]
 fn test_refs_has_head() -> io::Result<()> {
     let address = "localhost:".to_owned() + PORT;
     let mut client = Client::new(&address, "repo3", "localhost");
@@ -43,7 +33,7 @@ fn test_refs_has_head() -> io::Result<()> {
 }
 
 #[test]
-#[ignore]
+#[ignore = "This test only works if the server is running"]
 fn test_refs_has_tags() -> io::Result<()> {
     let address = "localhost:".to_owned() + PORT;
     let mut client = Client::new(&address, "repo2", "localhost");
@@ -53,7 +43,7 @@ fn test_refs_has_tags() -> io::Result<()> {
 }
 
 #[test]
-#[ignore]
+#[ignore = "This test only works if the server is running"]
 fn test_upload_pack() -> io::Result<()> {
     let address = "localhost:".to_owned() + PORT;
     let mut client = Client::new(&address, "repo", "localhost");
@@ -62,7 +52,7 @@ fn test_upload_pack() -> io::Result<()> {
 }
 
 #[test]
-#[ignore]
+#[ignore = "This test only works if the server is running"]
 fn test_receive_pack() -> io::Result<()> {
     let address = "localhost:".to_owned() + PORT;
     let mut client = Client::new(&address, "repo-push", "localhost");

@@ -2,15 +2,7 @@ use messi::{config::Config, init::git_init, pull::git_pull, remote::git_remote};
 use std::{fs, io, path::Path};
 
 #[test]
-#[ignore]
-fn remove_dir() -> io::Result<()> {
-    let git_dir = "tests/pull/";
-    fs::remove_dir_all(git_dir)?;
-    Ok(())
-}
-
-#[test]
-#[ignore]
+#[ignore = "This test only works if the server is running"]
 fn test_pull_empty_repo() -> io::Result<()> {
     let git_dir = "tests/pull";
     let result = first_pull(git_dir);
@@ -22,7 +14,7 @@ fn test_pull_empty_repo() -> io::Result<()> {
 }
 
 #[test]
-#[ignore]
+#[ignore = "This test only works if the server is running"]
 fn test_pull_non_empty_repo() -> io::Result<()> {
     let git_dir = "tests/pull";
     let result = second_pull(git_dir);
