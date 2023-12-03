@@ -84,13 +84,6 @@ pub fn checkout_branch(git_dir_path: &Path, root_dir: &str, branch_name: &str) -
         }
     };
 
-    if !branch::is_an_existing_branch(git_dir_path_str, branch_name) {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("Branch {} does not exist", branch_name),
-        ));
-    }
-
     match checkout_branch_references(git_dir_path, branch_name) {
         Ok(old_commit_id) => {
             let new_commit_id = branch::get_current_branch_commit(git_dir_path_str)?;
