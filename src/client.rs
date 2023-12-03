@@ -6,12 +6,13 @@ use std::{
     path::PathBuf,
 };
 
-use crate::{packfile_handler, server_utils::*};
+use crate::{packfile, server_utils::*};
 
 const VERSION: &str = "1";
 const GIT_UPLOAD_PACK: &str = "git-upload-pack";
 const GIT_RECEIVE_PACK: &str = "git-receive-pack";
-const CAPABILITIES_UPLOAD: &str = "multi_ack side-band-64k ofs-delta";
+const CAPABILITIES_UPLOAD: &str = "multi_ack include-tag side-band-64k ofs-delta";
+// const CAPABILITIES_RECEIVE: &str = "side-band-64k ofs-delta";
 const ZERO_HASH: &str = "0000000000000000000000000000000000000000";
 
 #[derive(Debug, Default)]
@@ -30,16 +31,22 @@ pub struct Client {
 impl Client {
     /// Creates client which will connect with a server (assuming its a git server)
     ///
-    /// Parameters:
-    ///     - address: address to establish a tcp connection
-    ///     - repository: name of the repository in the remote
-    ///     - host: name of the host. e.g. localhost
+    /// # Arguments
+    ///
+    /// * `address` - The address of the server.
+    /// * `repository` - The name of the repository in the remote.
+    /// * `host` - The name of the host. e.g. localhost
     pub fn new(address: &str, repository: &str, host: &str) -> Self {
-        let mut client = Self::default();
-        client.repository = repository.to_owned();
-        client.host = host.to_owned();
-        client.address = address.to_owned();
-        client
+        let _ = log(&format!(
+            "New client. Address: {}. Host: {}. Repository: {}",
+            address, host, repository
+        ));
+        Self {
+            repository: repository.to_owned(),
+            host: host.to_owned(),
+            address: address.to_owned(),
+            ..Default::default()
+        }
     }
 
     // Establish a connection with the server and asks for the refs in the remote.
@@ -48,6 +55,7 @@ impl Client {
     // Leaves the connection opened
     // May fail due to I/O errors
     pub fn get_server_refs(&mut self) -> io::Result<HashMap<String, String>> {
+        log("Getting server refs...")?;
         self.clear();
         self.connect()?;
         self.initiate_connection(GIT_UPLOAD_PACK)?;
@@ -61,11 +69,34 @@ impl Client {
     /// Else, the server is asked for the missing objects and a packfile is unpacked.
     /// Then the remote refs are updated.
     ///
-    /// Parameters:
-    ///    - wanted_branchs: vector with the names of the branchs to fetch
-    ///    - git_dir: path to the git directory
-    ///    - remote: name of the remote
+    /// # Arguments
+    ///
+    /// * `wanted_branchs` - A vector with the names of the branchs to fetch.
+    /// * `git_dir` - The path to the git directory.
+    /// * `remote` - The name of the remote.
     pub fn upload_pack(
+        &mut self,
+        wanted_branchs: Vec<String>, // recibir vector con varias branchs
+        git_dir: &str,
+        remote: &str,
+    ) -> io::Result<()> {
+        log(&format!(
+            "Upload pack requested. Remote: {}. Wanted branchs: {:?}",
+            remote, wanted_branchs
+        ))?;
+        match self.upload_pack_do(wanted_branchs, git_dir, remote) {
+            Ok(_) => {
+                log("Upload pack finished.")?;
+                Ok(())
+            }
+            Err(err) => {
+                log(&format!("Upload pack failed: {}", err))?;
+                Err(err)
+            }
+        }
+    }
+
+    fn upload_pack_do(
         &mut self,
         wanted_branchs: Vec<String>, // recibir vector con varias branchs
         git_dir: &str,
@@ -80,7 +111,8 @@ impl Client {
 
         let fetched_remotes_refs = self.want_branchs(wanted_branchs)?;
         if fetched_remotes_refs.is_empty() {
-            println!("Already up to date.");
+            log("Already up to date.")?;
+            self.end_connection()?;
             return Ok(());
         }
         self.wait_and_unpack_packfile()?;
@@ -95,24 +127,38 @@ impl Client {
     ///
     /// Refs can be updated, created or deleted. However, deletion is not implemented yet.
     ///
-    /// Parameters:
-    ///   - branch: name of the branch to push
-    ///   - git_dir: path to the git directory
+    /// # Arguments
+    ///
+    /// * `branch` - The name of the branch to push.
+    /// * `git_dir` - The path to the git directory.
     pub fn receive_pack(&mut self, branch: &str, git_dir: &str) -> io::Result<()> {
+        log(&format!("Receive pack requested. Branch: {}", branch))?;
+        match self.receive_pack_do(branch, git_dir) {
+            Ok(_) => {
+                log("Receive pack finished.")?;
+                Ok(())
+            }
+            Err(err) => {
+                log(&format!("Receive pack failed: {}", err))?;
+                Err(err)
+            }
+        }
+    }
+
+    fn receive_pack_do(&mut self, branch: &str, git_dir: &str) -> io::Result<()> {
         self.clear();
         self.connect()?;
         self.initiate_connection(GIT_RECEIVE_PACK)?;
         self.git_dir = git_dir.to_string();
         let pushing_ref = get_head_from_branch(git_dir, branch)?;
         self.wait_server_refs()?;
-        let client_heads_refs = get_head_refs(&self.git_dir)?;
+        let client_heads_refs = get_head_tags_refs(&self.git_dir)?;
         let new_hash = match client_heads_refs.get(branch) {
             Some(hash) => hash,
             None => {
-                return Err(Error::new(
-                    io::ErrorKind::NotFound,
-                    format!("Ref not found in local: {}", pushing_ref),
-                ))
+                let message = format!("Ref not found in local: {}", pushing_ref);
+                log(&message)?;
+                return Err(Error::new(io::ErrorKind::NotFound, message));
             }
         };
         let prev_hash = match self.server_refs.get(&pushing_ref) {
@@ -120,14 +166,20 @@ impl Client {
             None => String::new(),
         };
         if &prev_hash == new_hash {
-            println!("Already up to date.");
-            return Ok(());
+            log("Already up to date.")?;
         }
         if prev_hash.is_empty() {
-            self.receive_pack_create(&pushing_ref, new_hash)
+            self.receive_pack_create(&pushing_ref, new_hash)?;
         } else {
-            self.receive_pack_update(&pushing_ref, &prev_hash, new_hash)
+            self.receive_pack_update(&pushing_ref, &prev_hash, new_hash)?;
         }
+        while let Ok((size, line)) = read_pkt_line(self.socket()?) {
+            if size < 4 {
+                break;
+            }
+            log(&format!("Server response after packfile: {}", line))?;
+        }
+        Ok(())
     }
 
     // Clears the client state
@@ -139,6 +191,7 @@ impl Client {
 
     // Connects to the server and returns a Tcp socket
     fn connect(&mut self) -> io::Result<()> {
+        log(&format!("Connecting to {}...", self.address))?;
         self.socket = Some(TcpStream::connect(&self.address)?);
         Ok(())
     }
@@ -161,18 +214,22 @@ impl Client {
     // Should be called only aftes: initiate_connection
     fn wait_server_refs(&mut self) -> io::Result<()> {
         let (_, _) = read_pkt_line(self.socket()?)?;
-        let (mut size, mut line) = read_pkt_line(self.socket()?)?;
-
-        while size > 0 {
+        loop {
+            let (size, line) = read_pkt_line(self.socket()?)?;
+            if size == 0 {
+                break;
+            }
             if let Some((hash, mut ref_path)) = line.split_once(' ') {
                 if let Some((head, _capabilities)) = ref_path.split_once('\0') {
                     ref_path = head;
                 }
-                self.server_refs
-                    .insert(ref_path.trim().to_string(), hash.to_string());
+                if hash != ZERO_HASH {
+                    self.server_refs
+                        .insert(ref_path.trim().to_string(), hash.to_string());
+                }
             }
-            (size, line) = read_pkt_line(self.socket()?)?;
         }
+        log(&format!("Server refs: {:?}", self.server_refs))?;
         Ok(())
     }
 
@@ -184,19 +241,19 @@ impl Client {
     fn want_branchs(&mut self, branchs: Vec<String>) -> io::Result<HashMap<String, String>> {
         let mut fetched_remotes_refs = HashMap::new();
 
-        let client_remotes_refs = get_remote_refs(&self.git_dir, &self.remote)?;
+        let client_refs = get_client_refs(&self.git_dir, &self.remote)?;
+        log(&format!("Client refs: {:?}", client_refs))?;
         for branch in branchs {
             let wanted_ref = get_head_from_branch(&self.git_dir, &branch)?;
             let hash = match self.server_refs.get(&wanted_ref) {
                 Some(hash) => hash.clone(),
                 None => {
-                    return Err(Error::new(
-                        io::ErrorKind::NotFound,
-                        format!("Ref not found in remote: {}", wanted_ref),
-                    ))
+                    let message = format!("Ref not found in remote: {}", wanted_ref);
+                    log(&message)?;
+                    return Err(Error::new(io::ErrorKind::NotFound, message));
                 }
             };
-            if let Some(local_hash) = client_remotes_refs.get(&branch) {
+            if let Some(local_hash) = client_refs.get(&branch) {
                 if &hash == local_hash {
                     continue;
                 }
@@ -205,7 +262,7 @@ impl Client {
         }
         if !fetched_remotes_refs.is_empty() {
             self.send_wants(fetched_remotes_refs.values().collect())?;
-            self.send_haves(client_remotes_refs)?;
+            self.send_haves(client_refs)?;
             self.done()?;
         }
         Ok(fetched_remotes_refs)
@@ -241,21 +298,28 @@ impl Client {
     // Waits for the server to send a packfile
     // After receiving it, it is unpacked and stored in the git_dir
     fn wait_and_unpack_packfile(&mut self) -> io::Result<()> {
+        log("Waiting for packfile...")?;
         let socket = self.socket()?;
         while let Ok((size, bytes)) = read_pkt_line_bytes(socket) {
             if size < 4 {
                 break;
             }
             if bytes[0] == 1 {
-                return packfile_handler::unpack_packfile(&bytes[..], &self.git_dir);
+                return packfile::handler::unpack_packfile(&bytes[..], &self.git_dir);
             }
         }
-        Err(Error::new(io::ErrorKind::NotFound, "Packfile not found"))
+        let error_message = "Packfile not found";
+        log(error_message)?;
+        Err(Error::new(io::ErrorKind::NotFound, error_message))
     }
 
     // Updates remote ref with the fetched hash
     // If the ref does not exist, then it is created
     fn update_remote(&self, remote_ref: &str, hash: &str) -> io::Result<()> {
+        log(&format!(
+            "Updating remote ref: {} with hash: {}",
+            remote_ref, hash
+        ))?;
         let pathbuf = PathBuf::from(&self.git_dir);
         let remote = pathbuf.join("refs").join("remotes").join(&self.remote);
         fs::create_dir_all(&remote)?;
@@ -277,7 +341,7 @@ impl Client {
         prev_hash: &str,
         new_hash: &str,
     ) -> io::Result<()> {
-        let update = format!("{} {} {}\0", prev_hash, new_hash, pushing_ref);
+        let update = format!("{} {} {}\n", prev_hash, new_hash, pushing_ref);
         self.send(&pkt_line(&update))?;
         self.flush()?;
 
@@ -285,7 +349,8 @@ impl Client {
         haves.insert(prev_hash.to_string());
 
         let missing_objects = get_missing_objects_from(new_hash, &haves, &self.git_dir)?;
-        let packfile = packfile_handler::create_packfile_from_set(missing_objects, &self.git_dir)?;
+        log(&format!("Missing objects: {:?}", missing_objects))?;
+        let packfile = packfile::handler::create_packfile(&missing_objects, &self.git_dir)?;
         let packfile: Vec<u8> = [vec![1], packfile].concat();
         self.send_bytes(&pkt_line_bytes(&packfile))?;
         Ok(())
@@ -301,6 +366,7 @@ impl Client {
 
     /// Ends the connection by flushing the socket and setting it to `None`.
     fn end_connection(&mut self) -> io::Result<()> {
+        log("Ending connection...")?;
         self.flush()?;
         self.socket = None;
         Ok(())
@@ -308,13 +374,13 @@ impl Client {
 
     // Sends a message through the socket
     fn send(&mut self, message: &str) -> io::Result<()> {
-        dbg!(message);
+        log(&format!("Sending message: {}", message))?;
         write!(self.socket()?, "{}", message)
     }
 
     // Sends a message through the socket as bytes
     fn send_bytes(&mut self, content: &[u8]) -> io::Result<()> {
-        dbg!("Sending bytes...");
+        log(&format!("Sending bytes: {:?}", content))?;
         self.socket()?.write_all(content)
     }
 
@@ -326,11 +392,5 @@ impl Client {
     // Sends a 'done' signal to the server
     fn done(&mut self) -> io::Result<()> {
         self.send("0009done\n")
-    }
-}
-
-impl Drop for Client {
-    fn drop(&mut self) {
-        let _ = self.end_connection();
     }
 }

@@ -1,9 +1,11 @@
+use std::fs;
 use std::io::{self, Write};
+use std::path::Path;
 
 use crate::configuration::{GIT_DIR, LOGGER_COMMANDS_FILE};
 use crate::logger::Logger;
 use crate::utils::get_current_time;
-use crate::{fetch, merge};
+use crate::{fetch, merge, tree_handler};
 
 /// Logs the 'git push' command with the specified branch, local directory, and remote repository name.
 ///
@@ -71,25 +73,42 @@ pub fn git_pull(
             "Error: Could not fetch remote repository\n",
         ));
     }
-    let fetch_head_path = git_dir.to_string() + "/FETCH_HEAD";
-    let fetch_head = fetch::FetchHead::load_file(&fetch_head_path)?;
-    let branch_remotes = match fetch_head.get_branch_entry(branch) {
-        Some(branch_remotes) => branch_remotes,
-        None => {
+    let remote_ref = format!(
+        "{}/refs/remotes/{}/{}",
+        git_dir,
+        remote_repo_name.unwrap_or("origin"),
+        branch
+    );
+    let hash = match fs::read_to_string(remote_ref) {
+        Ok(hash) => hash.trim().to_string(),
+        Err(_) => {
             return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Error: Could not find branch in FETCH_HEAD\n",
+                io::ErrorKind::NotFound,
+                "Error: Could not find branch in remotes\n",
             ));
         }
     };
+    let head_ref = git_dir.to_string() + "/refs/heads/" + branch;
+    if Path::new(&head_ref).exists() {
+        let tree = merge::merge_remote_branch(branch, &hash, &git_dir)?;
+        tree.create_directories(local_dir, &git_dir)?;
+    } else {
+        let commit_tree = tree_handler::load_tree_from_commit(&hash, &git_dir)?;
+        commit_tree.create_directories(local_dir, &git_dir)?;
+    }
+    update_heads_from_fetch_head(&git_dir)?;
+    log_push(branch, local_dir, remote_repo_name)?;
+    Ok(())
+}
+
+fn update_heads_from_fetch_head(git_dir: &str) -> io::Result<()> {
+    let fetch_head_path = git_dir.to_string() + "/FETCH_HEAD";
+    let fetch_head = fetch::FetchHead::load_file(&fetch_head_path)?;
     for entry in fetch_head.get_entries() {
         let branch_file_path = git_dir.to_string() + "/refs/heads/" + &entry.branch_name;
         let mut branch_file = std::fs::File::create(branch_file_path)?;
         branch_file.write_all(entry.commit_hash.as_bytes())?;
     }
-    let hash = branch_remotes.commit_hash.clone();
-    merge::merge_remote_branch(branch, &hash, &git_dir)?;
-    log_push(branch, local_dir, remote_repo_name)?;
     Ok(())
 }
 

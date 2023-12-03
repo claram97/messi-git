@@ -22,7 +22,7 @@ pub mod logger;
 pub mod ls_files;
 pub mod ls_tree;
 pub mod merge;
-pub mod packfile_handler;
+pub mod packfile;
 pub mod parse_commands;
 pub mod pull;
 pub mod push;
