@@ -131,8 +131,15 @@ pub fn changes_to_be_committed(
 ) -> io::Result<()> {
     let mut count = 0;
     for (path, hash) in index.iter() {
-        if let Some(new_hash) = commit_tree.get_hash_from_path(path) {
-            if hash.ne(&new_hash) {
+        match commit_tree.get_hash_from_path(path) {
+            Some(new_hash) => {
+                if hash.ne(&new_hash) {
+                    count += 1;
+                    let buffer = format!("\x1b[31m\t\tmodified:\t {}\x1b[0m\n", path);
+                    output.write_all(buffer.as_bytes())?;
+                }
+            }
+            None => {
                 count += 1;
                 let buffer = format!("\x1b[31m\t\tmodified:\t {}\x1b[0m\n", path);
                 output.write_all(buffer.as_bytes())?;

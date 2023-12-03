@@ -203,6 +203,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "add-path-button",
         "add-all-button",
         "remove-path-button",
+        "reload-staging-view-button",
         "commit-changes-button",
         "new-branch-button",
         "checkout1",
@@ -588,6 +589,14 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                 let result = handle_visual_branches_button(&builder_clone);
                 if result.is_err() {
                     eprintln!("Error handling visual branches button.")
+                }
+            });
+        }
+        "reload-staging-view-button" => {
+            button.connect_clicked(move |_| {
+                let result = handle_reload_staging_view_button(&builder_clone);
+                if result.is_err() {
+                    eprintln!("Error handling reload staging view button.")
                 }
             });
         }
@@ -4537,7 +4546,11 @@ pub fn set_staging_area_texts(builder: &gtk::Builder) -> io::Result<()> {
         }
     }
     match get_staged_text() {
-        Ok(text) => update_text_view(builder, "staged-view", &text)?,
+        Ok(text) => {
+            update_text_view(builder, "staged-view", &text)?;
+            update_text_view(builder, "changes-to-be-commited-view", &text)?;
+
+        }
         Err(err) => {
             Err(io::Error::new(
                 io::ErrorKind::Other,
@@ -4546,6 +4559,18 @@ pub fn set_staging_area_texts(builder: &gtk::Builder) -> io::Result<()> {
         }
     }
     Ok(())
+}
+
+fn handle_reload_staging_view_button (
+    builder: &gtk::Builder,
+) -> io::Result<()> {
+    match set_staging_area_texts(builder) {
+        Ok(_) => Ok(()),
+        Err(err) => Err(io::Error::new(
+            io::ErrorKind::Other,
+            format!("Error setting staging area texts: {}", err),
+        )),
+    }
 }
 
 /// Get the text for not staged changes in a Git-like repository.
