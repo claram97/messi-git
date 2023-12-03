@@ -6,5 +6,5 @@ pub const INITIAL_BRANCH: &str = "master";
 pub const INITIAL_BRANCH_REF: &str = "/refs/heads/master";
 pub const LOGGER_COMMANDS_FILE: &str = ".logger_commands.txt";
 pub const HOST: &str = "localhost";
-pub const USER : &str = "no_user";
-pub const EMAIL : &str = "no_email";
+pub const USER: &str = "no_user";
+pub const EMAIL: &str = "no_email";

@@ -396,7 +396,7 @@
                     <property name="orientation">vertical</property>
                     <property name="layout-style">expand</property>
                     <child>
-                      <object class="GtkButton" id="checkout1">
+                      <object class="GtkButton">
                         <property name="label" translatable="yes">Change branch</property>
                         <property name="height-request">0</property>
                         <property name="visible">True</property>
@@ -410,7 +410,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="checkout2">
+                      <object class="GtkButton">
                         <property name="label" translatable="yes">Create branch and change</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -423,7 +423,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="checkout3">
+                      <object class="GtkButton">
                         <property name="label" translatable="yes">Create or reset a branch if it exists</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -436,7 +436,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="checkout4">
+                      <object class="GtkButton">
                         <property name="label" translatable="yes">Change to a specific commit</property>
                         <property name="height-request">20</property>
                         <property name="visible">True</property>
@@ -450,7 +450,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="checkout5">
+                      <object class="GtkButton">
                         <property name="label" translatable="yes">Force the change to a branch or commit</property>
                         <property name="height-request">20</property>
                         <property name="visible">True</property>
@@ -1116,18 +1116,81 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButtonBox">
+                  <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="orientation">vertical</property>
-                    <property name="layout-style">expand</property>
+                    <property name="homogeneous">True</property>
                     <child>
-                      <object class="GtkButton" id="show-branches-button">
-                        <property name="label" translatable="yes">Show Branches</property>
-                        <property name="height-request">20</property>
+                      <object class="GtkButtonBox">
                         <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="orientation">vertical</property>
+                        <property name="layout-style">center</property>
+                        <child>
+                          <object class="GtkButton" id="show-branches-button">
+                            <property name="label" translatable="yes">Show branches</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="new-branch-button">
+                            <property name="label" translatable="yes">New branch</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="delete-branch-button">
+                            <property name="label" translatable="yes">Delete branch</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="modify-branch-button">
+                            <property name="label" translatable="yes">Modify branch</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="another-branch">
+                            <property name="label" translatable="yes">Create branch from another branch</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">4</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -1136,12 +1199,76 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="new-branch-button">
-                        <property name="label" translatable="yes">New Branch</property>
-                        <property name="height-request">20</property>
+                      <object class="GtkButtonBox">
                         <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="orientation">vertical</property>
+                        <property name="layout-style">center</property>
+                        <child>
+                          <object class="GtkButton" id="checkout1">
+                            <property name="label" translatable="yes">Change branch</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="checkout2">
+                            <property name="label" translatable="yes">Create branch and change</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="checkout3">
+                            <property name="label" translatable="yes">Reset branch or create it if it doesn't exists</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="checkout4">
+                            <property name="label" translatable="yes">Change to a specific commit</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="checkout5">
+                            <property name="label" translatable="yes">Force the change to a branch or commit</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">4</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -1149,49 +1276,10 @@
                         <property name="position">1</property>
                       </packing>
                     </child>
-                    <child>
-                      <object class="GtkButton" id="delete-branch-button">
-                        <property name="label" translatable="yes">Delete Branch</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="modify-branch-button">
-                        <property name="label" translatable="yes">Modify Branch</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="another-branch">
-                        <property name="label" translatable="yes">Create branch using another branch</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">4</property>
-                      </packing>
-                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
-                    <property name="fill">True</property>
+                    <property name="fill">False</property>
                     <property name="position">1</property>
                   </packing>
                 </child>

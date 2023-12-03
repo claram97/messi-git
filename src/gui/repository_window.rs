@@ -1,5 +1,6 @@
 use crate::add::add;
 use crate::branch;
+use crate::branch::git_branch;
 use crate::check_ignore::git_check_ignore;
 use crate::checkout::checkout_branch;
 use crate::checkout::checkout_commit_detached;
@@ -8,16 +9,12 @@ use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
+use crate::config::Config;
 use crate::configuration::GIT_DIR;
 use crate::configuration::GIT_IGNORE;
 use crate::configuration::INDEX;
 use crate::fetch::git_fetch;
 use crate::git_config::git_config;
-use crate::tag::git_tag;
-use crate::utils::obtain_git_dir;
-use std::str;
-use crate::branch::git_branch;
-use crate::config::Config;
 use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
@@ -42,10 +39,12 @@ use crate::remote::git_remote;
 use crate::rm::git_rm;
 use crate::show_ref::git_show_ref;
 use crate::status;
+use crate::tag::git_tag;
 use crate::tree_handler;
 use crate::tree_handler::Tree;
 use crate::utils;
 use crate::utils::find_git_directory;
+use crate::utils::obtain_git_dir;
 use gtk::prelude::BuilderExtManual;
 use gtk::Builder;
 use gtk::Button;
@@ -67,6 +66,7 @@ use std::env;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
+use std::str;
 
 use super::style::apply_entry_style;
 use super::style::apply_label_style;
@@ -158,9 +158,7 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
 
     let builder_clone_for_fetch = builder.clone();
     match apply_style_to_fetch(&builder_clone_for_fetch) {
-        Ok(_) => {
-
-        }
+        Ok(_) => {}
         Err(error) => {
             eprintln!("{:?}", error);
         }
@@ -177,7 +175,7 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
     Ok(())
 }
 
-fn update_config_window(builder : &Builder) -> io::Result<()> {
+fn update_config_window(builder: &Builder) -> io::Result<()> {
     let git_dir = obtain_git_dir()?;
     let config = Config::load(&git_dir)?;
     let label = match get_label(builder, "config-title-label", 13.0) {
@@ -192,8 +190,7 @@ fn update_config_window(builder : &Builder) -> io::Result<()> {
     if let Ok((user, email)) = config.get_user_name_and_email() {
         let text = format!("Bienvenido {user}!\nParece que el email {email} está guardado en nuestra\nbase de datos.\nRecuerda que puedes modificarlo aquí abajo siempre que desees :)");
         label.set_text(&text);
-    }
-    else {
+    } else {
         label.set_text("Bienvenido!\nAlgunas funciones podrían presentar fallos si no nos dices quién eres.\nPor favor, indicanos tus datos aquí abajo.");
     }
     Ok(())
@@ -695,37 +692,32 @@ fn handle_fetch_button(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
-fn update_checkout_view(builder : &gtk::Builder) {
-    let text_view = match get_text_view(builder, "checkout-text-view") {
+fn update_checkout_view(builder: &gtk::Builder) {
+    let text_view = match get_text_view(builder, "show-branches-text") {
         Some(text_view) => text_view,
         None => {
             eprintln!("No pudimos obtener el text view");
-            return
+            return;
         }
     };
 
-    let scroll : gtk::ScrolledWindow = match builder.get_object("checkout-scrolled") {
+    let scroll: gtk::ScrolledWindow = match builder.get_object("checkout-scrolled") {
         Some(scroll) => scroll,
         None => {
             eprintln!("No pudimos obtener el scroll");
-            return
+            return;
         }
     };
 
     if let Ok((result, output_string)) = show_branches() {
         match handle_show_branches_result(result, &text_view, &scroll, output_string) {
-            Ok(_) => {
-
-            }
+            Ok(_) => {}
             Err(error) => {
                 eprintln!("{:?}", error);
-                return
+                return;
             }
         }
     }
-
-
-
 }
 
 /// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
@@ -4135,7 +4127,12 @@ fn call_git_config(name: String, email: String) {
 /// * `name_entry` - A reference to the GTK entry widget for the user's name.
 /// * `email_entry` - A reference to the GTK entry widget for the user's email.
 ///
-fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entry: &gtk::Entry, builder : &Builder) {
+fn config_button_on_clicked(
+    button: &Button,
+    name_entry: &gtk::Entry,
+    email_entry: &gtk::Entry,
+    builder: &Builder,
+) {
     let cloned_name_entry = name_entry.clone();
     let cloned_email_entry = email_entry.clone();
     let builder_clone = builder.clone();
