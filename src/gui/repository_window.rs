@@ -1278,9 +1278,7 @@ fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
         &git_ignore_path,
         Some(vec![".".to_string()]),
     ) {
-        Ok(_) => {
-            println!("La función 'add' se ejecutó correctamente.");
-        }
+        Ok(_) => {}
         Err(err) => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
@@ -2652,9 +2650,7 @@ pub fn find_git_directory_and_ignore() -> Result<(String, String), io::Error> {
 fn stage_changes(git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<String, io::Error> {
     let index_path = format!("{}/index", git_dir);
     match add(texto, &index_path, git_dir, git_ignore_path, None) {
-        Ok(_) => {
-            println!("La función 'add' se ejecutó correctamente.");
-        }
+        Ok(_) => {}
         Err(err) => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
@@ -4716,8 +4712,6 @@ pub fn set_commit_history_view(builder: &gtk::Builder) -> io::Result<()> {
         .get_object("commit-current-branch-commit")
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get label"))?;
     let mut current_dir = std::env::current_dir()?;
-    let binding = current_dir.clone();
-    let _current_dir_str = binding.to_str().unwrap();
     let git_dir_path_result = utils::find_git_directory(&mut current_dir, GIT_DIR);
     let git_dir_path = match git_dir_path_result {
         Some(path) => path,
@@ -4790,7 +4784,12 @@ fn check_commit_message(message: &str) -> io::Result<()> {
 /// Make a new commit with the provided message.
 fn create_new_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -> io::Result<()> {
     let result = commit::new_commit(git_dir_path, message, git_ignore_path);
-    println!("{:?}", result);
+    match result {
+        Ok(_) => {}
+        Err(e) => {
+            println!("{:?}", e);
+        }
+    }
     Ok(())
 }
 
