@@ -602,6 +602,33 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     Ok(())
 }
 
+/// Handles the user interaction with the "Fetch" button in the GUI.
+///
+/// This function is responsible for obtaining user input, validating the input,
+/// and initiating a Git fetch operation based on the provided information.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder object that is used to access
+///              and manipulate the GUI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success and an `io::Error` on failure.
+///
+/// # Errors
+///
+/// This function may return an `io::Error` in the following scenarios:
+///
+/// * The GTK entry field named "fetch-entry" is not found in the provided builder.
+/// * The entered remote name is empty.
+/// * There is an issue loading the Git directory or configuration.
+/// * The entered remote name does not exist in the Git configuration.
+///
+/// # Panics
+///
+/// This function does not intentionally panic under normal circumstances.
+///
 fn handle_fetch_button(builder: &gtk::Builder) -> io::Result<()> {
     let fetch_entry = match get_entry(builder, "fetch-entry") {
         Some(entry) => entry,
@@ -644,7 +671,7 @@ fn handle_create_and_checkout_branch_button(builder: &Builder) {
         } else {
             let resultado = obtain_text_from_create_and_checkout_branch(&text);
             match resultado {
-                Ok(texto) => {
+                Ok(_) => {
                     update_views_since_checkout_was_called(&builder_clone);
                 }
                 Err(err) => {
