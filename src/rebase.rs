@@ -64,6 +64,12 @@ fn intersection_files_that_changed_between_commits(
     Ok(intersection)
 }
 
+/// Obtains a ComboBoxText object from a GTK builder.
+///
+/// # Arguments
+///
+/// * `builder` - A gtk::Builder object containing the graphical interface.
+///
 fn obtain_combo_box_from_builder(builder: &gtk::Builder) -> io::Result<gtk::ComboBoxText> {
     let combo_box = match builder.get_object::<gtk::ComboBoxText>("rebase-text-list") {
         Some(combo_box) => combo_box,
@@ -78,6 +84,25 @@ fn obtain_combo_box_from_builder(builder: &gtk::Builder) -> io::Result<gtk::Comb
     Ok(combo_box)
 }
 
+/// Loads and returns the differences between files in two specified commits.
+///
+/// # Arguments
+///
+/// * `commit_to_rebase` - The commit hash to which the rebase is being performed.
+/// * `active_commit` - The commit hash representing the currently active commit.
+/// * `git_dir` - The path to the Git directory.
+///
+/// # Returns
+///
+/// Returns a Result containing a HashMap of file paths to their respective differences
+/// between the active commit and the commit to rebase. An empty HashMap is returned
+/// if there are no differences or an error occurred.
+///
+/// # Errors
+///
+/// Returns an error if there are issues loading the tree from the specified commits
+/// or if obtaining differences for a file fails.
+///
 fn load_file_diffs(
     commit_to_rebase: &str,
     active_commit: &str,
@@ -115,6 +140,21 @@ fn load_file_diffs(
     Ok(diffs)
 }
 
+/// Retrieves the root directory of a Git repository based on the specified Git directory.
+///
+/// # Arguments
+///
+/// * `git_dir` - The path to the Git directory.
+///
+/// # Returns
+///
+/// Returns a Result containing the root directory path as a String if successful.
+/// An error is returned if the working directory cannot be determined.
+///
+/// # Errors
+///
+/// Returns an error if the parent directory of the specified Git directory cannot be obtained.
+///
 fn get_root_dir(git_dir: &str) -> io::Result<String> {
     let root_dir = match Path::new(&git_dir).parent() {
         Some(dir) => dir.to_string_lossy().to_string(),
@@ -174,6 +214,22 @@ fn write_message_into_text_view(builder: &gtk::Builder, message: &str) -> io::Re
     Ok(())
 }
 
+/// Retrieves the content of a GTK TextView as a String.
+///
+/// # Arguments
+///
+/// * `builder` - A gtk::Builder object containing the graphical interface.
+///
+/// # Returns
+///
+/// Returns a Result containing the text content of the TextView if successful.
+/// An error is returned if the TextView or its associated buffer cannot be obtained.
+///
+/// # Errors
+///
+/// Returns an error if the TextView or its associated buffer cannot be obtained,
+/// or if the text content cannot be retrieved from the buffer.
+///
 fn get_text_view_content(builder: &gtk::Builder) -> io::Result<String> {
     let text_view = match style::get_text_view(builder, "rebase-view") {
         Some(text_view) => text_view,
@@ -211,6 +267,25 @@ fn get_text_view_content(builder: &gtk::Builder) -> io::Result<String> {
     Ok(text)
 }
 
+/// Handles the click event for the "Abort Rebase" button in the GTK application.
+///
+/// This function performs the necessary actions to abort the ongoing rebase process.
+///
+/// # Arguments
+///
+/// * `builder` - A gtk::Builder object containing the graphical interface.
+/// * `original_our_branch_hash` - The original hash of the commit in our branch before rebase.
+///
+/// # Returns
+///
+/// Returns a Result with a unit value if the operation is successful.
+/// An error is returned if there are issues writing to files or performing Git operations.
+///
+/// # Errors
+///
+/// Returns an error if there are issues writing the original commit hash into the branch file,
+/// checking out to the original branch, or writing a message to the TextView.
+///
 fn abort_rebase_button_on_click(
     builder: &gtk::Builder,
     original_our_branch_hash: String,
@@ -291,6 +366,25 @@ fn write_combo_box_and_view(
     Ok(())
 }
 
+/// Handles the change event for the ComboBox in the GTK application.
+///
+/// This function retrieves the selected file from the ComboBox and displays its diff
+/// in the associated TextView within the graphical interface.
+///
+/// # Arguments
+///
+/// * `builder` - A gtk::Builder object containing the graphical interface.
+/// * `diff` - A HashMap containing file paths as keys and their corresponding diffs as values.
+///
+/// # Returns
+///
+/// Returns a Result with a unit value if the operation is successful.
+/// An error is returned if the selected file or its corresponding diff cannot be obtained.
+///
+/// # Errors
+///
+/// Returns an error if the selected file or its corresponding diff cannot be obtained.
+///
 fn combo_box_on_change(builder: &gtk::Builder, diff: HashMap<String, String>) -> io::Result<()> {
     let combo_box = obtain_combo_box_from_builder(builder)?;
     let file = match combo_box.get_active_text() {
@@ -316,6 +410,25 @@ fn combo_box_on_change(builder: &gtk::Builder, diff: HashMap<String, String>) ->
     Ok(())
 }
 
+/// Handles the click event for the "Update" button in the GTK application.
+///
+/// This function retrieves the content of the TextView and the selected file from the ComboBox,
+/// then updates the associated diff in the Rebase structure.
+///
+/// # Arguments
+///
+/// * `builder` - A gtk::Builder object containing the graphical interface.
+/// * `rebase` - A shared reference to a Rebase structure stored in a RefCell and wrapped in Rc.
+///
+/// # Returns
+///
+/// Returns a Result with a unit value if the operation is successful.
+/// An error is returned if the text content from the TextView or the selected file cannot be obtained.
+///
+/// # Errors
+///
+/// Returns an error if the text content from the TextView or the selected file cannot be obtained.
+///
 fn update_button_on_click(builder: &gtk::Builder, rebase: Rc<RefCell<Rebase>>) -> io::Result<()> {
     let text = match get_text_view_content(builder) {
         Ok(text) => text,
@@ -344,6 +457,27 @@ fn update_button_on_click(builder: &gtk::Builder, rebase: Rc<RefCell<Rebase>>) -
     Ok(())
 }
 
+/// Loads and writes the file differences (diffs) into the GTK application's ComboBox and TextView.
+///
+/// This function retrieves the file differences (diffs) between the commit to rebase and the active commit
+/// from the specified Git directory. It then updates the ComboBox with the file paths and displays
+/// the content of the selected file in the TextView within the graphical interface.
+///
+/// # Arguments
+///
+/// * `builder` - A gtk::Builder object containing the graphical interface.
+/// * `rebase` - A shared reference to a Rebase structure stored in a RefCell and wrapped in Rc.
+/// * `git_dir` - A string representing the path to the Git directory.
+///
+/// # Returns
+///
+/// Returns a Result with a unit value if the operation is successful.
+/// An error is returned if the file differences cannot be loaded or if updating the ComboBox and TextView fails.
+///
+/// # Errors
+///
+/// Returns an error if the file differences cannot be loaded or if updating the ComboBox and TextView fails.
+///
 fn load_and_write_diffs(
     builder: &gtk::Builder,
     rebase: Rc<RefCell<Rebase>>,
@@ -358,6 +492,17 @@ fn load_and_write_diffs(
     Ok(())
 }
 
+/// Sets up the event handlers for the buttons in the GTK application.
+///
+/// This function initializes and connects event handlers for the "Update," "Abort Rebase," and "OK All" buttons
+/// in the GTK interface. It enables these buttons and associates their respective actions with the corresponding functions.
+///
+/// # Arguments
+///
+/// * `builder` - A gtk::Builder object containing the graphical interface.
+/// * `rebase` - A shared reference to a Rebase structure stored in a RefCell and wrapped in Rc.
+/// * `git_dir` - A string representing the path to the Git directory.
+///
 fn setup_buttons(builder: &gtk::Builder, rebase: Rc<RefCell<Rebase>>, git_dir: &str) {
     let update_button = style::get_button(builder, "rebase-button");
     update_button.set_sensitive(true);
@@ -389,6 +534,18 @@ fn setup_buttons(builder: &gtk::Builder, rebase: Rc<RefCell<Rebase>>, git_dir: &
     });
 }
 
+/// Writes the current state of the rebase step into the GTK graphical interface.
+///
+/// This function updates the GTK interface to reflect the current state of the rebase step.
+/// It disables the "Make Rebase" button, sets the combo box to be sensitive, removes all items from the combo box,
+/// clears the text view, loads and writes the file differences, and sets up the event handlers for buttons.
+///
+/// # Arguments
+///
+/// * `builder` - A gtk::Builder object containing the graphical interface.
+/// * `rebase` - A shared reference to a Rebase structure stored in a RefCell and wrapped in Rc.
+/// * `git_dir` - A string representing the path to the Git directory.
+///
 pub fn write_rebase_step_into_gui(
     builder: &gtk::Builder,
     rebase: Rc<RefCell<Rebase>>,
@@ -420,6 +577,21 @@ pub fn write_rebase_step_into_gui(
     Ok(())
 }
 
+/// Creates a new commit during the rebase process and returns its hash.
+///
+/// This function takes a Rebase structure and the path to the Git directory as input.
+/// It loads the tree of the commit to be rebased, applies the changes specified in the rebase step,
+/// creates a new commit with the updated tree, and returns the hash of the new commit.
+///
+/// # Arguments
+///
+/// * `rebase` - A reference to the Rebase structure representing the current state of the rebase.
+/// * `git_dir` - A string representing the path to the Git directory.
+///
+/// # Returns
+///
+/// A Result containing the hash of the newly created commit or an IO error.
+///
 fn create_rebase_commit(rebase: &Rebase, git_dir: &str) -> io::Result<String> {
     let commit_to_rebase = &rebase.commit_to_rebase.clone();
     let tree_to_rebase = tree_handler::load_tree_from_commit(commit_to_rebase, git_dir)?;
@@ -442,6 +614,23 @@ fn create_rebase_commit(rebase: &Rebase, git_dir: &str) -> io::Result<String> {
     Ok(new_commit_hash)
 }
 
+/// Finalizes the rebase process, updating the branch and displaying a completion message.
+///
+/// This function is responsible for completing the rebase process. It checks out the branch
+/// that was rebased, sets the completion message in the TextView, and adjusts the sensitivity
+/// of relevant UI elements in the GTK builder. Finally, it returns an error indicating that
+/// there are no more commits for rebase, as this function is typically called after the last rebase step.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to the GTK builder containing the UI elements.
+/// * `git_dir` - A string representing the path to the Git directory.
+///
+/// # Returns
+///
+/// An IO Result indicating the completion of the rebase with an error indicating
+/// that there are no more commits for rebase.
+///
 fn finalize_rebase(builder: &gtk::Builder, git_dir: &str) -> io::Result<()> {
     let text_view = match style::get_text_view(builder, "rebase-view") {
         Some(text_view) => text_view,
