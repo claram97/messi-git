@@ -165,7 +165,8 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
     }
 
     let builder_clone_for_checkout_view = builder.clone();
-    update_checkout_view(&builder_clone_for_checkout_view);
+    handle_show_branches_button(&builder_clone_for_checkout_view);
+    // update_checkout_view(&builder_clone_for_checkout_view);
 
     let builder_clone_for_config_window = builder.clone();
     update_config_window(&builder_clone_for_config_window);
@@ -625,34 +626,6 @@ fn handle_fetch_button(builder: &gtk::Builder) -> io::Result<()> {
         }
     }
     Ok(())
-}
-
-fn update_checkout_view(builder: &gtk::Builder) {
-    let text_view = match get_text_view(builder, "show-branches-text") {
-        Some(text_view) => text_view,
-        None => {
-            eprintln!("No pudimos obtener el text view");
-            return;
-        }
-    };
-
-    let scroll: gtk::ScrolledWindow = match builder.get_object("checkout-scrolled") {
-        Some(scroll) => scroll,
-        None => {
-            eprintln!("No pudimos obtener el scroll");
-            return;
-        }
-    };
-
-    if let Ok((result, output_string)) = show_branches() {
-        match handle_show_branches_result(result, &text_view, &scroll, output_string) {
-            Ok(_) => {}
-            Err(error) => {
-                eprintln!("{:?}", error);
-                return;
-            }
-        }
-    }
 }
 
 /// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
