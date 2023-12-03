@@ -185,6 +185,25 @@ pub fn new_merge_commit(
     Ok(commit_hash)
 }
 
+/// Creates a new commit for a rebase operation.
+///
+/// This function generates a new commit for a rebase operation based on the provided parameters.
+///
+/// # Arguments
+///
+/// - `git_dir_path`: The path to the Git directory.
+/// - `message`: The commit message.
+/// - `parent_commit`: The hash of the parent commit.
+/// - `tree`: The `Tree` representing the file structure for the new commit.
+///
+/// # Returns
+///
+/// Returns the hash of the newly created commit.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there are issues with file operations or other I/O-related problems.
+///
 pub fn new_rebase_commit(
     git_dir_path: &str,
     message: &str,
