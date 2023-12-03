@@ -1,4 +1,4 @@
-use std::{io, fs};
+use std::{fs, io};
 
 use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::logger::Logger;
@@ -184,6 +184,18 @@ pub fn git_merge(
     }
 }
 
+/// Given two branches, merges `our_branch` with `their_branch`.
+/// This function is used for the UI, where the user can choose to merge or not.
+/// It will try to do a fast forward merge, if it is not possible, it will do a two way merge.
+/// `our_branch` will point to a new commit that contains the changes of both branches.
+/// The working directory will be updated to match the changes.
+/// If there are conflicts, the user will have to resolve them.
+///
+/// # Arguments
+/// * `our_branch` - The name of the branch that will be updated.
+/// * `their_branch` - The name of the branch that will be merged with `our_branch`.
+/// * `git_dir` - The path to the git directory.
+/// * `root_dir` - The path to the root directory.
 pub fn git_merge_for_ui(
     our_branch: &str,
     their_branch: &str,

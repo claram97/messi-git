@@ -173,6 +173,10 @@ pub fn new_merge_commit(
     let commit_tree =
         tree_handler::build_tree_from_index(&index_path, git_dir_path, git_ignore_path)?;
     let (tree_hash, _) = tree_handler::write_tree(&commit_tree, git_dir_path)?;
+    if !has_tree_changed_since_last_commit(&tree_hash, parent_hash, git_dir_path) {
+        return Err(io::Error::new(io::ErrorKind::Other, "No changes were made"));
+    }
+
     let (timestamp, offset) = utils::get_timestamp()?;
     let time = format!("{} {}", timestamp, offset);
     let commit_content = format!("tree {tree_hash}\nparent {parent_hash}\nparent {parent_hash2}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0", "user", "email@email", "user", "email@email"
