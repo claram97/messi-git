@@ -64,7 +64,6 @@ pub fn git_check_ignore(
     line: Vec<String>,
     output: &mut impl Write,
 ) -> io::Result<()> {
-    // Log the check-ignore command
     log_check_ignore(ignorer_name, git_ignore_path, "check-ignore")?;
 
     let ignorer = Ignorer::load(git_ignore_path);
