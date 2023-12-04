@@ -1,6 +1,6 @@
 use std::{fs, io};
 
-use crate::configuration::{LOGGER_COMMANDS_FILE, GIT_DIR};
+use crate::configuration::{GIT_DIR, LOGGER_COMMANDS_FILE};
 use crate::logger::Logger;
 use crate::tree_handler::Tree;
 use crate::utils::get_current_time;
@@ -218,7 +218,8 @@ pub fn git_merge_for_ui(
         merge_head_file.write_all(their_commit.as_bytes())?;
 
         // Create a merge_index file where all the conflicts are written
-        let mut merge_index_file = fs::File::create(format!("{}/{}/MERGE_INDEX", root_dir, GIT_DIR))?;
+        let mut merge_index_file =
+            fs::File::create(format!("{}/{}/MERGE_INDEX", root_dir, GIT_DIR))?;
         for path in conflicting_paths.iter() {
             merge_index_file.write_all(path.as_bytes())?;
             merge_index_file.write_all(b"\n")?;
