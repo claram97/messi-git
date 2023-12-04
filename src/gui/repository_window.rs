@@ -139,18 +139,12 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
     let builder_clone1 = builder.clone();
 
     match set_staging_area_texts(&builder_clone) {
-        Ok(_) => println!("La función 'set_staging_area_texts' se ejecutó correctamente."),
-        Err(err) => println!(
-            "Error al llamar a la función 'set_staging_area_texts': {:?}",
-            err
-        ),
+        Ok(_) => println!(" 'set_staging_area_texts' works correctly."),
+        Err(err) => println!("Error in 'set_staging_area_texts': {:?}", err),
     };
     match set_commit_history_view(&builder_clone1) {
-        Ok(_) => println!("La función 'set_commit_history_view' se ejecutó correctamente."),
-        Err(err) => println!(
-            "Error al llamar a la función 'set_commit_history_view': {:?}",
-            err
-        ),
+        Ok(_) => println!("La función 'set_commit_history_view' works correctly."),
+        Err(err) => println!("Error in 'set_commit_history_view': {:?}", err),
     };
 
     add_to_open_windows(&new_window_clone);
@@ -216,10 +210,10 @@ fn update_config_window(builder: &Builder) -> io::Result<()> {
         }
     };
     if let Ok((user, email)) = config.get_user_name_and_email() {
-        let text = format!("Bienvenido {user}!\nParece que el email {email} está guardado en nuestra\nbase de datos.\nRecuerda que puedes modificarlo aquí abajo siempre que desees :)");
+        let text = format!("Welcome {user}!\nIt seems that {email} is stored in\nour database.\nRemember that you can change it if you want :)");
         label.set_text(&text);
     } else {
-        label.set_text("Bienvenido!\nAlgunas funciones podrían presentar fallos si no nos dices quién eres.\nPor favor, indicanos tus datos aquí abajo.");
+        label.set_text("Welcome!\nSome functionalities may fail if you don't tell us who are you.\nPlease, leave your name and email below.");
     }
     Ok(())
 }
@@ -392,7 +386,7 @@ fn handle_git_push() -> io::Result<()> {
 fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     let button = get_button(builder, button_id);
     apply_button_style(&button).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-    let builder_clone = builder.clone(); // Clonar el builder
+    let builder_clone = builder.clone();
     let button: gtk::Button = builder_clone
         .get_object(button_id)
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get the button object"))?;
@@ -578,7 +572,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                 let result = handle_git_pull();
                 match result {
                     Ok(_) => {
-                        show_message_dialog("Éxito", "Succesfully pulled");
+                        show_message_dialog("Success", "Succesfully pulled");
                     }
                     Err(err) => {
                         show_message_dialog("Error", &err.to_string());
@@ -591,7 +585,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
                 let result = handle_git_push();
                 match result {
                     Ok(_) => {
-                        show_message_dialog("Éxito", "Succesfully pushed");
+                        show_message_dialog("Success", "Succesfully pushed");
                     }
                     Err(err) => {
                         show_message_dialog("Error", &err.to_string());
@@ -766,7 +760,7 @@ fn handle_create_and_checkout_branch_button(builder: &Builder) {
     let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         if text.is_empty() {
-            show_message_dialog("Error", "Debe especificar la rama a la cual desea cambiar.");
+            show_message_dialog("Error", "The branch does not exists");
         } else {
             let resultado = obtain_text_from_create_and_checkout_branch(&text);
             match resultado {
@@ -797,7 +791,7 @@ fn handle_create_or_reset_branch_button(builder: &Builder) {
     let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         if text.is_empty() {
-            show_message_dialog("Error", "Debe especificar la rama a la cual desea cambiar.");
+            show_message_dialog("Error", "The branch does not exists.");
         } else {
             let resultado = obtain_text_from_create_or_reset_branch(&text);
             match resultado {
@@ -828,7 +822,7 @@ fn handle_checkout_commit_detached_button(builder: &Builder) {
     let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         if text.is_empty() {
-            show_message_dialog("Error", "Debe especificar la rama a la cual desea cambiar.");
+            show_message_dialog("Error", "The branch does not exists.");
         } else {
             let resultado = obtain_text_from_checkout_commit_detached(&text);
             match resultado {
@@ -859,7 +853,7 @@ fn handle_force_checkout_button(builder: &gtk::Builder) {
     let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         if text.is_empty() {
-            show_message_dialog("Error", "Debe especificar la rama a la cual desea cambiar.");
+            show_message_dialog("Error", "The branch does not exists.");
         } else {
             let resultado = obtain_text_from_force_checkout(&text);
             match resultado {
@@ -1145,8 +1139,8 @@ fn create_branch_from_another_branch(
 fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
     let create_result = create_text_entry_window2(
-        "Nombre de la nueva branch",
-        "Nombre de la branch de base",
+        "Name of new branch",
+        "Name of base branch",
         move |new_branch_name, existing_branch_name| {
             create_branch_from_another_branch(
                 &builder_clone,
@@ -1181,7 +1175,7 @@ fn delete_branch(builder: &Builder, name: String) {
             match handle_show_branches_button(builder) {
                 Ok(_) => {}
                 Err(_e) => {
-                    show_message_dialog("Error", "No se pudo actualizar la vista");
+                    show_message_dialog("Error", "view not updated");
                 }
             }
             let texto = match str::from_utf8(&output) {
@@ -1192,7 +1186,7 @@ fn delete_branch(builder: &Builder, name: String) {
                 }
             };
 
-            show_message_dialog("Éxito", texto);
+            show_message_dialog("Success", texto);
         }
         Err(error) => {
             show_message_dialog("Error", &error.to_string());
@@ -1241,16 +1235,16 @@ fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
 ///
 fn modify_current_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
     if !text1.is_empty() {
-        show_message_dialog("Error", "La opción 'rama actual' está activada. Por favor desactive esta opción si desea cambiar el nombre de otra rama o deje el primer campo vacío para cambiar el nombre de la rama actual.");
+        show_message_dialog("Error", "Option 'actual branch' is on. Please disable this option if you want to change the name of another branch or leave the first field empty to change the name of the current branch.");
     } else if text2.is_empty() {
-        show_message_dialog("Error", "Por favor, indique el nuevo nombre para la rama.");
+        show_message_dialog("Error", "Please , insert new branch name.");
     } else {
         let mut output: Vec<u8> = vec![];
         match git_branch(None, Some("-m"), Some(text2), &mut output) {
             Ok(_) => match handle_show_branches_button(builder) {
                 Ok(_) => {}
                 Err(_error) => {
-                    show_message_dialog("Error", "No se pudo actualizar la vista");
+                    show_message_dialog("Error", "view not updated");
                 }
             },
             Err(error) => {
@@ -1278,7 +1272,7 @@ fn update_git_branch(builder: &Builder, text1: String, text2: &str) {
         Ok(_) => match handle_show_branches_button(builder) {
             Ok(_) => {}
             Err(_error) => {
-                show_message_dialog("Error", "No se pudo actualizar la vista");
+                show_message_dialog("Error", "View not updated");
             }
         },
         Err(error) => {
@@ -1303,7 +1297,7 @@ fn modify_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
     if text1.is_empty() || text2.is_empty() {
         show_message_dialog(
             "Error",
-            "Debe ingresar el nombre de la rama a modificar y el nuevo nombre.",
+            "You must enter the name of the branch to modify and the new name.",
         );
     } else {
         update_git_branch(builder, text1.to_string(), text2);
@@ -1326,8 +1320,8 @@ fn modify_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
 /// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components.
 ///
 fn handle_modify_branch_button(builder: &gtk::Builder) -> io::Result<()> {
-    let message1 = "Nombre actual";
-    let message2 = "Nombre nuevo";
+    let message1 = "actual Name";
+    let message2 = "New name ";
     let builder_clone = builder.clone();
     create_text_entry_window_with_switch(message1, message2, move |text1, text2, switch_value| {
         if switch_value {
@@ -1359,11 +1353,11 @@ fn handle_add_path_button(builder: &Builder) -> io::Result<()> {
             Ok(_texto) => {
                 let result = set_staging_area_texts(&builder_clone);
                 if result.is_err() {
-                    eprintln!("No se pudo actualizar la vista de staging.");
+                    eprintln!("staging view not updated.");
                 }
             }
             Err(_err) => {
-                show_message_dialog("Error", "El path ingresado no es correcto.");
+                show_message_dialog("Error", "wrong path.");
             }
         }
     });
@@ -1405,13 +1399,13 @@ fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
         Err(err) => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                format!("Error al llamar a la función 'add': {:?}", err),
+                format!("Error in 'add': {:?}", err),
             ))
         }
     }
     let result = set_staging_area_texts(&builder_clone);
     if result.is_err() {
-        eprintln!("No se pudo actualizar la vista de staging.");
+        eprintln!("staging view not updated.");
     }
 
     Ok(())
@@ -1438,11 +1432,11 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
             Ok(_texto) => {
                 let result = set_staging_area_texts(&builder_clone);
                 if result.is_err() {
-                    eprintln!("No se pudo actualizar la vista de staging.");
+                    eprintln!("staging view not updated");
                 }
             }
             Err(_err) => {
-                show_message_dialog("Error", "El path ingresado no es correcto.");
+                show_message_dialog("Error", "wrong path");
             }
         }
     });
@@ -2031,7 +2025,7 @@ fn handle_tag_add_annotated(builder: &gtk::Builder) -> io::Result<()> {
         "Enter tag message",
         move |name, message| {
             if name.is_empty() || message.is_empty() {
-                show_message_dialog("Error", "Debe proveer un nombre y un mensaje para el tag.");
+                show_message_dialog("Error", "Insert name and message for tag ");
             } else {
                 let resultado = add_annotated_tag(&builder_clone, &name, &message);
                 match resultado {
@@ -2117,13 +2111,13 @@ pub fn create_tag_from_other_tag(
 fn handle_tag_from_tag(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
     let result = create_text_entry_window2(
-        "Nombre del nuevo tag",
-        "Nombre del tag de base",
+        "New tag name",
+        "Name of base tag ",
         move |new_tag_name, base_tag_name| {
             if new_tag_name.is_empty() || base_tag_name.is_empty() {
                 show_message_dialog(
                     "Error",
-                    "Debe proveer el nombre del nuevo tag y el nombre del tag de base",
+                    "Debe proveer el New tag name y el Name of base tag ",
                 );
             } else {
                 let resultado =
@@ -2159,7 +2153,7 @@ fn call_ls_trees(option: &str, hash: &str, builder: &gtk::Builder) {
     let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(_) => {
-            eprintln!("No se encontró el directorio git.");
+            eprintln!("git directory not found .");
             return;
         }
     };
@@ -2169,7 +2163,7 @@ fn call_ls_trees(option: &str, hash: &str, builder: &gtk::Builder) {
         Ok(_texto) => match update_list_trees_view(builder, output, "trees-text") {
             Ok(_) => {}
             Err(_e) => {
-                show_message_dialog("Error", "No se pudo actualizar la vista");
+                show_message_dialog("Error", "View not updated");
             }
         },
         Err(_err) => {
@@ -2195,7 +2189,7 @@ fn handle_ls_trees(builder: &gtk::Builder) -> io::Result<()> {
 
     let result = create_text_entry_window("Enter hash", move |hash| {
         if hash.is_empty() {
-            show_message_dialog("Error", "Debe ingresar un hash");
+            show_message_dialog("Error", "insert hash");
         } else {
             call_ls_trees("", &hash, &builder_clone);
         }
@@ -2225,7 +2219,7 @@ fn handle_ls_trees_r(builder: &gtk::Builder) -> io::Result<()> {
 
     let result = create_text_entry_window("Enter hash", move |hash| {
         if hash.is_empty() {
-            show_message_dialog("Error", "Debe ingresar un hash");
+            show_message_dialog("Error", "insert hash");
         } else {
             call_ls_trees("-r", &hash, &builder_clone);
         }
@@ -2254,7 +2248,7 @@ fn handle_ls_trees_d(builder: &gtk::Builder) -> io::Result<()> {
 
     let result = create_text_entry_window("Enter hash", move |hash| {
         if hash.is_empty() {
-            show_message_dialog("Error", "Debe ingresar un hash");
+            show_message_dialog("Error", "insert hash");
         } else {
             call_ls_trees("-d", &hash, &builder_clone);
         }
@@ -2284,7 +2278,7 @@ fn handle_ls_trees_rt(builder: &gtk::Builder) -> io::Result<()> {
 
     let result = create_text_entry_window("Enter hash", move |hash| {
         if hash.is_empty() {
-            show_message_dialog("Error", "Debe ingresar un hash");
+            show_message_dialog("Error", "insert hash");
         } else {
             call_ls_trees("-r-t", &hash, &builder_clone);
         }
@@ -2364,7 +2358,7 @@ fn handle_remote_set_url() -> io::Result<()> {
         let resultado = obtain_text_from_remote_set_url(&name, &url);
         match resultado {
             Ok(_texto) => {
-                show_message_dialog("Éxito", "La URL se actualizó correctamente.");
+                show_message_dialog("Success", "URL updated correctly.");
             }
             Err(_err) => {
                 let error_mesage = _err.to_string();
@@ -2394,7 +2388,7 @@ fn handle_remote_get_url() -> io::Result<()> {
         let resultado = obtain_text_from_remote_get_url(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Éxito", &format!("{}'", texto));
+                show_message_dialog("Success", &format!("{}'", texto));
             }
             Err(_err) => {
                 let error_mesage = _err.to_string();
@@ -2553,7 +2547,7 @@ fn update_tag_view(builder: &gtk::Builder, output: &mut [u8]) -> io::Result<()> 
     let tags_text_view: gtk::TextView = match builder.get_object("tag-text") {
         Some(view) => view,
         None => {
-            eprintln!("No se pudo obtener el text view");
+            eprintln!("obtainig text view failed");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
                 "Error obtaining text view",
@@ -2644,7 +2638,7 @@ fn handle_checkout_branch_window(builder: &Builder) {
     let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter the path of the file", move |text| {
         if text.is_empty() {
-            show_message_dialog("Error", "Debe especificar la rama a la cual desea cambiar.");
+            show_message_dialog("Error", "The branch does not exists.");
         } else {
             let resultado = obtain_text_from_checkout_branch(&text);
             match resultado {
@@ -2717,7 +2711,7 @@ fn handle_show_log_button_click(builder: &gtk::Builder) {
         let log_text_scrolled_window = match obtain_log_text_scrolled_window(builder) {
             Some(sw) => sw,
             None => {
-                eprintln!("No se pudo obtener el ScrolledWindow.");
+                eprintln!("ScrolledWindow not obtained.");
                 return;
             }
         };
@@ -2735,12 +2729,11 @@ fn handle_show_log_button_click(builder: &gtk::Builder) {
                     eprintln!("Fatal error in show repository window.");
                 }
 
-                // Añade el TextView al ScrolledWindow
                 log_text_scrolled_window.add(&log_text_view);
                 log_text_scrolled_window.show_all();
             }
             Err(err) => {
-                eprintln!("Error al obtener el texto: {}", err);
+                eprintln!("Error obtaining text: {}", err);
             }
         }
     } else {
@@ -2810,7 +2803,7 @@ fn stage_changes(git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<St
         Err(err) => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                format!("Error al llamar a la función 'add': {:?}", err),
+                format!("Error in 'add': {:?}", err),
             ))
         }
     }
@@ -2844,7 +2837,7 @@ pub fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
 
     git_rm(texto, &index_path, &git_dir, &git_ignore_path)?;
 
-    Ok("La función 'rm' se ejecutó correctamente.".to_string())
+    Ok(" 'rm' not working correctly".to_string())
 }
 
 /// Force checkout a file from a custom Git-like version control system.
@@ -2898,7 +2891,7 @@ pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, 
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
-        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Ok(_) => Ok("'checkout branch' works correctly.".to_string()),
         Err(err) => Err(err),
     }
 }
@@ -2929,7 +2922,7 @@ pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
-        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Ok(_) => Ok("'checkout branch' works correctly.".to_string()),
         Err(err) => Err(err),
     }
 }
@@ -2961,7 +2954,7 @@ pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
-        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Ok(_) => Ok("'checkout branch' works correctly.".to_string()),
         Err(err) => Err(err),
     }
 }
@@ -3096,18 +3089,18 @@ pub fn merge_button_connect_clicked(
 ) -> io::Result<Vec<String>> {
     let branch = entry.get_text().to_string();
     if branch.is_empty() {
-        show_message_dialog("Error", "Por favor, ingrese una rama.");
+        show_message_dialog("Error", "Please, enter a branch.");
     } else if !branch::is_an_existing_branch(&branch, git_directory.as_str()) {
-        show_message_dialog("Error", "Rama no encontrada.");
+        show_message_dialog("Error", "branch not found.");
     } else {
         let result = call_git_merge(&branch);
         match result {
             Ok(conflicts_list) => {
                 if conflicts_list.is_empty() {
-                    text_buffer.set_text("Merge exitoso.");
+                    text_buffer.set_text("Succesfull Merge .");
                 } else {
                     let mut conflicts_text = String::new();
-                    conflicts_text.push_str("Conflicto(s) detectado(s):\n");
+                    conflicts_text.push_str("Conflict(s) found:\n");
                     for conflict in &conflicts_list {
                         conflicts_text.push_str(conflict);
                         conflicts_text.push('\n');
@@ -3262,9 +3255,9 @@ fn show_current_branch_on_merge_window(merge_text_view: &TextView) -> io::Result
 
     let current_branch = commit::get_branch_name(&git_dir)?;
     buffer.set_text(
-        &("La rama actual es: ".to_string()
+        &("Actual branch: ".to_string()
             + &current_branch
-            + ".\nIngrese la rama que quiere mergear con la rama actual.\n"),
+            + ".\nEnter the branch you want to merge with the current branch..\n"),
     );
 
     Ok(())
@@ -3286,10 +3279,10 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
         let mut current_dir = match std::env::current_dir() {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el directorio actual");
+                eprintln!("Failed to obtain the current directory.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3298,10 +3291,10 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
         let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
             Some(dir) => dir,
             None => {
-                eprintln!("No se pudo obtener el git dir.");
+                eprintln!("Failed to obtain the Git directory..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data.(",
                 );
 
                 return;
@@ -3310,10 +3303,10 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
         let working_dir = match Path::new(&git_dir).parent() {
             Some(dir) => dir.to_string_lossy().to_string(),
             None => {
-                eprintln!("No se pudo obtener el working dir.");
+                eprintln!("Failed to obtain the Git directory.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data.(",
                 );
 
                 return;
@@ -3328,7 +3321,7 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
             Err(_e) => {
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data:(",
                 );
 
                 return;
@@ -3346,17 +3339,17 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
         if result.is_err() {
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "Something went wrong while trying to retrieve the data :(",
             );
             return;
         }
         let buffer = match cloned_text_view.get_buffer() {
             Some(buf) => buf,
             None => {
-                eprintln!("No se pudo obtener el text buffer");
+                eprintln!("Failed to obtain the Git directory");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data :(",
                 );
                 return;
             }
@@ -3365,10 +3358,10 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
         let string = match String::from_utf8(output) {
             Ok(str) => str,
             Err(_e) => {
-                eprintln!("No se pudo convertir el resultado a string.");
+                eprintln!("Failed to convert the result to a string..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data :(",
                 );
                 return;
             }
@@ -3393,10 +3386,10 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         let mut current_dir = match std::env::current_dir() {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el directorio actual");
+                eprintln!("Failed to obtain the current directory.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "An error occurred while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3405,10 +3398,10 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
             Some(dir) => dir,
             None => {
-                eprintln!("No se pudo obtener el git dir.");
+                eprintln!("Failed to obtain the Git directory..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "An error occurred while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3417,10 +3410,10 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         let working_dir = match Path::new(&git_dir).parent() {
             Some(dir) => dir.to_string_lossy().to_string(),
             None => {
-                eprintln!("No se pudo obtener el working dir.");
+                eprintln!("Failed to obtain the working directory.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "An error occurred while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3435,7 +3428,7 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
             Err(_e) => {
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "An error occurred while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3453,17 +3446,17 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         if result.is_err() {
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "An error occurred while trying to retrieve the data. :(",
             );
             return;
         }
         let buffer = match cloned_text_view.get_buffer() {
             Some(buf) => buf,
             None => {
-                eprintln!("No se pudo obtener el text buffer");
+                eprintln!("Failed to obtain the text buffer.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "An error occurred while trying to retrieve the data. :(",
                 );
                 return;
             }
@@ -3472,10 +3465,10 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         let string = match String::from_utf8(output) {
             Ok(str) => str,
             Err(_e) => {
-                eprintln!("No se pudo convertir el resultado a string.");
+                eprintln!("Failed to convert the result to a string.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "An error occurred while trying to retrieve the data. :(",
                 );
                 return;
             }
@@ -3500,10 +3493,10 @@ pub fn list_untracked_button_on_clicked(button: &Button, text_view: &gtk::TextVi
         let mut current_dir = match std::env::current_dir() {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el directorio actual");
+                eprintln!("Failed to obtain the current directory.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3512,10 +3505,10 @@ pub fn list_untracked_button_on_clicked(button: &Button, text_view: &gtk::TextVi
         let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
             Some(dir) => dir,
             None => {
-                eprintln!("No se pudo obtener el git dir.");
+                eprintln!("Failed to obtain the Git directory..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3524,10 +3517,10 @@ pub fn list_untracked_button_on_clicked(button: &Button, text_view: &gtk::TextVi
         let working_dir = match Path::new(&git_dir).parent() {
             Some(dir) => dir.to_string_lossy().to_string(),
             None => {
-                eprintln!("No se pudo obtener el working dir.");
+                eprintln!("Failed to obtain the working directory..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3542,7 +3535,7 @@ pub fn list_untracked_button_on_clicked(button: &Button, text_view: &gtk::TextVi
             Err(_e) => {
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3560,17 +3553,17 @@ pub fn list_untracked_button_on_clicked(button: &Button, text_view: &gtk::TextVi
         if result.is_err() {
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "Something went wrong while trying to retrieve the data. :(",
             );
             return;
         }
         let buffer = match cloned_text_view.get_buffer() {
             Some(buf) => buf,
             None => {
-                eprintln!("No se pudo obtener el text buffer");
+                eprintln!("Failed to obtain the text buffer.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
                 return;
             }
@@ -3579,10 +3572,10 @@ pub fn list_untracked_button_on_clicked(button: &Button, text_view: &gtk::TextVi
         let string = match String::from_utf8(output) {
             Ok(str) => str,
             Err(_e) => {
-                eprintln!("No se pudo convertir el resultado a string.");
+                eprintln!("Failed to convert the result to a string..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
                 return;
             }
@@ -3646,10 +3639,10 @@ fn check_ignore(gitignore_path: &str, line: Vec<String>, cloned_text_view: &Text
             let buffer = match cloned_text_view.get_buffer() {
                 Some(buf) => buf,
                 None => {
-                    eprintln!("No se pudo obtener el text buffer");
+                    eprintln!("Failed to obtain the text buffer.");
                     show_message_dialog(
                         "Fatal error",
-                        "Algo sucedió mientras intentábamos obtener los datos :(",
+                        "Something went wrong while trying to retrieve the data. :(",
                     );
                     return;
                 }
@@ -3658,10 +3651,10 @@ fn check_ignore(gitignore_path: &str, line: Vec<String>, cloned_text_view: &Text
             let string = match String::from_utf8(output) {
                 Ok(str) => str,
                 Err(_e) => {
-                    eprintln!("No se pudo convertir el resultado a string.");
+                    eprintln!("Failed to convert the result to a string..");
                     show_message_dialog(
                         "Fatal error",
-                        "Algo sucedió mientras intentábamos obtener los datos :(",
+                        "Something went wrong while trying to retrieve the data. :(",
                     );
                     return;
                 }
@@ -3672,7 +3665,7 @@ fn check_ignore(gitignore_path: &str, line: Vec<String>, cloned_text_view: &Text
             eprintln!("{}", e);
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "Something went wrong while trying to retrieve the data. :(",
             );
         }
     }
@@ -3731,14 +3724,14 @@ pub fn check_ignore_button_on_clicked(
         let git_dir = match obtain_git_dir() {
             Ok(dir) => dir,
             Err(_error) => {
-                eprintln!("No se pudo obtener el git dir");
+                eprintln!("Failed to obtain the Git directory.");
                 return;
             }
         };
         let working_dir = match Path::new(&git_dir).parent() {
             Some(dir) => dir.to_string_lossy().to_string(),
             None => {
-                eprintln!("No se pudo obtener el working dir");
+                eprintln!("Failed to obtain the working directory.");
                 return;
             }
         };
@@ -3747,7 +3740,7 @@ pub fn check_ignore_button_on_clicked(
 
         let path = cloned_entry.get_text();
         if path.is_empty() {
-            show_message_dialog("Error", "Debe ingresar un path");
+            show_message_dialog("Error", "You must enter a path.");
         } else {
             let line = get_line_for_check_ignore(cloned_switch.get_active(), path.to_string());
 
@@ -3773,14 +3766,14 @@ pub fn check_ignore_window(builder: &Builder) {
     let check_ignore_entry = match get_entry(builder, "check-ignore-entry") {
         Some(entry) => entry,
         None => {
-            eprintln!("No se pudo obtener el entry.");
+            eprintln!("Failed to obtain the entry..");
             return;
         }
     };
     let check_ignore_view = match get_text_view(builder, "check-ignore-view") {
         Some(view) => view,
         None => {
-            eprintln!("No se pudo obtener el text view.");
+            eprintln!("Failed to obtain the text view..");
             return;
         }
     };
@@ -3788,7 +3781,7 @@ pub fn check_ignore_window(builder: &Builder) {
     let check_ignore_switch = match get_switch(builder, "check-ignore-switch") {
         Some(view) => view,
         None => {
-            eprintln!("No se pudo obtener el switch.");
+            eprintln!("Failed to obtain the switch..");
             return;
         }
     };
@@ -3827,7 +3820,7 @@ pub fn handle_apply_button_style(button: &Button) {
     match apply_button_style(button) {
         Ok(_) => {}
         Err(_e) => {
-            eprintln!("No se pudo aplicar el estilo al botón");
+            eprintln!("Failed to apply the style to the button.");
         }
     }
 }
@@ -3846,10 +3839,10 @@ fn update_show_ref_view(cloned_text_view: &gtk::TextView, output: Vec<u8>) {
     let buffer = match cloned_text_view.get_buffer() {
         Some(buf) => buf,
         None => {
-            eprintln!("No se pudo obtener el text buffer");
+            eprintln!("Failed to obtain the text buffer.");
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "Something went wrong while trying to retrieve the data. :(",
             );
             return;
         }
@@ -3858,10 +3851,10 @@ fn update_show_ref_view(cloned_text_view: &gtk::TextView, output: Vec<u8>) {
     let string = match String::from_utf8(output) {
         Ok(str) => str,
         Err(_e) => {
-            eprintln!("No se pudo convertir el resultado a string.");
+            eprintln!("Failed to convert the result to a string..");
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "Something went wrong while trying to retrieve the data. :(",
             );
             return;
         }
@@ -3885,10 +3878,10 @@ pub fn show_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
         let git_dir = match obtain_git_dir() {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el git dir.");
+                eprintln!("Failed to obtain the Git directory..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3902,7 +3895,7 @@ pub fn show_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
         if result.is_err() {
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "Something went wrong while trying to retrieve the data. :(",
             );
             return;
         }
@@ -3927,10 +3920,10 @@ pub fn show_heads_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         let git_dir = match obtain_git_dir() {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el git dir.");
+                eprintln!("Failed to obtain the Git directory..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3947,7 +3940,7 @@ pub fn show_heads_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         if result.is_err() {
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "Something went wrong while trying to retrieve the data. :(",
             );
             return;
         }
@@ -3988,7 +3981,7 @@ pub fn show_tags_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
         if result.is_err() {
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "Something went wrong while trying to retrieve the data. :(",
             );
             return;
         }
@@ -4014,10 +4007,10 @@ pub fn show_hash_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
         let git_dir = match obtain_git_dir() {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el git dir.");
+                eprintln!("Failed to obtain the Git directory..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -4034,7 +4027,7 @@ pub fn show_hash_button_on_clicked(button: &Button, text_view: &gtk::TextView) {
         if result.is_err() {
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "Something went wrong while trying to retrieve the data. :(",
             );
             return;
         }
@@ -4062,10 +4055,10 @@ pub fn verify_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView, 
         let git_dir = match obtain_git_dir() {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el git dir.");
+                eprintln!("Failed to obtain the Git directory..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -4073,7 +4066,7 @@ pub fn verify_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView, 
         };
         let path = cloned_entry.get_text();
         if path.is_empty() {
-            show_message_dialog("Error", "Debe ingresar un path");
+            show_message_dialog("Error", "You must enter a path.");
         } else {
             let line = vec![
                 "git".to_string(),
@@ -4087,7 +4080,7 @@ pub fn verify_ref_button_on_clicked(button: &Button, text_view: &gtk::TextView, 
             if result.is_err() {
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
                 return;
             }
@@ -4111,7 +4104,7 @@ pub fn show_ref_window(builder: &Builder) {
     let show_ref_view = match get_text_view(builder, "show-ref-view") {
         Some(view) => view,
         None => {
-            eprintln!("No se pudo obtener el text view.");
+            eprintln!("Failed to obtain the text view..");
             return;
         }
     };
@@ -4123,7 +4116,7 @@ pub fn show_ref_window(builder: &Builder) {
     let show_ref_entry = match get_entry(builder, "show-ref-entry") {
         Some(entry) => entry,
         None => {
-            eprintln!("No se pudo obtener el entry");
+            eprintln!("Failed to obtain the entry.");
             return;
         }
     };
@@ -4163,10 +4156,10 @@ fn call_git_config(name: String, email: String) {
     let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(_e) => {
-            eprintln!("No se pudo obtener el git dir.");
+            eprintln!("Failed to obtain the Git directory..");
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "Something went wrong while trying to retrieve the data. :(",
             );
 
             return;
@@ -4183,7 +4176,7 @@ fn call_git_config(name: String, email: String) {
 
     match git_config(&git_dir, line) {
         Ok(_) => {
-            show_message_dialog("Éxito", "Información actualizada con éxito");
+            show_message_dialog("Success", "Successfully updated information.");
         }
         Err(_e) => {
             show_message_dialog("Error", &_e.to_string());
@@ -4216,7 +4209,7 @@ fn config_button_on_clicked(
         let email = cloned_email_entry.get_text().to_string();
 
         if name.is_empty() || email.is_empty() {
-            show_message_dialog("Warning", "Debe completar ambos campos para continuar");
+            show_message_dialog("Warning", "You must fill in both fields to proceed.");
         } else {
             call_git_config(name, email);
         }
@@ -4301,28 +4294,28 @@ fn set_abort_button_behavior(button: &Button, merge_button: &Button, git_dir: &s
         let branch = match branch {
             Ok(branch) => branch,
             Err(_e) => {
-                eprintln!("No se pudo obtener el nombre de la rama actual.");
+                eprintln!("Failed to obtain the name of the current branch..");
                 return;
             }
         };
         let branch_name = match branch.split('/').last() {
             Some(name) => name,
             None => {
-                eprintln!("No se pudo obtener el nombre de la rama actual.");
+                eprintln!("Failed to obtain the name of the current branch..");
                 return;
             }
         };
         let root_dir = match Path::new(&git_dir).parent() {
             Some(dir) => dir.to_string_lossy().to_string(),
             None => {
-                eprintln!("No se pudo obtener el directorio actual.");
+                eprintln!("Failed to obtain the current directory..");
                 return;
             }
         };
         let git_dir_path = Path::new(&git_dir);
         let result = checkout::checkout_branch(git_dir_path, &root_dir, branch_name);
         if result.is_err() {
-            eprintln!("No se pudo hacer checkout de la rama {}.", branch_name);
+            eprintln!("Checkout failed to branch {}.", branch_name);
         }
     });
 }
@@ -4332,7 +4325,7 @@ fn set_done_button_behavior(button: &Button, merge_button: &gtk::Button, conflic
     let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(_e) => {
-            eprintln!("No se pudo obtener el git dir.");
+            eprintln!("Failed to obtain the Git directory..");
             return;
         }
     };
@@ -4341,7 +4334,7 @@ fn set_done_button_behavior(button: &Button, merge_button: &gtk::Button, conflic
     let parent_hash = match branch::get_current_branch_commit(&git_dir) {
         Ok(hash) => hash,
         Err(_e) => {
-            eprintln!("No se pudo obtener el hash del commit actual.");
+            eprintln!("Failed to obtain the hash of the current commit..");
             return;
         }
     };
@@ -4349,7 +4342,7 @@ fn set_done_button_behavior(button: &Button, merge_button: &gtk::Button, conflic
     let mut merge_head_file = match File::open(merge_head_path) {
         Ok(file) => file,
         Err(_e) => {
-            eprintln!("No se pudo abrir el archivo MERGE_HEAD.");
+            eprintln!("Can't open MERGE_HEAD.");
             return;
         }
     };
@@ -4357,7 +4350,7 @@ fn set_done_button_behavior(button: &Button, merge_button: &gtk::Button, conflic
     match merge_head_file.read_to_string(&mut parent_hash2) {
         Ok(_) => {}
         Err(_e) => {
-            eprintln!("No se pudo leer el archivo MERGE_HEAD.");
+            eprintln!("Can't read MERGE_HEAD.");
             return;
         }
     };
@@ -4366,7 +4359,7 @@ fn set_done_button_behavior(button: &Button, merge_button: &gtk::Button, conflic
         for conflict in &conflicts {
             let result = add::add(conflict, &index_path, &git_dir, "", None);
             if result.is_err() {
-                eprintln!("No se pudo agregar el archivo {} al index.", conflict);
+                eprintln!("Can not add {} to index.", conflict);
             }
         }
         let commit_message = "Merge commit".to_string();
@@ -4642,7 +4635,7 @@ fn set_update_button_behavior(
         let text_buffer = match cloned_text_view.get_buffer() {
             Some(buff) => buff,
             None => {
-                eprintln!("No se encontró el buffer");
+                eprintln!("buffer not found");
                 return;
             }
         };
@@ -4777,10 +4770,7 @@ fn rebase_window(builder: &gtk::Builder) -> io::Result<()> {
     rebase_button.connect_clicked(move |_| {
         let their_branch = branch_entry.get_text().to_string();
         if their_branch.is_empty() {
-            show_message_dialog(
-                "Error",
-                "Debe especificar la rama con la cual desea realizar el rebase.",
-            );
+            show_message_dialog("Error", "Specify branch.");
         } else {
             let git_dir = match obtain_git_dir() {
                 Ok(dir) => dir,
@@ -4791,8 +4781,8 @@ fn rebase_window(builder: &gtk::Builder) -> io::Result<()> {
             };
             if !is_an_existing_branch(&their_branch, &git_dir) {
                 show_message_dialog(
-                    "Rama inválida",
-                    &format!("{:?} no es una rama existente", &their_branch),
+                    "Invalid branch",
+                    &format!("{:?} not an existing branch", &their_branch),
                 );
             } else {
                 let current_branch = match get_branch_name(&git_dir) {
@@ -5072,15 +5062,12 @@ pub fn set_commit_history_view(builder: &gtk::Builder) -> io::Result<()> {
 /// Get the current working directory as a string.
 fn get_current_dir_string() -> io::Result<String> {
     let current_dir = std::env::current_dir()?;
-    current_dir
-        .to_str()
-        .map(String::from) // Convert the &str to String
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::Other,
-                "Failed to convert current directory to string",
-            )
-        })
+    current_dir.to_str().map(String::from).ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::Other,
+            "Failed to convert current directory to string",
+        )
+    })
 }
 
 /// Retrieves the path to the Git directory in the given current directory.
@@ -5116,7 +5103,7 @@ fn check_commit_message(message: &str) -> io::Result<()> {
             gtk::DialogFlags::MODAL,
             gtk::MessageType::Error,
             gtk::ButtonsType::Ok,
-            "Debe ingresar un mensaje de commit.",
+            "Enter commit message.",
         );
 
         dialog.run();

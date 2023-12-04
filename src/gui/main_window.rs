@@ -56,50 +56,24 @@ pub fn run_main_window() -> io::Result<()> {
     }
 }
 
-/// Connects the `clicked` signal of a GTK button to open a file dialog for selecting a directory.
+/// Connects the "clicked" signal of a GTK button to open a new repository.
+///
+/// This function is designed to be connected to the "clicked" signal of a GTK button.
+/// When the button is clicked, it opens a file chooser dialog for selecting a directory.
+/// If a valid directory is selected, it checks if it contains an ".mgit" folder, indicating
+/// a valid repository. If so, it closes all windows, shows the repository window for the
+/// selected directory, and prints diagnostic information. If the directory is not a valid
+/// repository, it displays an error message.
 ///
 /// # Arguments
 ///
-/// * `button` - The GTK button that triggers the action when clicked.
+/// * `button` - A reference to the GTK button triggering the action.
 ///
-/// # Returns
+/// # Errors
 ///
-/// Returns a `std::io::Result` indicating whether the operation was successful or resulted in an error.
-// ///
-// fn connect_button_clicked_open_new_repository(button: &gtk::Button) -> std::io::Result<()> {
-//     button.connect_clicked(move |_| {
-//         let dialog = FileChooserDialog::new(
-//             Some("Select Directory"),
-//             Some(&gtk::Window::new(gtk::WindowType::Popup)),
-//             FileChooserAction::SelectFolder,
-//         );
-//         dialog.add_button("Open", gtk::ResponseType::Ok);
-//         dialog.add_button("Cancel", gtk::ResponseType::Cancel);
-//         let result = dialog.run();
-//         if result == gtk::ResponseType::Ok {
-//             if let Some(selected_directory) = dialog.get_filename() {
-//                 let mgit_folder_path = selected_directory.join(".mgit");
-//                 if mgit_folder_path.is_dir() {
-//                     let code_dir = match std::env::current_dir() {
-//                         Ok(dir) => dir,
-//                         Err(_) => Path::new("").to_path_buf(),
-//                     };
-//                     close_all_windows();
-//                     let result = show_repository_window(&code_dir, &selected_directory);
-//                     if result.is_err() {
-//                         eprintln!("Couldn't show repository window");
-//                     }
-//                     println!("Selected directory: {:?}", selected_directory);
-//                 } else {
-//                     println!("Not an mgit directory");
-//                 }
-//             }
-//         }
-//         dialog.hide();
-//     });
-//     Ok(())
-// }
-
+/// Returns a `std::io::Result<()>` to handle potential I/O errors that may occur during
+/// file system operations or window management.
+///
 fn connect_button_clicked_open_new_repository(button: &gtk::Button) -> std::io::Result<()> {
     button.connect_clicked(move |_| {
         let dialog = FileChooserDialog::new(
@@ -125,8 +99,7 @@ fn connect_button_clicked_open_new_repository(button: &gtk::Button) -> std::io::
                     }
                     println!("Selected directory: {:?}", selected_directory);
                 } else {
-                    // Mostrar mensaje de error
-                    show_message_dialog("Error", "La carpeta no es un repositorio");
+                    show_message_dialog("Error", "The folder is not a directory");
                     println!("Not an mgit directory");
                 }
             }
