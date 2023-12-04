@@ -11,8 +11,9 @@ use crate::{cat_file, logger, utils::get_current_time};
 
 pub fn log(message: &str) -> io::Result<()> {
     let mut logger = logger::Logger::new("logs/log.log")?;
+    let message = message.replace('\0', "\\0").replace('\n', "\\n");
     let message = format!("{} - {}", get_current_time(), message);
-    write!(logger, "{}", message.escape_debug())?;
+    write!(logger, "{}", message)?;
     logger.flush()
 }
 
