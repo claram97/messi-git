@@ -5534,3 +5534,4 @@ Untracked files 0
 Command 'git status': 2023-12-03 16:19:01.422511465 -03:00
 Unstaged files 0
 Command 'git_branch':  2023-12-03 16:19:01.443712065 -03:00
+Command 'git init': Initialized repository at '/home/claram97/taller/repo/.mgit'2023-12-03 17:12:23.245420447 -03:00
