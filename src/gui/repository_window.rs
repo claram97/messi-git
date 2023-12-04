@@ -140,17 +140,11 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
 
     match set_staging_area_texts(&builder_clone) {
         Ok(_) => println!(" 'set_staging_area_texts' works correctly."),
-        Err(err) => println!(
-            "Error in 'set_staging_area_texts': {:?}",
-            err
-        ),
+        Err(err) => println!("Error in 'set_staging_area_texts': {:?}", err),
     };
     match set_commit_history_view(&builder_clone1) {
         Ok(_) => println!("La función 'set_commit_history_view' works correctly."),
-        Err(err) => println!(
-            "Error in 'set_commit_history_view': {:?}",
-            err
-        ),
+        Err(err) => println!("Error in 'set_commit_history_view': {:?}", err),
     };
 
     add_to_open_windows(&new_window_clone);
@@ -392,7 +386,7 @@ fn handle_git_push() -> io::Result<()> {
 fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     let button = get_button(builder, button_id);
     apply_button_style(&button).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-    let builder_clone = builder.clone(); 
+    let builder_clone = builder.clone();
     let button: gtk::Button = builder_clone
         .get_object(button_id)
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get the button object"))?;
@@ -1241,7 +1235,8 @@ fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
 ///
 fn modify_current_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
     if !text1.is_empty() {
-        show_message_dialog("Error", "Option 'actual branch' is on. Please disable this option if you want to change the name of another branch or leave the first field empty to change the name of the current branch.");    } else if text2.is_empty() {
+        show_message_dialog("Error", "Option 'actual branch' is on. Please disable this option if you want to change the name of another branch or leave the first field empty to change the name of the current branch.");
+    } else if text2.is_empty() {
         show_message_dialog("Error", "Please , insert new branch name.");
     } else {
         let mut output: Vec<u8> = vec![];
@@ -4775,10 +4770,7 @@ fn rebase_window(builder: &gtk::Builder) -> io::Result<()> {
     rebase_button.connect_clicked(move |_| {
         let their_branch = branch_entry.get_text().to_string();
         if their_branch.is_empty() {
-            show_message_dialog(
-                "Error",
-                "Specify branch.",
-            );
+            show_message_dialog("Error", "Specify branch.");
         } else {
             let git_dir = match obtain_git_dir() {
                 Ok(dir) => dir,
@@ -5070,15 +5062,12 @@ pub fn set_commit_history_view(builder: &gtk::Builder) -> io::Result<()> {
 /// Get the current working directory as a string.
 fn get_current_dir_string() -> io::Result<String> {
     let current_dir = std::env::current_dir()?;
-    current_dir
-        .to_str()
-        .map(String::from) 
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::Other,
-                "Failed to convert current directory to string",
-            )
-        })
+    current_dir.to_str().map(String::from).ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::Other,
+            "Failed to convert current directory to string",
+        )
+    })
 }
 
 /// Retrieves the path to the Git directory in the given current directory.
