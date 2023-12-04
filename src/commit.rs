@@ -373,10 +373,6 @@ pub fn get_commit_time(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
     let commit_parent = get_parent_hash(commit_hash, git_dir_path)?;
 
-    println!("commit hash: {}", commit_hash);
-    println!("commit file: {}", commit_file);
-    println!("commit parent: {}", commit_parent);
-
     let time = if is_merge_commit(commit_hash, git_dir_path)? {
         match commit_file.split('\n').nth(4) {
             Some(time) => {

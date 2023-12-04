@@ -177,6 +177,7 @@ fn draw_nodes(
     } else {
         commits_len * 50 + 20
     };
+    y += 20 * branches_len;
     drawing_area.set_size_request(BRANCHES_DISTANCE * branches_len, y);
 
     for commit in commits {
@@ -259,9 +260,7 @@ fn draw_commits_connections(
 /// It searches for the git directory in the current directory.
 /// If it finds it, it builds the graph of the git.
 pub fn handle_show_visual_branches_tree(builder: &gtk::Builder) -> io::Result<()> {
-    let current_dir = std::env::current_dir()?;
-    let git_dir = utils::find_git_directory(&mut current_dir.clone(), ".mgit")
-        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to find git directory"))?;
+    let git_dir = utils::obtain_git_dir()?;
 
     let drawing_area = setup_canvas(builder)?;
 
