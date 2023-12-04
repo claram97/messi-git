@@ -27,6 +27,13 @@ use std::io::Write;
 use std::rc::Rc;
 use std::str;
 //use crate::fetch::git_fetch_for_gui;
+use super::style::apply_entry_style;
+use super::style::apply_label_style;
+use super::style::create_text_entry_window_with_switch;
+use super::style::get_combo_box;
+use super::style::get_label;
+use super::style::get_switch;
+use super::visual_branches;
 use crate::branch::git_branch;
 use crate::config::Config;
 use crate::gui::main_window::add_to_open_windows;
@@ -81,13 +88,6 @@ use std::env;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
-use super::style::apply_entry_style;
-use super::style::apply_label_style;
-use super::style::create_text_entry_window_with_switch;
-use super::style::get_combo_box;
-use super::style::get_label;
-use super::style::get_switch;
-use super::visual_branches;
 
 /// Displays a repository window with various buttons and actions in a GTK application.
 ///
@@ -417,9 +417,7 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
             });
         }
         "show-fetch" => {
-            button.connect_clicked(move |_| {
-               
-            });
+            button.connect_clicked(move |_| {});
         }
         "show-log-button" => {
             button.connect_clicked(move |_| {
@@ -594,7 +592,6 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     }
     Ok(())
 }
-
 
 /// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
 /// and attempts to create and checkout a new branch based on the provided path. It shows a success message
