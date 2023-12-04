@@ -247,16 +247,37 @@ pub fn git_merge_for_ui(
 /// `Ok(())` is returned; otherwise, an error is returned.
 ///
 pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io::Result<Tree> {
+    // Check if it is a fast forward merge
     let our_commit = branch::get_branch_commit_hash(branch, git_dir)?;
-    let our_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
-    let remote_tree = tree_handler::load_tree_from_commit(remote_hash, git_dir)?;
-    let (new_tree, _conflicts) = tree_handler::merge_trees(&our_tree, &remote_tree, git_dir)?;
-    let index_path = utils::get_index_file_path(git_dir);
-    let new_index_file_contents =
-        new_tree.build_index_file_from_tree(&index_path, git_dir, &get_git_ignore_path(git_dir))?;
-    new_index_file_contents.write_file()?;
+    let common_ancestor = find_common_ancestor(&our_commit, remote_hash, git_dir)?;
+    if is_fast_forward(&our_commit, &common_ancestor) {
+        let old_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
+        let remote_tree = tree_handler::load_tree_from_commit(remote_hash, git_dir)?;
+        old_tree.delete_directories(git_dir)?;
+        remote_tree.create_directories(git_dir, git_dir)?;
+        let index_path = utils::get_index_file_path(git_dir);
+        let new_index_file_contents = remote_tree.build_index_file_from_tree(
+            &index_path,
+            git_dir,
+            &get_git_ignore_path(git_dir),
+        )?;
+        new_index_file_contents.write_file()?;
+        branch::update_branch_commit_hash(branch, remote_hash, git_dir)?;
+        tree_handler::build_tree_from_index(&index_path, git_dir, &get_git_ignore_path(git_dir))
+    } else {
+        let our_tree = tree_handler::load_tree_from_commit(&our_commit, git_dir)?;
+        let remote_tree = tree_handler::load_tree_from_commit(remote_hash, git_dir)?;
+        let (new_tree, _conflicts) = tree_handler::merge_trees(&our_tree, &remote_tree, git_dir)?;
+        let index_path = utils::get_index_file_path(git_dir);
+        let new_index_file_contents = new_tree.build_index_file_from_tree(
+            &index_path,
+            git_dir,
+            &get_git_ignore_path(git_dir),
+        )?;
+        new_index_file_contents.write_file()?;
 
-    tree_handler::build_tree_from_index(&index_path, git_dir, &get_git_ignore_path(git_dir))
+        tree_handler::build_tree_from_index(&index_path, git_dir, &get_git_ignore_path(git_dir))
+    }
 }
 
 #[cfg(test)]

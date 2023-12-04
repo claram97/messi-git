@@ -11,8 +11,9 @@ use crate::{cat_file, logger, utils::get_current_time};
 
 pub fn log(message: &str) -> io::Result<()> {
     let mut logger = logger::Logger::new("logs/log.log")?;
+    let message = message.replace('\0', "\\0").replace('\n', "\\n");
     let message = format!("{} - {}", get_current_time(), message);
-    write!(logger, "{}", message.escape_debug())?;
+    write!(logger, "{}", message)?;
     logger.flush()
 }
 
@@ -110,21 +111,10 @@ pub fn get_head_from_branch(git_dir: &str, branch: &str) -> io::Result<String> {
         .join("tags")
         .join(branch);
     if pathbuf.exists() {
-        return Ok(format!("refs/tags/{}", branch));
+        Ok(format!("refs/tags/{}", branch))
+    } else {
+        Ok(format!("refs/heads/{}", branch))
     }
-    let pathbuf = PathBuf::from(git_dir)
-        .join("refs")
-        .join("heads")
-        .join(branch);
-    let heads = PathBuf::from(git_dir).join("refs").join("heads");
-    if pathbuf.exists() || heads.read_dir()?.count() == 0 {
-        return Ok(format!("refs/heads/{}", branch));
-    }
-
-    Err(io::Error::new(
-        io::ErrorKind::InvalidData,
-        format!("Invalid branch: {}", branch),
-    ))
 }
 
 /// Auxiliar function which get refs under refs/heads
