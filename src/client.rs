@@ -358,7 +358,10 @@ impl Client {
         prev_hash: &str,
         new_hash: &str,
     ) -> io::Result<()> {
-        let update = format!("{} {} {}\0{}\n", prev_hash, new_hash, pushing_ref, CAPABILITIES_UPLOAD);
+        let update = format!(
+            "{} {} {}\0{}\n",
+            prev_hash, new_hash, pushing_ref, CAPABILITIES_UPLOAD
+        );
         self.send(&pkt_line(&update))?;
         self.flush()?;
 
