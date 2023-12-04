@@ -1,5 +1,4 @@
-use crate::configuration::GIT_DIR_FOR_TEST;
-use crate::configuration::{GIT_DIR, LOGGER_COMMANDS_FILE};
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use std::fs;
