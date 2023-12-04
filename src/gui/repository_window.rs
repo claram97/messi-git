@@ -183,10 +183,20 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
     }
 
     let builder_clone_for_checkout_view = builder.clone();
-    handle_show_branches_button(&builder_clone_for_checkout_view);
+    match handle_show_branches_button(&builder_clone_for_checkout_view) {
+        Ok(_) => {}
+        Err(error) => {
+            eprintln!("{:?}", error.to_string());
+        }
+    }
 
     let builder_clone_for_config_window = builder.clone();
-    update_config_window(&builder_clone_for_config_window);
+    match update_config_window(&builder_clone_for_config_window) {
+        Ok(_) => {}
+        Err(error) => {
+            eprintln!("{:?}", error.to_string());
+        }
+    }
 
     setup_buttons(builder)?;
 
@@ -385,99 +395,143 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     let button: gtk::Button = builder_clone
         .get_object(button_id)
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get the button object"))?;
-    let merge_text_view = match get_text_view(&builder_clone, "merge-text-view") {
-        Some(text_view) => text_view,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Couldn't find merge text view.",
-            ));
-        }
-    };
     match button_id {
         "trees-button" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_ls_trees(&builder_clone);
+            button.connect_clicked(move |_| match handle_ls_trees(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "r-trees" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_ls_trees_r(&builder_clone);
+            button.connect_clicked(move |_| match handle_ls_trees_r(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "d-trees" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_ls_trees_d(&builder_clone);
+            button.connect_clicked(move |_| match handle_ls_trees_d(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "rt-trees" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_ls_trees_rt(&builder_clone);
+            button.connect_clicked(move |_| match handle_ls_trees_rt(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "verify-tag" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_tag_verify(&builder_clone);
+            button.connect_clicked(move |_| match handle_tag_verify(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "tag-from-tag" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_tag_from_tag(&builder_clone);
+            button.connect_clicked(move |_| match handle_tag_from_tag(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "list-tags" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_list_tags(&builder_clone);
+            button.connect_clicked(move |_| match handle_list_tags(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "add-normal-tag" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_tag_add_normal(&builder_clone);
+            button.connect_clicked(move |_| match handle_tag_add_normal(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "add-annotated-tag" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_tag_add_annotated(&builder_clone);
+            button.connect_clicked(move |_| match handle_tag_add_annotated(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "remove-tag" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_tag_remove(&builder_clone);
+            button.connect_clicked(move |_| match handle_tag_remove(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "another-branch" => {
             button.connect_clicked(move |_| {
-                let _ = handle_create_branch_from_branch_button(&builder_clone);
+                match handle_create_branch_from_branch_button(&builder_clone) {
+                    Ok(_) => {}
+                    Err(error) => {
+                        eprintln!("{:?}", error);
+                    }
+                }
             });
         }
         "remote" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_remote(&builder_clone);
+            button.connect_clicked(move |_| match handle_remote(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "remote-add" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_remote_add(&builder_clone);
+            button.connect_clicked(move |_| match handle_remote_add(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "remote-rm" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_remote_rm(&builder_clone);
+            button.connect_clicked(move |_| match handle_remote_rm(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "remote-set-url" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_remote_set_url();
+            button.connect_clicked(move |_| match handle_remote_set_url() {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "remote-get-url" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_remote_get_url();
+            button.connect_clicked(move |_| match handle_remote_get_url() {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "remote-rename" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_remote_rename(&builder_clone);
+            button.connect_clicked(move |_| match handle_remote_rename(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "fetch" => {
@@ -2580,7 +2634,7 @@ fn handle_checkout_branch_window(builder: &Builder) {
         } else {
             let resultado = obtain_text_from_checkout_branch(&text);
             match resultado {
-                Ok(texto) => {
+                Ok(_) => {
                     update_views_since_checkout_was_called(&builder_clone);
                 }
                 Err(err) => {
@@ -2606,14 +2660,14 @@ fn update_views_since_checkout_was_called(builder: &Builder) {
 
     match show_current_branch_on_merge_window(&merge_text_view) {
         Ok(_) => {}
-        Err(error) => {
+        Err(_) => {
             eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
         }
     }
 
     match handle_show_branches_button(builder) {
         Ok(_) => {}
-        Err(error) => {
+        Err(_) => {
             eprintln!("No se pudo actualizar la view");
         }
     }
@@ -4156,7 +4210,12 @@ fn config_button_on_clicked(
         } else {
             call_git_config(name, email);
         }
-        update_config_window(&builder_clone);
+        match update_config_window(&builder_clone) {
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!("{:?}", error.to_string());
+            }
+        }
     });
 }
 
@@ -4648,7 +4707,7 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
     update_button.set_sensitive(false);
 
     show_current_branch_on_merge_window(&merge_text_view)?;
-    let _ = set_merge_button_behavior(
+    set_merge_button_behavior(
         &merge_button,
         &merge_input_branch_entry,
         &merge_text_view,
