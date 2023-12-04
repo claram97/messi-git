@@ -769,7 +769,7 @@ impl Config {
 mod test {
     use std::{io::Read, path::Path};
 
-    use crate::init;
+    use crate::{configuration::GIT_DIR_FOR_TEST, init};
 
     use super::*;
 
@@ -787,7 +787,12 @@ mod test {
     #[test]
     fn test_load_config_ok() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_1", true)?;
-        init::git_init("tests/config_fake_repo_1", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_1",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/config_fake_repo_1/.mgit/config", false)?;
         let config_result = Config::load("tests/config_fake_repo_1/.mgit");
         assert!(config_result.is_ok());
@@ -798,7 +803,12 @@ mod test {
     #[test]
     fn test_load_config_error() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_2", true)?;
-        init::git_init("tests/config_fake_repo_2", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_2",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         let config_path = Path::new("tests/config_fake_repo_2/.mgit/config");
         if config_path.exists() {
             std::fs::remove_file(config_path)?;
@@ -812,7 +822,12 @@ mod test {
     #[test]
     fn test_add_existing_remote_fails() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_3", true)?;
-        init::git_init("tests/config_fake_repo_3", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_3",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/config_fake_repo_3/.mgit/config", false)?;
         let mut config = Config::load("tests/config_fake_repo_3/.mgit")?;
         let mut output: Vec<u8> = vec![];
@@ -836,7 +851,12 @@ mod test {
     #[test]
     fn test_writing_new_remote_correctly_to_file() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_4", true)?;
-        init::git_init("tests/config_fake_repo_4", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_4",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/config_fake_repo_4/.mgit/config", false)?;
         let mut config = Config::load("tests/config_fake_repo_4/.mgit")?;
         let mut output: Vec<u8> = vec![];
@@ -858,7 +878,12 @@ mod test {
     #[test]
     fn test_removing_remote_correctly_from_file() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_5", true)?;
-        init::git_init("tests/config_fake_repo_5", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_5",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/config_fake_repo_5/.mgit/config", false)?;
         let mut config = Config::load("tests/config_fake_repo_5/.mgit")?;
         let mut output: Vec<u8> = vec![];
@@ -882,7 +907,12 @@ mod test {
     #[test]
     fn test_removing_non_existing_remote_fails() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_6", true)?;
-        init::git_init("tests/config_fake_repo_6", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_6",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/config_fake_repo_6/.mgit/config", false)?;
         let mut config = Config::load("tests/config_fake_repo_6/.mgit")?;
         let mut output: Vec<u8> = vec![];
@@ -895,7 +925,12 @@ mod test {
     #[test]
     fn test_set_url_to_existing_remote_make_correct_changes_in_file() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_7", true)?;
-        init::git_init("tests/config_fake_repo_7", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_7",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/config_fake_repo_7/.mgit/config", false)?;
         let mut config = Config::load("tests/config_fake_repo_7/.mgit")?;
         let mut output: Vec<u8> = vec![];
@@ -927,7 +962,12 @@ mod test {
     #[test]
     fn test_set_url_to_non_existing_remote_fails() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_8", true)?;
-        init::git_init("tests/config_fake_repo_8", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_8",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/config_fake_repo_8/.mgit/config", false)?;
         let mut config = Config::load("tests/config_fake_repo_8/.mgit")?;
         let mut output: Vec<u8> = vec![];
@@ -940,7 +980,12 @@ mod test {
     #[test]
     fn test_get_url_from_non_existing_remote_fails() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_9", true)?;
-        init::git_init("tests/config_fake_repo_9", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_9",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/config_fake_repo_9/.mgit/config", false)?;
         let config = Config::load("tests/config_fake_repo_9/.mgit")?;
         let mut output: Vec<u8> = vec![];
@@ -953,7 +998,12 @@ mod test {
     #[test]
     fn test_get_url_from_existing_remote_returns_url_successfully() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_10", true)?;
-        init::git_init("tests/config_fake_repo_10", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_10",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/config_fake_repo_10/.mgit/config", false)?;
         let mut config = Config::load("tests/config_fake_repo_10/.mgit")?;
         let mut output: Vec<u8> = vec![];
@@ -975,7 +1025,12 @@ mod test {
     #[test]
     fn changing_name_of_existing_remote_to_non_existings_one_returns_ok() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_11", true)?;
-        init::git_init("tests/config_fake_repo_11", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_11",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         let mut config = Config::load("tests/config_fake_repo_11/.mgit")?;
         let mut output: Vec<u8> = vec![];
         let _ = config.add_remote(
@@ -1007,7 +1062,12 @@ mod test {
     #[test]
     fn changing_name_of_existing_remote_fails_due_to_other_existing_remote() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_12", true)?;
-        init::git_init("tests/config_fake_repo_12", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_12",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/config_fake_repo_12/.mgit/config", false)?;
         let mut config = Config::load("tests/config_fake_repo_12/.mgit")?;
         let mut output: Vec<u8> = vec![];
@@ -1034,7 +1094,12 @@ mod test {
     #[test]
     fn changing_name_of_non_existing_remote_fails() -> io::Result<()> {
         create_if_not_exists("tests/config_fake_repo_13", true)?;
-        init::git_init("tests/config_fake_repo_13", "current_branch", None)?;
+        init::git_init(
+            "tests/config_fake_repo_13",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/config_fake_repo_13/.mgit/config", false)?;
         let mut config = Config::load("tests/config_fake_repo_13/.mgit")?;
         let mut output: Vec<u8> = vec![];
@@ -1048,7 +1113,7 @@ mod test {
     fn setting_user_info_for_the_first_time_adds_data_correctly() -> io::Result<()> {
         let path = "tests/config_fake_repo_14";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let git_dir = format!("{}/{}", path, ".mgit");
         let config = Config::load(&git_dir)?;
         let initial_content = fs::read_to_string(&config.config_file_path)?;
@@ -1069,7 +1134,7 @@ mod test {
     fn updating_user_info_correctly_on_file() -> io::Result<()> {
         let path = "tests/config_fake_repo_15";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let git_dir = format!("{}/{}", path, ".mgit");
         let config = Config::load(&git_dir)?;
         let initial_content = fs::read_to_string(&config.config_file_path)?;
@@ -1098,7 +1163,7 @@ mod test {
     fn getting_info_correctly_from_file() -> io::Result<()> {
         let path = "tests/config_fake_repo_16";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let git_dir = format!("{}/{}", path, ".mgit");
         let config = Config::load(&git_dir)?;
         let initial_content = fs::read_to_string(&config.config_file_path)?;
@@ -1124,7 +1189,7 @@ mod test {
     fn getting_info_fails_if_no_info_is_setted() -> io::Result<()> {
         let path = "tests/config_fake_repo_17";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let git_dir = format!("{}/{}", path, ".mgit");
         let config = Config::load(&git_dir)?;
         let initial_content = fs::read_to_string(&config.config_file_path)?;

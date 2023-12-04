@@ -925,15 +925,6 @@ mod tests {
         assert!(new_tree.get_depth() == 1 && tree.get_depth() == 2);
     }
 
-    // #[test]
-    // fn test_tree_blobs_to_string_formatted_for_tree() {
-    //     let mut tree = Tree::new();
-    //     tree.add_file("root", "1");
-    //     tree.add_file("test", "2");
-    //     let string = tree.tree_blobs_to_string_formatted_for_tree();
-    //     assert_eq!(string, "100644 blob 1 root\n100644 blob 2 test\n");
-    // }
-
     #[test]
     fn test_get_hash_from_path_is_some() {
         let mut tree = Tree::new("");
@@ -1000,94 +991,101 @@ mod tests {
         Ok(())
     }
 
-    // fn create_git_dir(git_dir_path: &str) {
-    //     let _ = std::fs::remove_dir_all(git_dir_path);
-    //     let _ = std::fs::create_dir(git_dir_path);
-    //     let _ = std::fs::create_dir(git_dir_path.to_string() + "/refs");
-    //     let _ = std::fs::create_dir(git_dir_path.to_string() + "/refs/heads");
-    //     let _ = std::fs::create_dir(git_dir_path.to_string() + "/objects");
-    //     let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs");
-    //     let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs/refs");
-    //     let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs/refs/heads");
-    //     let mut head_file = std::fs::File::create(git_dir_path.to_string() + "/HEAD").unwrap();
-    //     head_file
-    //         .write_all("ref: refs/heads/main".as_bytes())
-    //         .unwrap();
+    fn create_git_dir(git_dir_path: &str) {
+        let _ = std::fs::remove_dir_all(git_dir_path);
+        let _ = std::fs::create_dir(git_dir_path);
+        let _ = std::fs::create_dir(git_dir_path.to_string() + "/refs");
+        let _ = std::fs::create_dir(git_dir_path.to_string() + "/refs/heads");
+        let _ = std::fs::create_dir(git_dir_path.to_string() + "/objects");
+        let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs");
+        let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs/refs");
+        let _ = std::fs::create_dir(git_dir_path.to_string() + "/logs/refs/heads");
+        let mut head_file = std::fs::File::create(git_dir_path.to_string() + "/HEAD").unwrap();
+        head_file
+            .write_all("ref: refs/heads/main".as_bytes())
+            .unwrap();
 
-    //     //Create the refs/heads/main file
-    //     let mut refs_file =
-    //         std::fs::File::create(git_dir_path.to_string() + "/refs/heads/main").unwrap();
-    //     refs_file
-    //         .write_all("hash_del_commit_anterior".as_bytes())
-    //         .unwrap();
+        //Create the refs/heads/main file
+        let mut refs_file =
+            std::fs::File::create(git_dir_path.to_string() + "/refs/heads/main").unwrap();
+        refs_file
+            .write_all("43020a76d7662415b39a1d9ab08517dc61f85fcf".as_bytes())
+            .unwrap();
 
-    //     //Create the index file
-    //     let mut index_file = std::fs::File::create(git_dir_path.to_string() + "/index").unwrap();
-    //     index_file.write_all("".as_bytes()).unwrap();
-    // }
+        //Create the index file
+        let mut index_file = std::fs::File::create(git_dir_path.to_string() + "/index").unwrap();
+        index_file.write_all("".as_bytes()).unwrap();
+    }
 
-    // #[test]
-    // fn test_write_tree_no_subtrees() {
-    //     let git_dir_path = "tests/commit/.mgit_test4";
-    //     create_git_dir(git_dir_path);
+    #[test]
+    fn test_write_tree_no_subtrees() {
+        let git_dir_path = "tests/commit/.mgit_test4";
+        create_git_dir(git_dir_path);
 
-    //     let content = "hash1 file1.txt\nhash2 file2.txt\nhash3 file3.txt\n";
-    //     let path = "tests/commit/.mgit_test4/index";
+        let content = "ef7f9a1ca80f71fa18caa9462a1fc907720296f5 file1.txt\ncea776787adac657c806991f181cd057be176ca5 file2.txt\ndeeaf3549af7671b6a5f990f09829ee05d46ca7e file3.txt\n";
+        let path = "tests/commit/.mgit_test4/index";
 
-    //     let mut index_file = OpenOptions::new()
-    //         .write(true)
-    //         .truncate(true)
-    //         .open(path)
-    //         .unwrap();
+        let mut index_file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(path)
+            .unwrap();
 
-    //     index_file.write_all(content.as_bytes()).unwrap();
-    //     let tree = build_tree_from_index(
-    //         "tests/commit/.mgit_test4/index",
-    //         "tests/commit/.mgit_test4",
-    //         "",
-    //     )
-    //     .unwrap();
-    //     let result = write_tree(&tree, "tests/commit/.mgit_test4").unwrap();
-    //     let tree_file = cat_file_return_content(&result.0, "tests/commit/.mgit_test4").unwrap();
+        index_file.write_all(content.as_bytes()).unwrap();
+        let tree = build_tree_from_index(
+            "tests/commit/.mgit_test4/index",
+            "tests/commit/.mgit_test4",
+            "",
+        )
+        .unwrap();
+        let result = write_tree(&tree, "tests/commit/.mgit_test4").unwrap();
+        let tree_vec = cat_file::cat_tree(&result.0, "tests/commit/.mgit_test4").unwrap();
 
-    //     assert_eq!(
-    //         tree_file,
-    //         "100644 blob hash1 file1.txt\n100644 blob hash2 file2.txt\n100644 blob hash3 file3.txt\n"
-    //     );
-    //     let _ = std::fs::remove_dir_all(git_dir_path);
-    // }
+        // The result of cat_tree will be a vec of (mode, name, hash)
 
-    // #[test]
-    // fn test_write_tree_with_subtrees() {
-    //     let git_dir_path = "tests/commit/.mgit_test5";
-    //     create_git_dir(git_dir_path);
+        assert_eq!(tree_vec.len(), 3);
+        assert_eq!(tree_vec[0].0, "100644");
+        assert_eq!(tree_vec[0].1, "file1.txt");
+        assert_eq!(tree_vec[0].2, "ef7f9a1ca80f71fa18caa9462a1fc907720296f5");
+        assert_eq!(tree_vec[1].2, "cea776787adac657c806991f181cd057be176ca5");
+        assert_eq!(tree_vec[2].2, "deeaf3549af7671b6a5f990f09829ee05d46ca7e");
 
-    //     let content = "hash1 file1.txt\nhash2 file2.txt\nhash3 file3.txt\nhash4 src/file4.txt\n";
-    //     let path = "tests/commit/.mgit_test5/index";
+        let _ = std::fs::remove_dir_all(git_dir_path);
+    }
 
-    //     let mut index_file = OpenOptions::new()
-    //         .write(true)
-    //         .truncate(true)
-    //         .open(path)
-    //         .unwrap();
+    #[test]
+    fn test_write_tree_with_subtrees() {
+        let git_dir_path = "tests/commit/.mgit_test5";
+        create_git_dir(git_dir_path);
 
-    //     index_file.write_all(content.as_bytes()).unwrap();
-    //     let tree =
-    //         build_tree_from_index("tests/commit/.mgit_test5/index", git_dir_path, "").unwrap();
-    //     let result = write_tree(&tree, git_dir_path).unwrap();
+        let content = "ef7f9a1ca80f71fa18caa9462a1fc907720296f5 file1.txt\ncea776787adac657c806991f181cd057be176ca5 file2.txt\ndeeaf3549af7671b6a5f990f09829ee05d46ca7e file3.txt\n9b748c5192f5b6886406b63dbcd1aff78f87a01a src/file4.txt\n";
+        let path = "tests/commit/.mgit_test5/index";
 
-    //     let tree_file = cat_file_return_content(&result.0, git_dir_path).unwrap();
-    //     let tree_file_blob_part = tree_file.split("tree").collect::<Vec<&str>>()[0];
-    //     let tree_file_tree_part = tree_file.split("tree").collect::<Vec<&str>>()[1];
-    //     let sub_tree_hash = tree_file_tree_part.split(" ").collect::<Vec<&str>>()[1];
+        let mut index_file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(path)
+            .unwrap();
 
-    //     let sub_tree_content = cat_file_return_content(&sub_tree_hash, git_dir_path).unwrap();
+        index_file.write_all(content.as_bytes()).unwrap();
+        let tree =
+            build_tree_from_index("tests/commit/.mgit_test5/index", git_dir_path, "").unwrap();
+        let result = write_tree(&tree, git_dir_path).unwrap();
 
-    //     assert_eq!(
-    //         tree_file_blob_part,
-    //         "100644 blob hash1 file1.txt\n100644 blob hash2 file2.txt\n100644 blob hash3 file3.txt\n040000 "
-    //     );
-    //     assert_eq!(sub_tree_content, "100644 blob hash4 file4.txt\n");
-    //     let _ = std::fs::remove_dir_all(git_dir_path);
-    // }
+        let tree_vec = cat_file::cat_tree(&result.0, git_dir_path).unwrap();
+        assert_eq!(tree_vec.len(), 4);
+
+        // Assert that the 4 modes are correct
+        assert_eq!(tree_vec[0].0, "100644");
+        assert_eq!(tree_vec[1].0, "100644");
+        assert_eq!(tree_vec[2].0, "100644");
+        assert_eq!(tree_vec[3].0, "40000 ");
+
+        // Assert that the hashes are correct
+        assert_eq!(tree_vec[0].2, "ef7f9a1ca80f71fa18caa9462a1fc907720296f5");
+        assert_eq!(tree_vec[1].2, "cea776787adac657c806991f181cd057be176ca5");
+        assert_eq!(tree_vec[2].2, "deeaf3549af7671b6a5f990f09829ee05d46ca7e");
+
+        let _ = std::fs::remove_dir_all(git_dir_path);
+    }
 }

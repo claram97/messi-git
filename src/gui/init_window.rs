@@ -1,3 +1,4 @@
+use crate::configuration::GIT_DIR;
 use crate::gui::main_window::add_to_open_windows;
 use crate::gui::main_window::close_all_windows;
 use crate::gui::main_window::run_main_window;
@@ -121,7 +122,12 @@ pub fn connect_button_clicked_init_window(
 ///
 fn handle_directory_selection(file_chooser: &FileChooserButton, current_dir: &Path) {
     if let Some(selected_directory) = file_chooser.get_filename() {
-        let result = git_init(&selected_directory.to_string_lossy(), "master", None);
+        let result = git_init(
+            &selected_directory.to_string_lossy(),
+            GIT_DIR,
+            "master",
+            None,
+        );
         if result.is_err() {
             eprintln!("Error in git init .");
             return;
@@ -181,7 +187,7 @@ fn create_selection_window() -> (Window, Button, FileChooserButton, Box) {
 /// * `current_dir` - The current directory path.
 ///
 fn init_git_and_handle_errors(dir_str: &str, current_dir: &Path) {
-    let result = git_init(dir_str, "master", None);
+    let result = git_init(dir_str, GIT_DIR, "master", None);
     if result.is_err() {
         eprintln!("Error initiating git.");
         return;
@@ -208,7 +214,7 @@ fn handle_template_path_entry(dir_str: &str, current_dir: &Path) {
     let current_dir_clone = current_dir.to_path_buf();
 
     let result = create_text_entry_window("Enter the template path", move |text| {
-        let result = git_init(&dir_str, "master", Some(&text));
+        let result = git_init(&dir_str, GIT_DIR, "master", Some(&text));
         if result.is_err() {
             eprintln!("Error initiating git.");
             return;
@@ -275,7 +281,7 @@ fn handle_git_init_and_change_dir(
     branch_name: &str,
     current_dir: &Path,
 ) -> Result<(), String> {
-    let result = git_init(dir_str, branch_name, None);
+    let result = git_init(dir_str, GIT_DIR, branch_name, None);
     if result.is_err() {
         return Err("Error initiating git.".to_string());
     }

@@ -8,3 +8,4 @@ pub const LOGGER_COMMANDS_FILE: &str = ".logger_commands.txt";
 pub const HOST: &str = "localhost";
 pub const USER: &str = "no_user";
 pub const EMAIL: &str = "no_email";
+pub const GIT_DIR_FOR_TEST: &str = ".mgit";
