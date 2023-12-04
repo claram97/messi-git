@@ -277,7 +277,7 @@ fn handle_ls_trees(args: Vec<String>) {
         return;
     }
 
-    let git_dir = match find_git_directory(&mut PathBuf::from("."), ".mgit") {
+    let git_dir = match find_git_directory(&mut PathBuf::from("."), GIT_DIR) {
         Some(dir) => dir,
         None => {
             eprintln!("Error obtaining the git directory");
@@ -724,7 +724,7 @@ pub fn handle_status() {
         }
     };
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+    let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
         Some(dir) => dir,
         None => {
             eprintln!("Error al obtener el git dir");
@@ -1003,7 +1003,7 @@ fn handle_log() {
             return;
         }
     };
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+    let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
         Some(git_dir) => git_dir,
         None => {
             eprintln!("Error al obtener el git dir");
