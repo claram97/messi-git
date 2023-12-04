@@ -218,7 +218,6 @@ mod test {
         }
         assert_eq!(file_content, "Test content");
 
-        // Clean up: Remove the temporary directory
         if let Err(err) = fs::remove_dir_all(&temp_dir) {
             panic!("Failed to remove temp directory: {}", err);
         }
@@ -232,7 +231,7 @@ mod test {
             panic!("Failed to initialize Git repository: {}", err);
         }
 
-        let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
+        let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR_FOR_TEST);
         assert!(Path::new(&git_dir_path).exists());
 
         if let Err(err) = fs::remove_dir_all(&temp_dir) {
@@ -246,7 +245,7 @@ mod test {
 
         match git_init(&temp_dir, GIT_DIR_FOR_TEST, "main", None) {
             Ok(_) => {
-                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
+                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR_FOR_TEST);
                 assert!(Path::new(&git_dir_path).exists());
                 assert!(Path::new(&git_dir_path).is_dir());
 
@@ -280,7 +279,7 @@ mod test {
 
         match git_init(&temp_dir, GIT_DIR_FOR_TEST, "mybranch", None) {
             Ok(_) => {
-                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
+                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR_FOR_TEST);
                 assert!(Path::new(&git_dir_path).exists());
                 assert!(Path::new(&git_dir_path).is_dir());
 
@@ -320,7 +319,7 @@ mod test {
 
         match git_init(&temp_dir, GIT_DIR_FOR_TEST, "main", Some(&template_dir)) {
             Ok(_) => {
-                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
+                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR_FOR_TEST);
                 assert!(Path::new(&git_dir_path).exists());
                 assert!(Path::new(&git_dir_path).is_dir());
 
@@ -372,7 +371,7 @@ mod test {
         // Call git_init on an existing directory
         match git_init(&temp_dir, GIT_DIR_FOR_TEST, "main", None) {
             Ok(_) => {
-                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
+                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR_FOR_TEST);
                 assert!(Path::new(&git_dir_path).exists());
                 assert!(Path::new(&git_dir_path).is_dir());
             }
