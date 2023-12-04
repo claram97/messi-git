@@ -246,7 +246,6 @@ pub fn git_merge_for_ui(
 /// `Ok(())` is returned; otherwise, an error is returned.
 ///
 pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io::Result<Tree> {
-    // Check if it is a fast forward merge
     let our_commit = branch::get_branch_commit_hash(branch, git_dir)?;
     let common_ancestor = find_common_ancestor(&our_commit, remote_hash, git_dir)?;
     if is_fast_forward(&our_commit, &common_ancestor) {
