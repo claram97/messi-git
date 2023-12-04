@@ -183,6 +183,7 @@ impl Client {
         };
         if &prev_hash == new_hash {
             log("Already up to date.")?;
+            return Ok(());
         }
         if prev_hash.is_empty() {
             self.receive_pack_create(&pushing_ref, new_hash)?;
