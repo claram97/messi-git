@@ -1845,7 +1845,7 @@ fn handle_tag_add_annotated(builder: &gtk::Builder) -> io::Result<()> {
         "Enter tag message",
         move |name, message| {
             if name.is_empty() || message.is_empty() {
-                show_message_dialog("Error", "Debe proveer un nombre y un mensaje para el tag.");
+                show_message_dialog("Error", "Insert name and message for tag ");
             } else {
                 let resultado = add_annotated_tag(&builder_clone, &name, &message);
                 match resultado {
@@ -1931,13 +1931,13 @@ pub fn create_tag_from_other_tag(
 fn handle_tag_from_tag(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
     let result = create_text_entry_window2(
-        "Nombre del nuevo tag",
-        "Nombre del tag de base",
+        "New tag name",
+        "Name of base tag ",
         move |new_tag_name, base_tag_name| {
             if new_tag_name.is_empty() || base_tag_name.is_empty() {
                 show_message_dialog(
                     "Error",
-                    "Debe proveer el nombre del nuevo tag y el nombre del tag de base",
+                    "Debe proveer el New tag name y el Name of base tag ",
                 );
             } else {
                 let resultado =
@@ -1973,7 +1973,7 @@ fn call_ls_trees(option: &str, hash: &str, builder: &gtk::Builder) {
     let git_dir = match obtain_git_dir() {
         Ok(dir) => dir,
         Err(_) => {
-            eprintln!("No se encontró el directorio git.");
+            eprintln!("git directory not found .");
             return;
         }
     };
@@ -1983,7 +1983,7 @@ fn call_ls_trees(option: &str, hash: &str, builder: &gtk::Builder) {
         Ok(_texto) => match update_list_trees_view(builder, output, "trees-text") {
             Ok(_) => {}
             Err(_e) => {
-                show_message_dialog("Error", "No se pudo actualizar la vista");
+                show_message_dialog("Error", "View not updated");
             }
         },
         Err(_err) => {
@@ -2009,7 +2009,7 @@ fn handle_ls_trees(builder: &gtk::Builder) -> io::Result<()> {
 
     let result = create_text_entry_window("Enter hash", move |hash| {
         if hash.is_empty() {
-            show_message_dialog("Error", "Debe ingresar un hash");
+            show_message_dialog("Error", "insert hash");
         } else {
             call_ls_trees("", &hash, &builder_clone);
         }
@@ -2039,7 +2039,7 @@ fn handle_ls_trees_r(builder: &gtk::Builder) -> io::Result<()> {
 
     let result = create_text_entry_window("Enter hash", move |hash| {
         if hash.is_empty() {
-            show_message_dialog("Error", "Debe ingresar un hash");
+            show_message_dialog("Error", "insert hash");
         } else {
             call_ls_trees("-r", &hash, &builder_clone);
         }
@@ -2068,7 +2068,7 @@ fn handle_ls_trees_d(builder: &gtk::Builder) -> io::Result<()> {
 
     let result = create_text_entry_window("Enter hash", move |hash| {
         if hash.is_empty() {
-            show_message_dialog("Error", "Debe ingresar un hash");
+            show_message_dialog("Error", "insert hash");
         } else {
             call_ls_trees("-d", &hash, &builder_clone);
         }
@@ -2098,7 +2098,7 @@ fn handle_ls_trees_rt(builder: &gtk::Builder) -> io::Result<()> {
 
     let result = create_text_entry_window("Enter hash", move |hash| {
         if hash.is_empty() {
-            show_message_dialog("Error", "Debe ingresar un hash");
+            show_message_dialog("Error", "insert hash");
         } else {
             call_ls_trees("-r-t", &hash, &builder_clone);
         }
@@ -2178,7 +2178,7 @@ fn handle_remote_set_url() -> io::Result<()> {
         let resultado = obtain_text_from_remote_set_url(&name, &url);
         match resultado {
             Ok(_texto) => {
-                show_message_dialog("Éxito", "La URL se actualizó correctamente.");
+                show_message_dialog("Success", "URL updated correctly.");
             }
             Err(_err) => {
                 let error_mesage = _err.to_string();
@@ -2208,7 +2208,7 @@ fn handle_remote_get_url() -> io::Result<()> {
         let resultado = obtain_text_from_remote_get_url(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Éxito", &format!("{}'", texto));
+                show_message_dialog("Success", &format!("{}'", texto));
             }
             Err(_err) => {
                 let error_mesage = _err.to_string();
@@ -2367,7 +2367,7 @@ fn update_tag_view(builder: &gtk::Builder, output: &mut [u8]) -> io::Result<()> 
     let tags_text_view: gtk::TextView = match builder.get_object("tag-text") {
         Some(view) => view,
         None => {
-            eprintln!("No se pudo obtener el text view");
+            eprintln!("obtainig text view failed");
             return Err(io::Error::new(
                 io::ErrorKind::Other,
                 "Error obtaining text view",
@@ -2450,14 +2450,14 @@ fn handle_checkout_branch_window() -> io::Result<()> {
         let resultado = obtain_text_from_checkout_branch(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+                show_message_dialog("Success", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => match _err.kind() {
                 std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Éxito", "Changed correctly to branch ");
+                    show_message_dialog("Success", "Changed correctly to branch ");
                 }
                 _ => {
-                    show_message_dialog("Error", "La rama indicada no existe.");
+                    show_message_dialog("Error", "Branch does not exists.");
                 }
             },
         }
@@ -2498,7 +2498,7 @@ fn handle_show_log_button_click(builder: &gtk::Builder) {
         let log_text_scrolled_window = match obtain_log_text_scrolled_window(builder) {
             Some(sw) => sw,
             None => {
-                eprintln!("No se pudo obtener el ScrolledWindow.");
+                eprintln!("ScrolledWindow not obtained.");
                 return;
             }
         };
@@ -2516,12 +2516,11 @@ fn handle_show_log_button_click(builder: &gtk::Builder) {
                     eprintln!("Fatal error in show repository window.");
                 }
 
-                // Añade el TextView al ScrolledWindow
                 log_text_scrolled_window.add(&log_text_view);
                 log_text_scrolled_window.show_all();
             }
             Err(err) => {
-                eprintln!("Error al obtener el texto: {}", err);
+                eprintln!("Error obtaining text: {}", err);
             }
         }
     } else {
@@ -2591,7 +2590,7 @@ fn stage_changes(git_dir: &str, git_ignore_path: &str, texto: &str) -> Result<St
         Err(err) => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                format!("Error al llamar a la función 'add': {:?}", err),
+                format!("Error in 'add': {:?}", err),
             ))
         }
     }
@@ -2625,7 +2624,7 @@ pub fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
 
     git_rm(texto, &index_path, &git_dir, &git_ignore_path)?;
 
-    Ok("La función 'rm' se ejecutó correctamente.".to_string())
+    Ok(" 'rm' not working correctly".to_string())
 }
 
 /// Force checkout a file from a custom Git-like version control system.
@@ -2656,12 +2655,10 @@ pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error>
     };
     if let Err(err) = force_checkout(&git_dir, texto) {
         eprintln!(
-            "Error al forzar el cambio de rama o commit (descartando cambios sin confirmar): {:?}",
+            " Error when forcing the branch or commit change (discarding uncommitted changes).: {:?}",
             err
         );
     }
-    //force_checkout(&git_dir, texto);
-
     Ok("Ok".to_string())
 }
 
@@ -2693,11 +2690,11 @@ pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, 
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
-        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Ok(_) => Ok(" 'checkout branch' works correctly.".to_string()),
         Err(err) => Err(io::Error::new(
             io::ErrorKind::NotFound,
             format!(
-                "Error al llamar a la función 'checkout branch': {:?}\n",
+                "Error in 'checkout branch': {:?}\n",
                 err
             ),
         )),
@@ -2706,7 +2703,7 @@ pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, 
     if result.is_err() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
-            "Error al llamar a la función 'checkout branch'\n",
+            "Error in 'checkout branch'\n",
         ));
     }
 
@@ -2741,11 +2738,11 @@ pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
-        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Ok(_) => Ok("'checkout branch' works correctly.".to_string()),
         Err(err) => Err(io::Error::new(
             io::ErrorKind::NotFound,
             format!(
-                "Error al llamar a la función 'checkout branch': {:?}\n",
+                "Error in 'checkout branch': {:?}\n",
                 err
             ),
         )),
@@ -2753,7 +2750,7 @@ pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io
     if result.is_err() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
-            "Error al llamar a la función 'checkout branch'\n",
+            "Error in 'checkout branch'\n",
         ));
     }
     Ok("Ok".to_string())
@@ -2788,11 +2785,11 @@ pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
-        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Ok(_) => Ok(" 'checkout branch' works correctly.".to_string()),
         Err(err) => Err(io::Error::new(
             io::ErrorKind::NotFound,
             format!(
-                "Error al llamar a la función 'checkout branch': {:?}\n",
+                "Error in 'checkout branch': {:?}\n",
                 err
             ),
         )),
@@ -2800,7 +2797,7 @@ pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String
     if result.is_err() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
-            "Error al llamar a la función 'checkout branch'\n",
+            "Error in 'checkout branch'\n",
         ));
     }
     Ok("Ok".to_string())
