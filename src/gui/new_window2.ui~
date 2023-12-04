@@ -79,7 +79,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="reload-staging-view">
+                          <object class="GtkButton" id="reload-staging-view-button">
                             <property name="label" translatable="yes">Reload view</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -397,117 +397,6 @@
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkScrolledWindow" id="checkout-scrolled">
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="shadow-type">in</property>
-                    <child>
-                      <object class="GtkTextView" id="checkout-text-view">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkButtonBox">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="orientation">vertical</property>
-                    <property name="layout-style">expand</property>
-                    <child>
-                      <object class="GtkButton">
-                        <property name="label" translatable="yes">Change branch</property>
-                        <property name="height-request">0</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton">
-                        <property name="label" translatable="yes">Create branch and change</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton">
-                        <property name="label" translatable="yes">Create or reset a branch if it exists</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton">
-                        <property name="label" translatable="yes">Change to a specific commit</property>
-                        <property name="height-request">20</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton">
-                        <property name="label" translatable="yes">Force the change to a branch or commit</property>
-                        <property name="height-request">20</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">4</property>
-                      </packing>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="name">page0</property>
-                <property name="title" translatable="yes">Checkout</property>
-                <property name="position">3</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkBox">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="orientation">vertical</property>
-                <child>
                   <object class="GtkScrolledWindow">
                     <property name="width-request">800</property>
                     <property name="height-request">400</property>
@@ -649,7 +538,7 @@
               <packing>
                 <property name="name">page1</property>
                 <property name="title" translatable="yes">Merge</property>
-                <property name="position">4</property>
+                <property name="position">3</property>
               </packing>
             </child>
             <child>
@@ -757,7 +646,7 @@
               <packing>
                 <property name="name">check ignore</property>
                 <property name="title" translatable="yes">Check Ignore</property>
-                <property name="position">5</property>
+                <property name="position">4</property>
               </packing>
             </child>
             <child>
@@ -848,7 +737,7 @@
               <packing>
                 <property name="name">page2</property>
                 <property name="title" translatable="yes">Ls files</property>
-                <property name="position">6</property>
+                <property name="position">5</property>
               </packing>
             </child>
             <child>
@@ -985,7 +874,7 @@
               <packing>
                 <property name="name">page5</property>
                 <property name="title" translatable="yes">Tag</property>
-                <property name="position">7</property>
+                <property name="position">6</property>
               </packing>
             </child>
             <child>
@@ -1127,7 +1016,7 @@
               <packing>
                 <property name="name">page4</property>
                 <property name="title" translatable="yes">Show ref</property>
-                <property name="position">8</property>
+                <property name="position">7</property>
               </packing>
             </child>
             <child>
@@ -1192,7 +1081,7 @@
               <packing>
                 <property name="name">page6</property>
                 <property name="title" translatable="yes">Fetch</property>
-                <property name="position">9</property>
+                <property name="position">8</property>
               </packing>
             </child>
             <child>
@@ -1393,7 +1282,7 @@
               <packing>
                 <property name="name">page3</property>
                 <property name="title" translatable="yes">Branch</property>
-                <property name="position">10</property>
+                <property name="position">9</property>
               </packing>
             </child>
             <child>
@@ -1543,7 +1432,7 @@
               <packing>
                 <property name="name">page7</property>
                 <property name="title" translatable="yes">Log</property>
-                <property name="position">11</property>
+                <property name="position">10</property>
               </packing>
             </child>
             <child>
@@ -1665,7 +1554,7 @@
               <packing>
                 <property name="name">page8</property>
                 <property name="title" translatable="yes">Remote</property>
-                <property name="position">12</property>
+                <property name="position">11</property>
               </packing>
             </child>
             <child>
@@ -1762,7 +1651,7 @@
               <packing>
                 <property name="name">page9</property>
                 <property name="title" translatable="yes">Ls Trees</property>
-                <property name="position">13</property>
+                <property name="position">12</property>
               </packing>
             </child>
             <child>
@@ -1853,7 +1742,7 @@ Set your name and email :)</property>
               <packing>
                 <property name="name">Config</property>
                 <property name="title" translatable="yes">Config</property>
-                <property name="position">14</property>
+                <property name="position">13</property>
               </packing>
             </child>
             <child>
@@ -2001,7 +1890,7 @@ Set your name and email :)</property>
               <packing>
                 <property name="name">rebase</property>
                 <property name="title" translatable="yes">Rebase</property>
-                <property name="position">15</property>
+                <property name="position">14</property>
               </packing>
             </child>
             <child>
@@ -2062,7 +1951,7 @@ Set your name and email :)</property>
               <packing>
                 <property name="name">git_tree</property>
                 <property name="title" translatable="yes">Git tree</property>
-                <property name="position">16</property>
+                <property name="position">15</property>
               </packing>
             </child>
           </object>

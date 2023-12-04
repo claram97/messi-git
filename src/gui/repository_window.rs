@@ -216,10 +216,10 @@ fn update_config_window(builder: &Builder) -> io::Result<()> {
         }
     };
     if let Ok((user, email)) = config.get_user_name_and_email() {
-        let text = format!("Bienvenido {user}!\nParece que el email {email} está guardado en nuestra\nbase de datos.\nRecuerda que puedes modificarlo aquí abajo siempre que desees :)");
+        let text = format!("Welcome {user}!\nIt seems that {email} is stored in\nour database.\nRemember that you can change it if you want :)");
         label.set_text(&text);
     } else {
-        label.set_text("Bienvenido!\nAlgunas funciones podrían presentar fallos si no nos dices quién eres.\nPor favor, indicanos tus datos aquí abajo.");
+        label.set_text("Welcome!\nSome functionalities may fail if you don't tell us who are you.\nPlease, leave your name and email below.");
     }
     Ok(())
 }
