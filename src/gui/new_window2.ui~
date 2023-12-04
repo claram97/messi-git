@@ -477,7 +477,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="merge-update-button">
-                        <property name="label" translatable="yes">Actualizar archivo</property>
+                        <property name="label" translatable="yes">Update File</property>
                         <property name="width-request">200</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -584,7 +584,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="check-ignore-button">
-                        <property name="label" translatable="yes">Obtener resultado</property>
+                        <property name="label" translatable="yes">Obtain Result</property>
                         <property name="width-request">100</property>
                         <property name="height-request">70</property>
                         <property name="visible">True</property>
@@ -1024,71 +1024,6 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
-                <child>
-                  <object class="GtkScrolledWindow">
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="shadow-type">in</property>
-                    <child>
-                      <object class="GtkTextView">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkBox">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <child>
-                      <object class="GtkEntry">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="show-fetch">
-                        <property name="label" translatable="yes">Show</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="name">page6</property>
-                <property name="title" translatable="yes">Fetch</property>
-                <property name="position">8</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkBox">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="orientation">vertical</property>
                 <property name="homogeneous">True</property>
                 <child>
                   <object class="GtkScrolledWindow" id="scrolled-window">
@@ -1282,7 +1217,7 @@
               <packing>
                 <property name="name">page3</property>
                 <property name="title" translatable="yes">Branch</property>
-                <property name="position">9</property>
+                <property name="position">8</property>
               </packing>
             </child>
             <child>
@@ -1432,7 +1367,7 @@
               <packing>
                 <property name="name">page7</property>
                 <property name="title" translatable="yes">Log</property>
-                <property name="position">10</property>
+                <property name="position">9</property>
               </packing>
             </child>
             <child>
@@ -1554,7 +1489,7 @@
               <packing>
                 <property name="name">page8</property>
                 <property name="title" translatable="yes">Remote</property>
-                <property name="position">11</property>
+                <property name="position">10</property>
               </packing>
             </child>
             <child>
@@ -1651,7 +1586,7 @@
               <packing>
                 <property name="name">page9</property>
                 <property name="title" translatable="yes">Ls Trees</property>
-                <property name="position">12</property>
+                <property name="position">11</property>
               </packing>
             </child>
             <child>
@@ -1742,7 +1677,7 @@ Set your name and email :)</property>
               <packing>
                 <property name="name">Config</property>
                 <property name="title" translatable="yes">Config</property>
-                <property name="position">13</property>
+                <property name="position">12</property>
               </packing>
             </child>
             <child>
@@ -1826,7 +1761,7 @@ Set your name and email :)</property>
                     </child>
                     <child>
                       <object class="GtkButton" id="rebase-button">
-                        <property name="label" translatable="yes">Actualizar archivo</property>
+                        <property name="label" translatable="yes">Update File</property>
                         <property name="width-request">200</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -1890,7 +1825,7 @@ Set your name and email :)</property>
               <packing>
                 <property name="name">rebase</property>
                 <property name="title" translatable="yes">Rebase</property>
-                <property name="position">14</property>
+                <property name="position">13</property>
               </packing>
             </child>
             <child>
@@ -1951,7 +1886,7 @@ Set your name and email :)</property>
               <packing>
                 <property name="name">git_tree</property>
                 <property name="title" translatable="yes">Git tree</property>
-                <property name="position">15</property>
+                <property name="position">14</property>
               </packing>
             </child>
           </object>
