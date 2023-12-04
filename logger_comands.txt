@@ -1,0 +1,5 @@
+Command 'init': Command executed
+Command 'add': Command executed
+Command 'commit': Command executed
+Command 'init': Command executed
+Command 'cat-file': Command executed

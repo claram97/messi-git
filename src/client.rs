@@ -183,6 +183,7 @@ impl Client {
         };
         if &prev_hash == new_hash {
             log("Already up to date.")?;
+            return Ok(());
         }
         if prev_hash.is_empty() {
             self.receive_pack_create(&pushing_ref, new_hash)?;
@@ -357,7 +358,10 @@ impl Client {
         prev_hash: &str,
         new_hash: &str,
     ) -> io::Result<()> {
-        let update = format!("{} {} {}\n", prev_hash, new_hash, pushing_ref);
+        let update = format!(
+            "{} {} {}\0{}\n",
+            prev_hash, new_hash, pushing_ref, CAPABILITIES_UPLOAD
+        );
         self.send(&pkt_line(&update))?;
         self.flush()?;
 

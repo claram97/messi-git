@@ -7,5 +7,5 @@
 	url = rme
 	fetch = +refs/heads/*:refs/remotes/remoteeeee/name/*
 [user]
-	name = Clara
-	email = email
+	name = Claris
+	email = cruano@fi.uba.ar

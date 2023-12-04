@@ -76,7 +76,12 @@ pub fn checkout_branch(git_dir_path: &Path, root_dir: &str, branch_name: &str) -
 
     let current_branch = match branch::get_current_branch_path(git_dir_path_str) {
         Ok(name) => name,
-        Err(_) => "Unknown".to_string(),
+        Err(_) => {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error getting current branch",
+            ))
+        }
     };
 
     match checkout_branch_references(git_dir_path, branch_name) {
@@ -129,6 +134,7 @@ fn checkout_branch_references(git_dir: &Path, branch_name: &str) -> io::Result<S
             format!("Branch {} does not exist", branch_name),
         ));
     }
+
     let old_commit_id = branch::get_current_branch_commit(git_dir_str)?;
     let head_file = git_dir.join("HEAD");
     let new_head_content = format!("ref: refs/heads/{}\n", branch_name);
