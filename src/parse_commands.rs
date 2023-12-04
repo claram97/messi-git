@@ -246,7 +246,7 @@ fn handle_ls_files(args: Vec<String>) {
     };
 
     let index_path = format!("{}/{}", git_dir, "index");
-    let gitignore_path = format!("{}/{}", working_dir, ".mgitignore");
+    let gitignore_path = format!("{}/{}", working_dir, GIT_IGNORE);
     let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
         Ok(ind) => ind,
         Err(_e) => {
@@ -357,9 +357,9 @@ fn handle_check_ignore(args: Vec<String>) {
         }
     };
 
-    let gitignore_path = format!("{}/{}", working_dir, ".mgitignore");
+    let gitignore_path = format!("{}/{}", working_dir, GIT_IGNORE);
 
-    match git_check_ignore(".mgitignore", &gitignore_path, args, &mut io::stdout()) {
+    match git_check_ignore(GIT_IGNORE, &gitignore_path, args, &mut io::stdout()) {
         Ok(_) => {}
         Err(e) => {
             eprintln!("{}", e)
@@ -570,7 +570,7 @@ fn load_index_and_commit_tree(git_dir: &str) -> io::Result<(Index, Tree)> {
     let git_ignore_path = format!(
         "{}/{}",
         get_working_directory_status(git_dir)?.to_string_lossy(),
-        ".mgitignore"
+        GIT_IGNORE
     );
 
     let index = Index::load(&index_path, git_dir, &git_ignore_path)?;

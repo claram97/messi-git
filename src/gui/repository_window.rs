@@ -2840,7 +2840,7 @@ pub fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
     let git_dir_parent = Path::new(&git_dir)
         .parent()
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
-    let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), ".mgitignore");
+    let git_ignore_path = format!("{}/{}", git_dir_parent.to_string_lossy(), GIT_IGNORE);
 
     git_rm(texto, &index_path, &git_dir, &git_ignore_path)?;
 
@@ -3743,7 +3743,7 @@ pub fn check_ignore_button_on_clicked(
             }
         };
 
-        let gitignore_path = format!("{}/{}", working_dir, ".mgitignore");
+        let gitignore_path = format!("{}/{}", working_dir, GIT_IGNORE);
 
         let path = cloned_entry.get_text();
         if path.is_empty() {
@@ -5142,7 +5142,7 @@ fn create_new_commit(git_dir_path: &str, message: &str, git_ignore_path: &str) -
 fn perform_commit(builder: &gtk::Builder, message: String) -> io::Result<()> {
     let current_dir_str = get_current_dir_string()?;
     let git_dir_path = get_git_directory_path(&PathBuf::from(&current_dir_str))?;
-    let git_ignore_path = format!("{}/{}", current_dir_str, ".mgitignore");
+    let git_ignore_path = format!("{}/{}", current_dir_str, GIT_IGNORE);
 
     check_commit_message(&message)?;
     create_new_commit(&git_dir_path, &message, &git_ignore_path)?;
