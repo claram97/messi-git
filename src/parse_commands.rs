@@ -1064,7 +1064,7 @@ fn handle_clone(_args: Vec<String>) {
 /// * `_args` - A vector of command-line arguments.
 ///
 fn handle_fetch(_args: Vec<String>) {
-    let current_dir = match std::env::current_dir() {
+    let _current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
             eprintln!("Error al obtener el directorio actual: {:?}", err);

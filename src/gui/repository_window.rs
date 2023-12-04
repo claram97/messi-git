@@ -211,7 +211,7 @@ fn update_config_window(builder: &Builder) -> io::Result<()> {
         None => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                format!("No se encontró el config label!"),
+                "No se encontró el config label!".to_string(),
             ));
         }
     };
@@ -230,7 +230,7 @@ fn apply_style_to_fetch(builder: &Builder) -> io::Result<()> {
         None => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                format!("No se encontró el fetch entry!"),
+                "No se encontró el fetch entry!".to_string(),
             ));
         }
     };
@@ -242,7 +242,7 @@ fn apply_style_to_fetch(builder: &Builder) -> io::Result<()> {
         None => {
             return Err(io::Error::new(
                 io::ErrorKind::AlreadyExists,
-                format!("No se encontró el fetch label!"),
+                "No se encontró el fetch label!".to_string(),
             ));
         }
     };
@@ -535,7 +535,12 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
             });
         }
         "fetch" => {
-            button.connect_clicked(move |_| {});
+            button.connect_clicked(move |_| match handle_fetch_button(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
+            });
         }
         "show-log-button" => {
             button.connect_clicked(move |_| {
@@ -2852,11 +2857,9 @@ pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error>
     let git_dir = obtain_git_dir()?;
     let git_dir = Path::new(&git_dir);
 
-    match force_checkout(&git_dir, texto) {
-        Ok(_) => return Ok("Correctly changed".to_string()),
-        Err(error) => {
-            return Err(error);
-        }
+    match force_checkout(git_dir, texto) {
+        Ok(_) => Ok("Correctly changed".to_string()),
+        Err(error) => Err(error),
     }
 }
 
@@ -2886,9 +2889,9 @@ pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, 
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
-        Ok(_) => return Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
-        Err(err) => return Err(err),
-    };
+        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Err(err) => Err(err),
+    }
 }
 
 /// Create or reset a branch in a custom Git-like version control system.
@@ -2917,9 +2920,9 @@ pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
-        Ok(_) => return Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
-        Err(err) => return Err(err),
-    };
+        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Err(err) => Err(err),
+    }
 }
 
 /// Create and checkout a branch in a custom Git-like version control system.
@@ -2949,9 +2952,9 @@ pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
-        Ok(_) => return Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
-        Err(err) => return Err(err),
-    };
+        Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
+        Err(err) => Err(err),
+    }
 }
 
 /// Checkout a branch in a custom Git-like version control system.
@@ -2981,11 +2984,9 @@ pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error>
         git_dir_parent.to_string_lossy().as_ref(),
         text,
     ) {
-        Ok(_) => return Ok("The 'checkout branch' function executed successfully.".to_string()),
-        Err(err) => {
-            return Err(err);
-        }
-    };
+        Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
+        Err(err) => Err(err),
+    }
 }
 
 /// Obtain the Git log as a filtered and formatted string.

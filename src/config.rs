@@ -450,7 +450,7 @@ impl Config {
                 return true;
             }
         }
-        return false;
+        false
     }
 
     /// Retrieves and writes the URL of a remote repository to the specified output.
