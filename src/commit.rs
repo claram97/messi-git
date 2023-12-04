@@ -1,5 +1,8 @@
 use crate::cat_file;
+use crate::config::Config;
+use crate::configuration::EMAIL;
 use crate::configuration::LOGGER_COMMANDS_FILE;
+use crate::configuration::USER;
 use crate::hash_object;
 use crate::logger::Logger;
 use crate::tree_handler;
@@ -68,12 +71,40 @@ fn create_new_commit_file(
 
     let (timestamp, offset) = utils::get_timestamp()?;
     let time = format!("{} {}", timestamp, offset);
-    let commit_content = format!(
-        "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0","user", "email@email", "user", "email@email"
-    );
+    let mut user = USER.to_string();
+    let mut email = EMAIL.to_string();
+    let config = Config::load(directory);
 
-    let commit_hash = hash_object::store_string_to_file(&commit_content, directory, "commit")?;
-    Ok(commit_hash)
+    if let Ok(config) = config {
+        if let Ok(result) = config.get_user_name_and_email() {
+            (user, email) = result;
+        }
+    }
+
+    if parent_commit == NO_PARENT {
+        let commit_content = format!(
+            "tree {tree_hash}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0",
+            user,
+            email,
+            user,
+            email,
+            message = message,
+            time = time,
+            tree_hash = tree_hash
+        );
+        let commit_hash = hash_object::store_string_to_file(&commit_content, directory, "commit")?;
+        Ok(commit_hash)
+    } else {
+        let commit_content = format!(
+            "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0", user, email, user, email,
+            message = message,
+            time = time,
+            tree_hash = tree_hash,
+            parent_commit = parent_commit
+        );
+        let commit_hash = hash_object::store_string_to_file(&commit_content, directory, "commit")?;
+        Ok(commit_hash)
+    }
 }
 
 /// Retrieves the name of the currently checked-out branch in a Git repository.
@@ -240,15 +271,21 @@ pub fn new_rebase_commit(
 pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
     let parent_hash: &str = match commit_file.split('\n').nth(1) {
-        Some(parent_hash) => match parent_hash.split(' ').nth(1) {
-            Some(parent_hash) => parent_hash,
-            None => {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "Parent hash not found",
-                ))
+        Some(parent_hash) => {
+            if parent_hash.starts_with("author") {
+                return Ok(NO_PARENT.to_string());
+            } else {
+                match parent_hash.split(' ').nth(1) {
+                    Some(parent_hash) => parent_hash,
+                    None => {
+                        return Err(io::Error::new(
+                            io::ErrorKind::NotFound,
+                            "Parent hash not found",
+                        ))
+                    }
+                }
             }
-        },
+        }
         None => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
@@ -270,8 +307,15 @@ pub fn get_parent_hash(commit_hash: &str, git_dir_path: &str) -> io::Result<Stri
 /// * `git_dir_path` - The path to the git directory.
 pub fn get_commit_message(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
+    let commit_parent = get_parent_hash(commit_hash, git_dir_path)?;
+
     let message = if is_merge_commit(commit_hash, git_dir_path)? {
         match commit_file.split('\n').nth(6) {
+            Some(message) => message,
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Message not found")),
+        }
+    } else if commit_parent == NO_PARENT {
+        match commit_file.split('\n').nth(4) {
             Some(message) => message,
             None => return Err(io::Error::new(io::ErrorKind::NotFound, "Message not found")),
         }
@@ -327,8 +371,22 @@ pub fn read_head_commit_hash(git_dir: &str) -> io::Result<String> {
 /// * `git_dir_path` - The path to the git directory.
 pub fn get_commit_time(commit_hash: &str, git_dir_path: &str) -> io::Result<String> {
     let commit_file = cat_file::cat_file_return_content(commit_hash, git_dir_path)?;
+    let commit_parent = get_parent_hash(commit_hash, git_dir_path)?;
+
+    println!("commit hash: {}", commit_hash);
+    println!("commit file: {}", commit_file);
+    println!("commit parent: {}", commit_parent);
+
     let time = if is_merge_commit(commit_hash, git_dir_path)? {
         match commit_file.split('\n').nth(4) {
+            Some(time) => {
+                let time: Vec<&str> = time.split(' ').collect();
+                time[3..].join(" ")
+            }
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Time not found")),
+        }
+    } else if commit_parent == NO_PARENT {
+        match commit_file.split('\n').nth(2) {
             Some(time) => {
                 let time: Vec<&str> = time.split(' ').collect();
                 time[3..].join(" ")
