@@ -110,23 +110,16 @@ impl Log {
     /// Returns a result containing the loaded commit on success, or an `io::Error` on failure.
     ///
     fn load_from_head(git_dir: &str) -> io::Result<Self> {
-        println!("loading from head");
         let head_path = format!("{}/HEAD", git_dir);
-        println!("head path is {:?}\n", head_path);
         let head_content = fs::read_to_string(head_path)?;
-        println!("head content is {}\n", head_content);
         let last_commit_ref = head_content.trim().split(": ").last();
-        println!("last commit ref is {:?}\n", last_commit_ref);
         match last_commit_ref {
             Some(refs) => {
                 let heads_path = format!("{}/{}", git_dir, refs);
-                println!("heads path is {:?}\n", heads_path);
                 if Path::new(&heads_path).exists() {
                     let hash = fs::read_to_string(heads_path)?;
-                    println!("hash is {:?}\n", hash);
                     Self::load_from_hash(hash.trim(), git_dir)
                 } else {
-                    println!("path doesn't exist, hash is {:?}\n", refs);
                     Self::load_from_hash(refs, git_dir)
                 }
             }
@@ -151,18 +144,12 @@ impl Log {
     /// Returns a result containing the loaded commit on success, or an `io::Error` on failure.
     ///
     fn load_from_hash(hash: &str, git_dir: &str) -> io::Result<Self> {
-        println!("Loading from hash\n");
-        println!("Hash is {:?}\n", hash);
         let commit_content = cat_file::cat_file_return_content(hash, git_dir)?;
-        println!("commit content is {:?}\n", commit_content);
         let header_lines = commit_content.lines().position(|line| line.is_empty());
-        println!("header lines {:?}\n", header_lines);
         match header_lines {
             Some(n) => {
                 let mut log = Self::default();
-                println!("log default {:?}\n", log);
                 for line in commit_content.lines().take(n) {
-                    println!("line {:?}\n", line);
                     log.parse_commit_header_line(line)?;
                 }
                 log.message = commit_content.lines().skip(n).collect();
@@ -195,21 +182,16 @@ impl Log {
     /// format for commit header lines, or if there is insufficient data to update the commit fields.
     ///
     fn parse_commit_header_line(&mut self, line: &str) -> io::Result<()> {
-        println!("Calling parse commit header line function!\n");
         match line.split_once(' ') {
             Some(("tree", hash)) => {
                 self.tree_hash = hash.to_string();
-                println!("hash {:?}\n", hash);
             }
             Some(("parent", hash)) => {
                 self.parent_hash = Some(hash.to_string());
-                println!("hash {:?}\n", hash);
             }
             Some(("author", author)) => {
                 let fields: Vec<&str> = author.split(' ').collect();
-                println!("fields {:?}\n", fields);
                 let len = fields.len();
-                println!("len {:?}\n", len);
                 if len < 4 {
                     return Err(invalid_data_error(line));
                 }

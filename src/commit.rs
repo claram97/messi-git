@@ -4,6 +4,7 @@ use crate::hash_object;
 use crate::logger::Logger;
 use crate::tree_handler;
 use crate::tree_handler::has_tree_changed_since_last_commit;
+use crate::tree_handler::Tree;
 use crate::utils;
 use crate::utils::get_current_time;
 use std::fs;
@@ -172,10 +173,54 @@ pub fn new_merge_commit(
     let commit_tree =
         tree_handler::build_tree_from_index(&index_path, git_dir_path, git_ignore_path)?;
     let (tree_hash, _) = tree_handler::write_tree(&commit_tree, git_dir_path)?;
+    if !has_tree_changed_since_last_commit(&tree_hash, parent_hash, git_dir_path) {
+        return Err(io::Error::new(io::ErrorKind::Other, "No changes were made"));
+    }
+
     let (timestamp, offset) = utils::get_timestamp()?;
     let time = format!("{} {}", timestamp, offset);
     let commit_content = format!("tree {tree_hash}\nparent {parent_hash}\nparent {parent_hash2}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0", "user", "email@email", "user", "email@email"
     );
+    let commit_hash = hash_object::store_string_to_file(&commit_content, git_dir_path, "commit")?;
+    let branch_name = get_branch_name(git_dir_path)?;
+    let branch_path = git_dir_path.to_string() + "/refs/heads/" + &branch_name;
+    let mut branch_file = std::fs::File::create(branch_path)?;
+    branch_file.write_all(commit_hash.as_bytes())?;
+    Ok(commit_hash)
+}
+
+/// Creates a new commit for a rebase operation.
+///
+/// This function generates a new commit for a rebase operation based on the provided parameters.
+///
+/// # Arguments
+///
+/// - `git_dir_path`: The path to the Git directory.
+/// - `message`: The commit message.
+/// - `parent_commit`: The hash of the parent commit.
+/// - `tree`: The `Tree` representing the file structure for the new commit.
+///
+/// # Returns
+///
+/// Returns the hash of the newly created commit.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there are issues with file operations or other I/O-related problems.
+///
+pub fn new_rebase_commit(
+    git_dir_path: &str,
+    message: &str,
+    parent_commit: &str,
+    tree: &Tree,
+) -> io::Result<String> {
+    let (tree_hash, _) = tree_handler::write_tree(tree, git_dir_path)?;
+
+    let time = chrono::Local::now();
+    let commit_content = format!(
+        "tree {tree_hash}\nparent {parent_commit}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0","user", "email@email", "user", "email@email"
+    );
+
     let commit_hash = hash_object::store_string_to_file(&commit_content, git_dir_path, "commit")?;
     let branch_name = get_branch_name(git_dir_path)?;
     let branch_path = git_dir_path.to_string() + "/refs/heads/" + &branch_name;

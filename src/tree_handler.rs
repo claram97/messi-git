@@ -17,7 +17,7 @@ const TREE_MODE_0: &str = "040000";
 
 //Tree structure
 //files is a vector of tuples (file_name, hash)
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Tree {
     pub name: String,
     pub files: Vec<(String, String)>,
@@ -54,17 +54,31 @@ impl Tree {
         self.directories.iter().find(|&dir| dir.name == name)
     }
 
-    /// Adds the hash and name of a file to the tree
-    /// It keeps an alphabetical order.
+    /// Adds the hash and name of a file to the tree. Keeps the files sorted by name.
     fn add_file(&mut self, name: &str, hash: &str) {
-        let insert_idx = self
-            .files
-            .binary_search_by(|(existing_name, _)| existing_name.cmp(&name.to_owned()));
+        let item = (name.to_string(), hash.to_string());
+        match self.files.binary_search(&item) {
+            Ok(pos) | Err(pos) => self.files.insert(pos, item),
+        }
+    }
 
-        match insert_idx {
-            Ok(idx) | Err(idx) => {
-                self.files.insert(idx, (name.to_string(), hash.to_string()));
+    /// Given a hash and a path, it updates the tree with the new hash. If the path does not exist, it creates it. If the path exists, it updates the hash.
+    pub fn update_tree(&mut self, path: &str, hash: &str) {
+        let mut path = path.split('/').collect::<Vec<&str>>();
+        let file_name = match path.pop() {
+            Some(file_name) => file_name,
+            None => return,
+        };
+        let mut current_tree = self;
+        while !path.is_empty() {
+            current_tree = current_tree.get_or_create_dir(path.remove(0));
+        }
+        match current_tree.files.iter().position(|(p, _)| p == file_name) {
+            Some(index) => {
+                current_tree.files.remove(index);
+                current_tree.add_file(file_name, hash)
             }
+            None => current_tree.add_file(file_name, hash),
         }
     }
 
@@ -211,19 +225,20 @@ impl Tree {
         }
         for file in &self.files {
             let path = dir_path.to_string() + "/" + &file.0;
-
             if Path::new(&path).exists() {
-                fs::remove_file(path)?;
+                fs::remove_file(&path)?;
             }
         }
-
         if dir_path.is_empty() {
             return Ok(());
         }
         let dir_path_buf = PathBuf::from(&dir_path);
-        let is_empty = dir_path_buf.read_dir()?.next().is_none();
-        if is_empty {
-            fs::remove_dir(dir_path)?;
+        let is_empty = match fs::read_dir(dir_path_buf) {
+            Ok(mut dir) => dir.next().is_none(),
+            Err(_) => false,
+        };
+        if is_empty && Path::new(&dir_path).exists() {
+            fs::remove_dir(&dir_path)?;
         }
         Ok(())
     }
@@ -752,6 +767,64 @@ pub fn merge_trees(
     let new_tree = merge_their_tree_into_ours(our_tree, their_tree, new_tree);
     let tuple = (new_tree, conflicting_paths);
     Ok(tuple)
+}
+
+pub fn get_files_with_changes(our_tree: &Tree, their_tree: &Tree) -> Vec<(String, String)> {
+    let our_tree_entries = our_tree.squash_tree_into_vec("");
+    let result = our_tree_entries
+        .iter()
+        .filter_map(|(path, hash)| {
+            let their_hash = their_tree.get_hash_from_path(path);
+            match their_hash {
+                Some(their_hash) => {
+                    if &their_hash != hash {
+                        Some((path.to_string(), hash.clone()))
+                    } else {
+                        None
+                    }
+                }
+                None => None,
+            }
+        })
+        .collect::<Vec<(String, String)>>();
+    result
+}
+
+/// Retrieves a list of files without changes between two Git trees.
+///
+/// This function takes two `Tree` instances, representing different commit snapshots, and returns
+/// a vector containing tuples of file paths and their corresponding hashes. The result includes
+/// only those files that exist in the first tree (`our_tree`) and have the same hash in both trees,
+/// indicating no changes between the snapshots.
+///
+/// # Arguments
+///
+/// - `our_tree`: The first `Tree` representing the commit snapshot for comparison.
+/// - `their_tree`: The second `Tree` representing another commit snapshot for comparison.
+///
+/// # Returns
+///
+/// Returns a vector of tuples containing file paths and hashes for files without changes.
+///
+pub fn get_files_without_changes(our_tree: &Tree, their_tree: &Tree) -> Vec<(String, String)> {
+    let our_tree_entries = our_tree.squash_tree_into_vec("");
+    let result = our_tree_entries
+        .iter()
+        .filter_map(|(path, hash)| {
+            let their_hash = their_tree.get_hash_from_path(path);
+            match their_hash {
+                Some(their_hash) => {
+                    if &their_hash == hash {
+                        Some((path.to_string(), hash.clone()))
+                    } else {
+                        None
+                    }
+                }
+                None => None,
+            }
+        })
+        .collect::<Vec<(String, String)>>();
+    result
 }
 
 #[cfg(test)]

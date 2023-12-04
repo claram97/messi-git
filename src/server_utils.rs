@@ -1,13 +1,20 @@
 use std::{
     collections::{HashMap, HashSet},
     fs,
-    io::{self, Error, Read},
+    io::{self, Error, Read, Write},
     net::TcpStream,
     path::PathBuf,
     str::from_utf8,
 };
 
-use crate::{cat_file, packfile_handler::ObjectType};
+use crate::{cat_file, logger, utils::get_current_time};
+
+pub fn log(message: &str) -> io::Result<()> {
+    let mut logger = logger::Logger::new("logs/log.log")?;
+    let message = format!("{} - {}", get_current_time(), message);
+    write!(logger, "{}", message.escape_debug())?;
+    logger.flush()
+}
 
 // HELPER MODULE
 
@@ -33,11 +40,13 @@ pub fn read_pkt_line(socket: &mut TcpStream) -> io::Result<(usize, String)> {
     let (size, bytes) = read_pkt_line_bytes(socket)?;
     let line = from_utf8(&bytes).unwrap_or_default().to_string();
     if line.starts_with("ERR") {
-        return Err(Error::new(
-            io::ErrorKind::Other,
-            format!("Error from server: {}", line),
-        ));
+        return Err(Error::new(io::ErrorKind::Other, format!("Error: {}", line)));
     }
+    log(&format!(
+        "Reading line of size {} -> {}",
+        size,
+        line.replace('\0', "\\0")
+    ))?;
     Ok((size, line))
 }
 
@@ -50,12 +59,13 @@ pub fn read_pkt_line_bytes(socket: &mut TcpStream) -> io::Result<(usize, Vec<u8>
     let size = from_utf8(&buf).unwrap_or_default();
     let size = usize::from_str_radix(size, 16).unwrap_or(0);
 
-    if size < 4 {
+    if size <= 4 {
         return Ok((size, vec![]));
     }
 
     let mut buf = vec![0u8; size - 4];
     socket.read_exact(&mut buf)?;
+    log(&format!("Reading bytes of size {} -> {:?}", size, buf))?;
     Ok((size, buf))
 }
 
@@ -86,31 +96,60 @@ pub fn pkt_line_bytes(content: &[u8]) -> Vec<u8> {
 /// Gets the ref name of a branch
 /// If branch is HEAD, then it gets the ref name of the branch pointed by HEAD
 pub fn get_head_from_branch(git_dir: &str, branch: &str) -> io::Result<String> {
-    if branch != "HEAD" {
+    if branch == "HEAD" {
+        let head = PathBuf::from(git_dir).join("HEAD");
+        let content = fs::read_to_string(head)?;
+        let (_, head) = content.rsplit_once(": ").ok_or(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("Invalid data HEAD. Must have ref for fetch: {}", content),
+        ))?;
+        return Ok(head.trim().to_string());
+    }
+    let pathbuf = PathBuf::from(git_dir)
+        .join("refs")
+        .join("tags")
+        .join(branch);
+    if pathbuf.exists() {
+        return Ok(format!("refs/tags/{}", branch));
+    }
+    let pathbuf = PathBuf::from(git_dir)
+        .join("refs")
+        .join("heads")
+        .join(branch);
+    let heads = PathBuf::from(git_dir).join("refs").join("heads");
+    if pathbuf.exists() || heads.read_dir()?.count() == 0 {
         return Ok(format!("refs/heads/{}", branch));
     }
 
-    let head = PathBuf::from(git_dir).join("HEAD");
-    let content = fs::read_to_string(head)?;
-    let (_, head) = content.rsplit_once(": ").ok_or(io::Error::new(
+    Err(io::Error::new(
         io::ErrorKind::InvalidData,
-        format!("Invalid data HEAD. Must have ref for fetch: {}", content),
-    ))?;
-    Ok(head.trim().to_string())
+        format!("Invalid branch: {}", branch),
+    ))
 }
 
 /// Auxiliar function which get refs under refs/heads
-pub fn get_head_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
+pub fn get_head_tags_refs(git_dir: &str) -> io::Result<HashMap<String, String>> {
     let pathbuf = PathBuf::from(git_dir);
     let heads = pathbuf.join("refs").join("heads");
-    get_refs(heads)
+    let tags = pathbuf.join("refs").join("tags");
+    let mut refs = get_refs(heads)?;
+    let tags = get_refs(tags)?;
+    refs.extend(tags);
+    Ok(refs)
 }
 
 /// Auxiliar function which get refs under refs/heads
-pub fn get_remote_refs(git_dir: &str, remote: &str) -> io::Result<HashMap<String, String>> {
+pub fn get_client_refs(git_dir: &str, remote: &str) -> io::Result<HashMap<String, String>> {
     let pathbuf = PathBuf::from(git_dir);
     let remotes = pathbuf.join("refs").join("remotes").join(remote);
-    get_refs(remotes)
+    if !remotes.exists() {
+        fs::create_dir_all(&remotes)?;
+    }
+    let tags = pathbuf.join("refs").join("tags");
+    let mut refs = get_refs(remotes)?;
+    let tags = get_refs(tags)?;
+    refs.extend(tags);
+    Ok(refs)
 }
 
 // Auxiliar function which get refs under refs_path
@@ -169,15 +208,14 @@ pub fn get_missing_objects_from(
     want: &str,
     haves: &HashSet<String>,
     git_dir: &str,
-) -> io::Result<HashSet<(ObjectType, String)>> {
-    let mut missing: HashSet<(ObjectType, String)> = HashSet::new();
-
+) -> io::Result<Vec<String>> {
     if haves.contains(want) {
-        return Ok(missing);
+        return Ok(vec![]);
     }
 
+    let mut missing: HashSet<String> = HashSet::new();
     if let Ok(commit) = CommitHashes::new(want, git_dir) {
-        missing.insert((ObjectType::Commit, commit.hash.to_string()));
+        missing.insert(commit.hash.to_string());
 
         let tree_objects = get_objects_tree_objects(&commit.tree, git_dir)?;
         missing.extend(tree_objects);
@@ -187,8 +225,9 @@ pub fn get_missing_objects_from(
             missing.extend(_missing);
         }
     }
-
-    Ok(missing)
+    let mut v: Vec<String> = missing.into_iter().collect();
+    v.sort();
+    Ok(v)
 }
 
 #[derive(Debug, Default)]
@@ -265,12 +304,9 @@ impl CommitHashes {
 ///
 /// An `io::Result` containing a `HashSet` of tuples representing object types and their hashes.
 ///
-fn get_objects_tree_objects(
-    hash: &str,
-    git_dir: &str,
-) -> io::Result<HashSet<(ObjectType, String)>> {
-    let mut objects: HashSet<(ObjectType, String)> = HashSet::new();
-    objects.insert((ObjectType::Tree, hash.to_string()));
+fn get_objects_tree_objects(hash: &str, git_dir: &str) -> io::Result<HashSet<String>> {
+    let mut objects: HashSet<String> = HashSet::new();
+    objects.insert(hash.to_string());
     let content = cat_file::cat_tree(hash, git_dir)?;
 
     for (mode, _, hash) in content {
@@ -278,9 +314,86 @@ fn get_objects_tree_objects(
             let tree_objects = get_objects_tree_objects(&hash, git_dir)?;
             objects.extend(tree_objects);
         } else {
-            objects.insert((ObjectType::Blob, hash.to_string()));
+            objects.insert(hash.to_string());
         };
     }
 
     Ok(objects)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pkt_line() {
+        assert_eq!(pkt_line("hello"), "0009hello");
+        assert_eq!(
+            pkt_line("git-upload-pack /repo\0host=localhost\0\0version=1\0"),
+            "0034git-upload-pack /repo\0host=localhost\0\0version=1\0"
+        );
+        assert_eq!(pkt_line("want 86135720c1283d83f2744781a915aba3d74da37b multi_ack include-tag side-band-64k ofs-delta\n"), "0060want 86135720c1283d83f2744781a915aba3d74da37b multi_ack include-tag side-band-64k ofs-delta\n");
+    }
+
+    #[test]
+    fn test_get_head_from_branch() -> io::Result<()> {
+        let head = get_head_from_branch("tests/packfiles/.mgit", "master")?;
+        assert_eq!(head, "refs/heads/master");
+        let head = get_head_from_branch("tests/packfiles/.mgit", "v1.0")?;
+        assert_eq!(head, "refs/tags/v1.0");
+        let head = get_head_from_branch("tests/packfiles/.mgit", "HEAD")?;
+        assert_eq!(head, "refs/heads/master");
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_refs() -> io::Result<()> {
+        let refs = get_refs(
+            PathBuf::from("tests/packfiles/.mgit")
+                .join("refs")
+                .join("heads"),
+        )?;
+        assert!(refs.contains_key(&"master".to_string()));
+        let refs = get_refs(
+            PathBuf::from("tests/packfiles/.mgit")
+                .join("refs")
+                .join("tags"),
+        )?;
+        assert!(refs.contains_key(&"v1.0".to_string()));
+        let refs = get_refs(
+            PathBuf::from("tests/packfiles/.mgit")
+                .join("refs")
+                .join("remotes")
+                .join("origin"),
+        )?;
+        assert!(refs.contains_key(&"master".to_string()));
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_head_tags_refs() -> io::Result<()> {
+        let refs = get_head_tags_refs("tests/packfiles/.mgit")?;
+        assert!(refs.contains_key(&"master".to_string()));
+        assert!(refs.contains_key(&"v1.0".to_string()));
+        Ok(())
+    }
+
+    #[test]
+    fn test_client_refs() -> io::Result<()> {
+        let refs = get_client_refs("tests/packfiles/.mgit", "origin")?;
+        assert!(refs.contains_key(&"master".to_string()));
+        assert!(refs.contains_key(&"v1.0".to_string()));
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_line_want_have() -> io::Result<()> {
+        let (want_have, hash) = parse_line_want_have("want 86135720c1283d83f2744781a915aba3d74da37b multi_ack include-tag side-band-64k ofs-delta\n")?;
+        assert_eq!(want_have, WantHave::Want);
+        assert_eq!(hash, "86135720c1283d83f2744781a915aba3d74da37b");
+        let (want_have, hash) = parse_line_want_have("have 86135720c1283d83f2744781a915aba3d74da37b multi_ack include-tag side-band-64k ofs-delta\n")?;
+        assert_eq!(want_have, WantHave::Have);
+        assert_eq!(hash, "86135720c1283d83f2744781a915aba3d74da37b");
+        Ok(())
+    }
 }

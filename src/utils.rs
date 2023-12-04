@@ -4,6 +4,20 @@ use chrono::{DateTime, FixedOffset, Offset, Utc};
 
 use crate::{commit, configuration::GIT_DIR};
 
+/// Obtains the path to the Git directory of the current project.
+///
+/// This function starts from the current directory and traverses upwards until it finds
+/// the `.git` directory or the user-configured Git directory. The path to the Git directory
+/// is returned as a `String` on success.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the path to the Git directory as a `String` on success.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there is an issue obtaining the actual directory or locating the Git directory.
+///
 pub fn obtain_git_dir() -> Result<String, io::Error> {
     let mut current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
@@ -88,7 +102,6 @@ pub fn get_branch_commit_history_with_messages(
     parents.push((commit_hash.to_string(), commit_message.to_string()));
     let mut commit_parent = commit::get_parent_hash(commit_hash, git_dir);
     while let Ok(parent) = commit_parent {
-        println!("{}", parent);
         let commit_message = match commit::get_commit_message(&parent, git_dir) {
             Ok(message) => message,
             Err(_) => break,
@@ -121,6 +134,44 @@ pub fn get_branch_commit_history(commit_hash: &str, git_dir: &str) -> io::Result
     parents.push(commit_hash.to_string());
     let mut commit_parent = commit::get_parent_hash(commit_hash, git_dir);
     while let Ok(parent) = commit_parent {
+        parents.push(parent.clone());
+        commit_parent = commit::get_parent_hash(&parent, git_dir);
+    }
+    Ok(parents)
+}
+
+/// Retrieves the commit history of a Git branch until a specified commit hash.
+///
+/// This function starts from the given `commit_hash` and traverses the parent commits until
+/// reaching the commit specified by `until`. The commit history, represented by a vector of commit
+/// hashes, is returned on success.
+///
+/// # Arguments
+///
+/// - `commit_hash`: The hash of the commit from which to start retrieving the history.
+/// - `git_dir`: The path to the Git directory.
+/// - `until`: The hash of the commit until which the history should be retrieved.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the commit history as a vector of commit hashes on success.
+///
+/// # Errors
+///
+/// Returns an `io::Error` if there is an issue obtaining commit information or traversing the history.
+///
+pub fn get_branch_commit_history_until(
+    commit_hash: &str,
+    git_dir: &str,
+    until: &str,
+) -> io::Result<Vec<String>> {
+    let mut parents = Vec::new();
+    parents.push(commit_hash.to_string());
+    let mut commit_parent = commit::get_parent_hash(commit_hash, git_dir);
+    while let Ok(parent) = commit_parent {
+        if parent == until {
+            break;
+        }
         parents.push(parent.clone());
         commit_parent = commit::get_parent_hash(&parent, git_dir);
     }

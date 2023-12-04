@@ -290,6 +290,19 @@ pub fn filter_color_code(input: &str) -> String {
     result
 }
 
+pub fn get_combo_box(builder: &gtk::Builder, id: &str) -> io::Result<gtk::ComboBoxText> {
+    let combo_box = match builder.get_object::<gtk::ComboBoxText>(id) {
+        Some(combo_box) => combo_box,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("No se pudo encontrar el ComboBoxText con ID {id}"),
+            ));
+        }
+    };
+    Ok(combo_box)
+}
+
 /// Creates a GTK text entry window for user input with a message and a callback function.
 ///
 /// This function generates a new GTK window with a text entry field and an "OK" button. It allows users to input text and invokes a provided callback function when the "OK" button is clicked. The window can display a custom message as its title.
@@ -390,6 +403,25 @@ pub fn create_text_entry_window2(
     Ok(())
 }
 
+/// Creates a text entry window with a switch in a GTK application.
+///
+/// This function generates a window with two text entry fields, a switch, and an OK button.
+/// It allows the user to input text in the entry fields and toggle a switch. The provided
+/// closure `on_text_entered` is called when the OK button is clicked, providing the entered
+/// text from both entry fields and the state of the switch.
+///
+/// # Arguments
+///
+/// - `message1`: Initial text for the first entry field.
+/// - `message2`: Initial text for the second entry field.
+/// - `on_text_entered`: A closure that takes three parameters: the text from the first entry field,
+///   the text from the second entry field, and a boolean indicating the state of the switch.
+///
+/// # Returns
+///
+/// - `Ok(())`: The operation was successful, and the text entry window was created and displayed.
+/// - `Err(io::Error)`: An error occurred during the creation or display of the text entry window.
+///
 pub fn create_text_entry_window_with_switch(
     message1: &str,
     message2: &str,
