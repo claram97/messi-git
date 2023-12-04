@@ -80,10 +80,14 @@ fn create_new_commit_file(
             (user, email) = result;
         }
     }
-    
+
     if parent_commit == NO_PARENT {
         let commit_content = format!(
-            "tree {tree_hash}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0", user, email, user, email,
+            "tree {tree_hash}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0",
+            user,
+            email,
+            user,
+            email,
             message = message,
             time = time,
             tree_hash = tree_hash
