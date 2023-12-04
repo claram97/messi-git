@@ -1,6 +1,7 @@
 use crate::add;
 use crate::add::add;
 use crate::branch;
+use crate::branch::git_branch;
 use crate::branch::is_an_existing_branch;
 use crate::check_ignore::git_check_ignore;
 use crate::checkout;
@@ -11,24 +12,13 @@ use crate::checkout::create_or_reset_branch;
 use crate::checkout::force_checkout;
 use crate::commit;
 use crate::commit::get_branch_name;
+use crate::config::Config;
 use crate::configuration::GIT_DIR;
 use crate::configuration::GIT_IGNORE;
+use crate::configuration::HOST;
 use crate::configuration::INDEX;
+use crate::fetch::git_fetch;
 use crate::git_config::git_config;
-use crate::rebase;
-use crate::tag::git_tag;
-use crate::utils::obtain_git_dir;
-
-use std::cell::RefCell;
-use std::fs;
-use std::fs::File;
-use std::io::Read;
-use std::io::Write;
-use std::rc::Rc;
-use std::str;
-//use crate::fetch::git_fetch_for_gui;
-use crate::branch::git_branch;
-use crate::config::Config;
 use crate::gui::main_window::add_to_open_windows;
 use crate::gui::style::apply_button_style;
 use crate::gui::style::configure_repository_window;
@@ -49,14 +39,17 @@ use crate::ls_tree::ls_tree;
 use crate::merge;
 use crate::pull::git_pull;
 use crate::push;
+use crate::rebase;
 use crate::remote::git_remote;
 use crate::rm::git_rm;
 use crate::show_ref::git_show_ref;
 use crate::status;
+use crate::tag::git_tag;
 use crate::tree_handler;
 use crate::tree_handler::Tree;
 use crate::utils;
 use crate::utils::find_git_directory;
+use crate::utils::obtain_git_dir;
 use gtk::prelude::BuilderExtManual;
 use gtk::Builder;
 use gtk::Button;
@@ -77,10 +70,18 @@ use gtk::TextBufferExt;
 use gtk::TextView;
 use gtk::TextViewExt;
 use gtk::WidgetExt;
+use std::cell::RefCell;
 use std::env;
+use std::fs;
+use std::fs::File;
 use std::io;
+use std::io::Read;
+use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
+use std::rc::Rc;
+use std::str;
+
 use super::style::apply_entry_style;
 use super::style::apply_label_style;
 use super::style::create_text_entry_window_with_switch;
@@ -173,7 +174,80 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
     let builder_clone_for_rebase = builder.clone();
     rebase_window(&builder_clone_for_rebase)?;
 
+    let builder_clone_for_fetch = builder.clone();
+    match apply_style_to_fetch(&builder_clone_for_fetch) {
+        Ok(_) => {}
+        Err(error) => {
+            eprintln!("{:?}", error);
+        }
+    }
+
+    let builder_clone_for_checkout_view = builder.clone();
+    match handle_show_branches_button(&builder_clone_for_checkout_view) {
+        Ok(_) => {}
+        Err(error) => {
+            eprintln!("{:?}", error.to_string());
+        }
+    }
+
+    let builder_clone_for_config_window = builder.clone();
+    match update_config_window(&builder_clone_for_config_window) {
+        Ok(_) => {}
+        Err(error) => {
+            eprintln!("{:?}", error.to_string());
+        }
+    }
+
     setup_buttons(builder)?;
+
+    Ok(())
+}
+
+fn update_config_window(builder: &Builder) -> io::Result<()> {
+    let git_dir = obtain_git_dir()?;
+    let config = Config::load(&git_dir)?;
+    let label = match get_label(builder, "config-title-label", 13.0) {
+        Some(label) => label,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se encontró el config label!".to_string(),
+            ));
+        }
+    };
+    if let Ok((user, email)) = config.get_user_name_and_email() {
+        let text = format!("Bienvenido {user}!\nParece que el email {email} está guardado en nuestra\nbase de datos.\nRecuerda que puedes modificarlo aquí abajo siempre que desees :)");
+        label.set_text(&text);
+    } else {
+        label.set_text("Bienvenido!\nAlgunas funciones podrían presentar fallos si no nos dices quién eres.\nPor favor, indicanos tus datos aquí abajo.");
+    }
+    Ok(())
+}
+
+fn apply_style_to_fetch(builder: &Builder) -> io::Result<()> {
+    let fetch_entry = match get_entry(builder, "fetch-entry") {
+        Some(entry) => entry,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No se encontró el fetch entry!".to_string(),
+            ));
+        }
+    };
+
+    apply_entry_style(&fetch_entry);
+
+    let fetch_label = match get_label(builder, "fetch-label", 14.0) {
+        Some(entry) => entry,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                "No se encontró el fetch label!".to_string(),
+            ));
+        }
+    };
+
+    apply_label_style(&fetch_label);
 
     Ok(())
 }
@@ -225,7 +299,7 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "r-trees",
         "d-trees",
         "rt-trees",
-        "show-fetch",
+        "fetch",
     ];
 
     for button_id in button_ids.iter() {
@@ -321,104 +395,151 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     let button: gtk::Button = builder_clone
         .get_object(button_id)
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get the button object"))?;
-    let merge_text_view = match get_text_view(&builder_clone, "merge-text-view") {
-        Some(text_view) => text_view,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Couldn't find merge text view.",
-            ));
-        }
-    };
     match button_id {
         "trees-button" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_ls_trees(&builder_clone);
+            button.connect_clicked(move |_| match handle_ls_trees(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "r-trees" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_ls_trees_r(&builder_clone);
+            button.connect_clicked(move |_| match handle_ls_trees_r(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "d-trees" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_ls_trees_d(&builder_clone);
+            button.connect_clicked(move |_| match handle_ls_trees_d(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "rt-trees" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_ls_trees_rt(&builder_clone);
+            button.connect_clicked(move |_| match handle_ls_trees_rt(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "verify-tag" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_tag_verify(&builder_clone);
+            button.connect_clicked(move |_| match handle_tag_verify(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "tag-from-tag" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_tag_from_tag(&builder_clone);
+            button.connect_clicked(move |_| match handle_tag_from_tag(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "list-tags" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_list_tags(&builder_clone);
+            button.connect_clicked(move |_| match handle_list_tags(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "add-normal-tag" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_tag_add_normal(&builder_clone);
+            button.connect_clicked(move |_| match handle_tag_add_normal(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "add-annotated-tag" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_tag_add_annotated(&builder_clone);
+            button.connect_clicked(move |_| match handle_tag_add_annotated(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "remove-tag" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_tag_remove(&builder_clone);
+            button.connect_clicked(move |_| match handle_tag_remove(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "another-branch" => {
             button.connect_clicked(move |_| {
-                let _ = handle_create_branch_from_branch_button(&builder_clone);
+                match handle_create_branch_from_branch_button(&builder_clone) {
+                    Ok(_) => {}
+                    Err(error) => {
+                        eprintln!("{:?}", error);
+                    }
+                }
             });
         }
         "remote" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_remote(&builder_clone);
+            button.connect_clicked(move |_| match handle_remote(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "remote-add" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_remote_add(&builder_clone);
+            button.connect_clicked(move |_| match handle_remote_add(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "remote-rm" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_remote_rm(&builder_clone);
+            button.connect_clicked(move |_| match handle_remote_rm(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "remote-set-url" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_remote_set_url();
+            button.connect_clicked(move |_| match handle_remote_set_url() {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "remote-get-url" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_remote_get_url();
+            button.connect_clicked(move |_| match handle_remote_get_url() {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "remote-rename" => {
-            button.connect_clicked(move |_| {
-                let _ = handle_remote_rename(&builder_clone);
+            button.connect_clicked(move |_| match handle_remote_rename(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
-        "show-fetch" => {
-            button.connect_clicked(move |_| {
-               
+        "fetch" => {
+            button.connect_clicked(move |_| match handle_fetch_button(&builder_clone) {
+                Ok(_) => {}
+                Err(error) => {
+                    eprintln!("{:?}", error);
+                }
             });
         }
         "show-log-button" => {
@@ -428,67 +549,27 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         }
         "checkout1" => {
             button.connect_clicked(move |_| {
-                let result = handle_checkout_branch_window();
-                if result.is_ok() {
-                    let result = show_current_branch_on_merge_window(&merge_text_view);
-                    if result.is_err() {
-                        eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
-                    }
-                } else {
-                    eprintln!("Error handling checkout branch window.")
-                }
+                handle_checkout_branch_window(&builder_clone);
             });
         }
         "checkout2" => {
             button.connect_clicked(move |_| {
-                let result = handle_create_and_checkout_branch_button();
-                if result.is_ok() {
-                    let result = show_current_branch_on_merge_window(&merge_text_view);
-                    if result.is_err() {
-                        eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
-                    }
-                } else {
-                    eprintln!("Error handling create and checkout branch button.");
-                }
+                handle_create_and_checkout_branch_button(&builder_clone);
             });
         }
         "checkout3" => {
             button.connect_clicked(move |_| {
-                let result = handle_create_or_reset_branch_button();
-                if result.is_ok() {
-                    let result = show_current_branch_on_merge_window(&merge_text_view);
-                    if result.is_err() {
-                        eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
-                    }
-                } else {
-                    eprintln!("Error handling create or reset branch button.");
-                }
+                handle_create_or_reset_branch_button(&builder_clone);
             });
         }
         "checkout4" => {
             button.connect_clicked(move |_| {
-                let result = handle_checkout_commit_detached_button();
-                if result.is_ok() {
-                    let result = show_current_branch_on_merge_window(&merge_text_view);
-                    if result.is_err() {
-                        eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
-                    }
-                } else {
-                    eprintln!("Error handling checkout commit detached button.");
-                }
+                handle_checkout_commit_detached_button(&builder_clone);
             });
         }
         "checkout5" => {
             button.connect_clicked(move |_| {
-                let result = handle_force_checkout_button();
-                if result.is_ok() {
-                    let result = show_current_branch_on_merge_window(&merge_text_view);
-                    if result.is_err() {
-                        eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
-                    }
-                } else {
-                    eprintln!("Error handling force checkout button.");
-                }
+                handle_force_checkout_button(&builder_clone);
             });
         }
         "pull" => {
@@ -595,6 +676,74 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     Ok(())
 }
 
+/// Handles the user interaction with the "Fetch" button in the GUI.
+///
+/// This function is responsible for obtaining user input, validating the input,
+/// and initiating a Git fetch operation based on the provided information.
+///
+/// # Arguments
+///
+/// * `builder` - A reference to a GTK builder object that is used to access
+///              and manipulate the GUI components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success and an `io::Error` on failure.
+///
+/// # Errors
+///
+/// This function may return an `io::Error` in the following scenarios:
+///
+/// * The GTK entry field named "fetch-entry" is not found in the provided builder.
+/// * The entered remote name is empty.
+/// * There is an issue loading the Git directory or configuration.
+/// * The entered remote name does not exist in the Git configuration.
+///
+/// # Panics
+///
+/// This function does not intentionally panic under normal circumstances.
+///
+fn handle_fetch_button(builder: &gtk::Builder) -> io::Result<()> {
+    let fetch_entry = match get_entry(builder, "fetch-entry") {
+        Some(entry) => entry,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                "No se encontró el fetch entry!",
+            ));
+        }
+    };
+
+    let remote_name = fetch_entry.get_text().to_string();
+    if remote_name.is_empty() {
+        show_message_dialog("Error", "Debe ingresar el nombre de un remote");
+    } else {
+        let git_dir = obtain_git_dir()?;
+        let working_dir = match Path::new(&git_dir).parent() {
+            Some(dir) => dir.to_string_lossy().to_string(),
+            None => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "No pudimos obtener el working dir",
+                ));
+            }
+        };
+        let config = Config::load(&git_dir)?;
+        if !config.is_an_existing_remote(&remote_name) {
+            show_message_dialog("Error", "El remoto no existe. Revise los remotos existentes o cree uno nuevo en la pestaña remote.");
+        } else {
+            match git_fetch(Some(&remote_name), HOST, &working_dir) {
+                Ok(_) => {
+                    show_message_dialog("Éxito", "Fetched successfully");
+                }
+                Err(error) => {
+                    show_message_dialog("Error", &error.to_string());
+                }
+            }
+        }
+    }
+    Ok(())
+}
 
 /// Handle the create and checkout branch button's click event. This function prompts the user to enter a path
 /// and attempts to create and checkout a new branch based on the provided path. It shows a success message
@@ -604,23 +753,27 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_create_and_checkout_branch_button() -> io::Result<()> {
+fn handle_create_and_checkout_branch_button(builder: &Builder) {
+    let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter the path of the file", move |text| {
-        let resultado = obtain_text_from_create_and_checkout_branch(&text);
-        match resultado {
-            Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
-            }
-            Err(_err) => {
-                show_message_dialog("Error", "La rama indicada no existe.");
+        if text.is_empty() {
+            show_message_dialog("Error", "Debe especificar la rama a la cual desea cambiar.");
+        } else {
+            let resultado = obtain_text_from_create_and_checkout_branch(&text);
+            match resultado {
+                Ok(_) => {
+                    update_views_since_checkout_was_called(&builder_clone);
+                }
+                Err(err) => {
+                    let error_message = err.to_string();
+                    show_message_dialog("Error", &error_message);
+                }
             }
         }
     });
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
-
-    result
 }
 
 /// Handle the create or reset branch button's click event. This function prompts the user to enter a path
@@ -631,22 +784,27 @@ fn handle_create_and_checkout_branch_button() -> io::Result<()> {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_create_or_reset_branch_button() -> io::Result<()> {
+fn handle_create_or_reset_branch_button(builder: &Builder) {
+    let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter the path of the file", move |text| {
-        let resultado = obtain_text_from_create_or_reset_branch(&text);
-        match resultado {
-            Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
-            }
-            Err(_err) => {
-                show_message_dialog("Error", "La rama indicada no existe.");
+        if text.is_empty() {
+            show_message_dialog("Error", "Debe especificar la rama a la cual desea cambiar.");
+        } else {
+            let resultado = obtain_text_from_create_or_reset_branch(&text);
+            match resultado {
+                Ok(_) => {
+                    update_views_since_checkout_was_called(&builder_clone);
+                }
+                Err(err) => {
+                    let error_message = err.to_string();
+                    show_message_dialog("Error", &error_message);
+                }
             }
         }
     });
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
-    result
 }
 
 /// Handle the checkout commit detached button's click event. This function prompts the user to enter a path
@@ -657,22 +815,27 @@ fn handle_create_or_reset_branch_button() -> io::Result<()> {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_checkout_commit_detached_button() -> io::Result<()> {
+fn handle_checkout_commit_detached_button(builder: &Builder) {
+    let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter the path of the file", move |text| {
-        let resultado = obtain_text_from_checkout_commit_detached(&text);
-        match resultado {
-            Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
-            }
-            Err(_err) => {
-                show_message_dialog("Error", "La rama indicada no existe.");
+        if text.is_empty() {
+            show_message_dialog("Error", "Debe especificar la rama a la cual desea cambiar.");
+        } else {
+            let resultado = obtain_text_from_checkout_commit_detached(&text);
+            match resultado {
+                Ok(_) => {
+                    update_views_since_checkout_was_called(&builder_clone);
+                }
+                Err(err) => {
+                    let error_message = err.to_string();
+                    show_message_dialog("Error", &error_message);
+                }
             }
         }
     });
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
-    result
 }
 
 /// Handle the force checkout button's click event. This function prompts the user to enter a path
@@ -683,22 +846,27 @@ fn handle_checkout_commit_detached_button() -> io::Result<()> {
 ///
 /// * `builder` - A reference to a GTK builder used to create UI elements.
 ///
-fn handle_force_checkout_button() -> io::Result<()> {
+fn handle_force_checkout_button(builder: &gtk::Builder) {
+    let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter the path of the file", move |text| {
-        let resultado = obtain_text_from_force_checkout(&text);
-        match resultado {
-            Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
-            }
-            Err(_err) => {
-                show_message_dialog("Error", "La rama indicada no existe.");
+        if text.is_empty() {
+            show_message_dialog("Error", "Debe especificar la rama a la cual desea cambiar.");
+        } else {
+            let resultado = obtain_text_from_force_checkout(&text);
+            match resultado {
+                Ok(_) => {
+                    update_views_since_checkout_was_called(&builder_clone);
+                }
+                Err(err) => {
+                    let error_message = err.to_string();
+                    show_message_dialog("Error", &error_message);
+                }
             }
         }
     });
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
-    result
 }
 
 /// Retrieves information about Git branches in the repository.
@@ -2441,6 +2609,15 @@ fn handle_list_tags(builder: &gtk::Builder) -> io::Result<()> {
     Ok(())
 }
 
+// let result = show_current_branch_on_merge_window(&merge_text_view);
+//                     if result.is_err() {
+//                         eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
+//                     }
+//                     let result = handle_show_branches_button(&builder_clone);
+//                     if result.is_err() {
+//                         eprintln!("No se pudo actualizar la rama actual en la ventana branch.");
+//                     }
+
 /// Handle the "Checkout Branch" button's click event. This function opens a text entry window for users to enter
 /// the name of the branch they want to check out. Once the branch name is entered and confirmed, it attempts to check
 /// out the branch and updates the repository window. If the operation is successful, it displays a success message.
@@ -2454,27 +2631,51 @@ fn handle_list_tags(builder: &gtk::Builder) -> io::Result<()> {
 ///
 /// This function returns an `io::Result` where `Ok(())` indicates success, and `Err` contains an error description.
 ///
-fn handle_checkout_branch_window() -> io::Result<()> {
+fn handle_checkout_branch_window(builder: &Builder) {
+    let builder_clone = builder.clone();
     let result = create_text_entry_window("Enter the path of the file", move |text| {
-        let resultado = obtain_text_from_checkout_branch(&text);
-        match resultado {
-            Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+        if text.is_empty() {
+            show_message_dialog("Error", "Debe especificar la rama a la cual desea cambiar.");
+        } else {
+            let resultado = obtain_text_from_checkout_branch(&text);
+            match resultado {
+                Ok(_) => {
+                    update_views_since_checkout_was_called(&builder_clone);
+                }
+                Err(err) => {
+                    let error_message = err.to_string();
+                    show_message_dialog("Error", &error_message);
+                }
             }
-            Err(_err) => match _err.kind() {
-                std::io::ErrorKind::UnexpectedEof => {
-                    show_message_dialog("Éxito", "Changed correctly to branch ");
-                }
-                _ => {
-                    show_message_dialog("Error", "La rama indicada no existe.");
-                }
-            },
         }
     });
     if result.is_err() {
         eprintln!("Error creating text entry window.");
     }
-    Ok(())
+}
+
+fn update_views_since_checkout_was_called(builder: &Builder) {
+    let merge_text_view = match get_text_view(builder, "merge-text-view") {
+        Some(view) => view,
+        None => {
+            eprintln!("No se pudo obtener el text view de merge");
+            return;
+        }
+    };
+
+    match show_current_branch_on_merge_window(&merge_text_view) {
+        Ok(_) => {}
+        Err(_) => {
+            eprintln!("No se pudo actualizar la rama actual en la ventana merge.");
+        }
+    }
+
+    match handle_show_branches_button(builder) {
+        Ok(_) => {}
+        Err(_) => {
+            eprintln!("No se pudo actualizar la view");
+        }
+    }
 }
 
 /// Obtains the ScrolledWindow widget for displaying log text.
@@ -2653,25 +2854,13 @@ pub fn obtain_text_from_remove(texto: &str) -> Result<String, io::Error> {
 /// * `Result<String, io::Error>` - A `Result` containing a success message "Ok" or an `io::Error` if any issues occur.
 ///
 pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir: PathBuf = match find_git_directory(&mut current_dir, GIT_DIR) {
-        Some(git_dir) => git_dir.into(),
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Git directory not found\n",
-            ));
-        }
-    };
-    if let Err(err) = force_checkout(&git_dir, texto) {
-        eprintln!(
-            "Error al forzar el cambio de rama o commit (descartando cambios sin confirmar): {:?}",
-            err
-        );
-    }
-    //force_checkout(&git_dir, texto);
+    let git_dir = obtain_git_dir()?;
+    let git_dir = Path::new(&git_dir);
 
-    Ok("Ok".to_string())
+    match force_checkout(git_dir, texto) {
+        Ok(_) => Ok("Correctly changed".to_string()),
+        Err(error) => Err(error),
+    }
 }
 
 /// Checkout a commit in detached HEAD state from a custom Git-like version control system.
@@ -2690,36 +2879,19 @@ pub fn obtain_text_from_force_checkout(texto: &str) -> Result<String, io::Error>
 /// * `Result<String, io::Error>` - A `Result` containing a success message or an `io::Error` if any issues occur.
 ///
 pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, io::Error> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, GIT_DIR)
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
+    let git_dir = obtain_git_dir()?;
     let git_dir_parent = Path::new(&git_dir)
         .parent()
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
     let git_dir_path = Path::new(&git_dir);
-    let result = match checkout_commit_detached(
+    match checkout_commit_detached(
         git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
         Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
-        Err(err) => Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!(
-                "Error al llamar a la función 'checkout branch': {:?}\n",
-                err
-            ),
-        )),
-    };
-
-    if result.is_err() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Error al llamar a la función 'checkout branch'\n",
-        ));
+        Err(err) => Err(err),
     }
-
-    Ok("Ok".to_string())
 }
 
 /// Create or reset a branch in a custom Git-like version control system.
@@ -2738,34 +2910,19 @@ pub fn obtain_text_from_checkout_commit_detached(texto: &str) -> Result<String, 
 /// * `Result<String, io::Error>` - A `Result` containing a success message or an `io::Error` if any issues occur.
 ///
 pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io::Error> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, GIT_DIR)
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
+    let git_dir = obtain_git_dir()?;
     let git_dir_parent = Path::new(&git_dir)
         .parent()
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
     let git_dir_path = Path::new(&git_dir);
-    let result = match create_or_reset_branch(
+    match create_or_reset_branch(
         git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
         Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
-        Err(err) => Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!(
-                "Error al llamar a la función 'checkout branch': {:?}\n",
-                err
-            ),
-        )),
-    };
-    if result.is_err() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Error al llamar a la función 'checkout branch'\n",
-        ));
+        Err(err) => Err(err),
     }
-    Ok("Ok".to_string())
 }
 
 /// Create and checkout a branch in a custom Git-like version control system.
@@ -2784,35 +2941,20 @@ pub fn obtain_text_from_create_or_reset_branch(texto: &str) -> Result<String, io
 /// * `Result<String, io::Error>` - A `Result` containing a success message or an `io::Error` if any issues occur.
 ///
 pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String, io::Error> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, GIT_DIR)
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
+    let git_dir = obtain_git_dir()?;
     let git_dir_parent = Path::new(&git_dir)
         .parent()
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
     let git_dir_path = Path::new(&git_dir);
 
-    let result = match create_and_checkout_branch(
+    match create_and_checkout_branch(
         git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
         texto,
     ) {
         Ok(_) => Ok("La función 'checkout branch' se ejecutó correctamente.".to_string()),
-        Err(err) => Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!(
-                "Error al llamar a la función 'checkout branch': {:?}\n",
-                err
-            ),
-        )),
-    };
-    if result.is_err() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Error al llamar a la función 'checkout branch'\n",
-        ));
+        Err(err) => Err(err),
     }
-    Ok("Ok".to_string())
 }
 
 /// Checkout a branch in a custom Git-like version control system.
@@ -2831,39 +2973,20 @@ pub fn obtain_text_from_create_and_checkout_branch(texto: &str) -> Result<String
 /// * `Result<String, io::Error>` - A `Result` containing a success message or an `io::Error` if any issues occur.
 ///
 pub fn obtain_text_from_checkout_branch(text: &str) -> Result<String, io::Error> {
-    let mut current_dir = std::env::current_dir()?;
-    let git_dir = find_git_directory(&mut current_dir, GIT_DIR)
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Git directory not found\n"))?;
+    let git_dir = obtain_git_dir()?;
     let git_dir_parent = Path::new(&git_dir)
         .parent()
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Gitignore file not found\n"))?;
     let git_dir_path = Path::new(&git_dir);
 
-    let _result = match checkout_branch(
+    match checkout_branch(
         git_dir_path,
         git_dir_parent.to_string_lossy().as_ref(),
         text,
     ) {
         Ok(_) => Ok("The 'checkout branch' function executed successfully.".to_string()),
-        Err(err) => {
-            {
-                match err.kind() {
-                    std::io::ErrorKind::UnexpectedEof => {
-                        eprintln!("exito.");
-                    }
-                    _ => {
-                        return Err(io::Error::new(
-                            io::ErrorKind::NotFound,
-                            "Error calling the 'checkout branch' function\n",
-                        ));
-                    }
-                };
-            };
-            Err(())
-        }
-    };
-
-    Ok("Ok".to_string())
+        Err(err) => Err(err),
+    }
 }
 
 /// Obtain the Git log as a filtered and formatted string.
@@ -4070,9 +4193,15 @@ fn call_git_config(name: String, email: String) {
 /// * `name_entry` - A reference to the GTK entry widget for the user's name.
 /// * `email_entry` - A reference to the GTK entry widget for the user's email.
 ///
-fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entry: &gtk::Entry) {
+fn config_button_on_clicked(
+    button: &Button,
+    name_entry: &gtk::Entry,
+    email_entry: &gtk::Entry,
+    builder: &Builder,
+) {
     let cloned_name_entry = name_entry.clone();
     let cloned_email_entry = email_entry.clone();
+    let builder_clone = builder.clone();
     button.connect_clicked(move |_| {
         let name = cloned_name_entry.get_text().to_string();
         let email = cloned_email_entry.get_text().to_string();
@@ -4081,6 +4210,12 @@ fn config_button_on_clicked(button: &Button, name_entry: &gtk::Entry, email_entr
             show_message_dialog("Warning", "Debe completar ambos campos para continuar");
         } else {
             call_git_config(name, email);
+        }
+        match update_config_window(&builder_clone) {
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!("{:?}", error.to_string());
+            }
         }
     });
 }
@@ -4144,7 +4279,7 @@ fn config_window(builder: &gtk::Builder) {
     apply_label_style(&email_label);
     apply_label_style(&config_title);
 
-    config_button_on_clicked(&config_button, &name_entry, &email_entry);
+    config_button_on_clicked(&config_button, &name_entry, &email_entry, builder);
 }
 
 /// Sets up the functionality of the merge abort button.
@@ -4292,6 +4427,200 @@ fn set_combo_box_on_changed_behavior(combo_box: &gtk::ComboBoxText, text_view: &
 /// - `button`: A reference to the `Button` for which the behavior is being set.
 /// - `combo_box`: A reference to the `gtk::ComboBoxText` containing file paths.
 /// - `merge_text_view`: A reference to the `gtk::TextView` containing the content to be written into a file.
+// ///
+// fn set_update_button_behavior(
+//     button: &Button,
+//     combo_box: &gtk::ComboBoxText,
+//     merge_text_view: &TextView,
+// ) {
+//     let cloned_text_view = merge_text_view.clone();
+//     let cloned_combo_box = combo_box.clone();
+//     button.connect_clicked(move |_| {
+//         let text_buffer = match cloned_text_view.get_buffer() {
+//             Some(buff) => buff,
+//             None => {
+//                 eprintln!("No se encontró el buffer");
+//                 return;
+//             }
+//         };
+
+//         let path = match cloned_combo_box.get_active_text() {
+//             Some(path) => path.to_string(),
+//             None => return,
+//         };
+
+//         let content = match text_buffer.get_text(
+//             &text_buffer.get_start_iter(),
+//             &text_buffer.get_end_iter(),
+//             false,
+//         ) {
+//             Some(content) => content.to_string(),
+//             None => return,
+//         };
+
+//         let cloned_path = path.clone();
+//         let mut file = match File::create(cloned_path) {
+//             Ok(file) => file,
+//             Err(error) => {
+//                 eprintln!("{:?}", error);
+//                 return;
+//             }
+//         };
+
+//         match file.write_all(content.as_bytes()) {
+//             Ok(_) => {}
+//             Err(error) => {
+//                 eprintln!("{:?}", error);
+//             }
+//         }
+//     });
+// }
+
+// /// Sets up the functionality of the merge abort button.
+// /// Will leave the repository as it was before the merge.
+// fn set_abort_button_behavior(button: &Button, merge_button: &Button, git_dir: &str) {
+//     merge_button.set_sensitive(true);
+//     let git_dir = git_dir.to_string();
+//     button.connect_clicked(move |_| {
+//         let branch = branch::get_current_branch_path(&git_dir);
+//         let branch = match branch {
+//             Ok(branch) => branch,
+//             Err(_e) => {
+//                 eprintln!("No se pudo obtener el nombre de la rama actual.");
+//                 return;
+//             }
+//         };
+//         let branch_name = match branch.split('/').last() {
+//             Some(name) => name,
+//             None => {
+//                 eprintln!("No se pudo obtener el nombre de la rama actual.");
+//                 return;
+//             }
+//         };
+//         let root_dir = match Path::new(&git_dir).parent() {
+//             Some(dir) => dir.to_string_lossy().to_string(),
+//             None => {
+//                 eprintln!("No se pudo obtener el directorio actual.");
+//                 return;
+//             }
+//         };
+//         let git_dir_path = Path::new(&git_dir);
+//         let result = checkout::checkout_branch(git_dir_path, &root_dir, branch_name);
+//         if result.is_err() {
+//             eprintln!("No se pudo hacer checkout de la rama {}.", branch_name);
+//         }
+//     });
+// }
+
+/// Sets up the functionality of the merge button. Will merge the current branch with the one that was selected.
+// fn set_done_button_behavior(button: &Button, merge_button: &gtk::Button, conflicts: Vec<String>) {
+//     let git_dir = match obtain_git_dir() {
+//         Ok(dir) => dir,
+//         Err(_e) => {
+//             eprintln!("No se pudo obtener el git dir.");
+//             return;
+//         }
+//     };
+//     let index_path = format!("{}/{}", git_dir, INDEX);
+
+//     let parent_hash = match branch::get_current_branch_commit(&git_dir) {
+//         Ok(hash) => hash,
+//         Err(_e) => {
+//             eprintln!("No se pudo obtener el hash del commit actual.");
+//             return;
+//         }
+//     };
+//     let merge_head_path = format!("{}/MERGE_HEAD", git_dir);
+//     let mut merge_head_file = match File::open(merge_head_path) {
+//         Ok(file) => file,
+//         Err(_e) => {
+//             eprintln!("No se pudo abrir el archivo MERGE_HEAD.");
+//             return;
+//         }
+//     };
+//     let mut parent_hash2 = String::new();
+//     match merge_head_file.read_to_string(&mut parent_hash2) {
+//         Ok(_) => {}
+//         Err(_e) => {
+//             eprintln!("No se pudo leer el archivo MERGE_HEAD.");
+//             return;
+//         }
+//     };
+//     let merge_button_cloned = merge_button.clone();
+//     button.connect_clicked(move |_| {
+//         for conflict in &conflicts {
+//             let result = add::add(conflict, &index_path, &git_dir, "", None);
+//             if result.is_err() {
+//                 eprintln!("No se pudo agregar el archivo {} al index.", conflict);
+//             }
+//         }
+//         let commit_message = "Merge commit".to_string();
+//         let result =
+//             commit::new_merge_commit(&git_dir, &commit_message, &parent_hash, &parent_hash2, "");
+//         println!("{:?}", result);
+//         merge_button_cloned.set_sensitive(true);
+//     });
+// }
+
+/// Updates the box with the paths of the files that have conflicts.
+// fn update_combo_box(combo_box: &gtk::ComboBoxText, conflicts: Vec<String>) {
+//     for conflict in &conflicts {
+//         combo_box.append_text(conflict);
+//     }
+// }
+
+/// Sets the behavior for the `gtk::ComboBoxText` when its active item changes.
+///
+/// This function connects a callback to the `changed` signal of the provided `gtk::ComboBoxText`.
+/// When the active item in the combo box changes, the callback reads the content of the file
+/// associated with the selected item and sets the text of the provided `gtk::TextView` accordingly.
+///
+/// # Arguments
+///
+/// - `combo_box`: A reference to the `gtk::ComboBoxText` for which the behavior is being set.
+/// - `text_view`: A reference to the `gtk::TextView` whose content will be updated based on the
+///   selected item in the combo box.
+// ///
+// fn set_combo_box_on_changed_behavior(combo_box: &gtk::ComboBoxText, text_view: &gtk::TextView) {
+//     let cloned_text_view = text_view.clone();
+//     let combo_box_cloned = combo_box.clone();
+//     combo_box.connect_changed(move |_| {
+//         let conflict_path = match combo_box_cloned.get_active_text() {
+//             Some(path) => path.to_string(),
+//             None => return,
+//         };
+
+//         let buff = match cloned_text_view.get_buffer() {
+//             Some(buff) => buff,
+//             None => {
+//                 eprintln!("Error getting the buffer");
+//                 return;
+//             }
+//         };
+
+//         let content = match fs::read_to_string(conflict_path) {
+//             Ok(content) => content,
+//             Err(error) => {
+//                 eprintln!("{:?}", error);
+//                 return;
+//             }
+//         };
+
+//         buff.set_text(&content)
+//     });
+// }
+
+/// Sets the behavior for an update button.
+///
+/// This function connects a callback to the `clicked` signal of the provided `Button`.
+/// When the button is clicked, the callback reads the content of the associated `gtk::TextView`
+/// and writes it into the file specified by the selected item in the associated `gtk::ComboBoxText`.
+///
+/// # Arguments
+///
+/// - `button`: A reference to the `Button` for which the behavior is being set.
+/// - `combo_box`: A reference to the `gtk::ComboBoxText` containing file paths.
+/// - `merge_text_view`: A reference to the `gtk::TextView` containing the content to be written into a file.
 ///
 fn set_update_button_behavior(
     button: &Button,
@@ -4379,7 +4708,7 @@ pub fn merge_window(builder: &Builder) -> io::Result<()> {
     update_button.set_sensitive(false);
 
     show_current_branch_on_merge_window(&merge_text_view)?;
-    let _ = set_merge_button_behavior(
+    set_merge_button_behavior(
         &merge_button,
         &merge_input_branch_entry,
         &merge_text_view,

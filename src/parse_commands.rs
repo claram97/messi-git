@@ -9,7 +9,7 @@ use crate::checkout::force_checkout;
 use crate::clone::git_clone;
 use crate::commit::{get_branch_name, new_commit};
 use crate::config::Config;
-use crate::configuration::{GIT_DIR, GIT_IGNORE, INDEX};
+use crate::configuration::{GIT_DIR, GIT_IGNORE, HOST, INDEX};
 use crate::fetch::git_fetch;
 use crate::hash_object::store_file;
 use crate::index::Index;
@@ -1064,7 +1064,7 @@ fn handle_clone(_args: Vec<String>) {
 /// * `_args` - A vector of command-line arguments.
 ///
 fn handle_fetch(_args: Vec<String>) {
-    let current_dir = match std::env::current_dir() {
+    let _current_dir = match std::env::current_dir() {
         Ok(dir) => dir,
         Err(err) => {
             eprintln!("Error al obtener el directorio actual: {:?}", err);
@@ -1072,21 +1072,30 @@ fn handle_fetch(_args: Vec<String>) {
         }
     };
     let url_text = &_args[2];
-    //The remote repo url is the first part of the URL, up until the last '/'.
     let _remote_repo_url = match url_text.rsplit_once('/') {
         Some((string, _)) => string,
         None => "",
     };
 
-    //The remote repository name is the last part of the URL.
-    let remote_repo_name = url_text.split('/').last().unwrap_or("");
-    let result = git_fetch(
-        Some(remote_repo_name),
-        "localhost",
-        current_dir.to_str().expect("Error "),
-    );
+    let git_dir = match obtain_git_dir() {
+        Ok(dir) => dir,
+        Err(error) => {
+            eprintln!("{:?}", error.to_string());
+            return;
+        }
+    };
 
-    // Manejo del resultado (puede imprimir un mensaje o manejar errores según sea necesario).
+    let working_dir = match Path::new(&git_dir).parent() {
+        Some(dir) => dir.to_string_lossy().to_string(),
+        None => {
+            eprintln!("No pudimos obtener el working dir");
+            return;
+        }
+    };
+
+    let remote_repo_name = url_text.split('/').last().unwrap_or("");
+    let result = git_fetch(Some(remote_repo_name), HOST, &working_dir);
+
     match result {
         Ok(_) => println!("Fetch successful!"),
         Err(err) => eprintln!("Error during fetch: {:?}", err),
