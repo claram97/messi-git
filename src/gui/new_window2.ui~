@@ -1128,7 +1128,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton">
+                      <object class="GtkButton" id="show-fetch">
                         <property name="label" translatable="yes">Show</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
