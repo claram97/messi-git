@@ -1,4 +1,4 @@
-use crate::configuration::{GIT_DIR, LOGGER_COMMANDS_FILE};
+use crate::configuration::LOGGER_COMMANDS_FILE;
 use crate::logger::Logger;
 use crate::utils::get_current_time;
 use std::fs;
@@ -80,6 +80,7 @@ fn create_file_if_not_exists(file: &str, content: &str) -> io::Result<()> {
 ///
 pub fn git_init(
     directory: &str,
+    git_dir_name: &str,
     initial_branch: &str,
     template_directory: Option<&str>,
 ) -> io::Result<()> {
@@ -89,7 +90,7 @@ pub fn git_init(
     }
 
     // Necessary directories
-    let git_dir = format!("{}/{}", directory, GIT_DIR);
+    let git_dir = format!("{}/{}", directory, git_dir_name);
     create_directory_if_not_exists(&git_dir)?;
 
     create_directory_if_not_exists(&format!("{}/objects", &git_dir))?;
@@ -150,6 +151,7 @@ pub fn git_init(
 mod test {
 
     use super::*;
+    use crate::configuration::GIT_DIR_FOR_TEST;
     use crate::init::fs::File;
     use rand::random;
     use std::fs;
@@ -215,28 +217,22 @@ mod test {
         }
         assert_eq!(file_content, "Test content");
 
-        // Clean up: Remove the temporary directory
         if let Err(err) = fs::remove_dir_all(&temp_dir) {
             panic!("Failed to remove temp directory: {}", err);
         }
     }
 
     #[test]
-    /// Tests the `git_init` function.
     fn test_git_init() {
-        // Create a temporary directory for testing
         let temp_dir = create_temp_directory().expect("Failed to create temp directory");
 
-        // Call the git_init function
-        if let Err(err) = git_init(&temp_dir, "main", None) {
+        if let Err(err) = git_init(&temp_dir, GIT_DIR_FOR_TEST, "main", None) {
             panic!("Failed to initialize Git repository: {}", err);
         }
 
-        // Check if the Git repository was initialized
-        let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
+        let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR_FOR_TEST);
         assert!(Path::new(&git_dir_path).exists());
 
-        // Clean up: Remove the temporary directory
         if let Err(err) = fs::remove_dir_all(&temp_dir) {
             panic!("Failed to remove temp directory: {}", err);
         }
@@ -246,9 +242,9 @@ mod test {
     fn test_git_init_default_branch() {
         let temp_dir = create_temp_directory().expect("Failed to create temp directory");
 
-        match git_init(&temp_dir, "main", None) {
+        match git_init(&temp_dir, GIT_DIR_FOR_TEST, "main", None) {
             Ok(_) => {
-                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
+                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR_FOR_TEST);
                 assert!(Path::new(&git_dir_path).exists());
                 assert!(Path::new(&git_dir_path).is_dir());
 
@@ -280,9 +276,9 @@ mod test {
     fn test_git_init_custom_branch() {
         let temp_dir = create_temp_directory().expect("Failed to create temp directory");
 
-        match git_init(&temp_dir, "mybranch", None) {
+        match git_init(&temp_dir, GIT_DIR_FOR_TEST, "mybranch", None) {
             Ok(_) => {
-                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
+                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR_FOR_TEST);
                 assert!(Path::new(&git_dir_path).exists());
                 assert!(Path::new(&git_dir_path).is_dir());
 
@@ -320,9 +316,9 @@ mod test {
         create_file_if_not_exists(&template_file_path, "Template content")
             .expect("Failed to create template file");
 
-        match git_init(&temp_dir, "main", Some(&template_dir)) {
+        match git_init(&temp_dir, GIT_DIR_FOR_TEST, "main", Some(&template_dir)) {
             Ok(_) => {
-                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
+                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR_FOR_TEST);
                 assert!(Path::new(&git_dir_path).exists());
                 assert!(Path::new(&git_dir_path).is_dir());
 
@@ -372,9 +368,9 @@ mod test {
         let temp_dir = create_temp_directory().expect("Failed to create temp directory");
 
         // Call git_init on an existing directory
-        match git_init(&temp_dir, "main", None) {
+        match git_init(&temp_dir, GIT_DIR_FOR_TEST, "main", None) {
             Ok(_) => {
-                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR);
+                let git_dir_path = format!("{}/{}", temp_dir, GIT_DIR_FOR_TEST);
                 assert!(Path::new(&git_dir_path).exists());
                 assert!(Path::new(&git_dir_path).is_dir());
             }

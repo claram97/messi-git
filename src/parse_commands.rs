@@ -246,7 +246,7 @@ fn handle_ls_files(args: Vec<String>) {
     };
 
     let index_path = format!("{}/{}", git_dir, "index");
-    let gitignore_path = format!("{}/{}", working_dir, ".mgitignore");
+    let gitignore_path = format!("{}/{}", working_dir, GIT_IGNORE);
     let index = match Index::load(&index_path, &git_dir, &gitignore_path) {
         Ok(ind) => ind,
         Err(_e) => {
@@ -277,7 +277,7 @@ fn handle_ls_trees(args: Vec<String>) {
         return;
     }
 
-    let git_dir = match find_git_directory(&mut PathBuf::from("."), ".mgit") {
+    let git_dir = match find_git_directory(&mut PathBuf::from("."), GIT_DIR) {
         Some(dir) => dir,
         None => {
             eprintln!("Error obtaining the git directory");
@@ -357,9 +357,9 @@ fn handle_check_ignore(args: Vec<String>) {
         }
     };
 
-    let gitignore_path = format!("{}/{}", working_dir, ".mgitignore");
+    let gitignore_path = format!("{}/{}", working_dir, GIT_IGNORE);
 
-    match git_check_ignore(".mgitignore", &gitignore_path, args, &mut io::stdout()) {
+    match git_check_ignore(GIT_IGNORE, &gitignore_path, args, &mut io::stdout()) {
         Ok(_) => {}
         Err(e) => {
             eprintln!("{}", e)
@@ -570,7 +570,7 @@ fn load_index_and_commit_tree(git_dir: &str) -> io::Result<(Index, Tree)> {
     let git_ignore_path = format!(
         "{}/{}",
         get_working_directory_status(git_dir)?.to_string_lossy(),
-        ".mgitignore"
+        GIT_IGNORE
     );
 
     let index = Index::load(&index_path, git_dir, &git_ignore_path)?;
@@ -724,7 +724,7 @@ pub fn handle_status() {
         }
     };
 
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+    let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
         Some(dir) => dir,
         None => {
             eprintln!("Error al obtener el git dir");
@@ -1003,7 +1003,7 @@ fn handle_log() {
             return;
         }
     };
-    let git_dir = match find_git_directory(&mut current_dir, ".mgit") {
+    let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
         Some(git_dir) => git_dir,
         None => {
             eprintln!("Error al obtener el git dir");
@@ -1438,7 +1438,12 @@ pub fn handle_init(args: Vec<String>) {
     let (current_directory, initial_branch, template_directory) = extract_init_params(&args);
 
     // Initialize the Git repository with the extracted parameters
-    if let Err(err) = git_init(&current_directory, &initial_branch, template_directory) {
+    if let Err(err) = git_init(
+        &current_directory,
+        GIT_DIR,
+        &initial_branch,
+        template_directory,
+    ) {
         eprintln!("Error al inicializar el repositorio Git: {}", err);
     }
 }

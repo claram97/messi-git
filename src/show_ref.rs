@@ -362,7 +362,7 @@ fn process_files_in_directory(
 
 #[cfg(test)]
 mod tests {
-    use crate::init;
+    use crate::{configuration::GIT_DIR_FOR_TEST, init};
 
     use super::*;
 
@@ -408,7 +408,7 @@ mod tests {
         let path = "tests/show_ref_fake_repo_2";
         let git_dir = format!("{}/{}", path, ".mgit");
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let line = vec![
             "git".to_string(),
             "show-ref".to_string(),
@@ -429,7 +429,7 @@ mod tests {
         let git_dir = format!("{}/{}", path, ".mgit");
         let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         create_if_not_exists(&head_ref, false)?;
         let line = vec![
             "git".to_string(),
@@ -459,7 +459,7 @@ mod tests {
         let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
         let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         create_if_not_exists(&tags, true)?;
         create_if_not_exists(&head_ref, false)?;
         create_if_not_exists(&tag_ref, false)?;
@@ -489,7 +489,7 @@ mod tests {
         let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
         let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         create_if_not_exists(&tags, true)?;
         create_if_not_exists(&head_ref, false)?;
         create_if_not_exists(&tag_ref, false)?;
@@ -515,7 +515,7 @@ mod tests {
         let head_ref = format!("{}/{}", git_dir, "refs/heads/some_ref");
         let tag_ref = format!("{}/{}", git_dir, "refs/tags/some_tag");
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         create_if_not_exists(&tags, true)?;
         create_if_not_exists(&head_ref, false)?;
         create_if_not_exists(&tag_ref, false)?;
@@ -550,7 +550,7 @@ mod tests {
         let remotes_path = format!("{}/{}", git_dir, "refs/remotes");
         let origin_folder = format!("{}/{}", git_dir, "refs/remotes/origin");
         let origin_ref = format!("{}/{}", git_dir, "refs/remotes/origin/branch");
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         create_if_not_exists(&tags, true)?;
         create_if_not_exists(&head_ref, false)?;
         create_if_not_exists(&tag_ref, false)?;
@@ -590,7 +590,7 @@ mod tests {
         let origin_folder = format!("{}/{}", git_dir, "refs/remotes/origin");
         let origin_ref = format!("{}/{}", git_dir, "refs/remotes/origin/branch");
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         create_if_not_exists(&tags_path, true)?;
         create_if_not_exists(&remotes_path, true)?;
         create_if_not_exists(&origin_folder, true)?;
@@ -634,7 +634,7 @@ mod tests {
         let origin_folder = format!("{}/{}", git_dir, "refs/remotes/origin");
         let origin_ref = format!("{}/{}", git_dir, "refs/remotes/origin/branch");
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         create_if_not_exists(&tags_path, true)?;
         create_if_not_exists(&head_ref, false)?;
         create_if_not_exists(&tag_ref, false)?;

@@ -419,7 +419,7 @@ pub fn git_tag(git_dir: &str, line: Vec<String>, output: &mut impl Write) -> io:
 mod tests {
     use std::fs::File;
 
-    use crate::{commit, init};
+    use crate::{commit, configuration::GIT_DIR_FOR_TEST, init};
 
     use super::*;
 
@@ -436,7 +436,7 @@ mod tests {
 
     fn create_repo(path: &str) -> Result<(), io::Error> {
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let git_dir_path = format!("{}/{}", path, ".mgit");
         let git_ignore_path = format!("{}/{}", path, ".mgitignore");
         let tags_path = format!("{}/{}", git_dir_path, "refs/tags");

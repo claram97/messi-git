@@ -1,5 +1,6 @@
 use super::clone_window::configure_clone_window;
 use super::init_window::configure_init_window;
+use crate::configuration::GIT_DIR;
 use crate::gui::repository_window::show_repository_window;
 use crate::gui::style::{
     apply_button_style, apply_window_style, get_button, load_and_get_window, show_message_dialog,
@@ -86,7 +87,7 @@ fn connect_button_clicked_open_new_repository(button: &gtk::Button) -> std::io::
         let result = dialog.run();
         if result == gtk::ResponseType::Ok {
             if let Some(selected_directory) = dialog.get_filename() {
-                let mgit_folder_path = selected_directory.join(".mgit");
+                let mgit_folder_path = selected_directory.join(GIT_DIR);
                 if mgit_folder_path.is_dir() {
                     let code_dir = match std::env::current_dir() {
                         Ok(dir) => dir,

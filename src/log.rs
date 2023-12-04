@@ -380,7 +380,7 @@ pub fn accumulate_logs(log_iter: impl Iterator<Item = Log>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::{add, commit, init};
+    use crate::{add, commit, configuration::GIT_DIR_FOR_TEST, init};
 
     use super::*;
 
@@ -426,7 +426,7 @@ mod tests {
     #[test]
     fn test_commits_date() -> io::Result<()> {
         let git_dir_path = "tests/log/";
-        init::git_init(git_dir_path, "master", None)?;
+        init::git_init(git_dir_path, GIT_DIR_FOR_TEST, "master", None)?;
         let git_dir_path = &format!("{}/.mgit", git_dir_path);
 
         let index = format!("{}/index", git_dir_path);

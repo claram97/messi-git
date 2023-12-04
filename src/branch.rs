@@ -523,7 +523,7 @@ pub fn is_an_existing_branch(branch: &str, git_dir: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::init;
+    use crate::{configuration::GIT_DIR_FOR_TEST, init};
 
     use super::*;
 
@@ -557,7 +557,12 @@ mod tests {
     #[test]
     fn test_list_branches() -> Result<(), io::Error> {
         create_if_not_exists("tests/test_list_branches", true)?;
-        init::git_init("tests/test_list_branches", "current_branch", None)?;
+        init::git_init(
+            "tests/test_list_branches",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/test_list_branches/.mgit/refs/heads/branch_1", false)?;
         create_if_not_exists("tests/test_list_branches/.mgit/refs/heads/branch_2", false)?;
         create_if_not_exists(
@@ -575,7 +580,12 @@ mod tests {
     #[test]
     fn test_list_branches_empty() -> Result<(), io::Error> {
         create_if_not_exists("tests/test_list_branches_2", true)?;
-        init::git_init("tests/test_list_branches_2", "current_branch", None)?;
+        init::git_init(
+            "tests/test_list_branches_2",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         let mut output: Vec<u8> = vec![];
         list_branches("tests/test_list_branches_2/.mgit", &mut output)?;
         assert!(output.is_empty());
@@ -587,7 +597,7 @@ mod tests {
     fn test_modify_current_branch_correctly() -> io::Result<()> {
         let path = "tests/branch_test_modify_repo";
         let git_dir = format!("{}/{}", path, ".mgit");
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let current_branch_string_path = format!("{}/{}", git_dir, "refs/heads/current_branch");
         let _current_branch_file = File::create(&current_branch_string_path)?;
         let new_branch_string_path = format!("{}/{}", git_dir, "refs/heads/branch");
@@ -614,7 +624,7 @@ mod tests {
     fn test_modify_not_current_branch_correctly() -> io::Result<()> {
         let path = "tests/branch_test_modify_repo_2";
         let git_dir = format!("{}/{}", path, ".mgit");
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let branch_to_modify_string_path = format!("{}/{}", git_dir, "refs/heads/branch");
         let _branch_to_modify_file = File::create(&branch_to_modify_string_path)?;
         let new_branch_string_path = format!("{}/{}", git_dir, "refs/heads/new_branch");
@@ -641,7 +651,7 @@ mod tests {
     fn test_modify_non_existing_branch_informs_error() -> io::Result<()> {
         let path = "tests/branch_test_modify_repo_3";
         let git_dir = format!("{}/{}", path, ".mgit");
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let non_existing_branch_string_path = format!("{}/{}", git_dir, "refs/heads/branch");
         let new_branch_string_path = format!("{}/{}", git_dir, "refs/heads/new_branch");
         let non_existing_branch_path = Path::new(&non_existing_branch_string_path);
@@ -661,7 +671,7 @@ mod tests {
     fn test_modify_branch_to_an_existing_one_informs_error() -> io::Result<()> {
         let path = "tests/branch_test_modify_repo_4";
         let git_dir = format!("{}/{}", path, ".mgit");
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let existing_branch_string_path = format!("{}/{}", git_dir, "refs/heads/branch");
         let _existing_branch_file = File::create(&existing_branch_string_path)?;
         let new_branch_string_path = format!("{}/{}", git_dir, "refs/heads/new_branch");
@@ -683,7 +693,7 @@ mod tests {
     fn create_branch_from_non_existing_one_informs_error() -> io::Result<()> {
         let path = "tests/branch_test_create_repo_0";
         let git_dir = format!("{}/{}", path, ".mgit");
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let current_branch_string_path = format!("{}/{}", git_dir, "refs/heads/branch");
         let current_branch_path = Path::new(&current_branch_string_path);
         let new_branch_string_path = format!("{}/{}", git_dir, "refs/heads/new_branch");
@@ -701,7 +711,7 @@ mod tests {
     fn create_branch_from_existing_one_functions_correctly() -> io::Result<()> {
         let path = "tests/branch_test_create_repo_";
         let git_dir = format!("{}/{}", path, ".mgit");
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let current_branch_string_path = format!("{}/{}", git_dir, "refs/heads/branch");
         let _current_branch_file = File::create(&current_branch_string_path)?;
         let current_branch_path = Path::new(&current_branch_string_path);
@@ -720,7 +730,7 @@ mod tests {
     fn test_delete_branch_correctly() -> io::Result<()> {
         let path = "tests/branch_test_delete_repo";
         let git_dir = format!("{}/{}", path, ".mgit");
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let branch_to_delete_path = format!("{}/{}", git_dir, "/refs/heads/branch");
         File::create(&branch_to_delete_path)?;
         let branch_to_delete_path = Path::new(&branch_to_delete_path);
@@ -739,9 +749,7 @@ mod tests {
     fn test_deleting_non_existing_branch_prints_error() -> io::Result<()> {
         let path = "tests/branch_test_delete_repo_2";
         let git_dir = format!("{}/{}", path, ".mgit");
-        init::git_init(path, "current_branch", None)?;
-        // let mut current_branch_file = File::create(current_branch_path)?;
-        // current_branch_file.write_all("12345678910".as_bytes())?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let mut output: Vec<u8> = vec![];
         delete_branch(&git_dir, "branch", &mut output)?;
         let string = String::from_utf8(output).unwrap();
@@ -754,7 +762,7 @@ mod tests {
     fn test_deleting_checkouted_branch_cant_be_performed() -> io::Result<()> {
         let path = "tests/branch_test_delete_repo_3";
         let git_dir = format!("{}/{}", path, ".mgit");
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let mut output: Vec<u8> = vec![];
         delete_branch(&git_dir, "current_branch", &mut output)?;
         let string = String::from_utf8(output).unwrap();
@@ -766,7 +774,12 @@ mod tests {
     #[test]
     fn test_create_new_branch_already_exists() -> Result<(), io::Error> {
         create_if_not_exists("tests/test_list_branches_3", true)?;
-        init::git_init("tests/test_list_branches_3", "current_branch", None)?;
+        init::git_init(
+            "tests/test_list_branches_3",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists(
             "tests/test_list_branches_3/.mgit/refs/heads/current_branch",
             false,
@@ -793,7 +806,12 @@ mod tests {
     #[test]
     fn test_create_new_branch() -> Result<(), io::Error> {
         create_if_not_exists("tests/test_list_branches_4", true)?;
-        init::git_init("tests/test_list_branches_4", "current_branch", None)?;
+        init::git_init(
+            "tests/test_list_branches_4",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists(
             "tests/test_list_branches_4/.mgit/refs/heads/current_branch",
             false,
@@ -832,7 +850,12 @@ mod tests {
     #[test]
     fn test_create_new_branch_with_no_tracked_files() -> Result<(), io::Error> {
         create_if_not_exists("tests/test_list_branches_5", true)?;
-        init::git_init("tests/test_list_branches_5", "current_branch", None)?;
+        init::git_init(
+            "tests/test_list_branches_5",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         let mut output: Vec<u8> = vec![];
         let result = create_new_branch(
             "tests/test_list_branches_5/.mgit",
