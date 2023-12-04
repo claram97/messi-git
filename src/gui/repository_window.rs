@@ -18,7 +18,6 @@ use crate::git_config::git_config;
 use crate::rebase;
 use crate::tag::git_tag;
 use crate::utils::obtain_git_dir;
-
 use std::cell::RefCell;
 use std::fs;
 use std::fs::File;
@@ -26,7 +25,6 @@ use std::io::Read;
 use std::io::Write;
 use std::rc::Rc;
 use std::str;
-//use crate::fetch::git_fetch_for_gui;
 use crate::branch::git_branch;
 use crate::config::Config;
 use crate::gui::main_window::add_to_open_windows;
@@ -138,16 +136,16 @@ fn setup_repository_window(builder: &gtk::Builder, new_window: &gtk::Window) -> 
     let builder_clone1 = builder.clone();
 
     match set_staging_area_texts(&builder_clone) {
-        Ok(_) => println!("La función 'set_staging_area_texts' se ejecutó correctamente."),
+        Ok(_) => println!(" 'set_staging_area_texts' works correctly."),
         Err(err) => println!(
-            "Error al llamar a la función 'set_staging_area_texts': {:?}",
+            "Error in 'set_staging_area_texts': {:?}",
             err
         ),
     };
     match set_commit_history_view(&builder_clone1) {
-        Ok(_) => println!("La función 'set_commit_history_view' se ejecutó correctamente."),
+        Ok(_) => println!("La función 'set_commit_history_view' works correctly."),
         Err(err) => println!(
-            "Error al llamar a la función 'set_commit_history_view': {:?}",
+            "Error in 'set_commit_history_view': {:?}",
             err
         ),
     };
@@ -225,7 +223,6 @@ fn setup_buttons(builder: &gtk::Builder) -> io::Result<()> {
         "r-trees",
         "d-trees",
         "rt-trees",
-        "show-fetch",
     ];
 
     for button_id in button_ids.iter() {
@@ -317,7 +314,7 @@ fn handle_git_push() -> io::Result<()> {
 fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
     let button = get_button(builder, button_id);
     apply_button_style(&button).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-    let builder_clone = builder.clone(); // Clonar el builder
+    let builder_clone = builder.clone(); 
     let button: gtk::Button = builder_clone
         .get_object(button_id)
         .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Failed to get the button object"))?;
@@ -414,11 +411,6 @@ fn setup_button(builder: &gtk::Builder, button_id: &str) -> io::Result<()> {
         "remote-rename" => {
             button.connect_clicked(move |_| {
                 let _ = handle_remote_rename(&builder_clone);
-            });
-        }
-        "show-fetch" => {
-            button.connect_clicked(move |_| {
-               
             });
         }
         "show-log-button" => {
@@ -609,10 +601,10 @@ fn handle_create_and_checkout_branch_button() -> io::Result<()> {
         let resultado = obtain_text_from_create_and_checkout_branch(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+                show_message_dialog("Success", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => {
-                show_message_dialog("Error", "La rama indicada no existe.");
+                show_message_dialog("Error", "The branch does not exists.");
             }
         }
     });
@@ -636,10 +628,10 @@ fn handle_create_or_reset_branch_button() -> io::Result<()> {
         let resultado = obtain_text_from_create_or_reset_branch(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+                show_message_dialog("Succes", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => {
-                show_message_dialog("Error", "La rama indicada no existe.");
+                show_message_dialog("Error", "The branch does not exists.");
             }
         }
     });
@@ -662,10 +654,10 @@ fn handle_checkout_commit_detached_button() -> io::Result<()> {
         let resultado = obtain_text_from_checkout_commit_detached(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+                show_message_dialog("Success", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => {
-                show_message_dialog("Error", "La rama indicada no existe.");
+                show_message_dialog("Error", "The branch does not exists");
             }
         }
     });
@@ -688,10 +680,10 @@ fn handle_force_checkout_button() -> io::Result<()> {
         let resultado = obtain_text_from_force_checkout(&text);
         match resultado {
             Ok(texto) => {
-                show_message_dialog("Éxito", &format!("Changed correctly to branch '{}'", texto));
+                show_message_dialog("Success", &format!("Changed correctly to branch '{}'", texto));
             }
             Err(_err) => {
-                show_message_dialog("Error", "La rama indicada no existe.");
+                show_message_dialog("Error", "The branch does not exists");
             }
         }
     });
@@ -968,8 +960,8 @@ fn create_branch_from_another_branch(
 fn handle_create_branch_from_branch_button(builder: &gtk::Builder) -> io::Result<()> {
     let builder_clone = builder.clone();
     let create_result = create_text_entry_window2(
-        "Nombre de la nueva branch",
-        "Nombre de la branch de base",
+        "Name of new branch",
+        "Name of base branch",
         move |new_branch_name, existing_branch_name| {
             create_branch_from_another_branch(
                 &builder_clone,
@@ -1004,7 +996,7 @@ fn delete_branch(builder: &Builder, name: String) {
             match handle_show_branches_button(builder) {
                 Ok(_) => {}
                 Err(_e) => {
-                    show_message_dialog("Error", "No se pudo actualizar la vista");
+                    show_message_dialog("Error", "view not updated");
                 }
             }
             let texto = match str::from_utf8(&output) {
@@ -1015,7 +1007,7 @@ fn delete_branch(builder: &Builder, name: String) {
                 }
             };
 
-            show_message_dialog("Éxito", texto);
+            show_message_dialog("Success", texto);
         }
         Err(error) => {
             show_message_dialog("Error", &error.to_string());
@@ -1064,16 +1056,15 @@ fn handle_delete_branch_button(builder: &gtk::Builder) -> io::Result<()> {
 ///
 fn modify_current_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
     if !text1.is_empty() {
-        show_message_dialog("Error", "La opción 'rama actual' está activada. Por favor desactive esta opción si desea cambiar el nombre de otra rama o deje el primer campo vacío para cambiar el nombre de la rama actual.");
-    } else if text2.is_empty() {
-        show_message_dialog("Error", "Por favor, indique el nuevo nombre para la rama.");
+        show_message_dialog("Error", "Option 'actual branch' is on. Please disable this option if you want to change the name of another branch or leave the first field empty to change the name of the current branch.");    } else if text2.is_empty() {
+        show_message_dialog("Error", "Please , insert new branch name.");
     } else {
         let mut output: Vec<u8> = vec![];
         match git_branch(None, Some("-m"), Some(text2), &mut output) {
             Ok(_) => match handle_show_branches_button(builder) {
                 Ok(_) => {}
                 Err(_error) => {
-                    show_message_dialog("Error", "No se pudo actualizar la vista");
+                    show_message_dialog("Error", "view not updated");
                 }
             },
             Err(error) => {
@@ -1101,7 +1092,7 @@ fn update_git_branch(builder: &Builder, text1: String, text2: &str) {
         Ok(_) => match handle_show_branches_button(builder) {
             Ok(_) => {}
             Err(_error) => {
-                show_message_dialog("Error", "No se pudo actualizar la vista");
+                show_message_dialog("Error", "View not updated");
             }
         },
         Err(error) => {
@@ -1126,7 +1117,7 @@ fn modify_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
     if text1.is_empty() || text2.is_empty() {
         show_message_dialog(
             "Error",
-            "Debe ingresar el nombre de la rama a modificar y el nuevo nombre.",
+            "You must enter the name of the branch to modify and the new name.",
         );
     } else {
         update_git_branch(builder, text1.to_string(), text2);
@@ -1149,8 +1140,8 @@ fn modify_branch(builder: &gtk::Builder, text1: &str, text2: &str) {
 /// Returns `Ok(())` on success or an `io::Error` if there are issues with the UI components.
 ///
 fn handle_modify_branch_button(builder: &gtk::Builder) -> io::Result<()> {
-    let message1 = "Nombre actual";
-    let message2 = "Nombre nuevo";
+    let message1 = "actual Name";
+    let message2 = "New name ";
     let builder_clone = builder.clone();
     create_text_entry_window_with_switch(message1, message2, move |text1, text2, switch_value| {
         if switch_value {
@@ -1182,11 +1173,11 @@ fn handle_add_path_button(builder: &Builder) -> io::Result<()> {
             Ok(_texto) => {
                 let result = set_staging_area_texts(&builder_clone);
                 if result.is_err() {
-                    eprintln!("No se pudo actualizar la vista de staging.");
+                    eprintln!("staging view not updated.");
                 }
             }
             Err(_err) => {
-                show_message_dialog("Error", "El path ingresado no es correcto.");
+                show_message_dialog("Error", "wrong path.");
             }
         }
     });
@@ -1228,13 +1219,13 @@ fn handle_add_all_button(builder: &Builder) -> io::Result<()> {
         Err(err) => {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                format!("Error al llamar a la función 'add': {:?}", err),
+                format!("Error in 'add': {:?}", err),
             ))
         }
     }
     let result = set_staging_area_texts(&builder_clone);
     if result.is_err() {
-        eprintln!("No se pudo actualizar la vista de staging.");
+        eprintln!("staging view not updated.");
     }
 
     Ok(())
@@ -1261,11 +1252,11 @@ fn handle_remove_path_window(builder: &gtk::Builder) -> io::Result<()> {
             Ok(_texto) => {
                 let result = set_staging_area_texts(&builder_clone);
                 if result.is_err() {
-                    eprintln!("No se pudo actualizar la vista de staging.");
+                    eprintln!("staging view not updated");
                 }
             }
             Err(_err) => {
-                show_message_dialog("Error", "El path ingresado no es correcto.");
+                show_message_dialog("Error", "wrong path");
             }
         }
     });
