@@ -2952,18 +2952,18 @@ pub fn merge_button_connect_clicked(
 ) -> io::Result<Vec<String>> {
     let branch = entry.get_text().to_string();
     if branch.is_empty() {
-        show_message_dialog("Error", "Por favor, ingrese una rama.");
+        show_message_dialog("Error", "Please, enter a branch.");
     } else if !branch::is_an_existing_branch(&branch, git_directory.as_str()) {
-        show_message_dialog("Error", "Rama no encontrada.");
+        show_message_dialog("Error", "branch not found.");
     } else {
         let result = call_git_merge(&branch);
         match result {
             Ok(conflicts_list) => {
                 if conflicts_list.is_empty() {
-                    text_buffer.set_text("Merge exitoso.");
+                    text_buffer.set_text("Succesfull Merge .");
                 } else {
                     let mut conflicts_text = String::new();
-                    conflicts_text.push_str("Conflicto(s) detectado(s):\n");
+                    conflicts_text.push_str("Conflict(s) found:\n");
                     for conflict in &conflicts_list {
                         conflicts_text.push_str(conflict);
                         conflicts_text.push('\n');
@@ -3118,9 +3118,9 @@ fn show_current_branch_on_merge_window(merge_text_view: &TextView) -> io::Result
 
     let current_branch = commit::get_branch_name(&git_dir)?;
     buffer.set_text(
-        &("La rama actual es: ".to_string()
+        &("Actual branch: ".to_string()
             + &current_branch
-            + ".\nIngrese la rama que quiere mergear con la rama actual.\n"),
+            + ".\nEnter the branch you want to merge with the current branch..\n"),
     );
 
     Ok(())
@@ -3142,10 +3142,10 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
         let mut current_dir = match std::env::current_dir() {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el directorio actual");
+                eprintln!("Failed to obtain the current directory.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3154,10 +3154,10 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
         let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
             Some(dir) => dir,
             None => {
-                eprintln!("No se pudo obtener el git dir.");
+                eprintln!("Failed to obtain the Git directory..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data.(",
                 );
 
                 return;
@@ -3166,10 +3166,10 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
         let working_dir = match Path::new(&git_dir).parent() {
             Some(dir) => dir.to_string_lossy().to_string(),
             None => {
-                eprintln!("No se pudo obtener el working dir.");
+                eprintln!("Failed to obtain the Git directory.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data.(",
                 );
 
                 return;
@@ -3184,7 +3184,7 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
             Err(_e) => {
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data:(",
                 );
 
                 return;
@@ -3202,17 +3202,17 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
         if result.is_err() {
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "Something went wrong while trying to retrieve the data :(",
             );
             return;
         }
         let buffer = match cloned_text_view.get_buffer() {
             Some(buf) => buf,
             None => {
-                eprintln!("No se pudo obtener el text buffer");
+                eprintln!("Failed to obtain the Git directory");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data :(",
                 );
                 return;
             }
@@ -3221,10 +3221,10 @@ pub fn list_modified_button_on_clicked(button: &Button, text_view: &gtk::TextVie
         let string = match String::from_utf8(output) {
             Ok(str) => str,
             Err(_e) => {
-                eprintln!("No se pudo convertir el resultado a string.");
+                eprintln!("Failed to convert the result to a string..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "Something went wrong while trying to retrieve the data :(",
                 );
                 return;
             }
@@ -3249,10 +3249,10 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         let mut current_dir = match std::env::current_dir() {
             Ok(dir) => dir,
             Err(_e) => {
-                eprintln!("No se pudo obtener el directorio actual");
+                eprintln!("Failed to obtain the current directory.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "An error occurred while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3261,10 +3261,10 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         let git_dir = match find_git_directory(&mut current_dir, GIT_DIR) {
             Some(dir) => dir,
             None => {
-                eprintln!("No se pudo obtener el git dir.");
+                eprintln!("Failed to obtain the Git directory..");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "An error occurred while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3273,10 +3273,10 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         let working_dir = match Path::new(&git_dir).parent() {
             Some(dir) => dir.to_string_lossy().to_string(),
             None => {
-                eprintln!("No se pudo obtener el working dir.");
+                eprintln!("Failed to obtain the working directory.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "An error occurred while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3291,7 +3291,7 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
             Err(_e) => {
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "An error occurred while trying to retrieve the data. :(",
                 );
 
                 return;
@@ -3309,17 +3309,17 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         if result.is_err() {
             show_message_dialog(
                 "Fatal error",
-                "Algo sucedió mientras intentábamos obtener los datos :(",
+                "An error occurred while trying to retrieve the data. :(",
             );
             return;
         }
         let buffer = match cloned_text_view.get_buffer() {
             Some(buf) => buf,
             None => {
-                eprintln!("No se pudo obtener el text buffer");
+                eprintln!("Failed to obtain the text buffer.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "An error occurred while trying to retrieve the data. :(",
                 );
                 return;
             }
@@ -3328,10 +3328,10 @@ pub fn list_index_button_on_clicked(button: &Button, text_view: &gtk::TextView) 
         let string = match String::from_utf8(output) {
             Ok(str) => str,
             Err(_e) => {
-                eprintln!("No se pudo convertir el resultado a string.");
+                eprintln!("Failed to convert the result to a string.");
                 show_message_dialog(
                     "Fatal error",
-                    "Algo sucedió mientras intentábamos obtener los datos :(",
+                    "An error occurred while trying to retrieve the data. :(",
                 );
                 return;
             }
