@@ -154,7 +154,7 @@ pub fn git_clone(
 ) -> io::Result<()> {
     log_clone(remote_repo_url, working_dir)?;
 
-    init::git_init(working_dir, INITIAL_BRANCH, None)?;
+    init::git_init(working_dir, GIT_DIR, INITIAL_BRANCH, None)?;
 
     let local_git_dir = working_dir.to_string() + "/" + GIT_DIR;
     let mut client = Client::new(remote_repo_url, remote_repo_name, host);

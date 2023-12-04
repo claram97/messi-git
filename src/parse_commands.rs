@@ -1438,7 +1438,12 @@ pub fn handle_init(args: Vec<String>) {
     let (current_directory, initial_branch, template_directory) = extract_init_params(&args);
 
     // Initialize the Git repository with the extracted parameters
-    if let Err(err) = git_init(&current_directory, &initial_branch, template_directory) {
+    if let Err(err) = git_init(
+        &current_directory,
+        GIT_DIR,
+        &initial_branch,
+        template_directory,
+    ) {
         eprintln!("Error al inicializar el repositorio Git: {}", err);
     }
 }

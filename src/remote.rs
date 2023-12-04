@@ -239,7 +239,7 @@ mod test {
 
     use std::{fs::File, path::Path};
 
-    use crate::init;
+    use crate::{configuration::GIT_DIR_FOR_TEST, init};
 
     fn create_if_not_exists(path: &str, is_dir: bool) -> io::Result<()> {
         if !Path::new(path).exists() {
@@ -270,7 +270,12 @@ mod test {
     #[test]
     fn test_uknown_command_makes_git_remote_fail() -> io::Result<()> {
         create_if_not_exists("tests/remote_fake_repo_1", true)?;
-        init::git_init("tests/remote_fake_repo_1", "current_branch", None)?;
+        init::git_init(
+            "tests/remote_fake_repo_1",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/remote_fake_repo_1/.mgit/config", false)?;
         let line = vec!["something"];
         let mut output: Vec<u8> = vec![];
@@ -285,7 +290,12 @@ mod test {
     #[test]
     fn test_invalid_add_command_with_few_arguments_makes_git_remote_fail() -> io::Result<()> {
         create_if_not_exists("tests/remote_fake_repo_2", true)?;
-        init::git_init("tests/remote_fake_repo_2", "current_branch", None)?;
+        init::git_init(
+            "tests/remote_fake_repo_2",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/remote_fake_repo_2/.mgit/config", false)?;
         let line = vec!["add"];
         let mut output: Vec<u8> = vec![];
@@ -300,7 +310,12 @@ mod test {
     #[test]
     fn test_invalid_add_command_with_too_many_args_makes_git_remote_fail() -> io::Result<()> {
         create_if_not_exists("tests/remote_fake_repo_3", true)?;
-        init::git_init("tests/remote_fake_repo_3", "current_branch", None)?;
+        init::git_init(
+            "tests/remote_fake_repo_3",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         create_if_not_exists("tests/remote_fake_repo_3/.mgit/config", false)?;
         let line = vec!["add", "new_remote", "url", "something else"];
         let mut output: Vec<u8> = vec![];
@@ -315,7 +330,12 @@ mod test {
     #[test]
     fn test_valid_add_command_returns_ok() -> io::Result<()> {
         create_if_not_exists("tests/remote_fake_repo_4", true)?;
-        init::git_init("tests/remote_fake_repo_4", "current_branch", None)?;
+        init::git_init(
+            "tests/remote_fake_repo_4",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create("tests/remote_fake_repo_4/.mgit/config")?;
         config_file.write_all(config_data.as_bytes())?;
@@ -333,7 +353,12 @@ mod test {
     #[test]
     fn test_invalid_remove_command_with_few_arguments_makes_git_remote_fail() -> io::Result<()> {
         create_if_not_exists("tests/remote_fake_repo_5", true)?;
-        init::git_init("tests/remote_fake_repo_5", "current_branch", None)?;
+        init::git_init(
+            "tests/remote_fake_repo_5",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create("tests/remote_fake_repo_5/.mgit/config")?;
         config_file.write_all(config_data.as_bytes())?;
@@ -351,7 +376,12 @@ mod test {
     #[test]
     fn test_invalid_add_command_with_too_many_arguments_makes_git_remote_fail() -> io::Result<()> {
         create_if_not_exists("tests/remote_fake_repo_6", true)?;
-        init::git_init("tests/remote_fake_repo_6", "current_branch", None)?;
+        init::git_init(
+            "tests/remote_fake_repo_6",
+            GIT_DIR_FOR_TEST,
+            "current_branch",
+            None,
+        )?;
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create("tests/remote_fake_repo_6/.mgit/config")?;
         config_file.write_all(config_data.as_bytes())?;
@@ -372,7 +402,7 @@ mod test {
         let config_path = path.to_string() + "/.mgit/config";
         let git_dir_path = path.to_string() + "/.mgit";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
@@ -392,7 +422,7 @@ mod test {
         let config_path = path.to_string() + "/.mgit/config";
         let git_dir_path = path.to_string() + "/.mgit";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
@@ -412,7 +442,7 @@ mod test {
         let config_path = path.to_string() + "/.mgit/config";
         let git_dir_path = path.to_string() + "/.mgit";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
@@ -432,7 +462,7 @@ mod test {
         let config_path = path.to_string() + "/.mgit/config";
         let git_dir_path = path.to_string() + "/.mgit";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
@@ -452,7 +482,7 @@ mod test {
         let config_path = path.to_string() + "/.mgit/config";
         let git_dir_path = path.to_string() + "/.mgit";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
@@ -472,7 +502,7 @@ mod test {
         let config_path = path.to_string() + "/.mgit/config";
         let git_dir_path = path.to_string() + "/.mgit";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
@@ -492,7 +522,7 @@ mod test {
         let config_path = path.to_string() + "/.mgit/config";
         let git_dir_path = path.to_string() + "/.mgit";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
@@ -517,7 +547,7 @@ mod test {
         let config_path = path.to_string() + "/.mgit/config";
         let git_dir_path = path.to_string() + "/.mgit";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;
@@ -542,7 +572,7 @@ mod test {
         let config_path = path.to_string() + "/.mgit/config";
         let git_dir_path = path.to_string() + "/.mgit";
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let config_data = format!("[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n");
         let mut config_file = File::create(&config_path)?;
         config_file.write_all(config_data.as_bytes())?;

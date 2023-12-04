@@ -260,7 +260,7 @@ pub fn git_ls_files(
 mod tests {
     use std::fs::{File, OpenOptions};
 
-    use crate::init;
+    use crate::{configuration::GIT_DIR_FOR_TEST, init};
 
     use super::*;
 
@@ -277,7 +277,7 @@ mod tests {
 
     fn create_repo(path: &str) -> Result<(), io::Error> {
         create_if_not_exists(path, true)?;
-        init::git_init(path, "current_branch", None)?;
+        init::git_init(path, GIT_DIR_FOR_TEST, "current_branch", None)?;
         let gitignore_path = path.to_string() + "/.mgitignore";
         create_if_not_exists(&gitignore_path, false)?;
         let index_path = path.to_string() + "/.mgit/index";

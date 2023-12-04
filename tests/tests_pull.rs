@@ -26,7 +26,7 @@ fn test_pull_non_empty_repo() -> io::Result<()> {
 }
 
 fn first_pull(git_dir: &str) -> io::Result<()> {
-    git_init(git_dir, "master", None)?;
+    git_init(git_dir, ".mgit", "master", None)?;
     let line = vec!["add", "origin", "localhost:9418/repo"];
     let repo_path = git_dir.to_owned() + "/.mgit";
     let mut config = Config::load(&repo_path)?;
