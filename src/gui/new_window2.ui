@@ -477,7 +477,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="merge-update-button">
-                        <property name="label" translatable="yes">Actualizar archivo</property>
+                        <property name="label" translatable="yes">Update File</property>
                         <property name="width-request">200</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
@@ -584,7 +584,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="check-ignore-button">
-                        <property name="label" translatable="yes">Obtener resultado</property>
+                        <property name="label" translatable="yes">Obtain Result</property>
                         <property name="width-request">100</property>
                         <property name="height-request">70</property>
                         <property name="visible">True</property>
@@ -1621,7 +1621,7 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="config-button">
-                    <property name="label" translatable="yes">Enviar</property>
+                    <property name="label" translatable="yes">Send</property>
                     <property name="width-request">70</property>
                     <property name="height-request">30</property>
                     <property name="visible">True</property>
@@ -1761,7 +1761,7 @@ Set your name and email :)</property>
                     </child>
                     <child>
                       <object class="GtkButton" id="rebase-button">
-                        <property name="label" translatable="yes">Actualizar archivo</property>
+                        <property name="label" translatable="yes">Update File</property>
                         <property name="width-request">200</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
