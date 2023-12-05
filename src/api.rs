@@ -1,7 +1,7 @@
+use chrono::Duration;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use chrono::Duration;
 
 // Data structures to represent Pull Requests and Repositories
 #[derive(Debug, Serialize, Deserialize)]
@@ -61,7 +61,10 @@ fn create_pull_request(
             .or_insert(vec![])
             .push(pull_request);
 
-        Ok(format!("Pull Request #{} created successfully", next_pull_number))
+        Ok(format!(
+            "Pull Request #{} created successfully",
+            next_pull_number
+        ))
     } else {
         Err("Repository not found".to_string())
     }
@@ -95,31 +98,35 @@ fn list_pull_requests(
             })
             .collect();
 
-    let sorted_pulls: Vec<&PullRequest> = match sort {
-        Some("popularity") => {
-            let max_reviewers = filtered_pulls.iter().map(|pr| pr.reviewers.len()).max().unwrap_or(0);
-            filtered_pulls
-                .iter()
-                .filter(|&&pr| pr.reviewers.len() == max_reviewers)
-                .map(|&pr| pr)  
-                .collect()
-        }
-        Some("long-running") => {
-            let now = chrono::Utc::now();
-            filtered_pulls
-                .iter()
-                .filter(|&&pr| {
-                    let created_at = chrono::DateTime::parse_from_str(&pr.created_at, "%+")
-                        .unwrap_or_else(|_| chrono::Utc::now().into());
+        let sorted_pulls: Vec<&PullRequest> = match sort {
+            Some("popularity") => {
+                let max_reviewers = filtered_pulls
+                    .iter()
+                    .map(|pr| pr.reviewers.len())
+                    .max()
+                    .unwrap_or(0);
+                filtered_pulls
+                    .iter()
+                    .filter(|&&pr| pr.reviewers.len() == max_reviewers)
+                    .map(|&pr| pr)
+                    .collect()
+            }
+            Some("long-running") => {
+                let now = chrono::Utc::now();
+                filtered_pulls
+                    .iter()
+                    .filter(|&&pr| {
+                        let created_at = chrono::DateTime::parse_from_str(&pr.created_at, "%+")
+                            .unwrap_or_else(|_| chrono::Utc::now().into());
 
-                    now.signed_duration_since(created_at) > Duration::days(30)
-                })
-                .map(|&pr| pr)  
-                .collect()
-        }
-        _ => filtered_pulls.to_vec(), 
-    };
-            
+                        now.signed_duration_since(created_at) > Duration::days(30)
+                    })
+                    .map(|&pr| pr)
+                    .collect()
+            }
+            _ => filtered_pulls.to_vec(),
+        };
+
         // Apply sorting direction
         let sorted_pulls: Vec<&PullRequest> = match direction {
             Some("asc") => sorted_pulls,
@@ -176,8 +183,15 @@ fn handle_request(
         }
         ("GET", "/repos/{repo}/pulls") => {
             if let Some(repo_name) = extract_repo_name(url) {
-                match list_pull_requests(&repo_name, &repo_name, state.clone(), Some("popularity"), Some("asc"), Some(30), Some(1)) {
-
+                match list_pull_requests(
+                    &repo_name,
+                    &repo_name,
+                    state.clone(),
+                    Some("popularity"),
+                    Some("asc"),
+                    Some(30),
+                    Some(1),
+                ) {
                     Ok(result) => result,
                     Err(err) => err,
                 }
