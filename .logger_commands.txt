@@ -162,3 +162,4 @@ Untracked files 0
 Command 'git status': 2023-12-04 20:04:09.360892259 +00:00
 Unstaged files 1
 Command 'git_branch':  2023-12-04 20:04:09.383696461 +00:00
+Command 'git init': Initialized repository at '/home/pau/Desktop/jabon/.mgit'2023-12-04 20:10:36.107622100 +00:00
