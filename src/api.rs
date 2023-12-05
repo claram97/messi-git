@@ -154,6 +154,41 @@ fn list_pull_requests(
     }
 }
 
+// Function to get a Pull Request
+fn get_pull_request(repo_name: &str, pull_number: u32, state: Arc<AppState>) -> Result<String, String> {
+    let pull_requests = state.pull_requests.lock().unwrap();
+
+    if let Some(pulls) = pull_requests.get(&repo_name.to_string()) {
+        // Convert pull_number to usize
+        let pull_number_usize = pull_number as usize;
+
+        if let Some(pull) = pulls.iter().find(|&pr| pr.pull_number == pull_number_usize) {
+            // Serialize to JSON
+            if let Ok(result) = serde_json::to_string(&pull) {
+                Ok(result)
+            } else {
+                Err("Error converting Pull Request to JSON".to_string())
+            }
+        } else {
+            Err("Pull Request not found".to_string())
+        }
+    } else {
+        Err("Repository not found or no Pull Requests".to_string())
+    }
+}
+
+// Function to extract the repository name and Pull Request number from the URL
+fn extract_repo_and_pull_number(url: &str) -> Option<(String, u32)> {
+    let parts: Vec<&str> = url.split('/').collect();
+    if parts.len() == 6 && parts[4] == "pulls" {
+        if let Ok(pull_number) = parts[5].parse::<u32>() {
+            return Some((parts[2].to_string(), pull_number));
+        }
+    }
+    None
+}
+
+
 // Function to handle API requests
 fn handle_request(
     method: &str,
@@ -197,6 +232,16 @@ fn handle_request(
                 }
             } else {
                 "Repository name not found in the URL".to_string()
+            }
+        }
+        ("GET", "/repos/{repo}/pulls/{pull_number}") => {
+            if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
+                match get_pull_request(&repo_name, pull_number, state.clone()) {
+                    Ok(result) => result,
+                    Err(err) => err,
+                }
+            } else {
+                "Invalid URL format for getting a Pull Request".to_string()
             }
         }
         _ => "Route not found".to_string(),
