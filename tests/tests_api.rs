@@ -1,7 +1,15 @@
+use std::io;
+
 use messi::api::utils::{
     headers::Headers, method::Method, query_string::QueryString, request::Request,
     status_code::StatusCode,
 };
+use messi::api::server;
+
+#[test]
+fn test_run_server() -> io::Result<()> {
+    server::run()
+}
 
 #[test]
 fn test_query_strings() {

@@ -1,10 +1,11 @@
-use api_rust::handlers;
-use api_rust::utils::method::Method;
-use api_rust::utils::mime_type::MimeType;
-use api_rust::utils::request::Request;
-use api_rust::utils::response::Response;
+use crate::api::handlers;
+use crate::api::utils::method::Method;
+use crate::api::utils::mime_type::MimeType;
+use crate::api::utils::request::Request;
+use crate::api::utils::response::Response;
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
+use std::thread;
 
 fn read_request(stream: &mut TcpStream) -> io::Result<String> {
     let mut bufreader = BufReader::new(stream);
@@ -49,22 +50,25 @@ fn get_mime_type(accept: Option<&str>) -> MimeType {
     }
 }
 
-fn run() -> io::Result<()> {
+pub fn run() -> io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:3000")?;
     println!("Servidor escuchando en 127.0.0.1:3000...");
-
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                std::thread::spawn(move || {
-                    let _ = handle_client(stream);
-                    println!("Terminando conexión...");
-                });
-            }
-            Err(e) => {
-                eprintln!("Error: {}", e);
-            }
-        }
+    
+    let mut handles = vec![];
+    while let Ok((stream, _socket_addr)) = listener.accept() {
+        println!("New connection from {:?}", _socket_addr);
+        let handle = thread::spawn(move || {
+            let _ = handle_client(stream);
+            println!("Ending connection...");
+        });
+        handles.push(handle);
     }
+
+    for h in handles {
+        let _ = h.join();
+    }
+    
     Ok(())
+
+    
 }
