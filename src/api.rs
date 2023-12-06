@@ -257,7 +257,10 @@ fn extract_repo_name(url: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
 
+    
     fn create_pull_request_test(
         pull_number: u32,
         reviewers: Vec<&str>,
@@ -278,16 +281,51 @@ mod tests {
             closed_at: None,
         }
     }
-
+    
     // Helper function to create a sample AppState with Pull Requests
     fn create_app_state_with_pull_requests(repo_name: &str, pulls: Vec<PullRequest>) -> AppState {
         let mut pull_requests_map = HashMap::new();
         pull_requests_map.insert(repo_name.to_string(), pulls);
-    
+        
         AppState {
             pull_requests: Mutex::new(pull_requests_map),
             repositories: Mutex::new(HashMap::new()),
         }
+    }
+    
+    #[test]
+    fn test_get_pull_request_success() {
+        let state = create_app_state_with_pull_requests("test_repo", vec![
+            create_pull_request_test(1, vec!["reviewer1", "reviewer2"], 7),
+            create_pull_request_test(2, vec!["reviewer1"], 10),
+        ]);
+        let state = Arc::new(state);
+        let result = get_pull_request("test_repo", 1, state.clone());
+        assert!(result.is_ok());
+        let result_json: PullRequest = serde_json::from_str(&result.unwrap()).unwrap();
+        assert_eq!(result_json.pull_number, 1);
+        assert_eq!(result_json.title, "Pull Request #1");
+    }
+
+    #[test]
+    fn test_get_pull_request_not_found_pull() {
+        let state = create_app_state_with_pull_requests("test_repo", vec![
+            create_pull_request_test(1, vec!["reviewer1", "reviewer2"], 7),
+            create_pull_request_test(2, vec!["reviewer1"], 10),
+        ]);
+        let state = Arc::new(state);
+        let result = get_pull_request("test_repo", 3, state.clone());
+        assert!(result.is_err());
+        assert_eq!(result.err(), Some("Pull Request not found".to_string()));
+    }
+
+    #[test]
+    fn test_get_pull_request_not_found_repo() {
+        let state = create_app_state_with_pull_requests("test_repo", vec![]);
+        let state = Arc::new(state);
+        let result = get_pull_request("nonexistent_repo", 1, state.clone());
+        assert!(result.is_err());
+        assert_eq!(result.err(), Some("Repository not found or no Pull Requests".to_string()));
     }
 
     #[test]
@@ -312,30 +350,6 @@ mod tests {
             Some("Repository not found or no Pull Requests".to_string())
         );
     }
-
-    // #[test]
-    // fn test_list_pull_requests_popularity_sort() {
-    //     // Crear Pull Requests de prueba
-    //     let pulls = vec![
-    //         create_pull_request_test(1, vec!["reviewer1", "reviewer2"], 7),
-    //         create_pull_request_test(2, vec!["reviewer1"], 10),
-    //         create_pull_request_test(3, vec!["reviewer1", "reviewer2", "reviewer3"], 5),
-    //     ];
-
-    //     // Crear un estado con los Pull Requests de prueba
-    //     let state = Arc::new(create_app_state_with_pull_requests("repo", pulls));
-
-    //     // Listar Pull Requests ordenados por popularidad
-    //     let result = list_pull_requests("owner", "repo", state, Some("popularity"), None, None, None);
-
-    //     // Verificar que la operación tiene éxito
-    //     assert!(result.is_ok());
-
-    //     // Deserializar el resultado JSON y verificar la longitud y el orden correcto
-    //     let result_json: Vec<PullRequest> = serde_json::from_str(&result.unwrap()).unwrap();
-    //     assert_eq!(result_json.len(), 1);
-    //     assert_eq!(result_json[0].pull_number, 3);
-    // }
 
     #[test]
     fn test_create_pull_request() {

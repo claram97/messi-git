@@ -5619,3 +5619,1377 @@ Command 'git rm': File 'tests/add/dir_to_add/non_empty/d.txt', 2023-12-06 01:22:
 Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/b.txt', Git Directory '.mgit', 2023-12-06 01:22:33.776107474 +00:00
 Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/b.txt, Time: 2023-12-06 01:22:33.776963131 +00:00
 Command 'git rm': File 'file.txt', 2023-12-06 01:22:44.030195308 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_create_repo_0/.mgit'2023-12-06 01:27:05.766704751 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_3/.mgit'2023-12-06 01:27:05.783514651 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_4/.mgit'2023-12-06 01:27:05.783213794 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_create_repo_/.mgit'2023-12-06 01:27:05.783727918 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_5/.mgit'2023-12-06 01:27:05.785378838 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_delete_repo_2/.mgit'2023-12-06 01:27:05.796144348 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_delete_repo/.mgit'2023-12-06 01:27:05.797706762 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches/.mgit'2023-12-06 01:27:05.798878354 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_2/.mgit'2023-12-06 01:27:05.800035069 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_delete_repo_3/.mgit'2023-12-06 01:27:05.797169595 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo_4/.mgit'2023-12-06 01:27:05.803839992 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo/.mgit'2023-12-06 01:27:05.804942620 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo_3/.mgit'2023-12-06 01:27:05.804879699 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo_2/.mgit'2023-12-06 01:27:05.805725307 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_1/.mgitignore', Option 'check-ignore', 2023-12-06 01:27:05.823599539 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_4/.mgitignore', Option 'check-ignore', 2023-12-06 01:27:05.823806681 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_5/.mgitignore', Option 'check-ignore', 2023-12-06 01:27:05.823980903 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_3/.mgitignore', Option 'check-ignore', 2023-12-06 01:27:05.824309970 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_2/.mgitignore', Option 'check-ignore', 2023-12-06 01:27:05.824387560 +00:00
+Command 'git hash-object': Path 'tests/checkout4/archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:27:05.826256331 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/archivo.txt, Time: 2023-12-06 01:27:05.826746203 +00:00
+Command 'git hash-object': Path 'tests/checkout4/otro_archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:27:05.828015010 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/otro_archivo.txt, Time: 2023-12-06 01:27:05.828183857 +00:00
+Command 'git hash-object': Path 'tests/checkout2/archivo.txt', Git Directory 'tests/checkout2/.mgit', 2023-12-06 01:27:05.828329451 +00:00
+Command 'git add': Add type: single, File: tests/checkout2/archivo.txt, Time: 2023-12-06 01:27:05.829227147 +00:00
+Command 'git commit': Git Directory 'tests/checkout4/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:27:05.831833643 +00:00
+Command 'git hash-object': Path 'tests/checkout2/otro_archivo.txt', Git Directory 'tests/checkout2/.mgit', 2023-12-06 01:27:05.833161163 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:05.833772878 +00:00
+Command 'git add': Add type: single, File: tests/checkout2/otro_archivo.txt, Time: 2023-12-06 01:27:05.836164732 +00:00
+Command 'git hash-object': Path 'tests/checkout3/archivo.txt', Git Directory 'tests/checkout3/.mgit', 2023-12-06 01:27:05.836196151 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:05.834640237 +00:00
+Command 'git hash-object': Path 'tests/checkout/archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:27:05.837851697 +00:00
+Command 'git add': Add type: single, File: tests/checkout/archivo.txt, Time: 2023-12-06 01:27:05.841081283 +00:00
+Command 'git hash-object': Path 'tests/checkout/otro_archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:27:05.843443802 +00:00
+Command 'git add': Add type: single, File: tests/checkout/otro_archivo.txt, Time: 2023-12-06 01:27:05.844312620 +00:00
+Command 'git commit': Git Directory 'tests/checkout2/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:27:05.843144403 +00:00
+Command 'git add': Add type: single, File: tests/checkout3/archivo.txt, Time: 2023-12-06 01:27:05.846046880 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:05.848452027 +00:00
+Command 'git commit': Git Directory 'tests/checkout/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:27:05.849519902 +00:00
+Command 'git checkout': From 'refs/heads/master' to 'new_branch'Create and Checkout 2023-12-06 01:27:05.845743273 +00:00
+Command 'git hash-object': Path 'tests/checkout3/otro_archivo.txt', Git Directory 'tests/checkout3/.mgit', 2023-12-06 01:27:05.851179907 +00:00
+Command 'git add': Add type: single, File: tests/checkout3/otro_archivo.txt, Time: 2023-12-06 01:27:05.851866336 +00:00
+Command 'git hash-object': Path 'tests/checkout/archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:27:05.851309376 +00:00
+Command 'git hash-object': Path 'tests/checkout4/archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:27:05.852512428 +00:00Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:05.849900182 +00:00
+
+Command 'git add': Add type: single, File: tests/checkout4/archivo.txt, Time: 2023-12-06 01:27:05.854883447 +00:00
+Command 'git checkout': From 'refs/heads/master' to 'new_branch'Create and Checkout 2023-12-06 01:27:05.854716851 +00:00
+Command 'git add': Add type: single, File: tests/checkout/archivo.txt, Time: 2023-12-06 01:27:05.853912205 +00:00
+Command 'git hash-object': Path 'tests/checkout4/otro_dir/nuevo_archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:27:05.856323102 +00:00
+Command 'git commit': Git Directory 'tests/checkout3/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:27:05.857735379 +00:00
+Command 'git hash-object': Path 'tests/checkout/otro_dir/nuevo_archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:27:05.859572940 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test3', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:05.869142897 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test3', Message 'test commit 2', Git Ignore Path '', 2023-12-06 01:27:05.874234588 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/otro_dir/nuevo_archivo.txt, Time: 2023-12-06 01:27:05.872232514 +00:00
+Command 'git add': Add type: single, File: tests/checkout/otro_dir/nuevo_archivo.txt, Time: 2023-12-06 01:27:05.871338361 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:05.883611197 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:05.884553937 +00:00
+Command 'git checkout': From 'refs/heads/master' to 'new_branch'Create and Checkout 2023-12-06 01:27:05.885024182 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test3', Message 'test commit 3', Git Ignore Path '', 2023-12-06 01:27:05.878485295 +00:00
+Command 'git commit': Git Directory 'tests/checkout4/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:27:05.880739930 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:05.887014963 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:05.887251648 +00:00
+Command 'git checkout': From 'refs/heads/new_branch' to 'master'Checkout 2023-12-06 01:27:05.887456581 +00:00
+Command 'git commit': Git Directory 'tests/checkout/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:27:05.895425080 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:05.900646239 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:05.902157816 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test2', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:05.900678283 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test6', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:05.905454907 +00:00
+Command 'git checkout': From 'refs/heads/new_branch' to 'master'Checkout 2023-12-06 01:27:05.903523881 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:05.912330237 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:05.912548963 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test2', Message 'test commit 2', Git Ignore Path '', 2023-12-06 01:27:05.911603388 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test_message', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:05.927123562 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:05.929213976 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_12/.mgit'2023-12-06 01:27:05.935191569 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test2', Message 'test commit 3', Git Ignore Path '', 2023-12-06 01:27:05.934231160 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test1', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:05.939742967 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_16/.mgit'2023-12-06 01:27:05.943481718 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_11/.mgit'2023-12-06 01:27:05.940995106 +00:00Command 'git init': Initialized repository at 'tests/config_fake_repo_17/.mgit'2023-12-06 01:27:05.944912372 +00:00
+
+Command 'git init': Initialized repository at 'tests/config_fake_repo_13/.mgit'2023-12-06 01:27:05.943122106 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_14/.mgit'2023-12-06 01:27:05.960163232 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_3/.mgit'2023-12-06 01:27:05.960297076 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_9/.mgit'2023-12-06 01:27:05.960626185 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_10/.mgit'2023-12-06 01:27:05.961122766 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_6/.mgit'2023-12-06 01:27:05.969287655 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_2/.mgit'2023-12-06 01:27:05.968673274 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_5/.mgit'2023-12-06 01:27:05.969976292 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_7/.mgit'2023-12-06 01:27:05.971827937 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_1/.mgit'2023-12-06 01:27:05.972149338 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_8/.mgit'2023-12-06 01:27:05.973821510 +00:00Command 'git init': Initialized repository at 'tests/config_fake_repo_4/.mgit'2023-12-06 01:27:05.974595529 +00:00
+
+Command 'git hash-object': Path 'tests/hash_object/hash_object_hello.txt', Git Directory 'tests/hash_object', 2023-12-06 01:27:05.976210656 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_15/.mgit'2023-12-06 01:27:05.974571277 +00:00
+Command 'git hash-object': Path 'tests/hash_object/hash_object_hello.txt', Git Directory 'tests/hash_object', 2023-12-06 01:27:05.978175018 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/a.txt', Git Directory '.mgit', 2023-12-06 01:27:05.980849102 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/recursive/recursive/recursive/a.txt', Git Directory '.mgit', 2023-12-06 01:27:05.981268802 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_546590478/.mgit'2023-12-06 01:27:05.982567320 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/recursive/recursive/a.txt', Git Directory '.mgit', 2023-12-06 01:27:05.983118780 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_2491554128/.mgit'2023-12-06 01:27:05.982882261 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/recursive/a.txt', Git Directory '.mgit', 2023-12-06 01:27:05.984691570 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_4173076379/.mgit'2023-12-06 01:27:05.984468927 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_1262618754/.mgit'2023-12-06 01:27:05.986049634 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_2550563733/.mgit'2023-12-06 01:27:05.986254650 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_8/.mgit'2023-12-06 01:27:05.986985916 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_6/.mgit'2023-12-06 01:27:05.987258562 +00:00Command 'git init': Initialized repository at 'tests/ls_files_repo_7/.mgit'2023-12-06 01:27:05.987262521 +00:00
+
+Command 'git init': Initialized repository at 'tests/log//.mgit'2023-12-06 01:27:05.987926490 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/objects', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:05.989747882 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_3/.mgit'2023-12-06 01:27:05.991828712 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/refs/tags', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:05.991959514 +00:00
+Command 'git hash-object': Path 'tests/log//.mgit/test_file', Git Directory 'tests/log//.mgit', 2023-12-06 01:27:05.991993891 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/refs/heads', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:05.992278830 +00:00
+Command 'git add': Add type: single, File: tests/log//.mgit/test_file, Time: 2023-12-06 01:27:05.992394798 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_3', Git Directory 'tests/ls_files_repo_3/.mgit', Current Directory 'tests/ls_files_repo_3', Line '["git", "ls-files", "-c"]', 2023-12-06 01:27:05.992833999 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_2/.mgit'2023-12-06 01:27:05.993193694 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_2', Git Directory 'tests/ls_files_repo_2/.mgit', Current Directory 'tests/ls_files_repo_2', Line '["git", "ls-files"]', 2023-12-06 01:27:05.993731111 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_5/.mgit'2023-12-06 01:27:05.995683180 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/refs', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:05.998033739 +00:00
+Command 'git commit': Git Directory 'tests/log//.mgit', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:05.997966776 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_4/.mgit'2023-12-06 01:27:05.999699828 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_5', Git Directory 'tests/ls_files_repo_5/.mgit', Current Directory 'tests/ls_files_repo_5', Line '["git", "ls-files", "-m"]', 2023-12-06 01:27:05.998661372 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_1/.mgit'2023-12-06 01:27:06.005914689 +00:00
+Command 'git hash-object': Path 'tests/log//.mgit/test_file2', Git Directory 'tests/log//.mgit', 2023-12-06 01:27:06.007333592 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:06.009378710 +00:00
+Command 'git add': Add type: single, File: tests/log//.mgit/test_file2, Time: 2023-12-06 01:27:06.011014629 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_1/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:27:06.020795519 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/objects', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:06.026527675 +00:00
+Command 'git commit': Git Directory 'tests/log//.mgit', Message 'test commit 2', Git Ignore Path '', 2023-12-06 01:27:06.025743156 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:27:06.029585206 +00:00
+Command 'git log': Commit 'None', Git Dir 'tests/log//.mgit', 2023-12-06 01:27:06.031186123 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/refs/tags', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:06.031300590 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/refs/heads', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:06.032598316 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/refs', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:06.033239158 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_1/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:27:06.033164902 +00:00Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:06.033332707 +00:00
+
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:06.033397462 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/hello.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:27:06.036344901 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:27:06.034996337 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_1/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:27:06.037610333 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/hello.c, Time: 2023-12-06 01:27:06.037908856 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:27:06.041863541 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/main.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:27:06.043662639 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/main.c, Time: 2023-12-06 01:27:06.044075797 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/2.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:06.042902747 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/2.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:06.038994066 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/2.c, Time: 2023-12-06 01:27:06.045708091 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/1.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:06.046721087 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/1.c, Time: 2023-12-06 01:27:06.046875474 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/2.c, Time: 2023-12-06 01:27:06.048712451 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/1.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:06.049811620 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/1.c, Time: 2023-12-06 01:27:06.050157855 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:27:06.052133510 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:27:06.053221637 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/3.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:06.053293309 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/3.c, Time: 2023-12-06 01:27:06.053492158 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/bye.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:27:06.054818220 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/bye.c, Time: 2023-12-06 01:27:06.054944313 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:27:06.055600031 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/3.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:06.057544891 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/3.c, Time: 2023-12-06 01:27:06.058124103 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:27:06.047499981 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:27:06.059982832 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:27:06.061682340 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/4.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:06.063397515 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:27:06.064296752 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/main.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:27:06.064917717 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/main.c, Time: 2023-12-06 01:27:06.065553892 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/4.c, Time: 2023-12-06 01:27:06.065008850 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/4.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:06.072168242 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/4.c, Time: 2023-12-06 01:27:06.073776993 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:27:06.075178144 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/2.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:06.076321150 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/2.c, Time: 2023-12-06 01:27:06.078643207 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:27:06.078541574 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/1.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:06.079706290 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/1.c, Time: 2023-12-06 01:27:06.080197370 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/5.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:06.081295164 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/5.c, Time: 2023-12-06 01:27:06.081662943 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:27:06.086146627 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:27:06.089036852 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/main.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:27:06.094520114 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/main.c, Time: 2023-12-06 01:27:06.094699837 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/2.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:06.095224044 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:27:06.099714062 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.094251343 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.100529667 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.100995579 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.101356440 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.101683383 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/hello.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:27:06.104568983 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.103692540 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/2.c, Time: 2023-12-06 01:27:06.105081940 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/1.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:06.106127855 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/1.c, Time: 2023-12-06 01:27:06.106621060 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/3.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:06.107826529 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/hello.c, Time: 2023-12-06 01:27:06.108578463 +00:00Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.108354571 +00:00
+
+Command 'git merge': Our Branch 'main', Their Branch 'branch', Git Directory 'tests/merge/test_true_merge/.mgit', Root Directory '', 2023-12-06 01:27:06.109294686 +00:00Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/3.c, Time: 2023-12-06 01:27:06.111367890 +00:00
+
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/4.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:06.113464053 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/4.c, Time: 2023-12-06 01:27:06.113599147 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.109080627 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/5.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:06.114716735 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/5.c, Time: 2023-12-06 01:27:06.114843703 +00:00
+Command 'git merge': Our Branch 'main', Their Branch 'branch', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Root Directory '', 2023-12-06 01:27:06.114177359 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:27:06.113939841 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_9/.mgit'2023-12-06 01:27:06.120675575 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:27:06.120986766 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/bye.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:27:06.119555529 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/bye.c, Time: 2023-12-06 01:27:06.126976693 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_10/.mgit'2023-12-06 01:27:06.129976386 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.126841766 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.130472174 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.130640813 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.130813618 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.130953129 +00:00
+Command 'git remote': Subcommand '["get-url", "remote", "extra_arg"]', 2023-12-06 01:27:06.131201440 +00:00
+Command 'git merge': Our Branch 'main', Their Branch 'branch', Git Directory 'tests/merge/test_conflict_merge/.mgit', Root Directory '', 2023-12-06 01:27:06.136730538 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:27:06.132018795 +00:00
+Command 'git remote': Subcommand '["get-url"]', 2023-12-06 01:27:06.138642896 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_2/.mgit'2023-12-06 01:27:06.142777053 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_3/.mgit'2023-12-06 01:27:06.143142123 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_6/.mgit'2023-12-06 01:27:06.143212545 +00:00
+Command 'git remote': Subcommand '["add"]', 2023-12-06 01:27:06.143258382 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/pizza.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:27:06.143291593 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/pizza.c, Time: 2023-12-06 01:27:06.143534820 +00:00
+Command 'git remote': Subcommand '["remove"]', 2023-12-06 01:27:06.143722210 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_5/.mgit'2023-12-06 01:27:06.144321757 +00:00
+Command 'git remote': Subcommand '["remove", "remote_name", "something else"]', 2023-12-06 01:27:06.144641990 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_12/.mgit'2023-12-06 01:27:06.149228015 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:27:06.148934492 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_11/.mgit'2023-12-06 01:27:06.150026786 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_8/.mgit'2023-12-06 01:27:06.164393826 +00:00
+Command 'git remote': Subcommand '["rename"]', 2023-12-06 01:27:06.166753968 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_7/.mgit'2023-12-06 01:27:06.169294292 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_1/.mgit'2023-12-06 01:27:06.170486093 +00:00
+Command 'git remote': Subcommand '["set-url"]', 2023-12-06 01:27:06.172420995 +00:00
+Command 'git remote': Subcommand '["something"]', 2023-12-06 01:27:06.172863113 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_13/.mgit'2023-12-06 01:27:06.173389237 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:27:06.174006202 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_14/.mgit'2023-12-06 01:27:06.174428735 +00:00Command 'git remote': Subcommand '["remove", "new_remote"]', 2023-12-06 01:27:06.174667837 +00:00
+
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_15/.mgit'2023-12-06 01:27:06.176026985 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_4/.mgit'2023-12-06 01:27:06.169965469 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:27:06.177143030 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:27:06.177235371 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.181101256 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.182479739 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.182634418 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:06.182731842 +00:00
+Command 'git checkout': From 'refs/heads/test' to 'test'Checkout 2023-12-06 01:27:06.182894563 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:27:06.184921513 +00:00
+Command 'git remote': Subcommand '["rename", "new_remote", "remote"]', 2023-12-06 01:27:06.186444091 +00:00
+Command 'git remote': Subcommand '["set-url", "new_remote", "new_url"]', 2023-12-06 01:27:06.185368257 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/a.txt', Git Directory '.mgit', 2023-12-06 01:27:06.186645898 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_1/.mgit'2023-12-06 01:27:06.189220224 +00:00
+Command 'git rm': File 'archivo_no_en_indice.txt', 2023-12-06 01:27:06.186800202 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_5/.mgit'2023-12-06 01:27:06.192671744 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_7/.mgit'2023-12-06 01:27:06.192389180 +00:00
+Command 'git hash-object': Path 'a.txt', Git Directory '.mgit', 2023-12-06 01:27:06.193003562 +00:00
+Command 'git rm': File 'a.txt', 2023-12-06 01:27:06.193420386 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_4/.mgit'2023-12-06 01:27:06.194202989 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_6/.mgit'2023-12-06 01:27:06.194507763 +00:00Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_8/.mgit'2023-12-06 01:27:06.194042143 +00:00
+
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_3/.mgit'2023-12-06 01:27:06.198167924 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_2/.mgit'2023-12-06 01:27:06.198862603 +00:00
+Command 'git init': Initialized repository at 'tests/status_feik_repo/.mgit'2023-12-06 01:27:06.199518237 +00:00
+Command 'git init': Initialized repository at 'tests/status_repo_2/.mgit'2023-12-06 01:27:06.199301721 +00:00
+Command 'git init': Initialized repository at 'tests/status_repo_/.mgit'2023-12-06 01:27:06.199799051 +00:00
+Command 'git status': 2023-12-06 01:27:06.201193535 +00:00
+Unstaged files 0
+Command 'git status': 2023-12-06 01:27:06.201920925 +00:00
+Untracked files 0
+Command 'git commit': Git Directory 'tests/status_feik_repo/.mgit', Message 'message', Git Ignore Path 'tests/status_feik_repo/.mgitignore', 2023-12-06 01:27:06.203270072 +00:00
+Command 'git init': Initialized repository at 'tests/status_fake_repo/.mgit'2023-12-06 01:27:06.203312409 +00:00
+Command 'git status': 2023-12-06 01:27:06.203433627 +00:00
+Untracked files 0
+Command 'git commit': Git Directory 'tests/status_fake_repo/.mgit', Message 'message', Git Ignore Path 'tests/status_fake_repo/.mgitignore', 2023-12-06 01:27:06.207166877 +00:00
+Command 'git status': 2023-12-06 01:27:06.207515863 +00:00
+Unstaged files 0
+Command 'git status': 2023-12-06 01:27:06.207508779 +00:00
+Unstaged files 0
+Command 'git status': 2023-12-06 01:27:06.208236877 +00:00
+Untracked files 1
+Command 'git status': 2023-12-06 01:27:06.208340760 +00:00
+Untracked files 0
+Command 'git status': 2023-12-06 01:27:06.208397473 +00:00
+Untracked files 0
+Command 'git status': 2023-12-06 01:27:06.208451561 +00:00
+Untracked files 0
+Command 'git init': Initialized repository at 'tests/status_repo/.mgit'2023-12-06 01:27:06.208164247 +00:00
+Command 'git status': 2023-12-06 01:27:06.208619782 +00:00
+Unstaged files 1
+Command 'git status': 2023-12-06 01:27:06.211583597 +00:00
+Unstaged files 1
+Command 'git status': 2023-12-06 01:27:06.211930999 +00:00
+Unstaged files 1
+Command 'git status': 2023-12-06 01:27:06.212724978 +00:00
+Unstaged files 1
+Command 'git status': 2023-12-06 01:27:06.208424392 +00:00
+Unstaged files 0
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_12/.mgit'2023-12-06 01:27:06.215432773 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_13/.mgit'2023-12-06 01:27:06.217291585 +00:00
+Command 'git status': 2023-12-06 01:27:06.218619730 +00:00
+Unstaged files 0
+Command 'git commit': Git Directory 'tests/tag_fake_repo_13/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_13/.mgitignore', 2023-12-06 01:27:06.220276443 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_14/.mgit'2023-12-06 01:27:06.220850405 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_12/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_12/.mgitignore', 2023-12-06 01:27:06.218488595 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_14/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_14/.mgitignore', 2023-12-06 01:27:06.224449561 +00:00Command 'git init': Initialized repository at 'tests/tag_fake_repo_04/.mgit'2023-12-06 01:27:06.224537693 +00:00
+
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_02/.mgit'2023-12-06 01:27:06.226211740 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_03/.mgit'2023-12-06 01:27:06.226913879 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_05/.mgit'2023-12-06 01:27:06.227674188 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_02/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_02/.mgitignore', 2023-12-06 01:27:06.231023575 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_05/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_05/.mgitignore', 2023-12-06 01:27:06.232424518 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_01/.mgit'2023-12-06 01:27:06.235020637 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_01/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_01/.mgitignore', 2023-12-06 01:27:06.240954643 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_03/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_03/.mgitignore', 2023-12-06 01:27:06.241486143 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_08/.mgit'2023-12-06 01:27:06.245475163 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_04/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_04/.mgitignore', 2023-12-06 01:27:06.227158689 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_09/.mgit'2023-12-06 01:27:06.247774134 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_08/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_08/.mgitignore', 2023-12-06 01:27:06.249860714 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_06/.mgit'2023-12-06 01:27:06.251863329 +00:00Command 'git init': Initialized repository at 'tests/tag_fake_repo_07/.mgit'2023-12-06 01:27:06.252203772 +00:00
+
+Command 'git commit': Git Directory 'tests/tag_fake_repo_09/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_09/.mgitignore', 2023-12-06 01:27:06.251941460 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_06/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_06/.mgitignore', 2023-12-06 01:27:06.256788339 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_11/.mgit'2023-12-06 01:27:06.257135616 +00:00Command 'git commit': Git Directory 'tests/tag_fake_repo_07/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_07/.mgitignore', 2023-12-06 01:27:06.259059308 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_10/.mgit'2023-12-06 01:27:06.259589974 +00:00
+
+Command 'git commit': Git Directory 'tests/tag_fake_repo_10/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_10/.mgitignore', 2023-12-06 01:27:06.263195423 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_11/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_11/.mgitignore', 2023-12-06 01:27:06.263438108 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents2', Message 'Mensaje', Git Ignore Path '', 2023-12-06 01:27:06.272187292 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents3', Message 'Mensaje', Git Ignore Path '', 2023-12-06 01:27:06.274122068 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents3', Message 'Aaaa', Git Ignore Path '', 2023-12-06 01:27:06.277840734 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents3', Message 'Holaaa', Git Ignore Path '', 2023-12-06 01:27:06.282214826 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_create_repo_/.mgit'2023-12-06 01:27:11.643045431 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_4/.mgit'2023-12-06 01:27:11.645519206 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_create_repo_0/.mgit'2023-12-06 01:27:11.646013869 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_3/.mgit'2023-12-06 01:27:11.647152124 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_5/.mgit'2023-12-06 01:27:11.647908808 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_delete_repo_3/.mgit'2023-12-06 01:27:11.651344574 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_delete_repo_2/.mgit'2023-12-06 01:27:11.651536547 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_delete_repo/.mgit'2023-12-06 01:27:11.652214475 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo_4/.mgit'2023-12-06 01:27:11.653398941 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo/.mgit'2023-12-06 01:27:11.654689166 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo_3/.mgit'2023-12-06 01:27:11.655328841 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches/.mgit'2023-12-06 01:27:11.657493925 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo_2/.mgit'2023-12-06 01:27:11.659831773 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_2/.mgit'2023-12-06 01:27:11.659870109 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_5/.mgitignore', Option 'check-ignore', 2023-12-06 01:27:11.660739635 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_1/.mgitignore', Option 'check-ignore', 2023-12-06 01:27:11.660829642 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_4/.mgitignore', Option 'check-ignore', 2023-12-06 01:27:11.662608363 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_2/.mgitignore', Option 'check-ignore', 2023-12-06 01:27:11.667265849 +00:00Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_3/.mgitignore', Option 'check-ignore', 2023-12-06 01:27:11.664838327 +00:00
+
+Command 'git hash-object': Path 'tests/checkout4/archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:27:11.673491206 +00:00
+Command 'git hash-object': Path 'tests/checkout2/archivo.txt', Git Directory 'tests/checkout2/.mgit', 2023-12-06 01:27:11.671183152 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/archivo.txt, Time: 2023-12-06 01:27:11.682013783 +00:00
+Command 'git add': Add type: single, File: tests/checkout2/archivo.txt, Time: 2023-12-06 01:27:11.683201083 +00:00
+Command 'git hash-object': Path 'tests/checkout2/otro_archivo.txt', Git Directory 'tests/checkout2/.mgit', 2023-12-06 01:27:11.684805415 +00:00
+Command 'git hash-object': Path 'tests/checkout4/otro_archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:27:11.685948296 +00:00
+Command 'git add': Add type: single, File: tests/checkout2/otro_archivo.txt, Time: 2023-12-06 01:27:11.686190106 +00:00
+Command 'git hash-object': Path 'tests/checkout3/archivo.txt', Git Directory 'tests/checkout3/.mgit', 2023-12-06 01:27:11.687388907 +00:00
+Command 'git add': Add type: single, File: tests/checkout3/archivo.txt, Time: 2023-12-06 01:27:11.687696306 +00:00
+Command 'git hash-object': Path 'tests/checkout3/otro_archivo.txt', Git Directory 'tests/checkout3/.mgit', 2023-12-06 01:27:11.688777306 +00:00
+Command 'git add': Add type: single, File: tests/checkout3/otro_archivo.txt, Time: 2023-12-06 01:27:11.689071413 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/otro_archivo.txt, Time: 2023-12-06 01:27:11.686969416 +00:00Command 'git commit': Git Directory 'tests/checkout2/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:27:11.690020028 +00:00
+
+Command 'git commit': Git Directory 'tests/checkout4/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:27:11.695503119 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.697316926 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.693523216 +00:00
+Command 'git commit': Git Directory 'tests/checkout3/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:27:11.696930105 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.697860760 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.697944016 +00:00
+Command 'git checkout': From 'refs/heads/master' to 'new_branch'Create and Checkout 2023-12-06 01:27:11.698962304 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.700644392 +00:00
+Command 'git hash-object': Path 'tests/checkout/archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:27:11.698769497 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.701459497 +00:00
+Command 'git checkout': From 'refs/heads/master' to 'new_branch'Create and Checkout 2023-12-06 01:27:11.702930403 +00:00
+Command 'git add': Add type: single, File: tests/checkout/archivo.txt, Time: 2023-12-06 01:27:11.703539450 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.708689182 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test3', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:11.707534176 +00:00Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.709170469 +00:00
+
+Command 'git checkout': From 'refs/heads/new_branch' to 'master'Checkout 2023-12-06 01:27:11.709850647 +00:00
+Command 'git checkout': From 'refs/heads/master' to 'new_branch'Create and Checkout 2023-12-06 01:27:11.698201245 +00:00
+Command 'git hash-object': Path 'tests/checkout/otro_archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:27:11.711750586 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test3', Message 'test commit 2', Git Ignore Path '', 2023-12-06 01:27:11.714396291 +00:00
+Command 'git hash-object': Path 'tests/checkout4/archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:27:11.715714851 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test3', Message 'test commit 3', Git Ignore Path '', 2023-12-06 01:27:11.719346508 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/archivo.txt, Time: 2023-12-06 01:27:11.717144129 +00:00
+Command 'git add': Add type: single, File: tests/checkout/otro_archivo.txt, Time: 2023-12-06 01:27:11.715846278 +00:00
+Command 'git hash-object': Path 'tests/checkout4/otro_dir/nuevo_archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:27:11.723410281 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test2', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:11.725269091 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/otro_dir/nuevo_archivo.txt, Time: 2023-12-06 01:27:11.725545988 +00:00
+Command 'git commit': Git Directory 'tests/checkout/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:27:11.733237792 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test2', Message 'test commit 2', Git Ignore Path '', 2023-12-06 01:27:11.729879282 +00:00
+Command 'git hash-object': Path 'tests/checkout/archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:27:11.734673570 +00:00
+Command 'git commit': Git Directory 'tests/checkout4/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:27:11.738598040 +00:00
+Command 'git add': Add type: single, File: tests/checkout/archivo.txt, Time: 2023-12-06 01:27:11.740177913 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.740930013 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test2', Message 'test commit 3', Git Ignore Path '', 2023-12-06 01:27:11.739493651 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.741483264 +00:00
+Command 'git checkout': From 'refs/heads/new_branch' to 'master'Checkout 2023-12-06 01:27:11.741635151 +00:00
+Command 'git hash-object': Path 'tests/checkout/otro_dir/nuevo_archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:27:11.741351087 +00:00
+Command 'git add': Add type: single, File: tests/checkout/otro_dir/nuevo_archivo.txt, Time: 2023-12-06 01:27:11.743504170 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test6', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:11.744616631 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test1', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:11.753814302 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:11.755949801 +00:00
+Command 'git commit': Git Directory 'tests/checkout/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:27:11.748933674 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_12/.mgit'2023-12-06 01:27:11.758184724 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_13/.mgit'2023-12-06 01:27:11.760925395 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test_message', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:11.760682751 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.762527685 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_17/.mgit'2023-12-06 01:27:11.762587315 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_16/.mgit'2023-12-06 01:27:11.761437976 +00:00Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.768342552 +00:00
+
+Command 'git init': Initialized repository at 'tests/config_fake_repo_11/.mgit'2023-12-06 01:27:11.769075943 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_14/.mgit'2023-12-06 01:27:11.785966584 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_10/.mgit'2023-12-06 01:27:11.786395242 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_9/.mgit'2023-12-06 01:27:11.786052091 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_3/.mgit'2023-12-06 01:27:11.786021380 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_2/.mgit'2023-12-06 01:27:11.788361311 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_6/.mgit'2023-12-06 01:27:11.789021487 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_5/.mgit'2023-12-06 01:27:11.789237129 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_1/.mgit'2023-12-06 01:27:11.788864350 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_7/.mgit'2023-12-06 01:27:11.789645327 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_15/.mgit'2023-12-06 01:27:11.791249577 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_4/.mgit'2023-12-06 01:27:11.800773939 +00:00
+Command 'git hash-object': Path 'tests/hash_object/hash_object_hello.txt', Git Directory 'tests/hash_object', 2023-12-06 01:27:11.803052866 +00:00
+Command 'git hash-object': Path 'tests/hash_object/hash_object_hello.txt', Git Directory 'tests/hash_object', 2023-12-06 01:27:11.804525230 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/a.txt', Git Directory '.mgit', 2023-12-06 01:27:11.805947340 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/recursive/recursive/recursive/a.txt', Git Directory '.mgit', 2023-12-06 01:27:11.806181608 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_3340982091/.mgit'2023-12-06 01:27:11.807300278 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_2449639328/.mgit'2023-12-06 01:27:11.807765023 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/recursive/recursive/a.txt', Git Directory '.mgit', 2023-12-06 01:27:11.808021501 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_4279302657/.mgit'2023-12-06 01:27:11.808165929 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/recursive/a.txt', Git Directory '.mgit', 2023-12-06 01:27:11.809301517 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_616455531/.mgit'2023-12-06 01:27:11.810082119 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_8/.mgit'2023-12-06 01:27:11.810633120 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_661809372/.mgit'2023-12-06 01:27:11.815195431 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_8/.mgit'2023-12-06 01:27:11.818462726 +00:00
+Command 'git init': Initialized repository at 'tests/log//.mgit'2023-12-06 01:27:11.818764750 +00:00
+Command 'git hash-object': Path 'tests/log//.mgit/test_file', Git Directory 'tests/log//.mgit', 2023-12-06 01:27:11.820032139 +00:00
+Command 'git add': Add type: single, File: tests/log//.mgit/test_file, Time: 2023-12-06 01:27:11.821158935 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_7/.mgit'2023-12-06 01:27:11.822193682 +00:00
+Command 'git commit': Git Directory 'tests/log//.mgit', Message 'test commit', Git Ignore Path '', 2023-12-06 01:27:11.831151251 +00:00
+Command 'git hash-object': Path 'tests/log//.mgit/test_file2', Git Directory 'tests/log//.mgit', 2023-12-06 01:27:11.841341165 +00:00
+Command 'git add': Add type: single, File: tests/log//.mgit/test_file2, Time: 2023-12-06 01:27:11.841802284 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_6/.mgit'2023-12-06 01:27:11.841846121 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/objects', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:11.842795236 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_2/.mgit'2023-12-06 01:27:11.845247967 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_2', Git Directory 'tests/ls_files_repo_2/.mgit', Current Directory 'tests/ls_files_repo_2', Line '["git", "ls-files"]', 2023-12-06 01:27:11.845932312 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_3/.mgit'2023-12-06 01:27:11.847215787 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_3', Git Directory 'tests/ls_files_repo_3/.mgit', Current Directory 'tests/ls_files_repo_3', Line '["git", "ls-files", "-c"]', 2023-12-06 01:27:11.847648612 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_5/.mgit'2023-12-06 01:27:11.851257058 +00:00
+Command 'git commit': Git Directory 'tests/log//.mgit', Message 'test commit 2', Git Ignore Path '', 2023-12-06 01:27:11.851984031 +00:00
+Command 'git log': Commit 'None', Git Dir 'tests/log//.mgit', 2023-12-06 01:27:11.853818506 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_5', Git Directory 'tests/ls_files_repo_5/.mgit', Current Directory 'tests/ls_files_repo_5', Line '["git", "ls-files", "-m"]', 2023-12-06 01:27:11.852677543 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_4/.mgit'2023-12-06 01:27:11.854670656 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/refs/tags', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:11.852279054 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/objects', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:11.864794606 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_1/.mgit'2023-12-06 01:27:11.865661007 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/refs/tags', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:11.865362817 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/refs/heads', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:11.865769140 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/refs', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:11.866125084 +00:00Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/refs/heads', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:11.866070039 +00:00
+
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/refs', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:11.867279341 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:11.868004980 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:11.867787880 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4', Line '["git", "ls-files", "-o"]', 2023-12-06 01:27:11.868630904 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_1/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:27:11.872411863 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/hello.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:27:11.874399725 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:27:11.877016678 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/2.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:11.878144724 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/hello.c, Time: 2023-12-06 01:27:11.878593134 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/2.c, Time: 2023-12-06 01:27:11.879732180 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_1/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:27:11.880675420 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/main.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:27:11.881185001 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/1.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:11.882424430 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/main.c, Time: 2023-12-06 01:27:11.883023935 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:27:11.884261864 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_1/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:27:11.886690427 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:27:11.887939274 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/2.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:11.891206194 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/2.c, Time: 2023-12-06 01:27:11.891502800 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/1.c, Time: 2023-12-06 01:27:11.886509705 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:27:11.895472566 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/bye.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:27:11.896955097 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/bye.c, Time: 2023-12-06 01:27:11.897328085 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/1.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:11.896528898 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/1.c, Time: 2023-12-06 01:27:11.901318310 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:27:11.900971825 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:27:11.903389804 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:27:11.904602773 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/main.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:27:11.904821790 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/main.c, Time: 2023-12-06 01:27:11.905564098 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/3.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:11.908252639 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:27:11.911481056 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/3.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:11.912640146 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/3.c, Time: 2023-12-06 01:27:11.912756530 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:27:11.916696668 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:27:11.918485557 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/3.c, Time: 2023-12-06 01:27:11.918702032 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/4.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:11.919677857 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/4.c, Time: 2023-12-06 01:27:11.919860496 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.924208583 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:27:11.925108903 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/2.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:11.926887666 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:27:11.928213227 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/main.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:27:11.929030082 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.927251111 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/2.c, Time: 2023-12-06 01:27:11.932149448 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.934707855 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/main.c, Time: 2023-12-06 01:27:11.935007670 +00:00Command 'git hash-object': Path 'tests/merge/test_true_merge/src/4.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:11.933629605 +00:00
+Command 'git merge': Our Branch 'main', Their Branch 'branch', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Root Directory '', 2023-12-06 01:27:11.935143097 +00:00
+
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/4.c, Time: 2023-12-06 01:27:11.935840693 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/1.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:11.937465485 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_9/.mgit'2023-12-06 01:27:11.937581869 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/1.c, Time: 2023-12-06 01:27:11.937648583 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/3.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:11.938788713 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/3.c, Time: 2023-12-06 01:27:11.940859998 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/4.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:11.942092343 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/4.c, Time: 2023-12-06 01:27:11.942253064 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:27:11.942745061 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/5.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:27:11.943481743 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/2.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:11.944696587 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:27:11.945630451 +00:00
+Command 'git remote': Subcommand '["get-url"]', 2023-12-06 01:27:11.946528479 +00:00Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/5.c, Time: 2023-12-06 01:27:11.946438097 +00:00
+
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/2.c, Time: 2023-12-06 01:27:11.946685408 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/1.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:11.949276400 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/1.c, Time: 2023-12-06 01:27:11.949410202 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/5.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:27:11.950483202 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/5.c, Time: 2023-12-06 01:27:11.950621837 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:27:11.952840134 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:27:11.962018720 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.963249357 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.963481208 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.963778315 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.964071004 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.964326774 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.967019191 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.967196246 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/hello.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:27:11.955068682 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/hello.c, Time: 2023-12-06 01:27:11.968136069 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_10/.mgit'2023-12-06 01:27:11.968308666 +00:00
+Command 'git remote': Subcommand '["get-url", "remote", "extra_arg"]', 2023-12-06 01:27:11.968813955 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_2/.mgit'2023-12-06 01:27:11.969918999 +00:00
+Command 'git merge': Our Branch 'main', Their Branch 'branch', Git Directory 'tests/merge/test_conflict_merge/.mgit', Root Directory '', 2023-12-06 01:27:11.971882651 +00:00
+Command 'git remote': Subcommand '["add"]', 2023-12-06 01:27:11.972592748 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_3/.mgit'2023-12-06 01:27:11.976432420 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_6/.mgit'2023-12-06 01:27:11.980900849 +00:00Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:27:11.981082280 +00:00
+
+Command 'git remote': Subcommand '["remove"]', 2023-12-06 01:27:11.981751832 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.987783632 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/bye.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:27:11.987981356 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/bye.c, Time: 2023-12-06 01:27:11.988396763 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_11/.mgit'2023-12-06 01:27:11.989086817 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.991522672 +00:00
+Command 'git remote': Subcommand '["rename"]', 2023-12-06 01:27:11.991965790 +00:00Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:11.992291440 +00:00
+
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_5/.mgit'2023-12-06 01:27:11.989875669 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_12/.mgit'2023-12-06 01:27:12.001115290 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_7/.mgit'2023-12-06 01:27:12.003535436 +00:00
+Command 'git remote': Subcommand '["set-url"]', 2023-12-06 01:27:12.004010222 +00:00Command 'git merge': Our Branch 'main', Their Branch 'branch', Git Directory 'tests/merge/test_true_merge/.mgit', Root Directory '', 2023-12-06 01:27:12.003763037 +00:00
+
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:27:12.002893011 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/pizza.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:27:12.009770626 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_1/.mgit'2023-12-06 01:27:12.012787568 +00:00
+Command 'git remote': Subcommand '["something"]', 2023-12-06 01:27:12.012937871 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_4/.mgit'2023-12-06 01:27:12.013394073 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:27:12.013554419 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/pizza.c, Time: 2023-12-06 01:27:12.011340539 +00:00Command 'git init': Initialized repository at 'tests/remote_fake_repo_13/.mgit'2023-12-06 01:27:12.014459864 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:27:12.014704424 +00:00
+Command 'git remote': Subcommand '["remove", "new_remote"]', 2023-12-06 01:27:12.014839518 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_14/.mgit'2023-12-06 01:27:12.015630579 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:27:12.015808593 +00:00
+Command 'git remote': Subcommand '["rename", "new_remote", "remote"]', 2023-12-06 01:27:12.015901100 +00:00
+
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_15/.mgit'2023-12-06 01:27:12.025598016 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:27:12.025820784 +00:00
+Command 'git remote': Subcommand '["set-url", "new_remote", "new_url"]', 2023-12-06 01:27:12.025923583 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/a.txt', Git Directory '.mgit', 2023-12-06 01:27:12.027950157 +00:00
+Command 'git hash-object': Path 'a.txt', Git Directory '.mgit', 2023-12-06 01:27:12.029672248 +00:00
+Command 'git rm': File 'a.txt', 2023-12-06 01:27:12.029863055 +00:00
+Command 'git rm': File 'archivo_no_en_indice.txt', 2023-12-06 01:27:12.030167953 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_1/.mgit'2023-12-06 01:27:12.032527010 +00:00
+Command 'git remote': Subcommand '["remove", "remote_name", "something else"]', 2023-12-06 01:27:12.025470882 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:27:12.035785012 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_8/.mgit'2023-12-06 01:27:12.039220403 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_5/.mgit'2023-12-06 01:27:12.041698011 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_4/.mgit'2023-12-06 01:27:12.042461987 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_6/.mgit'2023-12-06 01:27:12.044045984 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_7/.mgit'2023-12-06 01:27:12.039514551 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_8/.mgit'2023-12-06 01:27:12.053524051 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_3/.mgit'2023-12-06 01:27:12.054944327 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_2/.mgit'2023-12-06 01:27:12.079430345 +00:00
+Command 'git init': Initialized repository at 'tests/status_feik_repo/.mgit'2023-12-06 01:27:12.080810577 +00:00
+Command 'git init': Initialized repository at 'tests/status_repo_2/.mgit'2023-12-06 01:27:12.078932682 +00:00
+Command 'git init': Initialized repository at 'tests/status_repo_/.mgit'2023-12-06 01:27:12.085475771 +00:00
+Command 'git status': 2023-12-06 01:27:12.085864468 +00:00
+Untracked files 0
+Command 'git status': 2023-12-06 01:27:12.085971559 +00:00
+Untracked files 0
+Command 'git status': 2023-12-06 01:27:12.086063816 +00:00
+Untracked files 1
+Command 'git status': 2023-12-06 01:27:12.086193868 +00:00
+Untracked files 0
+Command 'git status': 2023-12-06 01:27:12.086637944 +00:00
+Untracked files 0
+Command 'git status': 2023-12-06 01:27:12.086752453 +00:00
+Untracked files 0
+Command 'git init': Initialized repository at 'tests/status_fake_repo/.mgit'2023-12-06 01:27:12.088344701 +00:00
+Command 'git status': 2023-12-06 01:27:12.083467032 +00:00
+Unstaged files 0
+Command 'git status': 2023-12-06 01:27:12.098054868 +00:00
+Unstaged files 0
+Command 'git commit': Git Directory 'tests/status_feik_repo/.mgit', Message 'message', Git Ignore Path 'tests/status_feik_repo/.mgitignore', 2023-12-06 01:27:12.100992804 +00:00
+Command 'git status': 2023-12-06 01:27:12.101173151 +00:00
+Unstaged files 0
+Command 'git commit': Git Directory 'tests/status_fake_repo/.mgit', Message 'message', Git Ignore Path 'tests/status_fake_repo/.mgitignore', 2023-12-06 01:27:12.103697846 +00:00
+Command 'git status': 2023-12-06 01:27:12.104247472 +00:00
+Unstaged files 0
+Command 'git status': 2023-12-06 01:27:12.105061118 +00:00
+Unstaged files 0
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_13/.mgit'2023-12-06 01:27:12.110745058 +00:00Command 'git init': Initialized repository at 'tests/status_repo/.mgit'2023-12-06 01:27:12.111002661 +00:00
+
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:12.110721723 +00:00
+Command 'git status': 2023-12-06 01:27:12.113472560 +00:00
+Unstaged files 1
+Command 'git status': 2023-12-06 01:27:12.111861186 +00:00
+Unstaged files 1
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:12.113487312 +00:00
+Command 'git status': 2023-12-06 01:27:12.113728205 +00:00
+Unstaged files 1
+Command 'git status': 2023-12-06 01:27:12.114638692 +00:00
+Unstaged files 1
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:12.114211659 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_12/.mgit'2023-12-06 01:27:12.116164019 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_13/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_13/.mgitignore', 2023-12-06 01:27:12.116368493 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:27:12.116397787 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_14/.mgit'2023-12-06 01:27:12.116693559 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_12/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_12/.mgitignore', 2023-12-06 01:27:12.122124271 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_14/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_14/.mgitignore', 2023-12-06 01:27:12.123740104 +00:00
+Command 'git checkout': From 'refs/heads/test' to 'test'Checkout 2023-12-06 01:27:12.128238952 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_04/.mgit'2023-12-06 01:27:12.132868518 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_02/.mgit'2023-12-06 01:27:12.137448956 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_05/.mgit'2023-12-06 01:27:12.144605134 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_04/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_04/.mgitignore', 2023-12-06 01:27:12.145423114 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_02/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_02/.mgitignore', 2023-12-06 01:27:12.142004933 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_03/.mgit'2023-12-06 01:27:12.148676907 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_05/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_05/.mgitignore', 2023-12-06 01:27:12.148877006 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_01/.mgit'2023-12-06 01:27:12.149111983 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_01/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_01/.mgitignore', 2023-12-06 01:27:12.152300021 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_03/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_03/.mgitignore', 2023-12-06 01:27:12.152631296 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_09/.mgit'2023-12-06 01:27:12.153811346 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_09/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_09/.mgitignore', 2023-12-06 01:27:12.157055055 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_07/.mgit'2023-12-06 01:27:12.158090552 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_07/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_07/.mgitignore', 2023-12-06 01:27:12.161225127 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_08/.mgit'2023-12-06 01:27:12.162095361 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_06/.mgit'2023-12-06 01:27:12.161706248 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_08/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_08/.mgitignore', 2023-12-06 01:27:12.165723684 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_11/.mgit'2023-12-06 01:27:12.165922324 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_10/.mgit'2023-12-06 01:27:12.166787641 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_10/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_10/.mgitignore', 2023-12-06 01:27:12.169961761 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_11/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_11/.mgitignore', 2023-12-06 01:27:12.170757739 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_06/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_06/.mgitignore', 2023-12-06 01:27:12.169025939 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents3', Message 'Mensaje', Git Ignore Path '', 2023-12-06 01:27:12.209020614 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents2', Message 'Mensaje', Git Ignore Path '', 2023-12-06 01:27:12.209725544 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents3', Message 'Aaaa', Git Ignore Path '', 2023-12-06 01:27:12.215289641 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents3', Message 'Holaaa', Git Ignore Path '', 2023-12-06 01:27:12.221614755 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/b.txt', Git Directory '.mgit', 2023-12-06 01:27:13.269572531 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/d.txt', Git Directory '.mgit', 2023-12-06 01:27:13.271994135 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/a.txt', Git Directory '.mgit', 2023-12-06 01:27:13.272263656 +00:00
+Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/a.txt, Time: 2023-12-06 01:27:13.273092011 +00:00
+Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/b.txt, Time: 2023-12-06 01:27:13.274645048 +00:00
+Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/d.txt, Time: 2023-12-06 01:27:13.276007486 +00:00
+Command 'git rm': File 'tests/add/dir_to_add/non_empty/d.txt', 2023-12-06 01:27:13.276507775 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/b.txt', Git Directory '.mgit', 2023-12-06 01:27:13.276915306 +00:00
+Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/b.txt, Time: 2023-12-06 01:27:13.277682907 +00:00
+Command 'git rm': File 'file.txt', 2023-12-06 01:27:23.049275102 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_4/.mgit'2023-12-06 01:29:17.210250453 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_create_repo_/.mgit'2023-12-06 01:29:17.208668314 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_create_repo_0/.mgit'2023-12-06 01:29:17.212291246 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_3/.mgit'2023-12-06 01:29:17.219855339 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_delete_repo_3/.mgit'2023-12-06 01:29:17.226983821 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_delete_repo/.mgit'2023-12-06 01:29:17.235653107 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_delete_repo_2/.mgit'2023-12-06 01:29:17.230594336 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_5/.mgit'2023-12-06 01:29:17.231070573 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches/.mgit'2023-12-06 01:29:17.238185805 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo_4/.mgit'2023-12-06 01:29:17.239784404 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_2/.mgit'2023-12-06 01:29:17.241832655 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo_3/.mgit'2023-12-06 01:29:17.245711103 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo_2/.mgit'2023-12-06 01:29:17.250880923 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo/.mgit'2023-12-06 01:29:17.247796107 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_4/.mgitignore', Option 'check-ignore', 2023-12-06 01:29:17.253559005 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_5/.mgitignore', Option 'check-ignore', 2023-12-06 01:29:17.253781811 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_1/.mgitignore', Option 'check-ignore', 2023-12-06 01:29:17.255079683 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_3/.mgitignore', Option 'check-ignore', 2023-12-06 01:29:17.257498582 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_2/.mgitignore', Option 'check-ignore', 2023-12-06 01:29:17.257754265 +00:00
+Command 'git hash-object': Path 'tests/checkout4/archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:29:17.262936960 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/archivo.txt, Time: 2023-12-06 01:29:17.264435928 +00:00
+Command 'git hash-object': Path 'tests/checkout2/archivo.txt', Git Directory 'tests/checkout2/.mgit', 2023-12-06 01:29:17.276177570 +00:00
+Command 'git add': Add type: single, File: tests/checkout2/archivo.txt, Time: 2023-12-06 01:29:17.280732102 +00:00
+Command 'git hash-object': Path 'tests/checkout4/otro_archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:29:17.280727476 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/otro_archivo.txt, Time: 2023-12-06 01:29:17.282095769 +00:00
+Command 'git hash-object': Path 'tests/checkout3/archivo.txt', Git Directory 'tests/checkout3/.mgit', 2023-12-06 01:29:17.288099307 +00:00
+Command 'git add': Add type: single, File: tests/checkout3/archivo.txt, Time: 2023-12-06 01:29:17.288395534 +00:00
+Command 'git commit': Git Directory 'tests/checkout4/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:29:17.292655380 +00:00Command 'git hash-object': Path 'tests/checkout2/otro_archivo.txt', Git Directory 'tests/checkout2/.mgit', 2023-12-06 01:29:17.287044825 +00:00
+Command 'git hash-object': Path 'tests/checkout3/otro_archivo.txt', Git Directory 'tests/checkout3/.mgit', 2023-12-06 01:29:17.297060402 +00:00
+
+Command 'git add': Add type: single, File: tests/checkout2/otro_archivo.txt, Time: 2023-12-06 01:29:17.297344712 +00:00Command 'git hash-object': Path 'tests/checkout/archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:29:17.299269914 +00:00
+Command 'git add': Add type: single, File: tests/checkout3/otro_archivo.txt, Time: 2023-12-06 01:29:17.299546264 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.300729004 +00:00
+
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.301520053 +00:00
+Command 'git add': Add type: single, File: tests/checkout/archivo.txt, Time: 2023-12-06 01:29:17.300032086 +00:00
+Command 'git checkout': From 'refs/heads/master' to 'new_branch'Create and Checkout 2023-12-06 01:29:17.301832739 +00:00
+Command 'git hash-object': Path 'tests/checkout/otro_archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:29:17.303495259 +00:00
+Command 'git add': Add type: single, File: tests/checkout/otro_archivo.txt, Time: 2023-12-06 01:29:17.303719147 +00:00
+Command 'git hash-object': Path 'tests/checkout4/archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:29:17.303743899 +00:00
+Command 'git commit': Git Directory 'tests/checkout3/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:29:17.305034645 +00:00
+Command 'git commit': Git Directory 'tests/checkout/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:29:17.309152650 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/archivo.txt, Time: 2023-12-06 01:29:17.304534406 +00:00
+Command 'git hash-object': Path 'tests/checkout4/otro_dir/nuevo_archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:29:17.314013659 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/otro_dir/nuevo_archivo.txt, Time: 2023-12-06 01:29:17.314582027 +00:00
+Command 'git hash-object': Path 'tests/checkout/archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:29:17.320211917 +00:00
+Command 'git commit': Git Directory 'tests/checkout4/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:29:17.320943212 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.322049572 +00:00
+Command 'git add': Add type: single, File: tests/checkout/archivo.txt, Time: 2023-12-06 01:29:17.323196268 +00:00
+Command 'git hash-object': Path 'tests/checkout/otro_dir/nuevo_archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:29:17.324462221 +00:00
+Command 'git add': Add type: single, File: tests/checkout/otro_dir/nuevo_archivo.txt, Time: 2023-12-06 01:29:17.324747322 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.322405636 +00:00
+Command 'git commit': Git Directory 'tests/checkout/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:29:17.330014106 +00:00
+Command 'git checkout': From 'refs/heads/master' to 'new_branch'Create and Checkout 2023-12-06 01:29:17.330508887 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.331027794 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.331469613 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.331845636 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.332086359 +00:00
+Command 'git checkout': From 'refs/heads/new_branch' to 'master'Checkout 2023-12-06 01:29:17.332330499 +00:00
+Command 'git checkout': From 'refs/heads/new_branch' to 'master'Checkout 2023-12-06 01:29:17.332559263 +00:00
+Command 'git commit': Git Directory 'tests/checkout2/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:29:17.315727473 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.336585304 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.335291016 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.337333684 +00:00
+Command 'git checkout': From 'refs/heads/master' to 'new_branch'Create and Checkout 2023-12-06 01:29:17.337637744 +00:00Command 'git commit': Git Directory 'tests/commit/.mgit_test3', Message 'test commit', Git Ignore Path '', 2023-12-06 01:29:17.337856007 +00:00
+
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.338564510 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test3', Message 'test commit 2', Git Ignore Path '', 2023-12-06 01:29:17.341660576 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test1', Message 'test commit', Git Ignore Path '', 2023-12-06 01:29:17.351110827 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test3', Message 'test commit 3', Git Ignore Path '', 2023-12-06 01:29:17.346411203 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test6', Message 'test commit', Git Ignore Path '', 2023-12-06 01:29:17.358707838 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test2', Message 'test commit', Git Ignore Path '', 2023-12-06 01:29:17.355080280 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test2', Message 'test commit 2', Git Ignore Path '', 2023-12-06 01:29:17.363507176 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test_message', Message 'test commit', Git Ignore Path '', 2023-12-06 01:29:17.368916844 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test2', Message 'test commit 3', Git Ignore Path '', 2023-12-06 01:29:17.373328575 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_11/.mgit'2023-12-06 01:29:17.373429540 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_12/.mgit'2023-12-06 01:29:17.372142460 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_13/.mgit'2023-12-06 01:29:17.377720763 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_16/.mgit'2023-12-06 01:29:17.378551690 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_17/.mgit'2023-12-06 01:29:17.378938630 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test', Message 'test commit', Git Ignore Path '', 2023-12-06 01:29:17.380834747 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_14/.mgit'2023-12-06 01:29:17.380023489 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_9/.mgit'2023-12-06 01:29:17.387004629 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_10/.mgit'2023-12-06 01:29:17.387056590 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_1/.mgit'2023-12-06 01:29:17.387655877 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_6/.mgit'2023-12-06 01:29:17.387853265 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_5/.mgit'2023-12-06 01:29:17.388417633 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_7/.mgit'2023-12-06 01:29:17.388698984 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_8/.mgit'2023-12-06 01:29:17.389334773 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_15/.mgit'2023-12-06 01:29:17.390491803 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_4/.mgit'2023-12-06 01:29:17.389897974 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_2/.mgit'2023-12-06 01:29:17.387326982 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_3/.mgit'2023-12-06 01:29:17.390584142 +00:00
+Command 'git hash-object': Path 'tests/hash_object/hash_object_hello.txt', Git Directory 'tests/hash_object', 2023-12-06 01:29:17.392256412 +00:00
+Command 'git hash-object': Path 'tests/hash_object/hash_object_hello.txt', Git Directory 'tests/hash_object', 2023-12-06 01:29:17.392278705 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/a.txt', Git Directory '.mgit', 2023-12-06 01:29:17.394090442 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/recursive/recursive/recursive/a.txt', Git Directory '.mgit', 2023-12-06 01:29:17.395432025 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/recursive/recursive/a.txt', Git Directory '.mgit', 2023-12-06 01:29:17.396868530 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_2805211017/.mgit'2023-12-06 01:29:17.398590637 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/recursive/a.txt', Git Directory '.mgit', 2023-12-06 01:29:17.399219384 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_663756061/.mgit'2023-12-06 01:29:17.400787272 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_1938139934/.mgit'2023-12-06 01:29:17.401169963 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_3019323014/.mgit'2023-12-06 01:29:17.406998615 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_3136289931/.mgit'2023-12-06 01:29:17.410863312 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_8/.mgit'2023-12-06 01:29:17.412748178 +00:00
+Command 'git init': Initialized repository at 'tests/log//.mgit'2023-12-06 01:29:17.413323839 +00:00
+Command 'git hash-object': Path 'tests/log//.mgit/test_file', Git Directory 'tests/log//.mgit', 2023-12-06 01:29:17.416988732 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_6/.mgit'2023-12-06 01:29:17.418141053 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_3/.mgit'2023-12-06 01:29:17.420388234 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_3', Git Directory 'tests/ls_files_repo_3/.mgit', Current Directory 'tests/ls_files_repo_3', Line '["git", "ls-files", "-c"]', 2023-12-06 01:29:17.421412714 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_2/.mgit'2023-12-06 01:29:17.423215784 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_7/.mgit'2023-12-06 01:29:17.428847757 +00:00Command 'git add': Add type: single, File: tests/log//.mgit/test_file, Time: 2023-12-06 01:29:17.429494630 +00:00
+
+Command 'git init': Initialized repository at 'tests/ls_files_repo_5/.mgit'2023-12-06 01:29:17.429714769 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_2', Git Directory 'tests/ls_files_repo_2/.mgit', Current Directory 'tests/ls_files_repo_2', Line '["git", "ls-files"]', 2023-12-06 01:29:17.430939386 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_5', Git Directory 'tests/ls_files_repo_5/.mgit', Current Directory 'tests/ls_files_repo_5', Line '["git", "ls-files", "-m"]', 2023-12-06 01:29:17.433142106 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_4/.mgit'2023-12-06 01:29:17.436638488 +00:00
+Command 'git commit': Git Directory 'tests/log//.mgit', Message 'test commit', Git Ignore Path '', 2023-12-06 01:29:17.438971799 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_1/.mgit'2023-12-06 01:29:17.435468833 +00:00
+Command 'git hash-object': Path 'tests/log//.mgit/test_file2', Git Directory 'tests/log//.mgit', 2023-12-06 01:29:17.440246795 +00:00
+Command 'git add': Add type: single, File: tests/log//.mgit/test_file2, Time: 2023-12-06 01:29:17.441284026 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/objects', Line '["git", "ls-files", "-o"]', 2023-12-06 01:29:17.437711680 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/refs/tags', Line '["git", "ls-files", "-o"]', 2023-12-06 01:29:17.445233186 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/refs/heads', Line '["git", "ls-files", "-o"]', 2023-12-06 01:29:17.445917937 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/refs', Line '["git", "ls-files", "-o"]', 2023-12-06 01:29:17.446530225 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit', Line '["git", "ls-files", "-o"]', 2023-12-06 01:29:17.446994504 +00:00
+Command 'git commit': Git Directory 'tests/log//.mgit', Message 'test commit 2', Git Ignore Path '', 2023-12-06 01:29:17.448797490 +00:00
+Command 'git log': Commit 'None', Git Dir 'tests/log//.mgit', 2023-12-06 01:29:17.449175222 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4', Line '["git", "ls-files", "-o"]', 2023-12-06 01:29:17.447232768 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/objects', Line '["git", "ls-files", "-o"]', 2023-12-06 01:29:17.455754253 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/refs/tags', Line '["git", "ls-files", "-o"]', 2023-12-06 01:29:17.460210029 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/refs/heads', Line '["git", "ls-files", "-o"]', 2023-12-06 01:29:17.460512131 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_1/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:29:17.462504087 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/refs', Line '["git", "ls-files", "-o"]', 2023-12-06 01:29:17.462686599 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_1/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:29:17.466398453 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:29:17.469363636 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit', Line '["git", "ls-files", "-o"]', 2023-12-06 01:29:17.467769538 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_1/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:29:17.471099535 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:29:17.472727386 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/2.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:29:17.477299794 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/2.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:29:17.479427133 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/hello.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:29:17.479500763 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/hello.c, Time: 2023-12-06 01:29:17.479793406 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/2.c, Time: 2023-12-06 01:29:17.479751445 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/2.c, Time: 2023-12-06 01:29:17.484407858 +00:00Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/1.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:29:17.482662750 +00:00
+
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:29:17.481589559 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/1.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:29:17.489565593 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/1.c, Time: 2023-12-06 01:29:17.489725687 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/main.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:29:17.489598637 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/main.c, Time: 2023-12-06 01:29:17.492805002 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:29:17.492566737 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/1.c, Time: 2023-12-06 01:29:17.490152880 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:29:17.495543463 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/3.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:29:17.500255504 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/3.c, Time: 2023-12-06 01:29:17.501012926 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:29:17.503769221 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/bye.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:29:17.511241517 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/bye.c, Time: 2023-12-06 01:29:17.512134030 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:29:17.513672625 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:29:17.513595495 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/3.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:29:17.515443318 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:29:17.517888469 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/4.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:29:17.515708751 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/3.c, Time: 2023-12-06 01:29:17.518041354 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/4.c, Time: 2023-12-06 01:29:17.522970492 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/main.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:29:17.523895382 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:29:17.525109915 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/4.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:29:17.527167584 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/main.c, Time: 2023-12-06 01:29:17.525962635 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/4.c, Time: 2023-12-06 01:29:17.528402661 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/main.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:29:17.528132727 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:29:17.531455183 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/2.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:29:17.535325214 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/2.c, Time: 2023-12-06 01:29:17.536208226 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/1.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:29:17.537262458 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/main.c, Time: 2023-12-06 01:29:17.534015008 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:29:17.533891125 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:29:17.539593769 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/1.c, Time: 2023-12-06 01:29:17.539589352 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:29:17.545174406 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/3.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:29:17.541083986 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/2.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:29:17.542670584 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/2.c, Time: 2023-12-06 01:29:17.546542699 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/hello.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:29:17.547191114 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/1.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:29:17.547928076 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/hello.c, Time: 2023-12-06 01:29:17.548107795 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/1.c, Time: 2023-12-06 01:29:17.548340393 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.549643432 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/3.c, Time: 2023-12-06 01:29:17.552261510 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/5.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:29:17.549580178 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:29:17.553616928 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/5.c, Time: 2023-12-06 01:29:17.553857692 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/4.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:29:17.553876777 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/bye.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:29:17.554952552 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.556660074 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/4.c, Time: 2023-12-06 01:29:17.558061577 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/5.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:29:17.559302654 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.558212462 +00:00
+Command 'git merge': Our Branch 'main', Their Branch 'branch', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Root Directory '', 2023-12-06 01:29:17.559818519 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/5.c, Time: 2023-12-06 01:29:17.559740639 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/bye.c, Time: 2023-12-06 01:29:17.560062618 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:29:17.560771203 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:29:17.565821307 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:29:17.565458576 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/pizza.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:29:17.567557331 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.571012503 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/pizza.c, Time: 2023-12-06 01:29:17.570166200 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_9/.mgit'2023-12-06 01:29:17.570846284 +00:00Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.577978267 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:29:17.582115022 +00:00
+
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.577813048 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.585011243 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.585517524 +00:00
+Command 'git remote': Subcommand '["get-url"]', 2023-12-06 01:29:17.587587902 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.588249652 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.587083538 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.591397054 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_10/.mgit'2023-12-06 01:29:17.596765303 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.596897853 +00:00
+Command 'git merge': Our Branch 'main', Their Branch 'branch', Git Directory 'tests/merge/test_conflict_merge/.mgit', Root Directory '', 2023-12-06 01:29:17.613022433 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.613528422 +00:00
+Command 'git remote': Subcommand '["get-url", "remote", "extra_arg"]', 2023-12-06 01:29:17.607893533 +00:00
+Command 'git merge': Our Branch 'main', Their Branch 'branch', Git Directory 'tests/merge/test_true_merge/.mgit', Root Directory '', 2023-12-06 01:29:17.621948485 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_2/.mgit'2023-12-06 01:29:17.625420241 +00:00Command 'git init': Initialized repository at 'tests/remote_fake_repo_3/.mgit'2023-12-06 01:29:17.625796514 +00:00
+
+Command 'git remote': Subcommand '["add"]', 2023-12-06 01:29:17.643338682 +00:00Command 'git init': Initialized repository at 'tests/remote_fake_repo_5/.mgit'2023-12-06 01:29:17.643581988 +00:00
+Command 'git remote': Subcommand '["remove", "remote_name", "something else"]', 2023-12-06 01:29:17.644327993 +00:00
+
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_6/.mgit'2023-12-06 01:29:17.645873047 +00:00
+Command 'git remote': Subcommand '["remove"]', 2023-12-06 01:29:17.651731492 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_12/.mgit'2023-12-06 01:29:17.652747097 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_7/.mgit'2023-12-06 01:29:17.654118640 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_8/.mgit'2023-12-06 01:29:17.655094492 +00:00Command 'git remote': Subcommand '["set-url"]', 2023-12-06 01:29:17.655306713 +00:00
+
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_1/.mgit'2023-12-06 01:29:17.656680173 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_11/.mgit'2023-12-06 01:29:17.657420302 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_4/.mgit'2023-12-06 01:29:17.658617293 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:29:17.659056070 +00:00
+Command 'git remote': Subcommand '["rename"]', 2023-12-06 01:29:17.659316503 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_13/.mgit'2023-12-06 01:29:17.661651897 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:29:17.662507158 +00:00
+Command 'git remote': Subcommand '["remove", "new_remote"]', 2023-12-06 01:29:17.663124738 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_14/.mgit'2023-12-06 01:29:17.664191304 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:29:17.664509115 +00:00
+Command 'git remote': Subcommand '["rename", "new_remote", "remote"]', 2023-12-06 01:29:17.665074234 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.665405129 +00:00
+Command 'git remote': Subcommand '["something"]', 2023-12-06 01:29:17.659498681 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.665894326 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_15/.mgit'2023-12-06 01:29:17.666240347 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:29:17.667055648 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.666770088 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:29:17.668638329 +00:00
+Command 'git checkout': From 'refs/heads/test' to 'test'Checkout 2023-12-06 01:29:17.668995643 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/a.txt', Git Directory '.mgit', 2023-12-06 01:29:17.669076189 +00:00
+Command 'git hash-object': Path 'a.txt', Git Directory '.mgit', 2023-12-06 01:29:17.668097546 +00:00
+Command 'git remote': Subcommand '["set-url", "new_remote", "new_url"]', 2023-12-06 01:29:17.669591555 +00:00
+Command 'git rm': File 'a.txt', 2023-12-06 01:29:17.669843987 +00:00
+Command 'git rm': File 'archivo_no_en_indice.txt', 2023-12-06 01:29:17.670517862 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_1/.mgit'2023-12-06 01:29:17.673357662 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_8/.mgit'2023-12-06 01:29:17.673564425 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_7/.mgit'2023-12-06 01:29:17.675177525 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_4/.mgit'2023-12-06 01:29:17.675666638 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_5/.mgit'2023-12-06 01:29:17.676097040 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_6/.mgit'2023-12-06 01:29:17.678031243 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_3/.mgit'2023-12-06 01:29:17.677707348 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_2/.mgit'2023-12-06 01:29:17.680743369 +00:00
+Command 'git init': Initialized repository at 'tests/status_repo_/.mgit'2023-12-06 01:29:17.681743056 +00:00
+Command 'git init': Initialized repository at 'tests/status_fake_repo/.mgit'2023-12-06 01:29:17.682073368 +00:00
+Command 'git status': 2023-12-06 01:29:17.682505603 +00:00
+Untracked files 0
+Command 'git init': Initialized repository at 'tests/status_repo_2/.mgit'2023-12-06 01:29:17.679930277 +00:00
+Command 'git init': Initialized repository at 'tests/status_feik_repo/.mgit'2023-12-06 01:29:17.680268840 +00:00
+Command 'git status': 2023-12-06 01:29:17.684113911 +00:00
+Unstaged files 0
+Command 'git status': 2023-12-06 01:29:17.684790702 +00:00
+Unstaged files 0
+Command 'git status': 2023-12-06 01:29:17.690556767 +00:00
+Unstaged files 0
+Command 'git commit': Git Directory 'tests/status_feik_repo/.mgit', Message 'message', Git Ignore Path 'tests/status_feik_repo/.mgitignore', 2023-12-06 01:29:17.690600270 +00:00
+Command 'git status': 2023-12-06 01:29:17.693290186 +00:00
+Unstaged files 0
+Command 'git status': 2023-12-06 01:29:17.693977645 +00:00
+Untracked files 0
+Command 'git status': 2023-12-06 01:29:17.701086126 +00:00
+Unstaged files 1Command 'git commit': Git Directory 'tests/status_fake_repo/.mgit', Message 'message', Git Ignore Path 'tests/status_fake_repo/.mgitignore', 2023-12-06 01:29:17.701098085 +00:00
+
+Command 'git status': 2023-12-06 01:29:17.701821255 +00:00
+Unstaged files 0
+Command 'git status': 2023-12-06 01:29:17.702452252 +00:00
+Untracked files 1
+Command 'git init': Initialized repository at 'tests/status_repo/.mgit'2023-12-06 01:29:17.702074229 +00:00
+Command 'git status': 2023-12-06 01:29:17.704281449 +00:00
+Unstaged files 1
+Command 'git status': 2023-12-06 01:29:17.703120835 +00:00
+Untracked files 0
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_12/.mgit'2023-12-06 01:29:17.707864379 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_13/.mgit'2023-12-06 01:29:17.708894026 +00:00
+Command 'git status': 2023-12-06 01:29:17.707757497 +00:00
+Unstaged files 1
+Command 'git status': 2023-12-06 01:29:17.713415222 +00:00
+Untracked files 0Command 'git commit': Git Directory 'tests/tag_fake_repo_12/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_12/.mgitignore', 2023-12-06 01:29:17.714109265 +00:00
+
+Command 'git status': 2023-12-06 01:29:17.718984816 +00:00
+Unstaged files 1
+Command 'git status': 2023-12-06 01:29:17.719425510 +00:00
+Untracked files 0
+Command 'git commit': Git Directory 'tests/tag_fake_repo_13/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_13/.mgitignore', 2023-12-06 01:29:17.722652126 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_14/.mgit'2023-12-06 01:29:17.719848994 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_02/.mgit'2023-12-06 01:29:17.726497905 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_14/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_14/.mgitignore', 2023-12-06 01:29:17.736645991 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_04/.mgit'2023-12-06 01:29:17.730046708 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_02/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_02/.mgitignore', 2023-12-06 01:29:17.739375868 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_03/.mgit'2023-12-06 01:29:17.735252447 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_05/.mgit'2023-12-06 01:29:17.747167100 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_01/.mgit'2023-12-06 01:29:17.748918125 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_01/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_01/.mgitignore', 2023-12-06 01:29:17.753649584 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_09/.mgit'2023-12-06 01:29:17.755215681 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_03/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_03/.mgitignore', 2023-12-06 01:29:17.760987704 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_04/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_04/.mgitignore', 2023-12-06 01:29:17.744592482 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_09/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_09/.mgitignore', 2023-12-06 01:29:17.759499362 +00:00Command 'git commit': Git Directory 'tests/tag_fake_repo_05/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_05/.mgitignore', 2023-12-06 01:29:17.772240024 +00:00
+
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_08/.mgit'2023-12-06 01:29:17.775107368 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_07/.mgit'2023-12-06 01:29:17.777287586 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_08/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_08/.mgitignore', 2023-12-06 01:29:17.899768657 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_07/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_07/.mgitignore', 2023-12-06 01:29:17.896293068 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_06/.mgit'2023-12-06 01:29:17.891556025 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_11/.mgit'2023-12-06 01:29:17.900695881 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_06/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_06/.mgitignore', 2023-12-06 01:29:17.911720688 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_10/.mgit'2023-12-06 01:29:17.915944491 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_11/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_11/.mgitignore', 2023-12-06 01:29:17.942641099 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents2', Message 'Mensaje', Git Ignore Path '', 2023-12-06 01:29:17.991066592 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_10/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_10/.mgitignore', 2023-12-06 01:29:18.004232865 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents3', Message 'Mensaje', Git Ignore Path '', 2023-12-06 01:29:18.005599824 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents3', Message 'Aaaa', Git Ignore Path '', 2023-12-06 01:29:18.092768994 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents3', Message 'Holaaa', Git Ignore Path '', 2023-12-06 01:29:18.121845372 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/a.txt', Git Directory '.mgit', 2023-12-06 01:29:19.162534819 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/b.txt', Git Directory '.mgit', 2023-12-06 01:29:19.162183839 +00:00
+Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/b.txt, Time: 2023-12-06 01:29:19.163788896 +00:00
+Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/a.txt, Time: 2023-12-06 01:29:19.164117791 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/b.txt', Git Directory '.mgit', 2023-12-06 01:29:19.165342033 +00:00
+Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/b.txt, Time: 2023-12-06 01:29:19.166395806 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/d.txt', Git Directory '.mgit', 2023-12-06 01:29:19.174131158 +00:00
+Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/d.txt, Time: 2023-12-06 01:29:19.175931894 +00:00
+Command 'git rm': File 'tests/add/dir_to_add/non_empty/d.txt', 2023-12-06 01:29:19.176592434 +00:00
+Command 'git rm': File 'file.txt', 2023-12-06 01:29:28.525619910 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_4/.mgit'2023-12-06 01:32:10.316255069 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_create_repo_/.mgit'2023-12-06 01:32:10.320310421 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_create_repo_0/.mgit'2023-12-06 01:32:10.319229955 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_3/.mgit'2023-12-06 01:32:10.320853904 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_5/.mgit'2023-12-06 01:32:10.335924260 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_delete_repo/.mgit'2023-12-06 01:32:10.338542964 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_delete_repo_2/.mgit'2023-12-06 01:32:10.338892605 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches/.mgit'2023-12-06 01:32:10.339723893 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo_4/.mgit'2023-12-06 01:32:10.340448634 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo/.mgit'2023-12-06 01:32:10.341328508 +00:00
+Command 'git init': Initialized repository at 'tests/test_list_branches_2/.mgit'2023-12-06 01:32:10.341036161 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_delete_repo_3/.mgit'2023-12-06 01:32:10.343035502 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo_3/.mgit'2023-12-06 01:32:10.344574906 +00:00
+Command 'git init': Initialized repository at 'tests/branch_test_modify_repo_2/.mgit'2023-12-06 01:32:10.346972807 +00:00Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_4/.mgitignore', Option 'check-ignore', 2023-12-06 01:32:10.347160399 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_1/.mgitignore', Option 'check-ignore', 2023-12-06 01:32:10.350618058 +00:00
+
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_5/.mgitignore', Option 'check-ignore', 2023-12-06 01:32:10.352352387 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_2/.mgitignore', Option 'check-ignore', 2023-12-06 01:32:10.352649734 +00:00
+Command 'git check-ignore': Name of Ignorer '.mgitignore', Git Ignore Path 'tests/check_ignore_fake_repo_3/.mgitignore', Option 'check-ignore', 2023-12-06 01:32:10.353553692 +00:00
+Command 'git hash-object': Path 'tests/checkout4/archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:32:10.357415285 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/archivo.txt, Time: 2023-12-06 01:32:10.361175540 +00:00
+Command 'git hash-object': Path 'tests/checkout2/archivo.txt', Git Directory 'tests/checkout2/.mgit', 2023-12-06 01:32:10.361288879 +00:00
+Command 'git hash-object': Path 'tests/checkout4/otro_archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:32:10.364321809 +00:00
+Command 'git add': Add type: single, File: tests/checkout2/archivo.txt, Time: 2023-12-06 01:32:10.365292354 +00:00
+Command 'git hash-object': Path 'tests/checkout3/archivo.txt', Git Directory 'tests/checkout3/.mgit', 2023-12-06 01:32:10.366608497 +00:00
+Command 'git add': Add type: single, File: tests/checkout3/archivo.txt, Time: 2023-12-06 01:32:10.368114858 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/otro_archivo.txt, Time: 2023-12-06 01:32:10.365195974 +00:00
+Command 'git hash-object': Path 'tests/checkout3/otro_archivo.txt', Git Directory 'tests/checkout3/.mgit', 2023-12-06 01:32:10.370402421 +00:00
+Command 'git hash-object': Path 'tests/checkout2/otro_archivo.txt', Git Directory 'tests/checkout2/.mgit', 2023-12-06 01:32:10.375116011 +00:00
+Command 'git commit': Git Directory 'tests/checkout4/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:32:10.379593216 +00:00
+Command 'git add': Add type: single, File: tests/checkout3/otro_archivo.txt, Time: 2023-12-06 01:32:10.383206923 +00:00
+Command 'git hash-object': Path 'tests/checkout/archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:32:10.385064967 +00:00
+Command 'git commit': Git Directory 'tests/checkout3/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:32:10.389472043 +00:00
+Command 'git add': Add type: single, File: tests/checkout/archivo.txt, Time: 2023-12-06 01:32:10.392519391 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.399596131 +00:00
+Command 'git hash-object': Path 'tests/checkout/otro_archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:32:10.400897482 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.401375629 +00:00
+Command 'git add': Add type: single, File: tests/checkout/otro_archivo.txt, Time: 2023-12-06 01:32:10.401523844 +00:00
+Command 'git add': Add type: single, File: tests/checkout2/otro_archivo.txt, Time: 2023-12-06 01:32:10.404509814 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.405882335 +00:00
+Command 'git commit': Git Directory 'tests/checkout2/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:32:10.412208625 +00:00
+Command 'git checkout': From 'refs/heads/master' to 'new_branch'Create and Checkout 2023-12-06 01:32:10.408215609 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.413740612 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.413930870 +00:00
+Command 'git checkout': From 'refs/heads/master' to 'new_branch'Create and Checkout 2023-12-06 01:32:10.414543982 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.415087382 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.406762167 +00:00
+Command 'git commit': Git Directory 'tests/checkout/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:32:10.409086732 +00:00
+Command 'git checkout': From 'refs/heads/master' to 'new_branch'Create and Checkout 2023-12-06 01:32:10.420565965 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test3', Message 'test commit', Git Ignore Path '', 2023-12-06 01:32:10.424748365 +00:00
+Command 'git hash-object': Path 'tests/checkout/archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:32:10.423542185 +00:00
+Command 'git add': Add type: single, File: tests/checkout/archivo.txt, Time: 2023-12-06 01:32:10.425877125 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.420401958 +00:00Command 'git hash-object': Path 'tests/checkout4/archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:32:10.426654327 +00:00
+
+Command 'git add': Add type: single, File: tests/checkout4/archivo.txt, Time: 2023-12-06 01:32:10.426896338 +00:00
+Command 'git hash-object': Path 'tests/checkout4/otro_dir/nuevo_archivo.txt', Git Directory 'tests/checkout4/.mgit', 2023-12-06 01:32:10.428214315 +00:00
+Command 'git checkout': From 'refs/heads/new_branch' to 'master'Checkout 2023-12-06 01:32:10.428364364 +00:00
+Command 'git add': Add type: single, File: tests/checkout4/otro_dir/nuevo_archivo.txt, Time: 2023-12-06 01:32:10.428848303 +00:00
+Command 'git hash-object': Path 'tests/checkout/otro_dir/nuevo_archivo.txt', Git Directory 'tests/checkout/.mgit', 2023-12-06 01:32:10.430144320 +00:00
+Command 'git add': Add type: single, File: tests/checkout/otro_dir/nuevo_archivo.txt, Time: 2023-12-06 01:32:10.436959299 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test2', Message 'test commit', Git Ignore Path '', 2023-12-06 01:32:10.435566152 +00:00
+Command 'git commit': Git Directory 'tests/checkout4/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:32:10.437584911 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test3', Message 'test commit 2', Git Ignore Path '', 2023-12-06 01:32:10.444630191 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test2', Message 'test commit 2', Git Ignore Path '', 2023-12-06 01:32:10.443468430 +00:00
+Command 'git commit': Git Directory 'tests/checkout/.mgit', Message 'Hola', Git Ignore Path '', 2023-12-06 01:32:10.443371259 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.447685748 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test2', Message 'test commit 3', Git Ignore Path '', 2023-12-06 01:32:10.452549095 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.452610640 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.452874610 +00:00
+Command 'git checkout': From 'refs/heads/new_branch' to 'master'Checkout 2023-12-06 01:32:10.454198837 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test3', Message 'test commit 3', Git Ignore Path '', 2023-12-06 01:32:10.456480192 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.463876447 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test1', Message 'test commit', Git Ignore Path '', 2023-12-06 01:32:10.472582512 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test6', Message 'test commit', Git Ignore Path '', 2023-12-06 01:32:10.475043707 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test_message', Message 'test commit', Git Ignore Path '', 2023-12-06 01:32:10.478124140 +00:00
+Command 'git commit': Git Directory 'tests/commit/.mgit_test', Message 'test commit', Git Ignore Path '', 2023-12-06 01:32:10.482487673 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_16/.mgit'2023-12-06 01:32:10.485053415 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_11/.mgit'2023-12-06 01:32:10.485097834 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_12/.mgit'2023-12-06 01:32:10.485521728 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_13/.mgit'2023-12-06 01:32:10.485343345 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_17/.mgit'2023-12-06 01:32:10.487409690 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_3/.mgit'2023-12-06 01:32:10.487488152 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_14/.mgit'2023-12-06 01:32:10.487743705 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_10/.mgit'2023-12-06 01:32:10.489592581 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_2/.mgit'2023-12-06 01:32:10.494780569 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_1/.mgit'2023-12-06 01:32:10.495754905 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_5/.mgit'2023-12-06 01:32:10.496645904 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_6/.mgit'2023-12-06 01:32:10.497707786 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_9/.mgit'2023-12-06 01:32:10.489875011 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_7/.mgit'2023-12-06 01:32:10.502432794 +00:00Command 'git init': Initialized repository at 'tests/config_fake_repo_4/.mgit'2023-12-06 01:32:10.503064281 +00:00
+
+Command 'git init': Initialized repository at 'tests/config_fake_repo_8/.mgit'2023-12-06 01:32:10.502750141 +00:00
+Command 'git init': Initialized repository at 'tests/config_fake_repo_15/.mgit'2023-12-06 01:32:10.503767396 +00:00
+Command 'git hash-object': Path 'tests/hash_object/hash_object_hello.txt', Git Directory 'tests/hash_object', 2023-12-06 01:32:10.507888502 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/a.txt', Git Directory '.mgit', 2023-12-06 01:32:10.512185990 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/recursive/recursive/recursive/a.txt', Git Directory '.mgit', 2023-12-06 01:32:10.515721610 +00:00
+Command 'git hash-object': Path 'tests/hash_object/hash_object_hello.txt', Git Directory 'tests/hash_object', 2023-12-06 01:32:10.509138184 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_1799711792/.mgit'2023-12-06 01:32:10.517126132 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/recursive/recursive/a.txt', Git Directory '.mgit', 2023-12-06 01:32:10.517451356 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_2684980841/.mgit'2023-12-06 01:32:10.518427359 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/recursive/a.txt', Git Directory '.mgit', 2023-12-06 01:32:10.519306857 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_121197780/.mgit'2023-12-06 01:32:10.520532913 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_1546864455/.mgit'2023-12-06 01:32:10.522521088 +00:00
+Command 'git init': Initialized repository at '/tmp/git_init_test_3268235821/.mgit'2023-12-06 01:32:10.522522629 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_7/.mgit'2023-12-06 01:32:10.524485844 +00:00
+Command 'git init': Initialized repository at 'tests/log//.mgit'2023-12-06 01:32:10.526082709 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_8/.mgit'2023-12-06 01:32:10.526358596 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/objects', Line '["git", "ls-files", "-o"]', 2023-12-06 01:32:10.527148966 +00:00
+Command 'git hash-object': Path 'tests/log//.mgit/test_file', Git Directory 'tests/log//.mgit', 2023-12-06 01:32:10.527792870 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_6/.mgit'2023-12-06 01:32:10.527358809 +00:00
+Command 'git add': Add type: single, File: tests/log//.mgit/test_file, Time: 2023-12-06 01:32:10.530042057 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_3/.mgit'2023-12-06 01:32:10.543711432 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/refs/tags', Line '["git", "ls-files", "-o"]', 2023-12-06 01:32:10.543192825 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_3', Git Directory 'tests/ls_files_repo_3/.mgit', Current Directory 'tests/ls_files_repo_3', Line '["git", "ls-files", "-c"]', 2023-12-06 01:32:10.546727778 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_2/.mgit'2023-12-06 01:32:10.546983790 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/refs/heads', Line '["git", "ls-files", "-o"]', 2023-12-06 01:32:10.547409184 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit/refs', Line '["git", "ls-files", "-o"]', 2023-12-06 01:32:10.547659321 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_7', Git Directory 'tests/ls_files_repo_7/.mgit', Current Directory 'tests/ls_files_repo_7/.mgit', Line '["git", "ls-files", "-o"]', 2023-12-06 01:32:10.547935417 +00:00
+Command 'git commit': Git Directory 'tests/log//.mgit', Message 'test commit', Git Ignore Path '', 2023-12-06 01:32:10.549313396 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_2', Git Directory 'tests/ls_files_repo_2/.mgit', Current Directory 'tests/ls_files_repo_2', Line '["git", "ls-files"]', 2023-12-06 01:32:10.550885718 +00:00
+Command 'git hash-object': Path 'tests/log//.mgit/test_file2', Git Directory 'tests/log//.mgit', 2023-12-06 01:32:10.553402667 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_4/.mgit'2023-12-06 01:32:10.554037529 +00:00
+Command 'git add': Add type: single, File: tests/log//.mgit/test_file2, Time: 2023-12-06 01:32:10.555270044 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_1/.mgit'2023-12-06 01:32:10.554519260 +00:00
+Command 'git init': Initialized repository at 'tests/ls_files_repo_5/.mgit'2023-12-06 01:32:10.556593896 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/objects', Line '["git", "ls-files", "-o"]', 2023-12-06 01:32:10.555539931 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_5', Git Directory 'tests/ls_files_repo_5/.mgit', Current Directory 'tests/ls_files_repo_5', Line '["git", "ls-files", "-m"]', 2023-12-06 01:32:10.557058626 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/refs/tags', Line '["git", "ls-files", "-o"]', 2023-12-06 01:32:10.557097919 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/refs/heads', Line '["git", "ls-files", "-o"]', 2023-12-06 01:32:10.557447935 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit/refs', Line '["git", "ls-files", "-o"]', 2023-12-06 01:32:10.557858746 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4/.mgit', Line '["git", "ls-files", "-o"]', 2023-12-06 01:32:10.558541319 +00:00
+Command 'git ls-files': Working Directory 'tests/ls_files_repo_4', Git Directory 'tests/ls_files_repo_4/.mgit', Current Directory 'tests/ls_files_repo_4', Line '["git", "ls-files", "-o"]', 2023-12-06 01:32:10.558717910 +00:00
+Command 'git commit': Git Directory 'tests/log//.mgit', Message 'test commit 2', Git Ignore Path '', 2023-12-06 01:32:10.565284544 +00:00
+Command 'git log': Commit 'None', Git Dir 'tests/log//.mgit', 2023-12-06 01:32:10.565708021 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/hello.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:32:10.567282052 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/2.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:32:10.568712075 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/hello.c, Time: 2023-12-06 01:32:10.568944919 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:32:10.564654806 +00:00Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_1/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:32:10.570097597 +00:00
+
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/main.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:32:10.570246104 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/2.c, Time: 2023-12-06 01:32:10.570452030 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/main.c, Time: 2023-12-06 01:32:10.571087767 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/1.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:32:10.572573960 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_1/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:32:10.574079529 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:32:10.577758406 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/1.c, Time: 2023-12-06 01:32:10.578109089 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:32:10.577990833 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_1/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:32:10.580691623 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:32:10.581213022 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_common_ancestor_2/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:32:10.584979528 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/2.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:32:10.588339432 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:32:10.588112963 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/3.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:32:10.592498247 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/2.c, Time: 2023-12-06 01:32:10.592617502 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/bye.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:32:10.592528498 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/3.c, Time: 2023-12-06 01:32:10.592949226 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/1.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:32:10.593949605 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/bye.c, Time: 2023-12-06 01:32:10.592930558 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/1.c, Time: 2023-12-06 01:32:10.594991152 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/main.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:32:10.597833282 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/main.c, Time: 2023-12-06 01:32:10.597991790 +00:00Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:32:10.598756408 +00:00
+
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/4.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:32:10.599820332 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:32:10.600654245 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/3.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:32:10.602032891 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/3.c, Time: 2023-12-06 01:32:10.602486037 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Initial commit', Git Ignore Path '', 2023-12-06 01:32:10.605285332 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/4.c, Time: 2023-12-06 01:32:10.604141238 +00:00Command 'git commit': Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:32:10.609966296 +00:00
+
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/hello.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:32:10.607288298 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:32:10.610944799 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/hello.c, Time: 2023-12-06 01:32:10.611118682 +00:00
+Command 'git hash-object': Path 'tests/merge/test_fast_forward_merge/src/main.c', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', 2023-12-06 01:32:10.612083559 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/4.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:32:10.613099022 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/4.c, Time: 2023-12-06 01:32:10.614501378 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:32:10.616095076 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:32:10.621147849 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/2.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:32:10.622380197 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Second commit', Git Ignore Path '', 2023-12-06 01:32:10.621624662 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_fast_forward_merge/src/main.c, Time: 2023-12-06 01:32:10.632867218 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/2.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:32:10.634797473 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/bye.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:32:10.636846442 +00:00Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/2.c, Time: 2023-12-06 01:32:10.637073411 +00:00
+
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/2.c, Time: 2023-12-06 01:32:10.636982740 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/1.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:32:10.639235510 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/1.c, Time: 2023-12-06 01:32:10.639461103 +00:00
+Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/bye.c, Time: 2023-12-06 01:32:10.639337848 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:32:10.643518039 +00:00
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Third commit', Git Ignore Path '', 2023-12-06 01:32:10.645075568 +00:00
+Command 'git hash-object': Path 'tests/merge/test_true_merge/src/5.c', Git Directory 'tests/merge/test_true_merge/.mgit', 2023-12-06 01:32:10.645815352 +00:00Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/1.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:32:10.638085874 +00:00
+
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/1.c, Time: 2023-12-06 01:32:10.646574304 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_true_merge/src/5.c, Time: 2023-12-06 01:32:10.646705726 +00:00
+Command 'git hash-object': Path 'tests/rebase_tests/test1/src/pizza.c', Git Directory 'tests/rebase_tests/test1/.mgit', 2023-12-06 01:32:10.647481220 +00:00
+Command 'git commit': Git Directory 'tests/merge/test_true_merge/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:32:10.653292528 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/3.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:32:10.654191610 +00:00Command 'git add': Add type: single, File: tests/rebase_tests/test1/src/pizza.c, Time: 2023-12-06 01:32:10.656308082 +00:00
+
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/3.c, Time: 2023-12-06 01:32:10.658808447 +00:00Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.660867207 +00:00
+
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.661159304 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.662723126 +00:00Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/4.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:32:10.662528367 +00:00
+
+Command 'git commit': Git Directory 'tests/rebase_tests/test1/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:32:10.664402411 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/4.c, Time: 2023-12-06 01:32:10.663075058 +00:00Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.663177813 +00:00
+
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.659966833 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.671283226 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.669913330 +00:00
+Command 'git hash-object': Path 'tests/merge/test_conflict_merge/src/5.c', Git Directory 'tests/merge/test_conflict_merge/.mgit', 2023-12-06 01:32:10.672014384 +00:00
+Command 'git add': Add type: single, File: tests/merge/test_conflict_merge/src/5.c, Time: 2023-12-06 01:32:10.672559784 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.675234323 +00:00
+Command 'git merge': Our Branch 'main', Their Branch 'branch', Git Directory 'tests/merge/test_true_merge/.mgit', Root Directory '', 2023-12-06 01:32:10.678862781 +00:00Command 'git merge': Our Branch 'main', Their Branch 'branch', Git Directory 'tests/merge/test_fast_forward_merge/.mgit', Root Directory '', 2023-12-06 01:32:10.678889865 +00:00
+
+Command 'git commit': Git Directory 'tests/merge/test_conflict_merge/.mgit', Message 'Fourth commit', Git Ignore Path '', 2023-12-06 01:32:10.679765780 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_9/.mgit'2023-12-06 01:32:10.682195641 +00:00
+Command 'git remote': Subcommand '["get-url"]', 2023-12-06 01:32:10.682880714 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.690705156 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.690879247 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.691106049 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.691316475 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.691485858 +00:00
+Command 'git merge': Our Branch 'main', Their Branch 'branch', Git Directory 'tests/merge/test_conflict_merge/.mgit', Root Directory '', 2023-12-06 01:32:10.697921569 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_3/.mgit'2023-12-06 01:32:10.702593783 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_6/.mgit'2023-12-06 01:32:10.704422950 +00:00
+Command 'git remote': Subcommand '["remove"]', 2023-12-06 01:32:10.705273530 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_2/.mgit'2023-12-06 01:32:10.710933164 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_10/.mgit'2023-12-06 01:32:10.714801175 +00:00
+Command 'git remote': Subcommand '["get-url", "remote", "extra_arg"]', 2023-12-06 01:32:10.715629962 +00:00
+Command 'git remote': Subcommand '["add"]', 2023-12-06 01:32:10.717982695 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_5/.mgit'2023-12-06 01:32:10.723772752 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_11/.mgit'2023-12-06 01:32:10.723789002 +00:00
+Command 'git remote': Subcommand '["rename"]', 2023-12-06 01:32:10.724198938 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.725332906 +00:00
+Command 'git remote': Subcommand '["remove", "remote_name", "something else"]', 2023-12-06 01:32:10.725650254 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_12/.mgit'2023-12-06 01:32:10.725619253 +00:00Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.726486501 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_7/.mgit'2023-12-06 01:32:10.726945522 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_8/.mgit'2023-12-06 01:32:10.727501631 +00:00
+
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.728012571 +00:00
+Command 'git remote': Subcommand '["set-url"]', 2023-12-06 01:32:10.728427798 +00:00
+Command 'git cat-file': Hash 'hash_here', Git Dir 'git_dir_here', 2023-12-06 01:32:10.728559679 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_1/.mgit'2023-12-06 01:32:10.731351682 +00:00
+Command 'git remote': Subcommand '["something"]', 2023-12-06 01:32:10.731577942 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_4/.mgit'2023-12-06 01:32:10.734664917 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:32:10.734923762 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_13/.mgit'2023-12-06 01:32:10.742932545 +00:00
+Command 'git checkout': From 'refs/heads/test' to 'test'Checkout 2023-12-06 01:32:10.729953534 +00:00Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:32:10.744052388 +00:00
+Command 'git remote': Subcommand '["remove", "new_remote"]', 2023-12-06 01:32:10.744503783 +00:00
+
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_15/.mgit'2023-12-06 01:32:10.748042945 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/a.txt', Git Directory '.mgit', 2023-12-06 01:32:10.750112998 +00:00
+Command 'git init': Initialized repository at 'tests/remote_fake_repo_14/.mgit'2023-12-06 01:32:10.744939053 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:32:10.753414399 +00:00
+Command 'git remote': Subcommand '["rename", "new_remote", "remote"]', 2023-12-06 01:32:10.754638622 +00:00
+Command 'git remote': Subcommand '["add", "new_remote", "url"]', 2023-12-06 01:32:10.755364238 +00:00
+Command 'git rm': File 'archivo_no_en_indice.txt', 2023-12-06 01:32:10.755946765 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_8/.mgit'2023-12-06 01:32:10.757878437 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_1/.mgit'2023-12-06 01:32:10.759157745 +00:00
+Command 'git remote': Subcommand '["set-url", "new_remote", "new_url"]', 2023-12-06 01:32:10.756394619 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_7/.mgit'2023-12-06 01:32:10.764400193 +00:00
+Command 'git hash-object': Path 'a.txt', Git Directory '.mgit', 2023-12-06 01:32:10.756398369 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_5/.mgit'2023-12-06 01:32:10.767862477 +00:00
+Command 'git rm': File 'a.txt', 2023-12-06 01:32:10.766448370 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_4/.mgit'2023-12-06 01:32:10.770761651 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_2/.mgit'2023-12-06 01:32:10.772069502 +00:00
+Command 'git init': Initialized repository at 'tests/status_repo_2/.mgit'2023-12-06 01:32:10.772824704 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_6/.mgit'2023-12-06 01:32:10.774049760 +00:00
+Command 'git init': Initialized repository at 'tests/show_ref_fake_repo_3/.mgit'2023-12-06 01:32:10.775632082 +00:00
+Command 'git status': 2023-12-06 01:32:10.774969760 +00:00
+Unstaged files 0
+Command 'git status': 2023-12-06 01:32:10.782926791 +00:00
+Unstaged files 0
+Command 'git status': 2023-12-06 01:32:10.783229346 +00:00
+Unstaged files 0
+Command 'git init': Initialized repository at 'tests/status_feik_repo/.mgit'2023-12-06 01:32:10.784535656 +00:00
+Command 'git init': Initialized repository at 'tests/status_repo_/.mgit'2023-12-06 01:32:10.786712922 +00:00
+Command 'git init': Initialized repository at 'tests/status_fake_repo/.mgit'2023-12-06 01:32:10.787895060 +00:00
+Command 'git init': Initialized repository at 'tests/status_repo/.mgit'2023-12-06 01:32:10.787485208 +00:00Command 'git status': 2023-12-06 01:32:10.793291640 +00:00
+Untracked files 0
+Command 'git commit': Git Directory 'tests/status_fake_repo/.mgit', Message 'message', Git Ignore Path 'tests/status_fake_repo/.mgitignore', 2023-12-06 01:32:10.792990084 +00:00
+Command 'git status': 2023-12-06 01:32:10.793398186 +00:00
+Untracked files 0
+Command 'git status': 2023-12-06 01:32:10.793476607 +00:00
+Untracked files 1
+Command 'git status': 2023-12-06 01:32:10.793546277 +00:00
+Untracked files 0
+Command 'git status': 2023-12-06 01:32:10.793614446 +00:00
+Untracked files 0
+Command 'git status': 2023-12-06 01:32:10.793762578 +00:00
+Untracked files 0
+Command 'git status': 2023-12-06 01:32:10.793834748 +00:00
+Unstaged files 0
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_13/.mgit'2023-12-06 01:32:10.794859545 +00:00
+
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_12/.mgit'2023-12-06 01:32:10.795540701 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_13/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_13/.mgitignore', 2023-12-06 01:32:10.798062483 +00:00
+Command 'git commit': Git Directory 'tests/status_feik_repo/.mgit', Message 'message', Git Ignore Path 'tests/status_feik_repo/.mgitignore', 2023-12-06 01:32:10.799449547 +00:00
+Command 'git status': 2023-12-06 01:32:10.799439546 +00:00
+Unstaged files 1
+Command 'git status': 2023-12-06 01:32:10.800157454 +00:00
+Unstaged files 0
+Command 'git status': 2023-12-06 01:32:10.800722521 +00:00
+Unstaged files 1
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_14/.mgit'2023-12-06 01:32:10.800961116 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_12/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_12/.mgitignore', 2023-12-06 01:32:10.802058624 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_14/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_14/.mgitignore', 2023-12-06 01:32:10.804960507 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_04/.mgit'2023-12-06 01:32:10.801792779 +00:00
+Command 'git status': 2023-12-06 01:32:10.808206572 +00:00
+Unstaged files 1
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_02/.mgit'2023-12-06 01:32:10.809538466 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_03/.mgit'2023-12-06 01:32:10.810553555 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_04/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_04/.mgitignore', 2023-12-06 01:32:10.810769606 +00:00
+Command 'git status': 2023-12-06 01:32:10.812786323 +00:00
+Unstaged files 1
+Command 'git commit': Git Directory 'tests/tag_fake_repo_03/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_03/.mgitignore', 2023-12-06 01:32:10.816172812 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_02/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_02/.mgitignore', 2023-12-06 01:32:10.816611457 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_01/.mgit'2023-12-06 01:32:10.822609398 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_05/.mgit'2023-12-06 01:32:10.819180949 +00:00Command 'git init': Initialized repository at 'tests/tag_fake_repo_08/.mgit'2023-12-06 01:32:10.822988290 +00:00
+
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_09/.mgit'2023-12-06 01:32:10.827678421 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_01/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_01/.mgitignore', 2023-12-06 01:32:10.827387741 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_08/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_08/.mgitignore', 2023-12-06 01:32:10.827979227 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_06/.mgit'2023-12-06 01:32:10.830145784 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_07/.mgit'2023-12-06 01:32:10.831232417 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_07/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_07/.mgitignore', 2023-12-06 01:32:10.833468519 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_09/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_09/.mgitignore', 2023-12-06 01:32:10.830608139 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_06/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_06/.mgitignore', 2023-12-06 01:32:10.837005640 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_05/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_05/.mgitignore', 2023-12-06 01:32:10.837047225 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_10/.mgit'2023-12-06 01:32:10.844743785 +00:00
+Command 'git init': Initialized repository at 'tests/tag_fake_repo_11/.mgit'2023-12-06 01:32:10.848974229 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_10/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_10/.mgitignore', 2023-12-06 01:32:10.851437591 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents2', Message 'Mensaje', Git Ignore Path '', 2023-12-06 01:32:10.852950619 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents3', Message 'Mensaje', Git Ignore Path '', 2023-12-06 01:32:10.856140806 +00:00
+Command 'git commit': Git Directory 'tests/tag_fake_repo_11/.mgit', Message 'This is a commit for tag test.', Git Ignore Path 'tests/tag_fake_repo_11/.mgitignore', 2023-12-06 01:32:10.853754864 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents3', Message 'Aaaa', Git Ignore Path '', 2023-12-06 01:32:10.862194083 +00:00
+Command 'git commit': Git Directory 'tests/utils/parents3', Message 'Holaaa', Git Ignore Path '', 2023-12-06 01:32:10.868250944 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/b.txt', Git Directory '.mgit', 2023-12-06 01:32:11.879623930 +00:00
+Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/b.txt, Time: 2023-12-06 01:32:11.880983159 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/a.txt', Git Directory '.mgit', 2023-12-06 01:32:11.881474223 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/b.txt', Git Directory '.mgit', 2023-12-06 01:32:11.887830846 +00:00
+Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/b.txt, Time: 2023-12-06 01:32:11.888338203 +00:00
+Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/a.txt, Time: 2023-12-06 01:32:11.887876973 +00:00
+Command 'git hash-object': Path 'tests/add/dir_to_add/non_empty/d.txt', Git Directory '.mgit', 2023-12-06 01:32:11.888670510 +00:00
+Command 'git add': Add type: single, File: tests/add/dir_to_add/non_empty/d.txt, Time: 2023-12-06 01:32:11.889341207 +00:00
+Command 'git rm': File 'tests/add/dir_to_add/non_empty/d.txt', 2023-12-06 01:32:11.889713224 +00:00
+Command 'git rm': File 'file.txt', 2023-12-06 01:32:21.883183074 +00:00
