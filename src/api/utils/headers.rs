@@ -5,11 +5,11 @@ pub struct Headers(HashMap<String, String>);
 
 impl Headers {
     pub fn insert(&mut self, key: &str, value: &str) {
-        self.0.insert(key.to_string(), value.to_string());
+        self.0.insert(key.to_lowercase(), value.to_lowercase());
     }
 
     pub fn get(&self, key: &str) -> Option<&str> {
-        match self.0.get(key) {
+        match self.0.get(key.to_lowercase().as_str()) {
             Some(value) => Some(value),
             None => None,
         }
@@ -18,14 +18,14 @@ impl Headers {
 
 impl From<Vec<&str>> for Headers {
     fn from(v: Vec<&str>) -> Self {
-        let mut map = HashMap::new();
+        let mut headers = Self::default();
         for line in v {
             let mut key_value = line.split(": ");
-            let key = key_value.next().unwrap_or_default().to_string();
-            let value = key_value.next().unwrap_or_default().to_string();
-            map.insert(key, value);
+            let key = key_value.next().unwrap_or_default();
+            let value = key_value.next().unwrap_or_default();
+            headers.insert(key, value);
         }
-        Self(map)
+        headers
     }
 }
 
