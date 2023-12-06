@@ -249,6 +249,45 @@ struct Commit {
 //     }
 // }
 
+fn modify_pull_request(
+    repo_name: &str,
+    pull_number: u32,
+    updated_data: PullRequest,
+    state: Arc<AppState>,
+) -> Result<String, String> {
+    let mut pull_requests = state.pull_requests.lock().unwrap();
+
+    if let Some(pulls) = pull_requests.get_mut(&repo_name.to_string()) {
+        let pull_number_usize = pull_number as usize;
+
+        if let Some(pull) = pulls
+            .iter_mut()
+            .find(|pr| pr.pull_number == pull_number_usize)
+        {
+            pull.title = updated_data.title;
+            pull.description = updated_data.description;
+            pull.source_branch = updated_data.source_branch;
+            pull.target_branch = updated_data.target_branch;
+            pull.author = updated_data.author;
+            pull.created_at = updated_data.created_at;
+            pull.updated_at = updated_data.updated_at;
+            pull.state = updated_data.state;
+            pull.reviewers = updated_data.reviewers;
+            pull.closed_at = updated_data.closed_at;
+
+            if let Ok(result) = serde_json::to_string(pull) {
+                Ok(result)
+            } else {
+                Err("Error converting Pull Request to JSON".to_string())
+            }
+        } else {
+            Err("Pull Request not found".to_string())
+        }
+    } else {
+        Err("Repository not found or no Pull Requests".to_string())
+    }
+}
+
 // Function to handle API requests
 fn handle_request(
     method: &str,
@@ -304,6 +343,30 @@ fn handle_request(
                 "Invalid URL format for getting a Pull Request".to_string()
             }
         }
+        ("PATCH", "/repos/{repo}/pulls/{pull_number}") => {
+            if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
+                if let Some(body) = body {
+                    if let Ok(updated_data) = serde_json::from_slice::<PullRequest>(body) {
+                        match modify_pull_request(
+                            &repo_name,
+                            pull_number,
+                            updated_data,
+                            state.clone(),
+                        ) {
+                            Ok(msg) => msg,
+                            Err(err) => err,
+                        }
+                    } else {
+                        "Error parsing the request body".to_string()
+                    }
+                } else {
+                    "Missing request body".to_string()
+                }
+            } else {
+                "Invalid URL format for modifying a Pull Request".to_string()
+            }
+        }
+
         // ("GET", "/repos/{repo}/pulls/{pull_number}/commits") => {
         //     if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
         //         match list_commits(&repo_name, pull_number, state.clone()) {
@@ -359,6 +422,65 @@ mod tests {
             pull_requests: Mutex::new(pull_requests_map),
             repositories: Mutex::new(HashMap::new()),
         }
+    }
+
+    #[test]
+    fn test_modify_pull_request_success() {
+        let repo_name = "test_repo";
+        let pull_number = 1;
+        let state = Arc::new(create_app_state_with_pull_requests(
+            repo_name,
+            vec![create_pull_request_test(pull_number, vec![], 7)],
+        ));
+
+        let updated_data = PullRequest {
+            pull_number: pull_number.try_into().unwrap(),
+            title: "Updated Title".to_string(),
+            description: "Updated Description".to_string(),
+            source_branch: "updated-source".to_string(),
+            target_branch: "updated-target".to_string(),
+            author: "updated-author".to_string(),
+            created_at: get_current_date(),
+            updated_at: get_current_date(),
+            state: "updated-state".to_string(),
+            reviewers: vec!["updated-reviewer".to_string()],
+            closed_at: Some(get_current_date()),
+        };
+
+        let result = modify_pull_request(repo_name, pull_number, updated_data, state.clone());
+
+        assert!(result.is_ok());
+        let result_json: PullRequest = serde_json::from_str(&result.unwrap()).unwrap();
+        assert_eq!(result_json.title, "Updated Title");
+        assert_eq!(result_json.description, "Updated Description");
+        assert_eq!(result_json.source_branch, "updated-source");
+        assert_eq!(result_json.target_branch, "updated-target");
+        assert_eq!(result_json.author, "updated-author");
+        assert_eq!(result_json.state, "updated-state");
+    }
+
+    #[test]
+    fn test_modify_pull_request_not_found_pull() {
+        let state = Arc::new(create_app_state_with_pull_requests("test_repo", vec![]));
+
+        let updated_data = PullRequest {
+            pull_number: 1,
+            title: "Updated Title".to_string(),
+            description: "Updated Description".to_string(),
+            source_branch: "updated-source".to_string(),
+            target_branch: "updated-target".to_string(),
+            author: "updated-author".to_string(),
+            created_at: get_current_date(),
+            updated_at: get_current_date(),
+            state: "updated-state".to_string(),
+            reviewers: vec!["updated-reviewer".to_string()],
+            closed_at: Some(get_current_date()),
+        };
+
+        let result = modify_pull_request("test_repo", 1, updated_data, state.clone());
+
+        assert!(result.is_err());
+        assert_eq!(result.err(), Some("Pull Request not found".to_string()));
     }
 
     #[test]
