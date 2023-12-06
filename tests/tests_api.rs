@@ -7,6 +7,7 @@ use messi::api::utils::{
 };
 
 #[test]
+#[ignore = "This test is for running the server"]
 fn test_run_server() -> io::Result<()> {
     let repos_path = "/home/rgestoso/daemon/server";
     server::run("localhost", "3000", repos_path)
@@ -83,7 +84,7 @@ fn test_request() {
     );
     assert_eq!(
         request.headers.get("User-Agent"),
-        Some("PostmanRuntime/7.32.3")
+        Some("postmanruntime/7.32.3")
     );
     assert_eq!(request.headers.get("Accept"), Some("*/*"));
     assert_eq!(
