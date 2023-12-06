@@ -56,7 +56,7 @@ fn get_mime_type(accept: Option<&str>) -> MimeType {
             .map(|mime| MimeType::try_from(mime.trim()))
             .find_map(Result::ok)
             .unwrap_or(MimeType::JSON),
-        None => MimeType::JSON,
+        None => MimeType::default(),
     }
 }
 
