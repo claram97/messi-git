@@ -2,7 +2,6 @@ use serde_json::json;
 
 use crate::api::utils::status_code::StatusCode;
 
-
 pub fn handle(path_splitted: &[&str]) -> (StatusCode, Option<String>) {
     match path_splitted {
         ["repos", repo, "pulls"] => {

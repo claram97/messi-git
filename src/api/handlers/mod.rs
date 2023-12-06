@@ -1,4 +1,4 @@
 pub mod get;
+pub mod patch;
 pub mod post;
 pub mod put;
-pub mod patch;

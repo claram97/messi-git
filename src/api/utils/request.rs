@@ -1,5 +1,5 @@
-use crate::api::utils::method::Method;
 use crate::api::utils::headers::Headers;
+use crate::api::utils::method::Method;
 use crate::api::utils::query_string::QueryString;
 
 #[derive(Debug, Default)]
@@ -11,12 +11,11 @@ pub struct Request {
     pub body: String,
 }
 
-
 impl Request {
     pub fn new(request: &str) -> Self {
         let mut lines = request.lines();
         let first_line = lines.next().unwrap_or_default();
-        
+
         let mut parts = first_line.split_whitespace();
 
         let method = parts.next().unwrap_or_default();

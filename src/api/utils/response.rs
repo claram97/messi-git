@@ -1,9 +1,8 @@
 use std::fmt;
 
+use crate::api::utils::headers::Headers;
 use crate::api::utils::mime_type::MimeType;
 use crate::api::utils::status_code::StatusCode;
-use crate::api::utils::headers::Headers;
-
 
 pub struct Response {
     status_code: StatusCode,
@@ -13,7 +12,6 @@ pub struct Response {
 
 impl Response {
     pub fn new(status_code: StatusCode, body: Option<String>, mime_type: MimeType) -> Self {
-
         let mut headers = Headers::default();
         if let Some(b) = &body {
             headers.insert("Content-Type", &mime_type.to_string());
@@ -34,12 +32,6 @@ impl fmt::Display for Response {
             Some(b) => "\r\n\r\n".to_owned() + b,
             None => "\r\n".to_owned(),
         };
-        write!(
-            f,
-            "HTTP/1.1 {}{}{}",
-            self.status_code,
-            self.headers,
-            body
-        )
+        write!(f, "HTTP/1.1 {}{}{}", self.status_code, self.headers, body)
     }
 }

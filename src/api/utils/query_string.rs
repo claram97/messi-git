@@ -16,7 +16,7 @@ impl QueryString {
     }
 }
 
-impl From <&str> for QueryString {
+impl From<&str> for QueryString {
     fn from(s: &str) -> Self {
         let mut map = HashMap::new();
         for pair in s.split("&") {

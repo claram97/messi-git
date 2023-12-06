@@ -16,7 +16,7 @@ impl Headers {
     }
 }
 
-impl From <Vec<&str>> for Headers {
+impl From<Vec<&str>> for Headers {
     fn from(v: Vec<&str>) -> Self {
         let mut map = HashMap::new();
         for line in v {

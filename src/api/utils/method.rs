@@ -1,12 +1,13 @@
 #[derive(Debug, PartialEq, Eq, Default)]
 pub enum Method {
-    #[default] GET,
+    #[default]
+    GET,
     POST,
     PUT,
     PATCH,
 }
 
-impl From <&str> for Method {
+impl From<&str> for Method {
     fn from(s: &str) -> Self {
         match s {
             "GET" => Self::GET,

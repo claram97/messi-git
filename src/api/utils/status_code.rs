@@ -12,11 +12,11 @@ pub enum StatusCode {
 impl StatusCode {
     pub fn reason_phrase(&self) -> &str {
         match self {
-            Self::Ok => "OK",
-            Self::Created => "CREATED",
-            Self::BadRequest => "BAD REQUEST",
-            Self::NotFound => "NOT FOUND",
-            Self::InternalServerError => "INTERNAL SERVER ERROR",
+            Self::Ok => "Ok",
+            Self::Created => "Created",
+            Self::BadRequest => "Bad Request",
+            Self::NotFound => "Not Found",
+            Self::InternalServerError => "Internal Server Error",
         }
     }
 
