@@ -1593,3 +1593,148 @@
 2023-12-06 01:32:12.180462737 +00:00 - Object fa64237eeaf8d28900b21573ece53c84d9bc980d of type ofs-delta appended at offset 5218
 2023-12-06 01:32:12.203225775 +00:00 - Delta object appended. Base object offset: 603
 2023-12-06 01:32:12.203558457 +00:00 - Object ff3028d0a0b422219298abcfee1bc59ce6e9255b of type ofs-delta appended at offset 5249
+2023-12-06 02:21:40.248304683 +00:00 - Creating packfile reader...
+2023-12-06 02:21:40.253696050 +00:00 - Creating packfile...
+2023-12-06 02:21:40.254017299 +00:00 - Appending 54 objects...
+2023-12-06 02:21:40.253840258 +00:00 - Validating packfile...
+2023-12-06 02:21:40.255089798 +00:00 - Object appended. Size: 72
+2023-12-06 02:21:40.255237464 +00:00 - Total objects: 12
+2023-12-06 02:21:40.255417839 +00:00 - Object 0243ae1dadb40fb49690dd8bb90b9895e3c02ec7 of type tree appended at offset 12
+2023-12-06 02:21:40.255470214 +00:00 - Reading object 1 of 12. Packfile position: 132023-12-06 02:21:40.256745420 +00:00 - Object appended. Size: 234
+
+2023-12-06 02:21:40.256855420 +00:00 - Object type: commit
+2023-12-06 02:21:40.257049795 +00:00 - Reading object 2 of 12. Packfile position: 173
+2023-12-06 02:21:40.257102294 +00:00 - Object 0574203b655df3bab829273a9314871afce08808 of type commit appended at offset 97
+2023-12-06 02:21:40.258837584 +00:00 - Delta object appended. Base object offset: 97
+2023-12-06 02:21:40.259032208 +00:00 - Object type: commit
+2023-12-06 02:21:40.259077042 +00:00 - Object 26b78faca03988a6be0ef408e33ec68a3a4cf713 of type ofs-delta appended at offset 252
+2023-12-06 02:21:40.259320875 +00:00 - Reading object 3 of 12. Packfile position: 331
+2023-12-06 02:21:40.261033080 +00:00 - Delta object appended. Base object offset: 97
+2023-12-06 02:21:40.261239955 +00:00 - Object 29e7a465fab7647bbdd3a2e2e748ec0d42430fc4 of type ofs-delta appended at offset 432
+2023-12-06 02:21:40.261201038 +00:00 - Object type: commit
+2023-12-06 02:21:40.263134285 +00:00 - Object appended. Size: 4194
+2023-12-06 02:21:40.263309285 +00:00 - Reading object 4 of 12. Packfile position: 489
+2023-12-06 02:21:40.263386535 +00:00 - Object 3ca05ccc6be58d22764dc1bb51e3b5e7e334e6f4 of type blob appended at offset 603
+2023-12-06 02:21:40.263441910 +00:00 - Object type: commit
+2023-12-06 02:21:40.264312284 +00:00 - Object appended. Size: 6
+2023-12-06 02:21:40.264943783 +00:00 - Reading object 5 of 12. Packfile position: 645
+2023-12-06 02:21:40.265102991 +00:00 - Object 4354e55be0544ccc7eba61a4740fe548a31a6fad of type blob appended at offset 656
+2023-12-06 02:21:40.265137782 +00:00 - Object type: tree
+2023-12-06 02:21:40.266430906 +00:00 - Reading object 6 of 12. Packfile position: 748
+2023-12-06 02:21:40.266666364 +00:00 - Object type: blob
+2023-12-06 02:21:40.267174654 +00:00 - Delta object appended. Base object offset: 252
+2023-12-06 02:21:40.267244904 +00:00 - Reading object 7 of 12. Packfile position: 801
+2023-12-06 02:21:40.267424529 +00:00 - Object 445c69e23d03d0cab0de1e053cc44da2188220bb of type ofs-delta appended at offset 671
+2023-12-06 02:21:40.267509071 +00:00 - Object type: ofs-delta
+2023-12-06 02:21:40.267906237 +00:00 - Object type: blob
+2023-12-06 02:21:40.268565486 +00:00 - Applying delta...
+2023-12-06 02:21:40.268631069 +00:00 - Object appended. Size: 109
+2023-12-06 02:21:40.269139735 +00:00 - Object 459eb505e404bee516a94de45e725f7e5eb3f4dc of type tree appended at offset 8492023-12-06 02:21:40.269064068 +00:00 - Reading object 8 of 12. Packfile position: 827
+
+2023-12-06 02:21:40.269508526 +00:00 - Object type: tree
+2023-12-06 02:21:40.269946442 +00:00 - Reading object 9 of 12. Packfile position: 908
+2023-12-06 02:21:40.270603358 +00:00 - Object appended. Size: 72
+2023-12-06 02:21:40.270652733 +00:00 - Object type: ofs-delta
+2023-12-06 02:21:40.270908649 +00:00 - Object 485cdeca8eab6ae0a5d7ea5c5e17fddd97e0cb2b of type tree appended at offset 958
+2023-12-06 02:21:40.270875982 +00:00 - Object type: blob
+2023-12-06 02:21:40.271430773 +00:00 - Applying delta...2023-12-06 02:21:40.272743771 +00:00 - Delta object appended. Base object offset: 656
+2023-12-06 02:21:40.272895271 +00:00 - Object 49a2f6fc2772a8f6a9024e9bd56a91ab28c5d88d of type ofs-delta appended at offset 1043
+2023-12-06 02:21:40.274101436 +00:00 - Delta object appended. Base object offset: 1043
+2023-12-06 02:21:40.274172269 +00:00 - Object 4b278a632361b07ae935a4af75016ee2ed727feb of type ofs-delta appended at offset 1069
+2023-12-06 02:21:40.275072851 +00:00 - Object appended. Size: 11
+2023-12-06 02:21:40.275139851 +00:00 - Object 4ec733dec44377502d733ddc0f5f2710d763c38b of type blob appended at offset 1083
+2023-12-06 02:21:40.276638724 +00:00 - Delta object appended. Base object offset: 671
+2023-12-06 02:21:40.277224056 +00:00 - Object 4fe576c74b70db01b6c5a840544989ae0033ece3 of type ofs-delta appended at offset 1103
+
+2023-12-06 02:21:40.278594012 +00:00 - Reading object 10 of 12. Packfile position: 926
+2023-12-06 02:21:40.278808887 +00:00 - Object type: tree
+2023-12-06 02:21:40.278857845 +00:00 - Delta object appended. Base object offset: 671
+2023-12-06 02:21:40.279110345 +00:00 - Reading object 11 of 12. Packfile position: 1028
+2023-12-06 02:21:40.279134137 +00:00 - Object 4fee3ce26d1384b172470fa78d8912018f378ef3 of type ofs-delta appended at offset 1266
+2023-12-06 02:21:40.280030385 +00:00 - Object appended. Size: 362023-12-06 02:21:40.280103385 +00:00 - Object type: ofs-delta
+
+2023-12-06 02:21:40.280372010 +00:00 - Object 532c9a392ed479ee08cc6ed375cf0bd86f893555 of type tree appended at offset 1430
+2023-12-06 02:21:40.280378676 +00:00 - Object type: blob
+2023-12-06 02:21:40.282718590 +00:00 - Applying delta...
+2023-12-06 02:21:40.285244919 +00:00 - Reading object 12 of 12. Packfile position: 1046
+2023-12-06 02:21:40.285525544 +00:00 - Object type: ofs-delta
+2023-12-06 02:21:40.285792002 +00:00 - Object type: tree
+2023-12-06 02:21:40.286478126 +00:00 - Applying delta...
+2023-12-06 02:21:40.297284776 +00:00 - Delta object appended. Base object offset: 603
+2023-12-06 02:21:40.297605484 +00:00 - Object 56c5de9b037066dc9971b0170b7a9d83a55a3974 of type ofs-delta appended at offset 1479
+2023-12-06 02:21:40.299062607 +00:00 - Object appended. Size: 36
+2023-12-06 02:21:40.299132690 +00:00 - Object 577829a8413d23bbc902e05d2e8e9a222e957e58 of type tree appended at offset 1497
+2023-12-06 02:21:40.299883397 +00:00 - Object appended. Size: 109
+2023-12-06 02:21:40.300096689 +00:00 - Object 5dbc085a84ed31aef4fe2c7626a94e6ff6bac574 of type tree appended at offset 1546
+2023-12-06 02:21:40.301288437 +00:00 - Delta object appended. Base object offset: 1069
+2023-12-06 02:21:40.301449520 +00:00 - Object 5df1fee3ac63beefe9360e2b23205c9a60e5ca66 of type ofs-delta appended at offset 1668
+2023-12-06 02:21:40.324961068 +00:00 - Delta object appended. Base object offset: 603
+2023-12-06 02:21:40.325338276 +00:00 - Object 5fc74462c85bbe2b3857f4e96666b6c56e6f2143 of type ofs-delta appended at offset 1703
+2023-12-06 02:21:40.327029398 +00:00 - Delta object appended. Base object offset: 671
+2023-12-06 02:21:40.328230980 +00:00 - Object 6a5be592355cf4362bad9671047a713e0dbeb234 of type ofs-delta appended at offset 1735
+2023-12-06 02:21:40.331634225 +00:00 - Delta object appended. Base object offset: 97
+2023-12-06 02:21:40.331938808 +00:00 - Object 6b183c0a9ad1d5c763840598cda7870356e9cb8e of type ofs-delta appended at offset 1899
+2023-12-06 02:21:40.332891223 +00:00 - Object appended. Size: 146
+2023-12-06 02:21:40.333119681 +00:00 - Object 6b5f377d501c01d6b04794c7b0a5d398f6311c58 of type tree appended at offset 2075
+2023-12-06 02:21:40.353107943 +00:00 - Delta object appended. Base object offset: 603
+2023-12-06 02:21:40.353453817 +00:00 - Object 6f883c5f2a625e7d7dbf976cef3fe3eb08e33032 of type ofs-delta appended at offset 2234
+2023-12-06 02:21:40.354750815 +00:00 - Object appended. Size: 264
+2023-12-06 02:21:40.355000731 +00:00 - Object 70ecb6d26eff99839360ae6fdf813dbd0982aedf of type blob appended at offset 2252
+2023-12-06 02:21:40.355990897 +00:00 - Object appended. Size: 72
+2023-12-06 02:21:40.356276105 +00:00 - Object 7835bed432a9b715c09967b4c98c16436a260808 of type tree appended at offset 2445
+2023-12-06 02:21:40.357217061 +00:00 - Object appended. Size: 36
+2023-12-06 02:21:40.357511769 +00:00 - Object 85289f5093bdf3f5859399ae5e5866b90db17e59 of type tree appended at offset 2530
+2023-12-06 02:21:40.359397475 +00:00 - Delta object appended. Base object offset: 432
+2023-12-06 02:21:40.359718433 +00:00 - Object 86135720c1283d83f2744781a915aba3d74da37b of type ofs-delta appended at offset 2579
+2023-12-06 02:21:40.361287514 +00:00 - Delta object appended. Base object offset: 2252
+2023-12-06 02:21:40.361531888 +00:00 - Object 869df0d5efbdba888137df81ed51ac7160c7be51 of type ofs-delta appended at offset 2748
+2023-12-06 02:21:40.363430094 +00:00 - Delta object appended. Base object offset: 1899
+2023-12-06 02:21:40.363722510 +00:00 - Object 8a32ea14459fa49d68a3d58f6fea37c4b645e4d3 of type ofs-delta appended at offset 2781
+2023-12-06 02:21:40.365021508 +00:00 - Delta object appended. Base object offset: 1069
+2023-12-06 02:21:40.365357549 +00:00 - Object 8bccd94ff0d7817527d7f5b9ca42295681597a87 of type ofs-delta appended at offset 2954
+2023-12-06 02:21:40.367270671 +00:00 - Delta object appended. Base object offset: 2781
+2023-12-06 02:21:40.367537004 +00:00 - Object 8daad67f32b80e695f061109e35d7a7eb60620d1 of type ofs-delta appended at offset 2988
+2023-12-06 02:21:40.369128294 +00:00 - Delta object appended. Base object offset: 671
+2023-12-06 02:21:40.369407335 +00:00 - Object 92cb4e13295393374c2b2b3ebd79bedc83263a7e of type ofs-delta appended at offset 3162
+2023-12-06 02:21:40.371316874 +00:00 - Delta object appended. Base object offset: 97
+2023-12-06 02:21:40.371569082 +00:00 - Object 9577989599d746fa7efc66552e5f546bcfa1ea5b of type ofs-delta appended at offset 3326
+2023-12-06 02:21:40.373183913 +00:00 - Delta object appended. Base object offset: 671
+2023-12-06 02:21:40.373448871 +00:00 - Object 96296a29ef23463a39f9dbc046fd1e47dffff38e of type ofs-delta appended at offset 3502
+2023-12-06 02:21:40.374546786 +00:00 - Object appended. Size: 72
+2023-12-06 02:21:40.374889827 +00:00 - Object 984ab4502bb1cb5e52559689c0cbe1dc0ac586e7 of type tree appended at offset 3666
+2023-12-06 02:21:40.396513044 +00:00 - Delta object appended. Base object offset: 603
+2023-12-06 02:21:40.396798544 +00:00 - Object 9898677f04ba321e1f4abef0f4fbe48ced0003e4 of type ofs-delta appended at offset 3751
+2023-12-06 02:21:40.397923001 +00:00 - Object appended. Size: 109
+2023-12-06 02:21:40.398375583 +00:00 - Object a029c004706d13b071fe128362b07d15ad943080 of type tree appended at offset 3769
+2023-12-06 02:21:40.399243790 +00:00 - Object appended. Size: 36
+2023-12-06 02:21:40.399493332 +00:00 - Object a0fe1cb22bcf86d92f4128d7cca4d6cfb9a81bfa of type tree appended at offset 3876
+2023-12-06 02:21:40.421206174 +00:00 - Delta object appended. Base object offset: 3751
+2023-12-06 02:21:40.421574382 +00:00 - Object a8080344260b78d883224f802484da2b1dea3784 of type ofs-delta appended at offset 3925
+2023-12-06 02:21:40.443701515 +00:00 - Delta object appended. Base object offset: 603
+2023-12-06 02:21:40.443972598 +00:00 - Object a9a68e39e49799a7842cc66b23aeba61e582e251 of type ofs-delta appended at offset 3943
+2023-12-06 02:21:40.444958847 +00:00 - Object appended. Size: 72
+2023-12-06 02:21:40.445192972 +00:00 - Object b1e5b9197174afcbf270f848972f7b8306e4bda1 of type tree appended at offset 3971
+2023-12-06 02:21:40.446364303 +00:00 - Object appended. Size: 109
+2023-12-06 02:21:40.446631428 +00:00 - Object c07637a28935300aca1b5fbf5ec41a4c296dca9b of type tree appended at offset 4056
+2023-12-06 02:21:40.447589718 +00:00 - Object appended. Size: 72
+2023-12-06 02:21:40.447819176 +00:00 - Object c7c0e0c5123b0849b2b165e6745dedd67990a5c9 of type tree appended at offset 4178
+2023-12-06 02:21:40.448743550 +00:00 - Object appended. Size: 14
+2023-12-06 02:21:40.448988591 +00:00 - Object cd2f7b5882180eae35efd2c3c60db0a698a24b68 of type blob appended at offset 4263
+2023-12-06 02:21:40.450145006 +00:00 - Object appended. Size: 184
+2023-12-06 02:21:40.450531589 +00:00 - Object d4fcb8b438a753430575dc76ac380af0f9a002a4 of type commit appended at offset 4284
+2023-12-06 02:21:40.452148503 +00:00 - Delta object appended. Base object offset: 252
+2023-12-06 02:21:40.452429002 +00:00 - Object d7ef3cc799fe4b1759595b8a94a834aba3512c04 of type ofs-delta appended at offset 4409
+2023-12-06 02:21:40.454189708 +00:00 - Delta object appended. Base object offset: 671
+2023-12-06 02:21:40.454565791 +00:00 - Object df2627a632ec75389e07d4191b00fbaa5ce1fb46 of type ofs-delta appended at offset 4573
+2023-12-06 02:21:40.455539498 +00:00 - Object appended. Size: 72
+2023-12-06 02:21:40.455805831 +00:00 - Object e4196f7bfa29c39dfc42dc93baa18974abbfeee7 of type tree appended at offset 4737
+2023-12-06 02:21:40.456712746 +00:00 - Object appended. Size: 36
+2023-12-06 02:21:40.456958787 +00:00 - Object e55a2b8e093470b1b185233198ac94f467397fb8 of type tree appended at offset 4822
+2023-12-06 02:21:40.458783951 +00:00 - Delta object appended. Base object offset: 671
+2023-12-06 02:21:40.459069701 +00:00 - Object e623d8d9e8e5b5fc1c9ce7f2712a9ef73b1719df of type ofs-delta appended at offset 4871
+2023-12-06 02:21:40.460206866 +00:00 - Object appended. Size: 183
+2023-12-06 02:21:40.460520074 +00:00 - Object f333d3052e20758e41e8fc16eadd5b9418d4b784 of type tree appended at offset 5035
+2023-12-06 02:21:40.477470965 +00:00 - Delta object appended. Base object offset: 1479
+2023-12-06 02:21:40.477781965 +00:00 - Object fa64237eeaf8d28900b21573ece53c84d9bc980d of type ofs-delta appended at offset 5218
+2023-12-06 02:21:40.499457390 +00:00 - Delta object appended. Base object offset: 603
+2023-12-06 02:21:40.499718057 +00:00 - Object ff3028d0a0b422219298abcfee1bc59ce6e9255b of type ofs-delta appended at offset 5249

@@ -2,7 +2,7 @@ use chrono::Duration;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-
+use crate::log::log;
 // Data structures to represent Pull Requests and Repositories
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequest {
@@ -191,6 +191,63 @@ fn extract_repo_and_pull_number(url: &str) -> Option<(String, u32)> {
     }
     None
 }
+// ...
+
+// Data structure to represent Commits
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Commit {
+    sha: String,
+    message: String,
+    author: String,
+    timestamp: String,
+}
+
+// Function to list commits in a Pull Request
+// fn list_commits(
+//     repo_name: &str,
+//     pull_number: u32,
+//     state: Arc<AppState>,
+// ) -> Result<String, String> {
+//     let pull_requests = state.pull_requests.lock().unwrap();
+
+//     if let Some(pulls) = pull_requests.get(&repo_name.to_string()) {
+//         // Convert pull_number to usize
+//         let pull_number_usize = pull_number as usize;
+
+//         if let Some(pull) = pulls.iter().find(|&pr| pr.pull_number == pull_number_usize) {
+//             // Use the log function to obtain commits
+//             let log_result = log(None, &pull.local_path, usize::MAX, 0, false);
+
+//             // Check if log function succeeded
+//             if let Ok(log_iter) = log_result {
+//                 // Collect commits from the iterator
+//                 let commits: Vec<Commit> = log_iter
+//                     .map(|log_entry| Commit {
+//                         sha: log_entry.hash,
+//                         message: log_entry.message,
+//                         // Add other fields as needed
+//                     })
+//                     .collect();
+
+//                 // Serialize to JSON
+//                 if let Ok(result) = serde_json::to_string(&commits) {
+//                     return Ok(result);
+//                 } else {
+//                     return Err("Error converting Commits to JSON".to_string());
+//                 }
+//             } else {
+//                 return Err(format!(
+//                     "Error retrieving commits for pull request {}",
+//                     pull_number
+//                 ));
+//             }
+//         } else {
+//             return Err("Pull Request not found".to_string());
+//         }
+//     } else {
+//         return Err("Repository not found or no Pull Requests".to_string());
+//     }
+// }
 
 // Function to handle API requests
 fn handle_request(
@@ -247,6 +304,16 @@ fn handle_request(
                 "Invalid URL format for getting a Pull Request".to_string()
             }
         }
+        // ("GET", "/repos/{repo}/pulls/{pull_number}/commits") => {
+        //     if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
+        //         match list_commits(&repo_name, pull_number, state.clone()) {
+        //             Ok(result) => result,
+        //             Err(err) => err,
+        //         }
+        //     } else {
+        //         "Invalid URL format for listing commits in a Pull Request".to_string()
+        //     }
+        // }
         _ => "Route not found".to_string(),
     }
 }
