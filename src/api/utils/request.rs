@@ -22,7 +22,7 @@ impl Request {
         let method = Method::from(method);
 
         let path = parts.next().unwrap_or_default();
-        let (path, qs) = match path.split_once("?") {
+        let (path, qs) = match path.split_once('?') {
             Some((path, qs)) => (path.to_string(), QueryString::from(qs)),
             None => (path.to_string(), QueryString::default()),
         };
@@ -60,7 +60,6 @@ impl Request {
     pub fn get_path_split(&self) -> Vec<&str> {
         self.path
             .split('/')
-            .into_iter()
             .filter(|s| !s.is_empty())
             .collect::<Vec<&str>>()
     }

@@ -19,8 +19,8 @@ impl QueryString {
 impl From<&str> for QueryString {
     fn from(s: &str) -> Self {
         let mut map = HashMap::new();
-        for pair in s.split("&") {
-            let mut key_value = pair.split("=");
+        for pair in s.split('&') {
+            let mut key_value = pair.split('=');
             let key = key_value.next().unwrap_or_default().to_string();
             let value = key_value.next().unwrap_or_default().to_string();
             map.insert(key, value);
