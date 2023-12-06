@@ -5,9 +5,9 @@ use crate::api::utils::mime_type::MimeType;
 use crate::api::utils::status_code::StatusCode;
 
 pub struct Response {
-    status_code: StatusCode,
-    headers: Headers,
-    body: Option<String>,
+    pub status_code: StatusCode,
+    pub headers: Headers,
+    pub body: Option<String>,
 }
 
 impl Response {

@@ -56,4 +56,12 @@ impl Request {
             body,
         }
     }
+
+    pub fn get_path_split(&self) -> Vec<&str> {
+        self.path
+            .split('/')
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<&str>>()
+    }
 }
