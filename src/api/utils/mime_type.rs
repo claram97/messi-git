@@ -1,8 +1,8 @@
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum MimeType {
-    JSON,
+    #[default] JSON,
     XML,
 }
 
