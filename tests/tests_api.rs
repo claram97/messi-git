@@ -8,7 +8,8 @@ use messi::api::server;
 
 #[test]
 fn test_run_server() -> io::Result<()> {
-    server::run()
+    let repos_path = "/home/rgestoso/daemon/server";
+    server::run("localhost", "3000", repos_path)
 }
 
 #[test]

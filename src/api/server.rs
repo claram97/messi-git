@@ -50,10 +50,14 @@ fn get_mime_type(accept: Option<&str>) -> MimeType {
     }
 }
 
-pub fn run() -> io::Result<()> {
-    let listener = TcpListener::bind("127.0.0.1:3000")?;
-    println!("Servidor escuchando en 127.0.0.1:3000...");
+pub fn run(domain: &str, port: &str, path: &str) -> io::Result<()> {
+    let address = domain.to_owned() + ":" + port;
+    let listener = TcpListener::bind(&address)?;
+    println!("Servidor escuchando en {}...", &address);
     
+    std::env::set_current_dir(path)?;
+    println!("Cambiando directorio de trabajo a {}", path);
+
     let mut handles = vec![];
     while let Ok((stream, _socket_addr)) = listener.accept() {
         println!("New connection from {:?}", _socket_addr);
