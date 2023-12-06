@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 // Data structures to represent Pull Requests and Repositories
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequest {
     pull_number: usize,
     title: String,
@@ -251,4 +251,189 @@ fn handle_request(
 // Function to extract the repository name from the URL
 fn extract_repo_name(url: &str) -> Option<String> {
     url.split('/').nth(2).map(|s| s.to_string())
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_pull_request_test(
+        pull_number: u32,
+        reviewers: Vec<&str>,
+        created_at_days_ago: i64,
+    ) -> PullRequest {
+        let now = chrono::Utc::now();
+        PullRequest {
+            pull_number: pull_number.try_into().unwrap(),
+            title: format!("Pull Request #{}", pull_number),
+            description: "Test Pull Request".to_string(),
+            source_branch: "feature-branch".to_string(),
+            target_branch: "main".to_string(),
+            author: "test_author".to_string(),
+            created_at: (now - Duration::days(created_at_days_ago)).to_string(),
+            updated_at: (now - Duration::days(created_at_days_ago)).to_string(),
+            state: "open".to_string(),
+            reviewers: reviewers.into_iter().map(String::from).collect(),
+            closed_at: None,
+        }
+    }
+
+    // Helper function to create a sample AppState with Pull Requests
+    fn create_app_state_with_pull_requests(repo_name: &str, pulls: Vec<PullRequest>) -> AppState {
+        let mut pull_requests_map = HashMap::new();
+        pull_requests_map.insert(repo_name.to_string(), pulls);
+    
+        AppState {
+            pull_requests: Mutex::new(pull_requests_map),
+            repositories: Mutex::new(HashMap::new()),
+        }
+    }
+
+    #[test]
+    fn test_list_pull_requests_no_repository() {
+        let state = Arc::new(create_app_state_with_pull_requests("other_repo", vec![]));
+        let result = list_pull_requests("owner", "repo", state, None, None, None, None);
+        assert!(result.is_err());
+        assert_eq!(
+            result.err(),
+            Some("Repository not found or no Pull Requests".to_string())
+        );
+    }
+
+    #[test]
+    fn test_list_pull_requests_empty_repository() {
+        let state = Arc::new(create_app_state_with_pull_requests("repo", Vec::new()));
+        let result = list_pull_requests("owner", "repo", state, None, None, None, None);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err(),
+            Some("Repository not found or no Pull Requests".to_string())
+        );
+    }
+
+    // #[test]
+    // fn test_list_pull_requests_popularity_sort() {
+    //     // Crear Pull Requests de prueba
+    //     let pulls = vec![
+    //         create_pull_request_test(1, vec!["reviewer1", "reviewer2"], 7),
+    //         create_pull_request_test(2, vec!["reviewer1"], 10),
+    //         create_pull_request_test(3, vec!["reviewer1", "reviewer2", "reviewer3"], 5),
+    //     ];
+
+    //     // Crear un estado con los Pull Requests de prueba
+    //     let state = Arc::new(create_app_state_with_pull_requests("repo", pulls));
+
+    //     // Listar Pull Requests ordenados por popularidad
+    //     let result = list_pull_requests("owner", "repo", state, Some("popularity"), None, None, None);
+
+    //     // Verificar que la operación tiene éxito
+    //     assert!(result.is_ok());
+
+    //     // Deserializar el resultado JSON y verificar la longitud y el orden correcto
+    //     let result_json: Vec<PullRequest> = serde_json::from_str(&result.unwrap()).unwrap();
+    //     assert_eq!(result_json.len(), 1);
+    //     assert_eq!(result_json[0].pull_number, 3);
+    // }
+
+    #[test]
+    fn test_create_pull_request() {
+        let state = AppState {
+            pull_requests: Mutex::new(HashMap::new()),
+            repositories: Mutex::new(HashMap::new()),
+        };
+        let state = Arc::new(state);
+
+        let repo_name = "test_repo";
+        state.repositories.lock().unwrap().insert(
+            repo_name.to_string(),
+            Repository {
+                name: repo_name.to_string(),
+            },
+        );
+        let pull_request = PullRequest {
+            pull_number: 0,
+            title: "Test Pull Request".to_string(),
+            description: "This is a test".to_string(),
+            source_branch: "feature-branch".to_string(),
+            target_branch: "main".to_string(),
+            author: "test_author".to_string(),
+            created_at: get_current_date(),
+            updated_at: get_current_date(),
+            state: "open".to_string(),
+            reviewers: vec!["reviewer1".to_string(), "reviewer2".to_string()],
+            closed_at: None,
+        };
+
+        let result = create_pull_request(repo_name, pull_request, state.clone());
+        assert!(result.is_ok());
+
+        let pull_requests = state.pull_requests.lock().unwrap();
+        let repo_pulls = pull_requests.get(repo_name).unwrap();
+
+        assert_eq!(repo_pulls.len(), 1);
+        assert_eq!(repo_pulls[0].title, "Test Pull Request");
+    }
+
+    #[test]
+    fn test_list_pull_requests() {
+        let state = AppState {
+            pull_requests: Mutex::new(HashMap::new()),
+            repositories: Mutex::new(HashMap::new()),
+        };
+        let state = Arc::new(state);
+
+        let repo_name = "test_repo";
+
+        state.repositories.lock().unwrap().insert(
+            repo_name.to_string(),
+            Repository {
+                name: repo_name.to_string(),
+            },
+        );
+
+        let pull_request1 = PullRequest {
+            pull_number: 1,
+            title: "Pull Request 1".to_string(),
+            description: "Description 1".to_string(),
+            source_branch: "feature-branch-1".to_string(),
+            target_branch: "main".to_string(),
+            author: "Author 1".to_string(),
+            created_at: get_current_date(),
+            updated_at: get_current_date(),
+            state: "open".to_string(),
+            reviewers: vec!["reviewer1".to_string(), "reviewer2".to_string()],
+            closed_at: None, 
+        };
+        
+        let pull_request2 = PullRequest {
+            pull_number: 2,
+            title: "Pull Request 2".to_string(),
+            description: "Description 2".to_string(),
+            source_branch: "feature-branch-2".to_string(),
+            target_branch: "main".to_string(),
+            author: "Author 2".to_string(),
+            created_at: get_current_date(),
+            updated_at: get_current_date(),
+            state: "open".to_string(),
+            reviewers: vec!["reviewer3".to_string(), "reviewer4".to_string()],
+            closed_at: Some(get_current_date()), 
+        };
+        
+        state.pull_requests.lock().unwrap().insert(
+            format!("{}/{}", repo_name, repo_name),
+            vec![pull_request1, pull_request2],
+        );
+        let result = list_pull_requests(repo_name, repo_name, state.clone(), None, None, None, None);
+
+        assert!(result.is_ok());
+
+        let result_str = result.unwrap();
+        let parsed_pull_requests: Vec<PullRequest> = serde_json::from_str(&result_str).unwrap();
+
+        assert_eq!(parsed_pull_requests.len(), 2);
+        assert_eq!(parsed_pull_requests[0].title, "Pull Request 2");
+        assert_eq!(parsed_pull_requests[1].title, "Pull Request 1");
+    }
 }
