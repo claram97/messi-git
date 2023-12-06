@@ -2,7 +2,7 @@ use std::io;
 
 use serde_json::json;
 
-use crate::api::utils::{status_code::StatusCode, log::log};
+use crate::api::utils::{log::log, status_code::StatusCode};
 
 pub fn handle(path_splitted: &[&str]) -> io::Result<(StatusCode, Option<String>)> {
     match path_splitted {
@@ -15,7 +15,10 @@ pub fn handle(path_splitted: &[&str]) -> io::Result<(StatusCode, Option<String>)
 }
 
 fn update_pull_request(repo: &str, pull_number: &str) -> io::Result<String> {
-    log(&format!("Updating pull request {} of {}", pull_number, repo))?;
+    log(&format!(
+        "Updating pull request {} of {}",
+        pull_number, repo
+    ))?;
     let result = json!({
         "message": format!("Actualizando pull request {} de {}", pull_number, repo)
     })

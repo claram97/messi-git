@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::api::utils::{status_code::StatusCode, log::log};
+use crate::api::utils::{log::log, status_code::StatusCode};
 use serde_json::json;
 
 pub fn handle(path_splitted: &[&str]) -> io::Result<(StatusCode, Option<String>)> {
@@ -40,7 +40,10 @@ fn get_pull_request(repo: &str, pull_number: &str) -> io::Result<String> {
 }
 
 fn list_pull_request_commits(repo: &str, pull_number: &str) -> io::Result<String> {
-    log(&format!("Listing commits of pull request {} of {}", pull_number, repo))?;
+    log(&format!(
+        "Listing commits of pull request {} of {}",
+        pull_number, repo
+    ))?;
     let result = json!({
         "message": format!("Listando commits de pull request {} de {}", pull_number, repo)
     })

@@ -2,7 +2,7 @@ use std::io;
 
 use serde_json::json;
 
-use crate::api::utils::{status_code::StatusCode, log::log};
+use crate::api::utils::{log::log, status_code::StatusCode};
 
 pub fn handle(path_splitted: &[&str]) -> io::Result<(StatusCode, Option<String>)> {
     match path_splitted {

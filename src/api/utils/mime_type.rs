@@ -2,7 +2,8 @@ use std::fmt;
 
 #[derive(Debug, Default)]
 pub enum MimeType {
-    #[default] JSON,
+    #[default]
+    JSON,
     XML,
 }
 
