@@ -1,8 +1,8 @@
+use crate::log::log;
 use chrono::Duration;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use crate::log::log;
 // Data structures to represent Pull Requests and Repositories
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequest {
