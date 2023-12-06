@@ -37,3 +37,4 @@ pub mod status;
 pub mod tag;
 pub mod tree_handler;
 pub mod utils;
+pub mod api;
