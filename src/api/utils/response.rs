@@ -5,9 +5,9 @@ use crate::api::utils::mime_type::MimeType;
 use crate::api::utils::status_code::StatusCode;
 
 /// A struct that holds the data of an HTTP response
-/// 
+///
 /// # Fields
-/// 
+///
 /// * `status_code` - A StatusCode enum that holds the status code of the response.
 /// * `headers` - A Headers struct that holds the headers of the response.
 /// * `body` - A string slice that holds the body of the response.
@@ -19,9 +19,9 @@ pub struct Response {
 
 impl Response {
     /// Create a new Response.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `status_code` - A StatusCode enum that holds the status code of the response.
     /// * `body` - A string slice that holds the body of the response.
     /// * `mime_type` - A MimeType enum that holds the mime type of the body.

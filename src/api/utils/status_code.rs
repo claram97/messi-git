@@ -1,9 +1,9 @@
 use std::fmt;
 
 /// An enum that holds the status code of a response.
-/// 
+///
 /// # Supported status codes
-/// 
+///
 /// - 200 Ok
 /// - 201 Created
 /// - 400 Bad Request
@@ -31,9 +31,9 @@ impl StatusCode {
     }
 
     /// Create a status code from a u16.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `code` - A u16 that holds the status code to be created.
     pub fn from_u16(code: u16) -> Result<Self, Error> {
         match code {

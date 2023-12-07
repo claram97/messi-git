@@ -3,9 +3,9 @@ use crate::api::utils::method::Method;
 use crate::api::utils::query_string::QueryString;
 
 /// A struct that holds the data of an HTTP request
-/// 
+///
 /// # Fields
-/// 
+///
 /// * `method` - A Method enum that holds the method of the request.
 /// * `path` - A string slice that holds the path of the request.
 /// * `headers` - A Headers struct that holds the headers of the request.
@@ -22,9 +22,9 @@ pub struct Request {
 
 impl Request {
     /// Create a new Request.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `request` - A string slice that holds the HTTP request to be parsed.
     pub fn new(request: &str) -> Self {
         let mut lines = request.lines();

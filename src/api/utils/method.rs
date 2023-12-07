@@ -1,7 +1,7 @@
 /// HTTP Method
-/// 
+///
 /// # Supported Methods
-/// 
+///
 /// - GET
 /// - POST
 /// - PUT

@@ -31,7 +31,7 @@ fn read_request(stream: &mut TcpStream) -> io::Result<String> {
 }
 
 /// Handle a client request.
-/// 
+///
 /// Parse the request, handle it and send the response.
 fn handle_client(stream: &mut TcpStream) -> io::Result<()> {
     let request = read_request(stream)?;
@@ -79,9 +79,9 @@ fn handle_error(stream: &mut TcpStream) -> io::Result<()> {
 }
 
 /// Run the REST API server.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `domain` - The domain of the server
 /// * `port` - The port of the server.
 /// * `path` - The path where the repositories are stored

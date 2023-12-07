@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
 /// A struct that holds the query strings of a request.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct QueryString(HashMap<String, String>);
 
 impl QueryString {
-
     /// Create a new QueryString.
     pub fn new() -> Self {
         Self(HashMap::new())
@@ -34,9 +33,9 @@ impl QueryString {
     }
 
     /// Add a query string to the query strings map.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `pair` - A string slice that holds the query string and its value to be added.
     fn add(&mut self, pair: &str) {
         let mut key_value = pair.split('=');

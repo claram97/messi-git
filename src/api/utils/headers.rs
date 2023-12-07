@@ -1,20 +1,19 @@
 use std::collections::HashMap;
 
 /// A struct that holds the headers of a request.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct Headers(HashMap<String, String>);
 
 impl Headers {
-
     /// Create a new Headers.
     pub fn new() -> Self {
         Self(HashMap::new())
     }
-    
+
     /// Insert a header into the headers map.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `key` - A string slice that holds the header to be added.
     /// * `value` - A string slice that holds the value of the header to be added.
     pub fn insert(&mut self, key: &str, value: &str) {
@@ -22,9 +21,9 @@ impl Headers {
     }
 
     /// Get a header from the headers map.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `key` - A string slice that holds the header to be retrieved.
     pub fn get(&self, key: &str) -> Option<&str> {
         match self.0.get(key.to_lowercase().as_str()) {
@@ -32,11 +31,11 @@ impl Headers {
             None => None,
         }
     }
-    
+
     /// Add a header to the headers map.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `line` - A string slice that holds the header and its value to be added.
     pub fn add(&mut self, line: &str) {
         let mut key_value = line.split(": ");

@@ -1,9 +1,9 @@
 use std::fmt;
 
 /// A struct that holds the mime type of a request.
-/// 
+///
 /// # Supported mime types
-/// 
+///
 /// - application/json
 /// - application/xml (not implemented yet)
 #[derive(Debug, Default)]
