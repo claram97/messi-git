@@ -1,7 +1,10 @@
 use crate::log::log;
+use crate::merge::git_merge;
 use chrono::Duration;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::Path;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 // Data structures to represent Pull Requests and Repositories
@@ -127,16 +130,13 @@ fn extract_repo_and_pull_number(url: &str) -> Option<(String, u32)> {
     None
 }
 
-// Data structure to represent Commits
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Commit {
-    sha: String,
-    message: String,
-    author: String,
-    timestamp: String,
-}
-
 // Function to list commits in a Pull Request
+// fn get_git_repo_dir(repo_name: &str, state: &Arc<AppState>) -> Option<String> {
+//     let repositories = state.repositories.lock().unwrap();
+
+//     repositories.get(repo_name).cloned()
+// }
+
 // fn list_commits(
 //     repo_name: &str,
 //     pull_number: u32,
@@ -149,8 +149,20 @@ struct Commit {
 //         let pull_number_usize = pull_number as usize;
 
 //         if let Some(pull) = pulls.iter().find(|&pr| pr.pull_number == pull_number_usize) {
-//             // Use the log function to obtain commits
-//             let log_result = log(None, &pull.local_path, usize::MAX, 0, false);
+//             // Extract source_branch and target_branch from the Pull Request
+//             let source_branch = &pull.source_branch;
+//             let target_branch = &pull.target_branch;
+
+//             // Get commit hash for source_branch
+//             let git_repo_dir = get_git_repo_dir(repo_name, &state).ok_or_else(|| {
+//                 "Repository not found or no path specified for the repository".to_string()
+//             })?;
+//             let source_branch_hash = get_branch_commit_hash(source_branch, &git_repo_dir)?;
+//             println!("Commit hash for source branch '{}': {}", source_branch, source_branch_hash);
+
+//             // Get commit hash for target_branch
+//             let target_branch_hash = get_branch_commit_hash(target_branch, &git_repo_dir)?;
+//             println!("Commit hash for target branch '{}': {}", target_branch, target_branch_hash);
 
 //             // Check if log function succeeded
 //             if let Ok(log_iter) = log_result {
@@ -159,7 +171,6 @@ struct Commit {
 //                     .map(|log_entry| Commit {
 //                         sha: log_entry.hash,
 //                         message: log_entry.message,
-//                         // Add other fields as needed
 //                     })
 //                     .collect();
 
@@ -219,6 +230,77 @@ fn modify_pull_request(
         }
     } else {
         Err("Repository not found or no Pull Requests".to_string())
+    }
+}
+
+fn get_git_repo_dir(repo_name: &str, state: &Arc<AppState>) -> Option<PathBuf> {
+    // Lock the Mutex to access the repositories in the state
+    let repositories = state.repositories.lock().unwrap();
+
+    // Attempt to retrieve the repository corresponding to the provided name
+    if let Some(repo) = repositories.get(repo_name) {
+        let root_dir = std::env::current_dir()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+
+        // If the repository is found, construct the path to the repository directory
+        // Assuming repositories are located in a subdirectory named "repos"
+        let repo_dir = Path::new(&root_dir).join("repos").join(&repo_name);
+
+        // Return Some with the path to the repository directory
+        Some(repo_dir)
+    } else {
+        // If the repository is not found, return None
+        None
+    }
+}
+//dejo los comentarios en espaniol por si es mas facil entender hasta q este
+fn merge_pull_request(
+    repo_name: &str,
+    pull_number: u32,
+    state: Arc<AppState>,
+) -> Result<String, String> {
+    // Obtener el repositorio desde el estado
+    let repositories = state.repositories.lock().unwrap();
+    if let Some(repo) = repositories.get(repo_name) {
+        // Obtener el Pull Request desde el estado
+        let pull_requests = state.pull_requests.lock().unwrap();
+        if let Some(pull) = pull_requests.get(repo_name).and_then(|prs| {
+            prs.iter()
+                .find(|&pr| pr.pull_number == pull_number as usize)
+        }) {
+            // Suponiendo que puedes extraer la información necesaria del Pull Request
+            let our_branch = &pull.target_branch;
+            let their_branch = &pull.source_branch;
+            let git_repo_dir = get_git_repo_dir(repo_name, &state).ok_or_else(|| {
+                format!(
+                    "Repository '{}' not found or no path specified for the repository",
+                    repo_name
+                )
+            })?;
+            let root_dir = std::env::current_dir()
+                .unwrap()
+                .to_string_lossy()
+                .into_owned();
+
+            match git_merge(
+                our_branch,
+                their_branch,
+                &git_repo_dir.to_string_lossy(),
+                &root_dir,
+            ) {
+                Ok((hash, conflicting_paths)) => Ok(format!(
+                    "Pull Request #{} merged successfully. Commit hash: {}",
+                    pull_number, hash
+                )),
+                Err(err) => Err(format!("Error merging Pull Request: {}", err)),
+            }
+        } else {
+            Err(format!("Pull Request #{} not found", pull_number))
+        }
+    } else {
+        Err(format!("Repository '{}' not found", repo_name))
     }
 }
 
@@ -290,6 +372,16 @@ fn handle_request(
                 }
             } else {
                 "Invalid URL format for modifying a Pull Request".to_string()
+            }
+        }
+        ("PUT", "/repos/{repo}/pulls/{pull_number}/merge") => {
+            if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
+                match merge_pull_request(&repo_name, pull_number, state.clone()) {
+                    Ok(msg) => msg,
+                    Err(err) => err,
+                }
+            } else {
+                "Invalid URL format for merging a Pull Request".to_string()
             }
         }
 
