@@ -14,28 +14,24 @@ pub struct Request {
 impl Request {
     pub fn new(request: &str) -> Self {
         let mut lines = request.lines();
-        let first_line = lines.next().unwrap_or_default();
 
-        let mut parts = first_line.split_whitespace();
+        let head_line = lines.next().unwrap_or_default();
+        let mut parts = head_line.split_whitespace();
 
         let method = parts.next().unwrap_or_default();
         let method = Method::from(method);
 
         let path = parts.next().unwrap_or_default();
-        let (path, qs) = match path.split_once('?') {
-            Some((path, qs)) => (path.to_string(), QueryString::from(qs)),
-            None => (path.to_string(), QueryString::default()),
-        };
+        let (path, qs) = parse_path(path);
 
-        let mut headers = Vec::new();
+        let mut headers = Headers::default();
         loop {
             let line = lines.next().unwrap_or_default();
-            headers.push(line);
             if line.is_empty() {
                 break;
             }
+            headers.add(line);
         }
-        let headers = Headers::from(headers);
 
         let mut body = String::new();
         loop {
@@ -47,7 +43,6 @@ impl Request {
         }
         // transformamos el body segun mime type, ahora es siempre json.
         // pero si viene XML hay que pasarlo a json que es lo que entendemos
-
         Self {
             method,
             path,
@@ -62,5 +57,12 @@ impl Request {
             .split('/')
             .filter(|s| !s.is_empty())
             .collect::<Vec<&str>>()
+    }
+}
+
+fn parse_path(path: &str) -> (String, QueryString) {
+    match path.split_once('?') {
+        Some((path, qs)) => (path.to_string(), QueryString::from(qs)),
+        None => (path.to_string(), QueryString::default()),
     }
 }

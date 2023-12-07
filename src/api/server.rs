@@ -4,23 +4,28 @@ use crate::api::utils::method::Method;
 use crate::api::utils::mime_type::MimeType;
 use crate::api::utils::request::Request;
 use crate::api::utils::response::Response;
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 
 use super::utils::status_code::StatusCode;
 
 fn read_request(stream: &mut TcpStream) -> io::Result<String> {
-    let mut bufreader = BufReader::new(stream);
-    let mut buffer = String::new();
+    let mut buffer = [0; 1024];
+    let mut request = Vec::new();
+
     loop {
-        let mut temp_buffer = String::new();
-        let read = bufreader.read_line(&mut temp_buffer)?;
-        if read < 3 {
-            break;
+        match stream.read(&mut buffer) {
+            Ok(bytes_read) if bytes_read > 0 => {
+                request.extend_from_slice(&buffer[..bytes_read]);
+                if bytes_read < buffer.len() {
+                    break;
+                }
+            }
+            _ => break,
         }
-        buffer.push_str(&temp_buffer);
     }
+    let buffer = String::from_utf8(request).unwrap();
     Ok(buffer)
 }
 
@@ -74,6 +79,7 @@ pub fn run(domain: &str, port: &str, path: &str) -> io::Result<()> {
 
     log(&format!("Changed working directory to {}", path))?;
     log(&format!("Server listening at {}...", &address))?;
+    println!("Server listening at {}...", &address);
 
     let mut handles = vec![];
     while let Ok((mut stream, socket_addr)) = listener.accept() {
@@ -81,12 +87,14 @@ pub fn run(domain: &str, port: &str, path: &str) -> io::Result<()> {
         let handle = thread::spawn(move || -> io::Result<()> {
             match handle_client(&mut stream) {
                 Ok(_) => log(&format!("End connection from {}...Successful", socket_addr))?,
-                Err(e) => log(&format!(
-                    "End connection from {}...With error: {}",
-                    socket_addr, e
-                ))?,
+                Err(e) => {
+                    log(&format!(
+                        "End connection from {}...With error: {}",
+                        socket_addr, e
+                    ))?;
+                    handle_error(&mut stream)?;
+                }
             }
-            handle_error(&mut stream)?;
             Ok(())
         });
         handles.push(handle);
