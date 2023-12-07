@@ -3,6 +3,7 @@ use chrono::Duration;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+
 // Data structures to represent Pull Requests and Repositories
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct PullRequest {
@@ -51,8 +52,6 @@ fn create_pull_request(
         pull_request.pull_number = next_pull_number;
         pull_request.created_at = get_current_date();
         pull_request.updated_at = pull_request.created_at.clone();
-
-        // No need to clone each field individually, use the struct itself
         pull_request.state = "open".to_string();
         pull_request.closed_at = None;
 
@@ -76,75 +75,13 @@ fn get_current_date() -> String {
     Local::now().to_string()
 }
 
-// Function to list Pull Requests
-fn list_pull_requests(
-    owner: &str,
-    repo: &str,
-    state: Arc<AppState>,
-    sort: Option<&str>,
-    direction: Option<&str>,
-    per_page: Option<usize>,
-    page: Option<usize>,
-) -> Result<String, String> {
+fn list_pull_requests(repo: &str, state: Arc<AppState>) -> Result<String, String> {
     let pull_requests = state.pull_requests.lock().unwrap();
 
-    if let Some(pulls) = pull_requests.get(&format!("{}/{}", owner, repo)) {
-        // Filter and sort Pull Requests
-        let filtered_pulls: Vec<&PullRequest> = pulls
-            .iter()
-            .filter(|&pr| {
-                // me falta la logica de filtrado (state, source branch, target branch)
-                true
-            })
-            .collect();
+    if let Some(pulls) = pull_requests.get(repo) {
+        let pulls_clone: Vec<&PullRequest> = pulls.iter().collect();
 
-        let sorted_pulls: Vec<&PullRequest> = match sort {
-            Some("popularity") => {
-                let max_reviewers = filtered_pulls
-                    .iter()
-                    .map(|pr| pr.reviewers.len())
-                    .max()
-                    .unwrap_or(0);
-                filtered_pulls
-                    .iter()
-                    .filter(|&&pr| pr.reviewers.len() == max_reviewers)
-                    .map(|&pr| pr)
-                    .collect()
-            }
-            Some("long-running") => {
-                let now = chrono::Utc::now();
-                filtered_pulls
-                    .iter()
-                    .filter(|&&pr| {
-                        let created_at = chrono::DateTime::parse_from_str(&pr.created_at, "%+")
-                            .unwrap_or_else(|_| chrono::Utc::now().into());
-
-                        now.signed_duration_since(created_at) > Duration::days(30)
-                    })
-                    .map(|&pr| pr)
-                    .collect()
-            }
-            _ => filtered_pulls.to_vec(),
-        };
-
-        // Apply sorting direction
-        let sorted_pulls: Vec<&PullRequest> = match direction {
-            Some("asc") => sorted_pulls,
-            Some("desc") | None => sorted_pulls.into_iter().rev().collect(),
-            _ => return Err("Invalid sorting direction".to_string()),
-        };
-
-        // Paginate the results
-        let start_idx = (page.unwrap_or(1) - 1) * per_page.unwrap_or(30);
-        let end_idx = start_idx + per_page.unwrap_or(30);
-        let paginated_pulls: Vec<&PullRequest> = sorted_pulls
-            .into_iter()
-            .skip(start_idx)
-            .take(end_idx - start_idx)
-            .collect();
-
-        // Serialize to JSON
-        if let Ok(result) = serde_json::to_string(&paginated_pulls) {
+        if let Ok(result) = serde_json::to_string(&pulls_clone) {
             Ok(result)
         } else {
             Err("Error converting Pull Requests to JSON".to_string())
@@ -163,11 +100,9 @@ fn get_pull_request(
     let pull_requests = state.pull_requests.lock().unwrap();
 
     if let Some(pulls) = pull_requests.get(&repo_name.to_string()) {
-        // Convert pull_number to usize
         let pull_number_usize = pull_number as usize;
 
         if let Some(pull) = pulls.iter().find(|&pr| pr.pull_number == pull_number_usize) {
-            // Serialize to JSON
             if let Ok(result) = serde_json::to_string(&pull) {
                 Ok(result)
             } else {
@@ -191,7 +126,6 @@ fn extract_repo_and_pull_number(url: &str) -> Option<(String, u32)> {
     }
     None
 }
-// ...
 
 // Data structure to represent Commits
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -317,15 +251,7 @@ fn handle_request(
         }
         ("GET", "/repos/{repo}/pulls") => {
             if let Some(repo_name) = extract_repo_name(url) {
-                match list_pull_requests(
-                    &repo_name,
-                    &repo_name,
-                    state.clone(),
-                    Some("popularity"),
-                    Some("asc"),
-                    Some(30),
-                    Some(1),
-                ) {
+                match list_pull_requests(&repo_name, state.clone()) {
                     Ok(result) => result,
                     Err(err) => err,
                 }
@@ -530,7 +456,7 @@ mod tests {
     #[test]
     fn test_list_pull_requests_no_repository() {
         let state = Arc::new(create_app_state_with_pull_requests("other_repo", vec![]));
-        let result = list_pull_requests("owner", "repo", state, None, None, None, None);
+        let result = list_pull_requests("repo", state);
         assert!(result.is_err());
         assert_eq!(
             result.err(),
@@ -540,14 +466,32 @@ mod tests {
 
     #[test]
     fn test_list_pull_requests_empty_repository() {
-        let state = Arc::new(create_app_state_with_pull_requests("repo", Vec::new()));
-        let result = list_pull_requests("owner", "repo", state, None, None, None, None);
+        let state = Arc::new(create_app_state_with_pull_requests(
+            "repo_empty",
+            Vec::new(),
+        ));
+        let result = list_pull_requests("repo_empty", state.clone());
 
-        assert!(result.is_err());
-        assert_eq!(
-            result.err(),
-            Some("Repository not found or no Pull Requests".to_string())
-        );
+        assert!(result.is_ok());
+        let result_str = result.unwrap();
+        let parsed_pull_requests: Vec<PullRequest> = serde_json::from_str(&result_str).unwrap();
+
+        assert_eq!(parsed_pull_requests.len(), 0);
+    }
+
+    #[test]
+    fn test_list_pull_requests_success() {
+        let repo_name = "test_repo";
+        let pull_request1 = create_pull_request_test(1, vec!["reviewer1", "reviewer2"], 7);
+        let pull_request2 = create_pull_request_test(2, vec!["reviewer1"], 10);
+        let state =
+            create_app_state_with_pull_requests(repo_name, vec![pull_request1, pull_request2]);
+        let result = list_pull_requests(repo_name, Arc::new(state));
+
+        assert!(result.is_ok());
+        let result_str = result.unwrap();
+        assert!(result_str.contains("Pull Request #1"));
+        assert!(result_str.contains("Pull Request #2"));
     }
 
     #[test]
@@ -587,67 +531,5 @@ mod tests {
 
         assert_eq!(repo_pulls.len(), 1);
         assert_eq!(repo_pulls[0].title, "Test Pull Request");
-    }
-
-    #[test]
-    fn test_list_pull_requests() {
-        let state = AppState {
-            pull_requests: Mutex::new(HashMap::new()),
-            repositories: Mutex::new(HashMap::new()),
-        };
-        let state = Arc::new(state);
-
-        let repo_name = "test_repo";
-
-        state.repositories.lock().unwrap().insert(
-            repo_name.to_string(),
-            Repository {
-                name: repo_name.to_string(),
-            },
-        );
-
-        let pull_request1 = PullRequest {
-            pull_number: 1,
-            title: "Pull Request 1".to_string(),
-            description: "Description 1".to_string(),
-            source_branch: "feature-branch-1".to_string(),
-            target_branch: "main".to_string(),
-            author: "Author 1".to_string(),
-            created_at: get_current_date(),
-            updated_at: get_current_date(),
-            state: "open".to_string(),
-            reviewers: vec!["reviewer1".to_string(), "reviewer2".to_string()],
-            closed_at: None,
-        };
-
-        let pull_request2 = PullRequest {
-            pull_number: 2,
-            title: "Pull Request 2".to_string(),
-            description: "Description 2".to_string(),
-            source_branch: "feature-branch-2".to_string(),
-            target_branch: "main".to_string(),
-            author: "Author 2".to_string(),
-            created_at: get_current_date(),
-            updated_at: get_current_date(),
-            state: "open".to_string(),
-            reviewers: vec!["reviewer3".to_string(), "reviewer4".to_string()],
-            closed_at: Some(get_current_date()),
-        };
-
-        state.pull_requests.lock().unwrap().insert(
-            format!("{}/{}", repo_name, repo_name),
-            vec![pull_request1, pull_request2],
-        );
-        let result =
-            list_pull_requests(repo_name, repo_name, state.clone(), None, None, None, None);
-
-        assert!(result.is_ok());
-
-        let result_str = result.unwrap();
-        let parsed_pull_requests: Vec<PullRequest> = serde_json::from_str(&result_str).unwrap();
-
-        assert_eq!(parsed_pull_requests.len(), 2);
-        assert_eq!(parsed_pull_requests[0].title, "Pull Request 2");
-        assert_eq!(parsed_pull_requests[1].title, "Pull Request 1");
     }
 }
