@@ -3,6 +3,7 @@ use std::io;
 use crate::api::utils::{log::log, status_code::StatusCode};
 use serde_json::json;
 
+/// Handle a GET request.
 pub fn handle(path_splitted: &[&str]) -> io::Result<(StatusCode, Option<String>)> {
     match path_splitted {
         ["repos", repo, "pulls"] => {

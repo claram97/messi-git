@@ -16,7 +16,7 @@ fn test_run_server() -> io::Result<()> {
 #[test]
 fn test_query_strings() {
     let qs = QueryString::from("id=1&not=2");
-    let mut qs_example = QueryString::default();
+    let mut qs_example = QueryString::new();
     qs_example.insert("id", "1");
     qs_example.insert("not", "2");
     assert_eq!(qs, qs_example);
@@ -49,7 +49,7 @@ fn test_headers() {
         "Connection: keep-alive",
         "Content-Length: 44",
     ]);
-    let mut header_example = Headers::default();
+    let mut header_example = Headers::new();
     header_example.insert("Content-Type", "application/json");
     header_example.insert("user-agent", "PostmanRuntime/7.32.3");
     header_example.insert("Accept", "*/*");

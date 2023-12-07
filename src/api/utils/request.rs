@@ -2,7 +2,16 @@ use crate::api::utils::headers::Headers;
 use crate::api::utils::method::Method;
 use crate::api::utils::query_string::QueryString;
 
-#[derive(Debug, Default)]
+/// A struct that holds the data of an HTTP request
+/// 
+/// # Fields
+/// 
+/// * `method` - A Method enum that holds the method of the request.
+/// * `path` - A string slice that holds the path of the request.
+/// * `headers` - A Headers struct that holds the headers of the request.
+/// * `qs` - A QueryString struct that holds the query strings of the request.
+/// * `body` - A string slice that holds the body of the request.
+#[derive(Debug)]
 pub struct Request {
     pub method: Method,
     pub path: String,
@@ -12,6 +21,11 @@ pub struct Request {
 }
 
 impl Request {
+    /// Create a new Request.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `request` - A string slice that holds the HTTP request to be parsed.
     pub fn new(request: &str) -> Self {
         let mut lines = request.lines();
 
@@ -24,7 +38,7 @@ impl Request {
         let path = parts.next().unwrap_or_default();
         let (path, qs) = parse_path(path);
 
-        let mut headers = Headers::default();
+        let mut headers = Headers::new();
         loop {
             let line = lines.next().unwrap_or_default();
             if line.is_empty() {
@@ -52,6 +66,7 @@ impl Request {
         }
     }
 
+    /// Splits the path of the request into a vector of string slices.
     pub fn get_path_split(&self) -> Vec<&str> {
         self.path
             .split('/')
@@ -60,9 +75,10 @@ impl Request {
     }
 }
 
+/// Parse the path of the request into a string slice and a QueryString struct.
 fn parse_path(path: &str) -> (String, QueryString) {
     match path.split_once('?') {
         Some((path, qs)) => (path.to_string(), QueryString::from(qs)),
-        None => (path.to_string(), QueryString::default()),
+        None => (path.to_string(), QueryString::new()),
     }
 }

@@ -2,6 +2,7 @@ use std::io::{self, Write};
 
 use crate::{logger, utils::get_current_time};
 
+/// Log a message to the logs/api.log file.
 pub fn log(message: &str) -> io::Result<()> {
     let mut logger = logger::Logger::new("logs/api.log")?;
     let message = message

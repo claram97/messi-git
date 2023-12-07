@@ -1,3 +1,11 @@
+/// HTTP Method
+/// 
+/// # Supported Methods
+/// 
+/// - GET
+/// - POST
+/// - PUT
+/// - PATCH
 #[derive(Debug, PartialEq, Eq, Default)]
 pub enum Method {
     #[default]

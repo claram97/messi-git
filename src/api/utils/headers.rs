@@ -1,9 +1,16 @@
 use std::collections::HashMap;
 
-#[derive(Debug, Default, PartialEq, Eq)]
+/// A struct that holds the headers of a request.
+#[derive(Debug, PartialEq, Eq)]
 pub struct Headers(HashMap<String, String>);
 
 impl Headers {
+
+    /// Create a new Headers.
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+    
     /// Insert a header into the headers map.
     /// 
     /// # Arguments
@@ -41,12 +48,9 @@ impl Headers {
 
 impl From<Vec<&str>> for Headers {
     fn from(v: Vec<&str>) -> Self {
-        let mut headers = Self::default();
+        let mut headers = Self::new();
         for line in v {
-            let mut key_value = line.split(": ");
-            let key = key_value.next().unwrap_or_default();
-            let value = key_value.next().unwrap_or_default();
-            headers.insert(key, value);
+            headers.add(line)
         }
         headers
     }

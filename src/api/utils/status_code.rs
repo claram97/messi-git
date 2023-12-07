@@ -1,5 +1,14 @@
 use std::fmt;
 
+/// An enum that holds the status code of a response.
+/// 
+/// # Supported status codes
+/// 
+/// - 200 Ok
+/// - 201 Created
+/// - 400 Bad Request
+/// - 404 Not Found
+/// - 500 Internal Server Error
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum StatusCode {
     Ok = 200,
@@ -10,6 +19,7 @@ pub enum StatusCode {
 }
 
 impl StatusCode {
+    /// Get the reason phrase of a status code.
     pub fn reason_phrase(&self) -> &str {
         match self {
             Self::Ok => "Ok",
@@ -20,6 +30,11 @@ impl StatusCode {
         }
     }
 
+    /// Create a status code from a u16.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `code` - A u16 that holds the status code to be created.
     pub fn from_u16(code: u16) -> Result<Self, Error> {
         match code {
             200 => Ok(Self::Ok),
@@ -31,11 +46,13 @@ impl StatusCode {
         }
     }
 
+    /// Get the u16 value of a status code.
     pub fn to_u16(&self) -> u16 {
         *self as u16
     }
 }
 
+/// An enum that holds the errors of a status code.
 #[derive(Debug)]
 pub enum Error {
     InvalidRequest,

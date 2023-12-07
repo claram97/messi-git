@@ -10,6 +10,7 @@ use std::thread;
 
 use super::utils::status_code::StatusCode;
 
+/// Read the HTTP request from the client.
 fn read_request(stream: &mut TcpStream) -> io::Result<String> {
     let mut buffer = [0; 1024];
     let mut request = Vec::new();
@@ -29,6 +30,9 @@ fn read_request(stream: &mut TcpStream) -> io::Result<String> {
     Ok(buffer)
 }
 
+/// Handle a client request.
+/// 
+/// Parse the request, handle it and send the response.
 fn handle_client(stream: &mut TcpStream) -> io::Result<()> {
     let request = read_request(stream)?;
     log(&format!("HTTP Request: {}", request))?;
@@ -54,6 +58,8 @@ fn handle_client(stream: &mut TcpStream) -> io::Result<()> {
     stream.flush()
 }
 
+/// Get the mime type of the response.
+/// If the Accept header is not present, the default mime type is JSON.
 fn get_mime_type(accept: Option<&str>) -> MimeType {
     match accept {
         Some(accept) => accept
@@ -65,12 +71,20 @@ fn get_mime_type(accept: Option<&str>) -> MimeType {
     }
 }
 
+/// Handle an error in the server.
 fn handle_error(stream: &mut TcpStream) -> io::Result<()> {
     let response = Response::new(StatusCode::InternalServerError, None, MimeType::default());
     write!(stream, "{}", response)?;
     stream.flush()
 }
 
+/// Run the REST API server.
+/// 
+/// # Arguments
+/// 
+/// * `domain` - The domain of the server
+/// * `port` - The port of the server.
+/// * `path` - The path where the repositories are stored
 pub fn run(domain: &str, port: &str, path: &str) -> io::Result<()> {
     std::env::set_current_dir(path)?;
 

@@ -4,6 +4,7 @@ use serde_json::json;
 
 use crate::api::utils::{log::log, status_code::StatusCode};
 
+/// Handle a POST request.
 pub fn handle(path_splitted: &[&str]) -> io::Result<(StatusCode, Option<String>)> {
     match path_splitted {
         ["repos", repo, "pulls"] => {
