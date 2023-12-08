@@ -30,8 +30,8 @@ struct Repository {
 
 // Global state to store Pull Requests and Repositories
 pub struct AppState {
-    pub pull_requests: Mutex<HashMap<String, Vec<PullRequest>>>,
-    pub repositories: Mutex<HashMap<String, Repository>>,
+    pull_requests: Mutex<HashMap<String, Vec<PullRequest>>>,
+    repositories: Mutex<HashMap<String, Repository>>,
 }
 
 // API functions
