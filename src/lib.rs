@@ -1,4 +1,5 @@
 pub mod add;
+pub mod api;
 pub mod branch;
 pub mod branch_handler;
 pub mod cat_file;
