@@ -450,6 +450,26 @@ pub fn get_merge_parents(commit_hash: &str, git_dir_path: &str) -> io::Result<Ve
     Ok(vec![parent1.to_string(), parent2.to_string()])
 }
 
+/// This function will not use the index file. It will use the tree provided as a parameter.
+pub fn new_pr_merge_commit(
+    git_dir_path: &str,
+    message: &str,
+    parent_hash: &str,
+    parent_hash2: &str,
+    tree: &Tree,
+) -> io::Result<String> {
+    let (tree_hash, _) = tree_handler::write_tree(tree, git_dir_path)?;
+    let (timestamp, offset) = utils::get_timestamp()?;
+    let time = format!("{} {}", timestamp, offset);
+    let commit_content = format!("tree {tree_hash}\nparent {parent_hash}\nparent {parent_hash2}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0", "user", "email", "user", "email", message = message, time = time, tree_hash = tree_hash, parent_hash = parent_hash, parent_hash2 = parent_hash2);
+    let commit_hash = hash_object::store_string_to_file(&commit_content, git_dir_path, "commit")?;
+    let branch_name = get_branch_name(git_dir_path)?;
+    let branch_path = git_dir_path.to_string() + "/refs/heads/" + &branch_name;
+    let mut branch_file = std::fs::File::create(branch_path)?;
+    branch_file.write_all(commit_hash.as_bytes())?;
+    Ok(commit_hash)
+}
+
 #[cfg(test)]
 mod tests {
     fn create_git_dir(git_dir_path: &str) {
