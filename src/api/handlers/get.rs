@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::api::utils::{log::log, status_code::StatusCode, request::Request};
+use crate::api::utils::{log::log, request::Request, status_code::StatusCode};
 use serde_json::json;
 
 /// Handle a GET request.

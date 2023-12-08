@@ -2,7 +2,7 @@ use std::io;
 
 use serde_json::json;
 
-use crate::api::utils::{log::log, status_code::StatusCode, request::Request};
+use crate::api::utils::{log::log, request::Request, status_code::StatusCode};
 
 /// Handle a PATCH request.
 pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
