@@ -52,10 +52,10 @@ pub struct PullRequest {
 }
 
 impl PullRequest {
+    /// Returns a new PullRequest
     pub fn new(repo: &mut Repository, pull_request_create: PullRequestCreate) -> io::Result<Self> {
         let now = get_current_date();
         let next_pull_number = repo.pr_count + 1;
-        repo.pr_count += 1;
 
         let pr = Self {
             pull_number: next_pull_number,
@@ -68,17 +68,13 @@ impl PullRequest {
             state: PRState::Open,
             ..Default::default()
         };
-        repo.pull_requests.insert(next_pull_number, pr.clone());
+        repo.insert_pull_request(&pr);
         Ok(pr)
     }
 
-    pub fn patch(repo: &mut Repository, pull_number: usize, pr_patch: PullRequestPatch) -> io::Result<Self> {
-        let now = get_current_date();
-        let mut pr = match repo.get_pull_request(pull_number) {
-            Some(pr) => pr.clone(),
-            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Pull Request not found"))
-        };
-
+    /// Returns a new PullRequest with the updated fields
+    pub fn patch(&self, repo: &mut Repository, pr_patch: PullRequestPatch) -> Self {
+        let mut pr = self.clone();
         if let Some(title) = pr_patch.title {
             pr.title = title;
         }
@@ -88,9 +84,10 @@ impl PullRequest {
         if let Some(target_branch) = pr_patch.target_branch {
             pr.target_branch = target_branch;
         }
+        let now = get_current_date();
         pr.updated_at = now.clone();
-        repo.pull_requests.insert(pull_number, pr.clone());
-        Ok(pr)
+        repo.insert_pull_request(&pr);
+        pr
     }
 }
 
@@ -110,6 +107,13 @@ impl Repository {
             pull_requests: HashMap::new(),
         }
     }
+
+    pub fn insert_pull_request(&mut self, pull_request: &PullRequest) {
+        match self.pull_requests.insert(pull_request.pull_number, pull_request.clone()) {
+            Some(_) => (),
+            None => self.pr_count += 1,
+        }
+    } 
 
     pub fn list_pull_requests(&self) -> Vec<PullRequest> {
         let mut prs: Vec<PullRequest> = self.pull_requests.values().cloned().collect();
@@ -136,8 +140,7 @@ impl Repository {
         let filename = root_dir.to_owned() + "/prs/" + &self.name.clone() + ".json";
         let repo = serde_json::to_string(self)?;
         let repo = repo.as_bytes();
-        std::fs::write(filename, repo)?;
-        Ok(())
+        std::fs::write(filename, repo)
     }
 }
 
@@ -802,62 +805,59 @@ mod tests {
     #[test]
     fn test_load_dump_repo() -> io::Result<()> {
         std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let repo_name = "repo";
-        let repo = Repository {
-            name: repo_name.to_string(),
-            pr_count: 0,
-            pull_requests: HashMap::new(),
-        };
+        let root_dir = "tests/pull_request/server";
+        let repo_name = "repo_dump";
+        let repo = Repository::load(repo_name, root_dir)?;
 
-        repo.dump("tests/pull_request/server")?;
-
-        let loaded_repo = Repository::load(repo_name, "tests/pull_request/server")?;
+        repo.dump(root_dir)?;
+        let loaded_repo = Repository::load(repo_name, root_dir)?;
         assert_eq!(loaded_repo.name, repo_name);
         assert_eq!(loaded_repo.pr_count, 0);
         assert_eq!(loaded_repo.pull_requests.len(), 0);
-
-        std::fs::remove_file("tests/pull_request/server/prs/repo.json")?;
+        
+        let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
+        std::fs::remove_file(repo_path)?;
+        
+        
+        let repo_name = "not_exist";
+        let loaded_repo = Repository::load(repo_name, root_dir)?;
+        assert_eq!(loaded_repo.name, repo_name);
+        assert_eq!(loaded_repo.pr_count, 0);
+        assert_eq!(loaded_repo.pull_requests.len(), 0);
+        
         Ok(())
     }
 
     #[test]
     fn test_create_one_pr() -> io::Result<()> {
         std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let repo_name = "repo_create";
-        let mut repo = Repository {
-            name: repo_name.to_string(),
-            pr_count: 0,
-            pull_requests: HashMap::new(),
-        };
-
+        let root_dir = "tests/pull_request/server";
+        let repo_name = "repo_create"; 
+        let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
             description: "description".to_string(),
             source_branch: "source_branch".to_string(),
             target_branch: "target_branch".to_string(),
         };
-
         PullRequest::new(&mut repo, pr)?;
+        repo.dump(root_dir)?;
         
-        repo.dump("tests/pull_request/server")?;
-        let pr = Repository::load(repo_name, "tests/pull_request/server")?;
-        assert_eq!(pr.name, repo_name);
-        assert_eq!(pr.pr_count, 1);
-        assert_eq!(pr.pull_requests.len(), 1);
-        std::fs::remove_file("tests/pull_request/server/prs/repo_create.json")?;
+        let repo = Repository::load(repo_name, root_dir)?;
+        assert_eq!(repo.name, repo_name);
+        assert_eq!(repo.pr_count, 1);
+        assert_eq!(repo.pull_requests.len(), 1);
+        let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
+        std::fs::remove_file(repo_path)?;
         Ok(())
     }
 
     #[test]
     fn test_create_many_pr() -> io::Result<()> {
         std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let repo_name = "repo_create";
-        let mut repo = Repository {
-            name: repo_name.to_string(),
-            pr_count: 0,
-            pull_requests: HashMap::new(),
-        };
-
+        let root_dir = "tests/pull_request/server";
+        let repo_name = "repo_create_many"; 
+        let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
             description: "description".to_string(),
@@ -868,26 +868,23 @@ mod tests {
         PullRequest::new(&mut repo, pr.clone())?;
         PullRequest::new(&mut repo, pr.clone())?;
         PullRequest::new(&mut repo, pr.clone())?;
+        repo.dump(root_dir)?;
 
-        repo.dump("tests/pull_request/server")?;
-        let pr = Repository::load(repo_name, "tests/pull_request/server")?;
-        assert_eq!(pr.name, repo_name);
-        assert_eq!(pr.pr_count, 3);
-        assert_eq!(pr.pull_requests.len(), 3);
-        std::fs::remove_file("tests/pull_request/server/prs/repo_create.json")?;
+        let repo = Repository::load(repo_name, root_dir)?;
+        assert_eq!(repo.name, repo_name);
+        assert_eq!(repo.pr_count, 3);
+        assert_eq!(repo.pull_requests.len(), 3);
+        let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
+        std::fs::remove_file(repo_path)?;
         Ok(())
     }
 
     #[test]
     fn test_get_pull_request() -> io::Result<()> {
         std::fs::create_dir_all("tests/pull_request/server/prs")?;
+        let root_dir = "tests/pull_request/server";
         let repo_name = "repo_get_pr";
-        let mut repo = Repository {
-            name: repo_name.to_string(),
-            pr_count: 0,
-            pull_requests: HashMap::new(),
-        };
-
+        let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
             description: "description".to_string(),
@@ -896,25 +893,51 @@ mod tests {
         };
 
         PullRequest::new(&mut repo, pr.clone())?;
-        repo.dump("tests/pull_request/server")?;
-        let repo = Repository::load(repo_name, "tests/pull_request/server")?;
+        repo.dump(root_dir)?;
+
+        let repo = Repository::load(repo_name, root_dir)?;
         let pr = repo.get_pull_request(1).unwrap();
+
         assert_eq!(pr.title, "title");
         assert_eq!(pr.description, "description");
         assert_eq!(pr.pull_number, 1);
-        std::fs::remove_file("tests/pull_request/server/prs/repo_create.json")?;
+        let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
+        std::fs::remove_file(repo_path)?;
         Ok(())
     }
 
     #[test]
     fn test_get_pull_request_not_found() -> io::Result<()> {
         std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let repo_name = "repo_get_pr";
-        let mut repo = Repository {
-            name: repo_name.to_string(),
-            pr_count: 0,
-            pull_requests: HashMap::new(),
+        let root_dir = "tests/pull_request/server";
+        let repo_name = "repo_get_pr_not_found";
+        let mut repo = Repository::load(repo_name, root_dir)?;
+        let pr = PullRequestCreate {
+            title: "title".to_string(),
+            description: "description".to_string(),
+            source_branch: "source_branch".to_string(),
+            target_branch: "target_branch".to_string(),
         };
+        PullRequest::new(&mut repo, pr.clone())?;
+        repo.dump(root_dir)?;
+
+        let repo = Repository::load(repo_name, root_dir)?;
+        let repo = repo.get_pull_request(3);
+        assert!(repo.is_none());
+        let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
+        std::fs::remove_file(repo_path)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_list_prs() -> io::Result<()> {
+        std::fs::create_dir_all("tests/pull_request/server/prs")?;
+        let root_dir = "tests/pull_request/server";
+        let repo_name = "repo_list_prs"; 
+        let mut repo = Repository::load(repo_name, root_dir)?;
+
+        let prs = repo.list_pull_requests();
+        assert_eq!(prs.len(), 0);
 
         let pr = PullRequestCreate {
             title: "title".to_string(),
@@ -924,11 +947,56 @@ mod tests {
         };
 
         PullRequest::new(&mut repo, pr.clone())?;
-        repo.dump("tests/pull_request/server")?;
-        let repo = Repository::load(repo_name, "tests/pull_request/server")?;
-        let pr = repo.get_pull_request(3);
-        assert!(pr.is_none());
-        std::fs::remove_file("tests/pull_request/server/prs/repo_create.json")?;
+        PullRequest::new(&mut repo, pr.clone())?;
+        PullRequest::new(&mut repo, pr.clone())?;
+        repo.dump(root_dir)?;
+
+        let repo = Repository::load(repo_name, root_dir)?;
+        let prs = repo.list_pull_requests();
+        assert_eq!(prs.len(), 3);
+
+        let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
+        std::fs::remove_file(repo_path)?;
         Ok(())
     }
+
+    #[test]
+    fn test_patch_pr() -> io::Result<()> {
+        std::fs::create_dir_all("tests/pull_request/server/prs")?;
+        let root_dir = "tests/pull_request/server";
+        let repo_name = "repo_patch"; 
+        let mut repo = Repository::load(repo_name, root_dir)?;
+        let pr = PullRequestCreate {
+            title: "title".to_string(),
+            description: "description".to_string(),
+            source_branch: "source_branch".to_string(),
+            target_branch: "target_branch".to_string(),
+        };
+        PullRequest::new(&mut repo, pr)?;
+        repo.dump(root_dir)?;
+        
+        let mut repo = Repository::load(repo_name, root_dir)?;
+        let pr = repo.get_pull_request(1).unwrap();
+        let pr_patch = PullRequestPatch {
+            title: Some("new title".to_string()),
+            description: Some("new description".to_string()),
+            target_branch: None,
+        };
+
+        pr.clone().patch(&mut repo, pr_patch);
+
+        repo.dump(root_dir)?;
+        let repo = Repository::load(repo_name, root_dir)?;
+        let pr = repo.get_pull_request(1).unwrap();
+
+        assert_eq!(pr.title, "new title");
+        assert_eq!(pr.description, "new description");
+        assert_eq!(pr.target_branch, "target_branch");
+
+        let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
+        std::fs::remove_file(repo_path)?;
+        Ok(())
+    }
+
+
 }
