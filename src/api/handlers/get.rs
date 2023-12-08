@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::api::utils::{log::log, request::Request, status_code::StatusCode};
+use crate::{api::utils::{log::log, request::Request, status_code::StatusCode}, pull_request::load_repo, pull};
 use serde_json::json;
 
 /// Handle a GET request.
@@ -12,8 +12,7 @@ pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
             Ok((StatusCode::Ok, Some(body)))
         }
         ["repos", repo, "pulls", pull_number] => {
-            let body = get_pull_request(repo, pull_number)?;
-            Ok((StatusCode::Ok, Some(body)))
+            get_pull_request(repo, pull_number)
         }
         ["repos", repo, "pulls", pull_number, "commits"] => {
             let body = list_pull_request_commits(repo, pull_number)?;
@@ -25,20 +24,26 @@ pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
 
 fn list_pull_requests(repo: &str) -> io::Result<String> {
     log(&format!("Listing pull requests of {}", repo))?;
-    let result = json!({
-        "message": format!("Listando pull requests de {}", repo)
-    })
-    .to_string();
-    Ok(result)
+    let curdir = std::env::current_dir()?;
+    let root_dir = curdir.to_string_lossy();
+    let repo = load_repo(repo, &root_dir)?;
+    let prs = repo.list_pull_requests();
+    let prs = serde_json::to_string(&prs)?;
+    Ok(prs)
 }
 
-fn get_pull_request(repo: &str, pull_number: &str) -> io::Result<String> {
+fn get_pull_request(repo: &str, pull_number: &str) -> io::Result<(StatusCode, Option<String>)> {
     log(&format!("Showing pull request {} of {}", pull_number, repo))?;
-    let result = json!({
-        "message": format!("Mostrando pull request {} de {}", pull_number, repo)
-    })
-    .to_string();
-    Ok(result)
+    let pull_number = pull_number.parse::<usize>().unwrap_or(0);
+    let curdir = std::env::current_dir()?;
+    let root_dir = curdir.to_string_lossy();
+    let repo = load_repo(repo, &root_dir)?;
+    let pr = match repo.get_pull_request(pull_number) {
+        Some(pr) => pr,
+        None => return Ok((StatusCode::NotFound, None))
+    };
+    let pr = serde_json::to_string(&pr)?;
+    Ok((StatusCode::Ok, Some(pr)))
 }
 
 fn list_pull_request_commits(repo: &str, pull_number: &str) -> io::Result<String> {

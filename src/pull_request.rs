@@ -97,6 +97,19 @@ pub struct Repository {
     pull_requests: HashMap<usize, PullRequest>,
 }
 
+impl Repository {
+
+    pub fn list_pull_requests(&self) -> Vec<PullRequest> {
+        let mut prs: Vec<PullRequest> = self.pull_requests.values().cloned().collect();
+        prs.sort_by(|a, b| a.pull_number.cmp(&b.pull_number));
+        prs
+    }
+
+    pub fn get_pull_request(&self, pull_number: usize) -> Option<&PullRequest> {
+        self.pull_requests.get(&pull_number)
+    }
+}
+
 // // Global state to store Pull Requests and Repositories
 pub struct AppState {
     pull_requests: Mutex<HashMap<String, Vec<PullRequest>>>,
