@@ -2,7 +2,7 @@ use std::io;
 
 use serde_json::json;
 
-use crate::{api::utils::{log::log, request::{Request, self}, status_code::StatusCode}, pull_request::{load_repo, dump_repo, PullRequestCreate, PullRequest}};
+use crate::{api::utils::{log::log, request::{Request, self}, status_code::StatusCode}, pull_request::{PullRequestCreate, PullRequest, Repository}};
 
 /// Handle a POST request.
 pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
@@ -22,10 +22,10 @@ fn create_pull_request(repo: &str, request: &Request) -> io::Result<String> {
     let root_dir = curdir.to_string_lossy();
     let body = &request.body;
     let pr_create: PullRequestCreate = serde_json::from_str(&body)?;
-    let mut repo = load_repo(repo, &root_dir)?;
+    let mut repo = Repository::load(repo, &root_dir)?;
     let pr = PullRequest::new(&mut repo, pr_create)?;
-    dump_repo(&repo, &root_dir)?;
-    
+    repo.dump(&root_dir)?;
+
     log(&format!("Pull request created: {:?}", pr))?;
     let pr = serde_json::to_string(&pr)?;
     Ok(pr)

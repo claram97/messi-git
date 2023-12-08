@@ -28,6 +28,14 @@ pub struct PullRequestCreate {
     target_branch: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PullRequestPatch {
+    title: Option<String>,
+    description: Option<String>,
+    source_branch: Option<String>,
+    target_branch: Option<String>,
+}
+
 // Data structures to represent Pull Requests and Repositories
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct PullRequest {
@@ -64,31 +72,31 @@ impl PullRequest {
         repo.pull_requests.insert(next_pull_number, pr.clone());
         Ok(pr)
     }
-}
-///
-pub fn load_repo(repo: &str, root_dir: &str) -> io::Result<Repository> {
-    let repo = repo.to_string() + ".json";
-    let path = Path::new(root_dir).join("prs").join(&repo);
-    let repo = match std::fs::read_to_string(path) {
-        Ok(repo) => repo,
-        Err(_) => Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("Repository not found: {}", repo),
-        ))?,
-    };
-    let repo: Repository = serde_json::from_str(&repo)?;
-    Ok(repo)
-}
 
-pub fn dump_repo(repo: &Repository, root_dir: &str) -> io::Result<()> {
-    let filename = root_dir.to_owned() + "/prs/" + &repo.name.clone() + ".json";
-    let repo = serde_json::to_string(repo)?;
-    let repo = repo.as_bytes();
-    // let path = Path::new("prs").join(&filename);
-    std::fs::write(filename, repo)?;
-    Ok(())
+    pub fn patch(repo: &mut Repository, pull_number: usize, pr_patch: PullRequestPatch) -> io::Result<Self> {
+        let now = get_current_date();
+        let mut pr = match repo.get_pull_request(pull_number) {
+            Some(pr) => pr.clone(),
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Pull Request not found"))
+        };
+
+        if let Some(title) = pr_patch.title {
+            pr.title = title;
+        }
+        if let Some(description) = pr_patch.description {
+            pr.description = description;
+        }
+        if let Some(source_branch) = pr_patch.source_branch {
+            pr.source_branch = source_branch;
+        }
+        if let Some(target_branch) = pr_patch.target_branch {
+            pr.target_branch = target_branch;
+        }
+        pr.updated_at = now.clone();
+        repo.pull_requests.insert(pull_number, pr.clone());
+        Ok(pr)
+    }
 }
-/// 
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Repository {
@@ -107,6 +115,28 @@ impl Repository {
 
     pub fn get_pull_request(&self, pull_number: usize) -> Option<&PullRequest> {
         self.pull_requests.get(&pull_number)
+    }
+
+    pub fn load(repo: &str, root_dir: &str) -> io::Result<Self> {
+        let repo = repo.to_string() + ".json";
+        let path = Path::new(root_dir).join("prs").join(&repo);
+        let repo = match std::fs::read_to_string(path) {
+            Ok(repo) => repo,
+            Err(_) => Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("Repository not found: {}", repo),
+            ))?,
+        };
+        let repo: Self = serde_json::from_str(&repo)?;
+        Ok(repo)
+    }
+
+    pub fn dump(&self, root_dir: &str) -> io::Result<()> {
+        let filename = root_dir.to_owned() + "/prs/" + &self.name.clone() + ".json";
+        let repo = serde_json::to_string(self)?;
+        let repo = repo.as_bytes();
+        std::fs::write(filename, repo)?;
+        Ok(())
     }
 }
 
@@ -778,9 +808,9 @@ mod tests {
             pull_requests: HashMap::new(),
         };
 
-        dump_repo(&repo, "tests/pull_request/server")?;
+        repo.dump("tests/pull_request/server")?;
 
-        let loaded_repo = load_repo(repo_name, "tests/pull_request/server")?;
+        let loaded_repo = Repository::load(repo_name, "tests/pull_request/server")?;
         assert_eq!(loaded_repo.name, repo_name);
         assert_eq!(loaded_repo.pr_count, 0);
         assert_eq!(loaded_repo.pull_requests.len(), 0);
@@ -808,8 +838,8 @@ mod tests {
 
         PullRequest::new(&mut repo, pr)?;
         
-        dump_repo(&repo, "tests/pull_request/server")?;
-        let pr = load_repo(repo_name, "tests/pull_request/server")?;
+        repo.dump("tests/pull_request/server")?;
+        let pr = Repository::load(repo_name, "tests/pull_request/server")?;
         assert_eq!(pr.name, repo_name);
         assert_eq!(pr.pr_count, 1);
         assert_eq!(pr.pull_requests.len(), 1);
@@ -838,8 +868,8 @@ mod tests {
         PullRequest::new(&mut repo, pr.clone())?;
         PullRequest::new(&mut repo, pr.clone())?;
 
-        dump_repo(&repo, "tests/pull_request/server")?;
-        let pr = load_repo(repo_name, "tests/pull_request/server")?;
+        repo.dump("tests/pull_request/server")?;
+        let pr = Repository::load(repo_name, "tests/pull_request/server")?;
         assert_eq!(pr.name, repo_name);
         assert_eq!(pr.pr_count, 3);
         assert_eq!(pr.pull_requests.len(), 3);

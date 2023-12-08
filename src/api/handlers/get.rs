@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::{api::utils::{log::log, request::Request, status_code::StatusCode}, pull_request::load_repo, pull};
+use crate::{api::utils::{log::log, request::Request, status_code::StatusCode}, pull_request::Repository};
 use serde_json::json;
 
 /// Handle a GET request.
@@ -26,7 +26,7 @@ fn list_pull_requests(repo: &str) -> io::Result<String> {
     log(&format!("Listing pull requests of {}", repo))?;
     let curdir = std::env::current_dir()?;
     let root_dir = curdir.to_string_lossy();
-    let repo = load_repo(repo, &root_dir)?;
+    let repo = Repository::load(repo, &root_dir)?;
     let prs = repo.list_pull_requests();
     let prs = serde_json::to_string(&prs)?;
     Ok(prs)
@@ -37,7 +37,7 @@ fn get_pull_request(repo: &str, pull_number: &str) -> io::Result<(StatusCode, Op
     let pull_number = pull_number.parse::<usize>().unwrap_or(0);
     let curdir = std::env::current_dir()?;
     let root_dir = curdir.to_string_lossy();
-    let repo = load_repo(repo, &root_dir)?;
+    let repo = Repository::load(repo, &root_dir)?;
     let pr = match repo.get_pull_request(pull_number) {
         Some(pr) => pr,
         None => return Ok((StatusCode::NotFound, None))
