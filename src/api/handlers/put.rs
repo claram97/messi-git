@@ -2,11 +2,12 @@ use std::io;
 
 use serde_json::json;
 
-use crate::api::utils::{log::log, status_code::StatusCode};
+use crate::api::utils::{log::log, status_code::StatusCode, request::Request};
 
 /// Handle a PUT request.
-pub fn handle(path_splitted: &[&str]) -> io::Result<(StatusCode, Option<String>)> {
-    match path_splitted {
+pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
+    let path_splitted = request.get_path_split();
+    match path_splitted[..] {
         ["repos", repo, "pulls", pull_number, "merge"] => {
             let body = merge_pull_request(repo, pull_number)?;
             Ok((StatusCode::Ok, Some(body)))

@@ -39,12 +39,12 @@ fn handle_client(stream: &mut TcpStream) -> io::Result<()> {
     let request = Request::new(&request);
     log(&format!("Parsed Request: {:?}", request))?;
 
-    let request_path_splitted = request.get_path_split();
+    // let request_path_splitted = request.get_path_split();
     let (status_code, body) = match request.method {
-        Method::GET => handlers::get::handle(&request_path_splitted)?,
-        Method::POST => handlers::post::handle(&request_path_splitted)?,
-        Method::PUT => handlers::put::handle(&request_path_splitted)?,
-        Method::PATCH => handlers::patch::handle(&request_path_splitted)?,
+        Method::GET => handlers::get::handle(&request)?,
+        Method::POST => handlers::post::handle(&request)?,
+        Method::PUT => handlers::put::handle(&request)?,
+        Method::PATCH => handlers::patch::handle(&request)?,
     };
 
     let mime_type = get_mime_type(request.headers.get("Accept"));
