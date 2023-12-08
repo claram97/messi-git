@@ -3,3 +3,5 @@ tests/logs
 file
 .vscode
 my_file
+logs/
+.logger_commands.txt
