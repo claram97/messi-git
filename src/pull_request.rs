@@ -1,5 +1,5 @@
 use crate::branch::get_branch_commit_hash;
-use crate::log::log;
+use crate::api::utils::log::log;
 use crate::merge::find_common_ancestor;
 use crate::merge::git_merge;
 use crate::merge::git_merge_for_pull_request;
@@ -32,7 +32,6 @@ pub struct PullRequestCreate {
 pub struct PullRequestPatch {
     title: Option<String>,
     description: Option<String>,
-    source_branch: Option<String>,
     target_branch: Option<String>,
 }
 
@@ -86,9 +85,6 @@ impl PullRequest {
         if let Some(description) = pr_patch.description {
             pr.description = description;
         }
-        if let Some(source_branch) = pr_patch.source_branch {
-            pr.source_branch = source_branch;
-        }
         if let Some(target_branch) = pr_patch.target_branch {
             pr.target_branch = target_branch;
         }
@@ -107,6 +103,14 @@ pub struct Repository {
 
 impl Repository {
 
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            pr_count: 0,
+            pull_requests: HashMap::new(),
+        }
+    }
+
     pub fn list_pull_requests(&self) -> Vec<PullRequest> {
         let mut prs: Vec<PullRequest> = self.pull_requests.values().cloned().collect();
         prs.sort_by(|a, b| a.pull_number.cmp(&b.pull_number));
@@ -118,15 +122,12 @@ impl Repository {
     }
 
     pub fn load(repo: &str, root_dir: &str) -> io::Result<Self> {
-        let repo = repo.to_string() + ".json";
-        let path = Path::new(root_dir).join("prs").join(&repo);
-        let repo = match std::fs::read_to_string(path) {
-            Ok(repo) => repo,
-            Err(_) => Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                format!("Repository not found: {}", repo),
-            ))?,
-        };
+        let filename = repo.to_string() + ".json";
+        let path = Path::new(root_dir).join("prs").join(&filename);
+        if !path.exists() {
+            return Ok(Self::new(repo))
+        }
+        let repo = std::fs::read_to_string(path)?;
         let repo: Self = serde_json::from_str(&repo)?;
         Ok(repo)
     }
@@ -149,41 +150,41 @@ pub struct AppState {
 // API functions
 
 // Function to create a Pull Request
-fn create_pull_request(
-    repo_name: &str,
-    // repo: &mut Repository,
-    mut pull_request: PullRequest,
-    state: Arc<AppState>,
-) -> Result<String, String> {
-    let mut pull_requests = state.pull_requests.lock().unwrap();
-    let mut repositories = state.repositories.lock().unwrap();
+// fn create_pull_request(
+//     repo_name: &str,
+//     // repo: &mut Repository,
+//     mut pull_request: PullRequest,
+//     state: Arc<AppState>,
+// ) -> Result<String, String> {
+//     let mut pull_requests = state.pull_requests.lock().unwrap();
+//     let mut repositories = state.repositories.lock().unwrap();
 
-    if let Some(repo) = repositories.get_mut(repo_name) {
-        let next_pull_number = pull_requests
-            .entry(repo_name.to_string())
-            .or_insert_with(Vec::new)
-            .len()
-            + 1;
+//     if let Some(repo) = repositories.get_mut(repo_name) {
+//         let next_pull_number = pull_requests
+//             .entry(repo_name.to_string())
+//             .or_insert_with(Vec::new)
+//             .len()
+//             + 1;
 
-        pull_request.pull_number = next_pull_number;
-        pull_request.created_at = get_current_date();
-        pull_request.updated_at = pull_request.created_at.clone();
-        pull_request.state = PRState::Open;
-        pull_request.closed_at = None;
+//         pull_request.pull_number = next_pull_number;
+//         pull_request.created_at = get_current_date();
+//         pull_request.updated_at = pull_request.created_at.clone();
+//         pull_request.state = PRState::Open;
+//         pull_request.closed_at = None;
 
-        pull_requests
-            .entry(repo_name.to_string())
-            .or_insert(vec![])
-            .push(pull_request);
+//         pull_requests
+//             .entry(repo_name.to_string())
+//             .or_insert(vec![])
+//             .push(pull_request);
 
-        Ok(format!(
-            "Pull Request #{} created successfully",
-            next_pull_number
-        ))
-    } else {
-        Err("Repository not found".to_string())
-    }
-}
+//         Ok(format!(
+//             "Pull Request #{} created successfully",
+//             next_pull_number
+//         ))
+//     } else {
+//         Err("Repository not found".to_string())
+//     }
+// }
 
 // Function to get the current date and time as a string
 fn get_current_date() -> String {
@@ -478,144 +479,144 @@ fn merge_pull_request(
 }
 
 // Function to handle API requests
-fn handle_request(
-    method: &str,
-    url: &str,
-    body: Option<&[u8]>,
-    state: Arc<AppState>,
-    git_dir: &str,
-) -> String {
-    match (method, url) {
-        ("POST", "/repos/{repo}/pulls") => {
-            if let Some(repo_name) = extract_repo_name(url) {
-                if let Some(body) = body {
-                    if let Ok(pull_request) = serde_json::from_slice::<PullRequest>(body) {
-                        match create_pull_request(&repo_name, pull_request, state.clone()) {
-                            Ok(msg) => msg,
-                            Err(err) => err,
-                        }
-                    } else {
-                        "Error parsing the request body".to_string()
-                    }
-                } else {
-                    "Missing request body".to_string()
-                }
-            } else {
-                "Repository name not found in the URL".to_string()
-            }
-        }
-        ("GET", "/repos/{repo}/pulls") => {
-            if let Some(repo_name) = extract_repo_name(url) {
-                match list_pull_requests(&repo_name, state.clone()) {
-                    Ok(result) => result,
-                    Err(err) => err,
-                }
-            } else {
-                "Repository name not found in the URL".to_string()
-            }
-        }
-        ("GET", "/repos/{repo}/pulls/{pull_number}") => {
-            if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
-                match get_pull_request(&repo_name, pull_number, state.clone()) {
-                    Ok(result) => result,
-                    Err(err) => err,
-                }
-            } else {
-                "Invalid URL format for getting a Pull Request".to_string()
-            }
-        }
-        ("PATCH", "/repos/{repo}/pulls/{pull_number}") => {
-            if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
-                if let Some(body) = body {
-                    if let Ok(updated_data) = serde_json::from_slice::<PullRequest>(body) {
-                        match modify_pull_request(
-                            &repo_name,
-                            pull_number,
-                            updated_data,
-                            state.clone(),
-                        ) {
-                            Ok(msg) => msg,
-                            Err(err) => err,
-                        }
-                    } else {
-                        "Error parsing the request body".to_string()
-                    }
-                } else {
-                    "Missing request body".to_string()
-                }
-            } else {
-                "Invalid URL format for modifying a Pull Request".to_string()
-            }
-        }
-        ("PUT", "/repos/{repo}/pulls/{pull_number}/merge") => {
-            if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
-                match merge_pull_request(&repo_name, pull_number, state.clone()) {
-                    Ok(msg) => msg,
-                    Err(err) => err,
-                }
-            } else {
-                "Invalid URL format for merging a Pull Request".to_string()
-            }
-        }
+// fn handle_request(
+//     method: &str,
+//     url: &str,
+//     body: Option<&[u8]>,
+//     state: Arc<AppState>,
+//     git_dir: &str,
+// ) -> String {
+//     match (method, url) {
+//         ("POST", "/repos/{repo}/pulls") => {
+//             if let Some(repo_name) = extract_repo_name(url) {
+//                 if let Some(body) = body {
+//                     if let Ok(pull_request) = serde_json::from_slice::<PullRequest>(body) {
+//                         match create_pull_request(&repo_name, pull_request, state.clone()) {
+//                             Ok(msg) => msg,
+//                             Err(err) => err,
+//                         }
+//                     } else {
+//                         "Error parsing the request body".to_string()
+//                     }
+//                 } else {
+//                     "Missing request body".to_string()
+//                 }
+//             } else {
+//                 "Repository name not found in the URL".to_string()
+//             }
+//         }
+//         ("GET", "/repos/{repo}/pulls") => {
+//             if let Some(repo_name) = extract_repo_name(url) {
+//                 match list_pull_requests(&repo_name, state.clone()) {
+//                     Ok(result) => result,
+//                     Err(err) => err,
+//                 }
+//             } else {
+//                 "Repository name not found in the URL".to_string()
+//             }
+//         }
+//         ("GET", "/repos/{repo}/pulls/{pull_number}") => {
+//             if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
+//                 match get_pull_request(&repo_name, pull_number, state.clone()) {
+//                     Ok(result) => result,
+//                     Err(err) => err,
+//                 }
+//             } else {
+//                 "Invalid URL format for getting a Pull Request".to_string()
+//             }
+//         }
+//         ("PATCH", "/repos/{repo}/pulls/{pull_number}") => {
+//             if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
+//                 if let Some(body) = body {
+//                     if let Ok(updated_data) = serde_json::from_slice::<PullRequest>(body) {
+//                         match modify_pull_request(
+//                             &repo_name,
+//                             pull_number,
+//                             updated_data,
+//                             state.clone(),
+//                         ) {
+//                             Ok(msg) => msg,
+//                             Err(err) => err,
+//                         }
+//                     } else {
+//                         "Error parsing the request body".to_string()
+//                     }
+//                 } else {
+//                     "Missing request body".to_string()
+//                 }
+//             } else {
+//                 "Invalid URL format for modifying a Pull Request".to_string()
+//             }
+//         }
+//         ("PUT", "/repos/{repo}/pulls/{pull_number}/merge") => {
+//             if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
+//                 match merge_pull_request(&repo_name, pull_number, state.clone()) {
+//                     Ok(msg) => msg,
+//                     Err(err) => err,
+//                 }
+//             } else {
+//                 "Invalid URL format for merging a Pull Request".to_string()
+//             }
+//         }
 
-        // ("GET", "/repos/{repo}/pulls/{pull_number}/commits") => {
-        //     if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
-        //         match list_commits(&repo_name, pull_number, state.clone()) {
-        //             Ok(result) => result,
-        //             Err(err) => err,
-        //         }
-        //     } else {
-        //         "Invalid URL format for listing commits in a Pull Request".to_string()
-        //     }
-        // }
-        _ => "Route not found".to_string(),
-    }
-}
+//         // ("GET", "/repos/{repo}/pulls/{pull_number}/commits") => {
+//         //     if let Some((repo_name, pull_number)) = extract_repo_and_pull_number(url) {
+//         //         match list_commits(&repo_name, pull_number, state.clone()) {
+//         //             Ok(result) => result,
+//         //             Err(err) => err,
+//         //         }
+//         //     } else {
+//         //         "Invalid URL format for listing commits in a Pull Request".to_string()
+//         //     }
+//         // }
+//         _ => "Route not found".to_string(),
+//     }
+// }
 
 // Function to extract the repository name from the URL
-fn extract_repo_name(url: &str) -> Option<String> {
-    url.split('/').nth(2).map(|s| s.to_string())
-}
+// fn extract_repo_name(url: &str) -> Option<String> {
+//     url.split('/').nth(2).map(|s| s.to_string())
+// }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::collections::HashMap;
-    use std::sync::{Arc, Mutex};
+    // use std::sync::{Arc, Mutex};
 
-    fn create_pull_request_test(
-        pull_number: u32,
-        reviewers: Vec<&str>,
-        created_at_days_ago: i64,
-    ) -> PullRequest {
-        let now = chrono::Utc::now();
-        PullRequest {
-            pull_number: pull_number.try_into().unwrap(),
-            title: format!("Pull Request #{}", pull_number),
-            description: "Test Pull Request".to_string(),
-            source_branch: "feature-branch".to_string(),
-            target_branch: "main".to_string(),
-            author: "test_author".to_string(),
-            created_at: (now - Duration::days(created_at_days_ago)).to_string(),
-            updated_at: (now - Duration::days(created_at_days_ago)).to_string(),
-            state: PRState::Open,
-            reviewers: reviewers.into_iter().map(String::from).collect(),
-            closed_at: None,
-        }
-    }
+    // fn create_pull_request_test(
+    //     pull_number: u32,
+    //     reviewers: Vec<&str>,
+    //     created_at_days_ago: i64,
+    // ) -> PullRequest {
+    //     let now = chrono::Utc::now();
+    //     PullRequest {
+    //         pull_number: pull_number.try_into().unwrap(),
+    //         title: format!("Pull Request #{}", pull_number),
+    //         description: "Test Pull Request".to_string(),
+    //         source_branch: "feature-branch".to_string(),
+    //         target_branch: "main".to_string(),
+    //         author: "test_author".to_string(),
+    //         created_at: (now - Duration::days(created_at_days_ago)).to_string(),
+    //         updated_at: (now - Duration::days(created_at_days_ago)).to_string(),
+    //         state: PRState::Open,
+    //         reviewers: reviewers.into_iter().map(String::from).collect(),
+    //         closed_at: None,
+    //     }
+    // }
 
     // Helper function to create a sample AppState with Pull Requests
-    fn create_app_state_with_pull_requests(repo_name: &str, pulls: Vec<PullRequest>) -> AppState {
-        let mut pull_requests_map = HashMap::new();
-        pull_requests_map.insert(repo_name.to_string(), pulls);
+    // fn create_app_state_with_pull_requests(repo_name: &str, pulls: Vec<PullRequest>) -> AppState {
+    //     let mut pull_requests_map = HashMap::new();
+    //     pull_requests_map.insert(repo_name.to_string(), pulls);
 
-        AppState {
-            pull_requests: Mutex::new(pull_requests_map),
-            repositories: Mutex::new(HashMap::new()),
-        }
-    }
+    //     AppState {
+    //         pull_requests: Mutex::new(pull_requests_map),
+    //         repositories: Mutex::new(HashMap::new()),
+    //     }
+    // }
 
-    #[test]
+    // #[test]
     // fn test_modify_pull_request_success() {
     //     let repo_name = "test_repo";
     //     let pull_number = 1;
@@ -650,7 +651,7 @@ mod tests {
     //     assert_eq!(result_json.state, "updated-state");
     // }
 
-    #[test]
+    // #[test]
     // fn test_modify_pull_request_not_found_pull() {
     //     let state = Arc::new(create_app_state_with_pull_requests("test_repo", vec![]));
 
@@ -674,90 +675,90 @@ mod tests {
     //     assert_eq!(result.err(), Some("Pull Request not found".to_string()));
     // }
 
-    #[test]
-    fn test_get_pull_request_success() {
-        let state = create_app_state_with_pull_requests(
-            "test_repo",
-            vec![
-                create_pull_request_test(1, vec!["reviewer1", "reviewer2"], 7),
-                create_pull_request_test(2, vec!["reviewer1"], 10),
-            ],
-        );
-        let state = Arc::new(state);
-        let result = get_pull_request("test_repo", 1, state.clone());
-        assert!(result.is_ok());
-        let result_json: PullRequest = serde_json::from_str(&result.unwrap()).unwrap();
-        assert_eq!(result_json.pull_number, 1);
-        assert_eq!(result_json.title, "Pull Request #1");
-    }
+    // #[test]
+    // fn test_get_pull_request_success() {
+    //     let state = create_app_state_with_pull_requests(
+    //         "test_repo",
+    //         vec![
+    //             create_pull_request_test(1, vec!["reviewer1", "reviewer2"], 7),
+    //             create_pull_request_test(2, vec!["reviewer1"], 10),
+    //         ],
+    //     );
+    //     let state = Arc::new(state);
+    //     let result = get_pull_request("test_repo", 1, state.clone());
+    //     assert!(result.is_ok());
+    //     let result_json: PullRequest = serde_json::from_str(&result.unwrap()).unwrap();
+    //     assert_eq!(result_json.pull_number, 1);
+    //     assert_eq!(result_json.title, "Pull Request #1");
+    // }
 
-    #[test]
-    fn test_get_pull_request_not_found_pull() {
-        let state = create_app_state_with_pull_requests(
-            "test_repo",
-            vec![
-                create_pull_request_test(1, vec!["reviewer1", "reviewer2"], 7),
-                create_pull_request_test(2, vec!["reviewer1"], 10),
-            ],
-        );
-        let state = Arc::new(state);
-        let result = get_pull_request("test_repo", 3, state.clone());
-        assert!(result.is_err());
-        assert_eq!(result.err(), Some("Pull Request not found".to_string()));
-    }
+    // #[test]
+    // fn test_get_pull_request_not_found_pull() {
+    //     let state = create_app_state_with_pull_requests(
+    //         "test_repo",
+    //         vec![
+    //             create_pull_request_test(1, vec!["reviewer1", "reviewer2"], 7),
+    //             create_pull_request_test(2, vec!["reviewer1"], 10),
+    //         ],
+    //     );
+    //     let state = Arc::new(state);
+    //     let result = get_pull_request("test_repo", 3, state.clone());
+    //     assert!(result.is_err());
+    //     assert_eq!(result.err(), Some("Pull Request not found".to_string()));
+    // }
 
-    #[test]
-    fn test_get_pull_request_not_found_repo() {
-        let state = create_app_state_with_pull_requests("test_repo", vec![]);
-        let state = Arc::new(state);
-        let result = get_pull_request("nonexistent_repo", 1, state.clone());
-        assert!(result.is_err());
-        assert_eq!(
-            result.err(),
-            Some("Repository not found or no Pull Requests".to_string())
-        );
-    }
+    // #[test]
+    // fn test_get_pull_request_not_found_repo() {
+    //     let state = create_app_state_with_pull_requests("test_repo", vec![]);
+    //     let state = Arc::new(state);
+    //     let result = get_pull_request("nonexistent_repo", 1, state.clone());
+    //     assert!(result.is_err());
+    //     assert_eq!(
+    //         result.err(),
+    //         Some("Repository not found or no Pull Requests".to_string())
+    //     );
+    // }
 
-    #[test]
-    fn test_list_pull_requests_no_repository() {
-        let state = Arc::new(create_app_state_with_pull_requests("other_repo", vec![]));
-        let result = list_pull_requests("repo", state);
-        assert!(result.is_err());
-        assert_eq!(
-            result.err(),
-            Some("Repository not found or no Pull Requests".to_string())
-        );
-    }
+    // #[test]
+    // fn test_list_pull_requests_no_repository() {
+    //     let state = Arc::new(create_app_state_with_pull_requests("other_repo", vec![]));
+    //     let result = list_pull_requests("repo", state);
+    //     assert!(result.is_err());
+    //     assert_eq!(
+    //         result.err(),
+    //         Some("Repository not found or no Pull Requests".to_string())
+    //     );
+    // }
 
-    #[test]
-    fn test_list_pull_requests_empty_repository() {
-        let state = Arc::new(create_app_state_with_pull_requests(
-            "repo_empty",
-            Vec::new(),
-        ));
-        let result = list_pull_requests("repo_empty", state.clone());
+    // #[test]
+    // fn test_list_pull_requests_empty_repository() {
+    //     let state = Arc::new(create_app_state_with_pull_requests(
+    //         "repo_empty",
+    //         Vec::new(),
+    //     ));
+    //     let result = list_pull_requests("repo_empty", state.clone());
 
-        assert!(result.is_ok());
-        let result_str = result.unwrap();
-        let parsed_pull_requests: Vec<PullRequest> = serde_json::from_str(&result_str).unwrap();
+    //     assert!(result.is_ok());
+    //     let result_str = result.unwrap();
+    //     let parsed_pull_requests: Vec<PullRequest> = serde_json::from_str(&result_str).unwrap();
 
-        assert_eq!(parsed_pull_requests.len(), 0);
-    }
+    //     assert_eq!(parsed_pull_requests.len(), 0);
+    // }
 
-    #[test]
-    fn test_list_pull_requests_success() {
-        let repo_name = "test_repo";
-        let pull_request1 = create_pull_request_test(1, vec!["reviewer1", "reviewer2"], 7);
-        let pull_request2 = create_pull_request_test(2, vec!["reviewer1"], 10);
-        let state =
-            create_app_state_with_pull_requests(repo_name, vec![pull_request1, pull_request2]);
-        let result = list_pull_requests(repo_name, Arc::new(state));
+    // #[test]
+    // fn test_list_pull_requests_success() {
+    //     let repo_name = "test_repo";
+    //     let pull_request1 = create_pull_request_test(1, vec!["reviewer1", "reviewer2"], 7);
+    //     let pull_request2 = create_pull_request_test(2, vec!["reviewer1"], 10);
+    //     let state =
+    //         create_app_state_with_pull_requests(repo_name, vec![pull_request1, pull_request2]);
+    //     let result = list_pull_requests(repo_name, Arc::new(state));
 
-        assert!(result.is_ok());
-        let result_str = result.unwrap();
-        assert!(result_str.contains("Pull Request #1"));
-        assert!(result_str.contains("Pull Request #2"));
-    }
+    //     assert!(result.is_ok());
+    //     let result_str = result.unwrap();
+    //     assert!(result_str.contains("Pull Request #1"));
+    //     assert!(result_str.contains("Pull Request #2"));
+    // }
 
     // #[test]
     // fn test_create_pull_request() {
@@ -799,7 +800,7 @@ mod tests {
     // }
 
     #[test]
-    fn test_load_repo() -> io::Result<()> {
+    fn test_load_dump_repo() -> io::Result<()> {
         std::fs::create_dir_all("tests/pull_request/server/prs")?;
         let repo_name = "repo";
         let repo = Repository {
@@ -873,6 +874,60 @@ mod tests {
         assert_eq!(pr.name, repo_name);
         assert_eq!(pr.pr_count, 3);
         assert_eq!(pr.pull_requests.len(), 3);
+        std::fs::remove_file("tests/pull_request/server/prs/repo_create.json")?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_pull_request() -> io::Result<()> {
+        std::fs::create_dir_all("tests/pull_request/server/prs")?;
+        let repo_name = "repo_get_pr";
+        let mut repo = Repository {
+            name: repo_name.to_string(),
+            pr_count: 0,
+            pull_requests: HashMap::new(),
+        };
+
+        let pr = PullRequestCreate {
+            title: "title".to_string(),
+            description: "description".to_string(),
+            source_branch: "source_branch".to_string(),
+            target_branch: "target_branch".to_string(),
+        };
+
+        PullRequest::new(&mut repo, pr.clone())?;
+        repo.dump("tests/pull_request/server")?;
+        let repo = Repository::load(repo_name, "tests/pull_request/server")?;
+        let pr = repo.get_pull_request(1).unwrap();
+        assert_eq!(pr.title, "title");
+        assert_eq!(pr.description, "description");
+        assert_eq!(pr.pull_number, 1);
+        std::fs::remove_file("tests/pull_request/server/prs/repo_create.json")?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_pull_request_not_found() -> io::Result<()> {
+        std::fs::create_dir_all("tests/pull_request/server/prs")?;
+        let repo_name = "repo_get_pr";
+        let mut repo = Repository {
+            name: repo_name.to_string(),
+            pr_count: 0,
+            pull_requests: HashMap::new(),
+        };
+
+        let pr = PullRequestCreate {
+            title: "title".to_string(),
+            description: "description".to_string(),
+            source_branch: "source_branch".to_string(),
+            target_branch: "target_branch".to_string(),
+        };
+
+        PullRequest::new(&mut repo, pr.clone())?;
+        repo.dump("tests/pull_request/server")?;
+        let repo = Repository::load(repo_name, "tests/pull_request/server")?;
+        let pr = repo.get_pull_request(3);
+        assert!(pr.is_none());
         std::fs::remove_file("tests/pull_request/server/prs/repo_create.json")?;
         Ok(())
     }
