@@ -72,6 +72,14 @@ impl PullRequest {
         Ok(pr)
     }
 
+    pub fn list_commits(&self, root_dir : &str, repository : &mut Repository) -> io::Result<Vec<String>>{
+        let git_dir = format!("{}/{}/{}", root_dir, repository.name, GIT_DIR);
+        let source_hash = get_branch_commit_hash(&self.source_branch, &git_dir)?;
+        let target_hash = get_branch_commit_hash(&self.target_branch, &git_dir)?;
+        let common_ancestor = find_common_ancestor(&source_hash, &target_hash, &git_dir)?;
+        get_branch_commit_history_until(&source_hash, &git_dir, &common_ancestor)
+    }
+
     /// Returns a new PullRequest with the updated fields
     pub fn patch(&self, repo: &mut Repository, pr_patch: PullRequestPatch) -> Self {
         let mut pr = self.clone();
@@ -279,7 +287,7 @@ fn list_commits(repo_name: &str, pull_number: u32, state: Arc<AppState>) -> Resu
                     Ok(ancestor) => ancestor,
                     Err(error) => return Err(error.to_string()),
                 };
-
+    
             let commit_history = match get_branch_commit_history_until(
                 &source_branch_hash,
                 &git_dir,
@@ -998,5 +1006,9 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn test_list_commit() {
+        //Iniciar un repo con load
+    }
 
 }
