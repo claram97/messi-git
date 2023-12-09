@@ -46,8 +46,8 @@ fn merge_pull_request(repo: &str, pull_number: &str) -> io::Result<String> {
         }
     };
     let mut cloned_repo = repository.clone();
-    let result = pr.merge(&current_dir, GIT_DIR, &mut cloned_repo);
-    cloned_repo.dump(&current_dir)?;
+    let result = pr.merge(current_dir, GIT_DIR, &mut cloned_repo);
+    cloned_repo.dump(current_dir)?;
     match result {
         Ok(_) => {
             log("Merge was successfull.")?;

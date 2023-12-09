@@ -5,7 +5,7 @@ use crate::{
     configuration::GIT_DIR,
     pull_request::Repository,
 };
-use serde_json::{error, json};
+use serde_json::json;
 
 /// Handle a GET request.
 pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
@@ -73,7 +73,7 @@ fn list_pull_request_commits(
             return Ok((StatusCode::NotFound, Some(error_message)));
         }
     };
-    let result = pr.list_commits(&current_dir, GIT_DIR, &repository);
+    let result = pr.list_commits(current_dir, GIT_DIR, &repository);
 
     let vec = match result {
         Ok(vec) => {
