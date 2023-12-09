@@ -66,7 +66,7 @@ fn update_pull_request(
         }
     };
     repo.dump(&root_dir)?;
-    
+
     log(&format!("Pull request updated: {:?}", &pr))?;
     let pr = serde_json::to_string(&pr)?;
     Ok((StatusCode::Ok, Some(pr)))

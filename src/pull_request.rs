@@ -50,9 +50,9 @@ pub struct PullRequest {
 
 impl PullRequest {
     /// Returns a new PullRequest
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `pull_request_create` - a new PullRequestCreate to create a PullRequest
     /// * `pull_number` - the number of the PullRequest
     fn new(pull_request_create: PullRequestCreate, pull_number: usize) -> Self {
@@ -72,9 +72,9 @@ impl PullRequest {
     }
 
     /// Returns the list of commits involved in the PullRequest
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `root_dir` - the root directory of the repository
     /// * `git_dir_name` - the name of the git directory
     /// * `repository` - the repository
@@ -116,15 +116,15 @@ impl PullRequest {
     }
 
     /// Merges the PullRequest into the target branch
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `root_dir` - the root directory of the repository
     /// * `git_dir_name` - the name of the git directory
     /// * `repository` - the repository
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(String)` - the hash of the merge commit
     pub fn merge(
         &self,
@@ -168,9 +168,9 @@ pub struct Repository {
 
 impl Repository {
     /// Returns a new Repository with the specified name and no Pull Requests
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `name` - the name of the repository
     pub fn new(name: &str) -> Self {
         Self {
@@ -181,13 +181,13 @@ impl Repository {
     }
 
     /// Creates a new PullRequest and inserts it into the repository
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `pr_create` - a PullRequestCreate to create a PullRequest
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `PullRequest` - the created PullRequest
     pub fn create_pull_request(&mut self, pr_create: PullRequestCreate) -> PullRequest {
         let next_pull_number = self.pr_count + 1;
@@ -197,14 +197,14 @@ impl Repository {
     }
 
     /// Patches a PullRequest with the specified pull number
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `pull_number` - the number of the PullRequest to patch
     /// * `pr_patch` - a PullRequestPatch to patch the PullRequest
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(PullRequest)` - the patched and cloned PullRequest
     /// * `Err(io::Error)` - if the PullRequest doesn't exist
     pub fn patch_pull_request(
@@ -243,13 +243,13 @@ impl Repository {
     }
 
     /// Returns the PullRequest with the specified pull number
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `pull_number` - the number of the PullRequest to get
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Option<&PullRequest>` - the PullRequest with the specified pull number
     /// * `None` - if the PullRequest doesn't exist
     pub fn get_pull_request(&self, pull_number: usize) -> Option<&PullRequest> {
@@ -257,14 +257,14 @@ impl Repository {
     }
 
     /// Loads a Repository from the specified root directory
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `repo` - the name of the repository to load
     /// * `root_dir` - the root directory of the repository
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(Repository)` - the loaded Repository
     /// * `Err(io::Error)` - if the repository doesn't exist
     pub fn load(repo: &str, root_dir: &str) -> io::Result<Self> {
@@ -286,13 +286,13 @@ impl Repository {
     }
 
     /// Dumps the Repository into the specified root directory
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `root_dir` - the root directory of the repository
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(())` - if the dump was successful
     /// * `Err(io::Error)` - if the dump was unsuccessful
     pub fn dump(&self, root_dir: &str) -> io::Result<()> {

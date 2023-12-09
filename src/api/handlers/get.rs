@@ -96,7 +96,7 @@ fn list_pull_request_commits(
     };
     let current_dir = std::env::current_dir()?;
     let root_dir = &current_dir.to_string_lossy();
-    let repo = match Repository::load(repo, &root_dir) {
+    let repo = match Repository::load(repo, root_dir) {
         Ok(repo) => repo,
         Err(e) if e.kind() == io::ErrorKind::NotFound => {
             let error_message = json!({
@@ -120,7 +120,7 @@ fn list_pull_request_commits(
             log("Error trying to list commits.")?;
             let error_message = json!({"error" : e.to_string()}).to_string();
             return Ok((StatusCode::BadRequest, Some(error_message)));
-        },
+        }
     };
 
     log("Commits succesfully listed.")?;
