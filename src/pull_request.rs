@@ -72,8 +72,8 @@ impl PullRequest {
         Ok(pr)
     }
 
-    pub fn list_commits(&self, root_dir : &str, repository : &mut Repository) -> io::Result<Vec<String>>{
-        let git_dir = format!("{}/{}/{}", root_dir, repository.name, GIT_DIR);
+    pub fn list_commits(&self, root_dir : &str, git_dir_name : &str, repository : &mut Repository) -> io::Result<Vec<String>>{
+        let git_dir = format!("{}/{}/{}", root_dir, repository.name, git_dir_name);
         let source_hash = get_branch_commit_hash(&self.source_branch, &git_dir)?;
         let target_hash = get_branch_commit_hash(&self.target_branch, &git_dir)?;
         let common_ancestor = find_common_ancestor(&source_hash, &target_hash, &git_dir)?;
