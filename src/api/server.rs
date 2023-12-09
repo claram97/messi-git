@@ -6,6 +6,7 @@ use crate::api::utils::request::Request;
 use crate::api::utils::response::Response;
 use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::path::Path;
 use std::thread;
 
 use super::utils::status_code::StatusCode;
@@ -87,7 +88,9 @@ fn handle_error(stream: &mut TcpStream) -> io::Result<()> {
 /// * `path` - The path where the repositories are stored
 pub fn run(domain: &str, port: &str, path: &str) -> io::Result<()> {
     std::env::set_current_dir(path)?;
-
+    if !Path::new("prs").exists() {
+        std::fs::create_dir("prs")?;
+    }
     let address = domain.to_owned() + ":" + port;
     let listener = TcpListener::bind(&address)?;
 
