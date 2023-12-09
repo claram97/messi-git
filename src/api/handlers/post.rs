@@ -21,7 +21,16 @@ fn create_pull_request(repo: &str, request: &Request) -> io::Result<(StatusCode,
     let curdir = std::env::current_dir()?;
     let root_dir = curdir.to_string_lossy();
     let body = &request.body;
-    let pr_create: PullRequestCreate = serde_json::from_str(body)?;
+    let pr_create: PullRequestCreate = match serde_json::from_str(body) {
+        Ok(pr_create) => pr_create,
+        Err(e) => {
+            let error_message = json!({
+                "error": e.to_string()
+            })
+            .to_string();
+            return Ok((StatusCode::BadRequest, Some(error_message)));
+        }
+    };
     let mut repo = match Repository::load(repo, &root_dir) {
         Ok(repo) => repo,
         Err(e) if e.kind() == io::ErrorKind::NotFound => {
@@ -30,7 +39,7 @@ fn create_pull_request(repo: &str, request: &Request) -> io::Result<(StatusCode,
             })
             .to_string();
             return Ok((StatusCode::NotFound, Some(error_message)));
-        },
+        }
         Err(e) => return Err(e),
     };
 

@@ -12,30 +12,28 @@ use crate::{
 pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
     let path_splitted = request.get_path_split();
     match path_splitted[..] {
-        ["repos", repo, "pulls", pull_number, "merge"] => {
-            let body = merge_pull_request(repo, pull_number)?;
-            Ok((StatusCode::Ok, Some(body)))
-        }
+        ["repos", repo, "pulls", pull_number, "merge"] => merge_pull_request(repo, pull_number),
         _ => Ok((StatusCode::BadRequest, None)),
     }
 }
-fn merge_pull_request(repo: &str, pull_number: &str) -> io::Result<String> {
+fn merge_pull_request(repo: &str, pull_number: &str) -> io::Result<(StatusCode, Option<String>)> {
     log(&format!(
         "Merging pull request {} of {}.",
         pull_number, repo
     ))?;
-    let current_dir = std::env::current_dir()?;
-    let current_dir = &current_dir.to_string_lossy().to_string();
-    let repository = Repository::load(repo, current_dir)?;
     let pull_number = match pull_number.parse::<usize>() {
         Ok(pull_number) => pull_number,
         Err(_) => {
-            return Err(io::Error::new(
-                io::ErrorKind::Interrupted,
-                "Error trying to parse pull number.\n",
-            ))
+            let error_message = json!({
+                "error": "Invalid pull number: not a number."
+            })
+            .to_string();
+            return Ok((StatusCode::BadRequest, Some(error_message)));
         }
     };
+    let current_dir = std::env::current_dir()?;
+    let current_dir = &current_dir.to_string_lossy().to_string();
+    let repository = Repository::load(repo, current_dir)?;
     let pr = match repository.get_pull_request(pull_number) {
         Some(pr) => pr,
         None => {
@@ -62,5 +60,5 @@ fn merge_pull_request(repo: &str, pull_number: &str) -> io::Result<String> {
         "message": format!("Listando commits de pull request {} de {}", pull_number, repo)
     })
     .to_string();
-    Ok(result)
+    Ok((StatusCode::Ok, Some(result)))
 }
