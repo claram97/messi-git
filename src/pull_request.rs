@@ -154,7 +154,7 @@ impl Repository {
 
     pub fn load(repo: &str, root_dir: &str) -> io::Result<Self> {
         let filename = repo.to_string() + ".json";
-        let path = Path::new(root_dir).join("prs").join(&filename);
+        let path = Path::new(root_dir).join("prs").join(filename);
         if !path.exists() {
             return Ok(Self::new(repo));
         }

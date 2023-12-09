@@ -1,14 +1,8 @@
 use std::io;
 
-use serde_json::json;
-
 use crate::{
-    api::utils::{
-        log::log,
-        request::{self, Request},
-        status_code::StatusCode,
-    },
-    pull_request::{PullRequest, PullRequestPatch, Repository},
+    api::utils::{log::log, request::Request, status_code::StatusCode},
+    pull_request::{PullRequestPatch, Repository},
 };
 
 /// Handle a PATCH request.
@@ -33,7 +27,7 @@ fn update_pull_request(
     let curdir = std::env::current_dir()?;
     let root_dir = curdir.to_string_lossy();
     let body = &request.body;
-    let pr_patch: PullRequestPatch = serde_json::from_str(&body)?;
+    let pr_patch: PullRequestPatch = serde_json::from_str(body)?;
     let pull_number = pull_number.parse::<usize>().unwrap_or(0);
 
     let mut repo = Repository::load(repo, &root_dir)?;

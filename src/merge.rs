@@ -297,7 +297,7 @@ pub fn git_merge_for_pull_request(
             &pull_request_commit,
             &pull_request_tree,
         )?;
-        return Ok(commit_hash);
+        Ok(commit_hash)
     } else {
         let base_tree = tree_handler::load_tree_from_commit(&base_commit, git_dir)?;
         let pull_request_tree = tree_handler::load_tree_from_commit(&pull_request_commit, git_dir)?;
@@ -311,7 +311,7 @@ pub fn git_merge_for_pull_request(
             &pull_request_commit,
             &new_tree,
         )?;
-        return Ok(commit_hash);
+        Ok(commit_hash)
     }
 }
 
