@@ -19,7 +19,6 @@ pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
         _ => Ok((StatusCode::BadRequest, None)),
     }
 }
-
 fn merge_pull_request(repo: &str, pull_number: &str) -> io::Result<String> {
     log(&format!(
         "Merging pull request {} of {}.",
