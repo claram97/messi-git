@@ -1,5 +1,6 @@
 use crate::api::utils::log::log;
 use crate::branch::get_branch_commit_hash;
+use crate::merge;
 use crate::merge::find_common_ancestor;
 use crate::merge::git_merge;
 use crate::merge::git_merge_for_pull_request;
@@ -85,6 +86,18 @@ impl PullRequest {
         let common_ancestor = find_common_ancestor(&source_hash, &target_hash, &git_dir)?;
         get_branch_commit_history_until(&source_hash, &git_dir, &common_ancestor)
     }
+
+    pub fn merge(&self, root_dir : &str, git_dir_name : &str, repository : &mut Repository) -> io::Result<String>{
+        let git_dir = format!("{}/{}/{}", root_dir, repository.name, git_dir_name);
+        let hash = merge::git_merge_for_pull_request(&self.target_branch,&self.source_branch, &git_dir)?;
+        let mut pr = self.clone();
+        pr.state = PRState::Closed;
+        pr.updated_at = get_current_date();
+        pr.closed_at = Some(get_current_date());
+        repository.insert_pull_request(&pr);
+        Ok(hash)
+    }
+
 
     /// Returns a new PullRequest with the updated fields
     pub fn patch(&self, repo: &mut Repository, pr_patch: PullRequestPatch) -> Self {
@@ -599,10 +612,10 @@ fn merge_pull_request(
 
 #[cfg(test)]
 mod tests {
-    use crate::configuration::GIT_DIR_FOR_TEST;
+    use crate::{configuration::GIT_DIR_FOR_TEST, branch, commit, add};
 
     use super::*;
-    use std::collections::HashMap;
+    use std::{collections::HashMap, fs, io::Write};
     // use std::sync::{Arc, Mutex};
 
     // fn create_pull_request_test(
@@ -1140,6 +1153,281 @@ mod tests {
         let pr = pr?;
         let commits = pr.list_commits(root_dir, GIT_DIR_FOR_TEST, &mut repo);
         assert!(commits.is_err());
+
+        Ok(())
+    }
+
+    fn create_mock_git_dir(git_dir: &str, root_dir: &str) -> String {
+        fs::create_dir_all(&git_dir).unwrap();
+        let objects_dir = format!("{}/objects", git_dir);
+        fs::create_dir_all(&objects_dir).unwrap();
+        let refs_dir = format!("{}/refs/heads", git_dir);
+        fs::create_dir_all(&refs_dir).unwrap();
+        let head_file_path = format!("{}/HEAD", git_dir);
+        let mut head_file = fs::File::create(&head_file_path).unwrap();
+        head_file.write_all(b"ref: refs/heads/main").unwrap();
+
+        let src_dir = format!("{}/src", root_dir);
+        fs::create_dir_all(&src_dir).unwrap();
+        
+        let file_1_path = format!("{}/src/1.c", root_dir);
+        let mut file = fs::File::create(&file_1_path).unwrap();
+        file.write_all(b"int main() { return 0; }").unwrap();
+        let file_2_path = format!("{}/src/2.c", root_dir);
+        let mut file = fs::File::create(&file_2_path).unwrap();
+        file.write_all(b"int hello() { return 0; }").unwrap();
+        let index_file_path = format!("{}/index", git_dir);
+        let _ = fs::File::create(&index_file_path).unwrap();
+        add::add(
+            &file_2_path,
+            &index_file_path,
+            git_dir,
+            "",
+            None,
+        )
+        .unwrap();
+        add::add(
+            &file_1_path,
+            &index_file_path,
+            git_dir,
+            "",
+            None,
+        )
+        .unwrap();
+
+        let commit_message = "Initial commit";
+        let commit_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+        commit_hash
+    }
+
+    #[test]
+    fn test_merge_pr_no_conflicts() -> io::Result<()> {
+        if Path::new("tests/pull_request/server/prs").exists() {
+            fs::remove_dir_all("tests/pull_request/server/prs")?;
+        }
+        std::fs::create_dir_all("tests/pull_request/server/prs")?;
+        let dir = "tests/pull_request/server";
+        let repo_name = "merge";
+
+        let root_dir = format!("{}/{}", dir, repo_name);
+        if Path::new(&root_dir).exists() {
+            fs::remove_dir_all(&root_dir)?;
+        }
+        
+        let git_dir = Path::new(&dir).join(&repo_name).join(".mgit");
+        if Path::new(&git_dir).exists() {
+            fs::remove_dir_all(&git_dir)?;
+        }
+        std::fs::create_dir_all(&git_dir)?;
+        let git_dir = git_dir.to_string_lossy().to_string();
+
+        let main_commit_hash = create_mock_git_dir(&git_dir, &root_dir);
+
+        let feature_branch = "feature-branch";
+        branch::create_new_branch(&git_dir, feature_branch, None, &mut io::stdout())?;
+
+        let head_file_path = format!("{}/HEAD", git_dir);
+        let mut head_file = fs::File::create(&head_file_path).unwrap();
+        head_file
+            .write_all(format!("ref: refs/heads/{}", feature_branch).as_bytes())
+            .unwrap();
+
+        let index_file_path = format!("{}/index", &git_dir);
+
+        let file_3_path = format!("{}/src/3.c", root_dir);
+        let mut file = fs::File::create(&file_3_path).unwrap();
+        file.write_all(b"int bye() { return 0; }").unwrap();
+        add::add(
+            "tests/pull_request/server/merge/src/3.c",
+            &index_file_path,
+            &git_dir,
+            "",
+            None,
+        )
+        .unwrap();
+
+        let commit_message = "Second commit";
+        let _ = commit::new_commit(&git_dir, commit_message, "").unwrap();
+
+        let file_4_path = format!("{}/src/4.c", root_dir);
+        let mut file = fs::File::create(&file_4_path).unwrap();
+        file.write_all(b"int prueba() { return 0; }").unwrap();
+        add::add(
+            "tests/pull_request/server/merge/src/4.c",
+            &index_file_path,
+            &git_dir,
+            "",
+            None,
+        )
+        .unwrap();
+
+        let commit_message = "Third commit";
+        let _ = commit::new_commit(&git_dir, commit_message, "").unwrap();
+
+        let file_5_path = format!("{}/src/5.c", root_dir);
+        let mut file = fs::File::create(&file_5_path).unwrap();
+        file.write_all(b"int otro() { return 0; }").unwrap();
+        let index_file_path = format!("{}/index", &git_dir);
+        add::add(
+            "tests/pull_request/server/merge/src/5.c",
+            &index_file_path,
+            &git_dir,
+            "",
+            None,
+        )
+        .unwrap();
+
+        let commit_message = "Fourth commit";
+        let commit_3_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+
+        let mut repo = Repository::load(repo_name, &root_dir)?;
+        let pr = PullRequestCreate {
+            title: "title".to_string(),
+            description: "description".to_string(),
+            source_branch: feature_branch.to_string(),
+            target_branch: "main".to_string(),
+        };
+
+        PullRequest::new(&mut repo, pr)?;
+        repo.dump(&dir)?;
+
+        let repo = Repository::load(repo_name, &dir)?;
+        let pr = repo.get_pull_request(1).unwrap();
+
+        let mut repo = Repository::load(repo_name, &dir)?;
+        let result = pr.merge(&dir, ".mgit", &mut repo);
+        
+        assert!(result.is_ok());
+        let merge_commit_hash = result.unwrap();
+        let merge_commit = commit::is_merge_commit(&merge_commit_hash, &git_dir).unwrap();
+        assert!(merge_commit);
+
+        let merge_commit_parents = commit::get_merge_parents(&merge_commit_hash, &git_dir).unwrap();
+        assert_eq!(merge_commit_parents.len(), 2);
+        assert!(merge_commit_parents.contains(&main_commit_hash));
+        assert!(merge_commit_parents.contains(&commit_3_hash));
+
+        let repo_path = format!("tests/pull_request/server/merge");
+        std::fs::remove_dir_all(repo_path)?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_merge_pr_conflicts() -> io::Result<()> {
+        if Path::new("tests/pull_request/server/prs").exists() {
+            fs::remove_dir_all("tests/pull_request/server/prs")?;
+        }
+        std::fs::create_dir_all("tests/pull_request/server/prs")?;
+        let dir = "tests/pull_request/server";
+        let repo_name = "merge_conflicts";
+
+        let root_dir = format!("{}/{}", dir, repo_name);
+        if Path::new(&root_dir).exists() {
+            fs::remove_dir_all(&root_dir)?;
+        }
+        
+        let git_dir = Path::new(&dir).join(&repo_name).join(".mgit");
+        if Path::new(&git_dir).exists() {
+            fs::remove_dir_all(&git_dir)?;
+        }
+        std::fs::create_dir_all(&git_dir)?;
+        let git_dir = git_dir.to_string_lossy().to_string();
+
+        let _ = create_mock_git_dir(&git_dir, &root_dir);
+
+        let feature_branch = "feature-branch";
+        branch::create_new_branch(&git_dir, feature_branch, None, &mut io::stdout())?;
+
+        let head_file_path = format!("{}/HEAD", git_dir);
+        let mut head_file = fs::File::create(&head_file_path).unwrap();
+        head_file
+            .write_all(format!("ref: refs/heads/{}", feature_branch).as_bytes())
+            .unwrap();
+
+        let index_file_path = format!("{}/index", &git_dir);
+
+        let file_3_path = format!("{}/src/2.c", root_dir);
+        let mut file = fs::File::create(&file_3_path).unwrap();
+        file.write_all(b"int bye() { return 0; }").unwrap();
+        add::add(
+            "tests/pull_request/server/merge_conflicts/src/2.c",
+            &index_file_path,
+            &git_dir,
+            "",
+            None,
+        ).unwrap();
+
+        let commit_message = "Second commit";
+        let _ = commit::new_commit(&git_dir, commit_message, "").unwrap();
+
+        let file_4_path = format!("{}/src/1.c", root_dir);
+        let mut file = fs::File::create(&file_4_path).unwrap();
+        file.write_all(b"int prueba() { return 0; }").unwrap();
+        add::add(
+            "tests/pull_request/server/merge_conflicts/src/1.c",
+            &index_file_path,
+            &git_dir,
+            "",
+            None,
+        ).unwrap();
+        
+        let commit_message = "Third commit";
+        let commit_2_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+
+        let head_file_path = format!("{}/HEAD", git_dir);
+        let mut head_file = fs::File::create(&head_file_path).unwrap();
+        head_file
+            .write_all(format!("ref: refs/heads/main").as_bytes())
+            .unwrap();
+        
+        let file_5_path = format!("{}/src/5.c", root_dir);
+        let mut file = fs::File::create(&file_5_path).unwrap();
+        file.write_all(b"int otro() { return 0; }").unwrap();
+        let index_file_path = format!("{}/index", &git_dir);
+        add::add(
+            "tests/pull_request/server/merge_conflicts/src/5.c",
+            &index_file_path,
+            &git_dir,
+            "",
+            None,
+        ).unwrap();
+
+        let commit_message = "Fourth commit";
+        let commit_3_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+
+        let mut repo = Repository::load(repo_name, &root_dir)?;
+        let pr = PullRequestCreate {
+            title: "title".to_string(),
+            description: "description".to_string(),
+            source_branch: feature_branch.to_string(),
+            target_branch: "main".to_string(),
+        };
+
+        PullRequest::new(&mut repo, pr)?;
+        repo.dump(&dir)?;
+        
+        let repo = Repository::load(repo_name, &dir)?;
+        let pr = repo.get_pull_request(1).unwrap();
+
+        let mut repo = Repository::load(repo_name, &dir)?;
+        let result = pr.merge(&dir, ".mgit", &mut repo);
+
+        assert!(result.is_ok());
+        let merge_commit_hash = result.unwrap();
+        let merge_commit = commit::is_merge_commit(&merge_commit_hash, &git_dir).unwrap();
+        assert!(merge_commit);
+
+        let merge_commit_parents = commit::get_merge_parents(&merge_commit_hash, &git_dir).unwrap();
+        assert_eq!(merge_commit_parents.len(), 2);
+        assert!(merge_commit_parents.contains(&commit_2_hash));
+        assert!(merge_commit_parents.contains(&commit_3_hash));
+
+        let main_commit_hash = branch::get_branch_commit_hash("main", &git_dir).unwrap();
+        assert_eq!(main_commit_hash, merge_commit_hash);
+
+        let repo_path = format!("tests/pull_request/server/merge_conflicts");
+        std::fs::remove_dir_all(repo_path)?;
 
         Ok(())
     }
