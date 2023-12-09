@@ -153,6 +153,13 @@ impl Repository {
     }
 
     pub fn load(repo: &str, root_dir: &str) -> io::Result<Self> {
+        let repo_dir = Path::new(root_dir).join(repo);
+        if !repo_dir.exists() {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("Repository doesn't exist: {}", repo),
+            ));
+        }
         let filename = repo.to_string() + ".json";
         let path = Path::new(root_dir).join("prs").join(filename);
         if !path.exists() {
@@ -183,12 +190,31 @@ mod tests {
 
     use super::*;
     use std::{fs, io::Write};
+    const TEST_SERVER_DIR: &str = "tests/pull_request/server";
+    const TEST_SERVER_PRS_DIR: &str = "tests/pull_request/server/prs";
+    
+    fn create_repo_for_test(repo_name: &str) -> io::Result<()> {
+        let repo = Path::new(TEST_SERVER_DIR).join(repo_name);
+        if !repo.exists() {
+            fs::create_dir(repo)?;
+        }
+        Ok(())
+    }
+
+    fn remove_repo_for_test(repo_name: &str) -> io::Result<()> {
+        let repo = Path::new(TEST_SERVER_DIR).join(repo_name);
+        if repo.exists() {
+            fs::remove_dir_all(repo)?;
+        }
+        Ok(())
+    }
 
     #[test]
     fn test_load_dump_repo() -> io::Result<()> {
-        std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let root_dir = "tests/pull_request/server";
+        let root_dir = TEST_SERVER_DIR;
         let repo_name = "repo_dump";
+        create_repo_for_test(repo_name)?;
+        std::fs::create_dir_all(TEST_SERVER_PRS_DIR)?;
         let repo = Repository::load(repo_name, root_dir)?;
 
         repo.dump(root_dir)?;
@@ -197,23 +223,29 @@ mod tests {
         assert_eq!(loaded_repo.pr_count, 0);
         assert_eq!(loaded_repo.pull_requests.len(), 0);
 
-        let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
+        let repo_path = format!("{}/{}.json", TEST_SERVER_PRS_DIR, repo_name);
         std::fs::remove_file(repo_path)?;
+        remove_repo_for_test(repo_name)?;
+        
+        Ok(())
+    }
 
-        let repo_name = "not_exist";
-        let loaded_repo = Repository::load(repo_name, root_dir)?;
-        assert_eq!(loaded_repo.name, repo_name);
-        assert_eq!(loaded_repo.pr_count, 0);
-        assert_eq!(loaded_repo.pull_requests.len(), 0);
-
+    #[test]
+    fn test_load_repo_not_found() -> io::Result<()> {
+        let root_dir = TEST_SERVER_DIR;
+        let repo_name = "repo_not_found";
+        let loaded_repo = Repository::load(repo_name, root_dir);
+        assert!(loaded_repo.is_err());
+        assert!(loaded_repo.unwrap_err().kind() == io::ErrorKind::NotFound);
         Ok(())
     }
 
     #[test]
     fn test_create_one_pr() -> io::Result<()> {
-        std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let root_dir = "tests/pull_request/server";
+        let root_dir = TEST_SERVER_DIR;
         let repo_name = "repo_create";
+        create_repo_for_test(repo_name)?;
+        std::fs::create_dir_all(TEST_SERVER_PRS_DIR)?;
         let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
@@ -230,14 +262,16 @@ mod tests {
         assert_eq!(repo.pull_requests.len(), 1);
         let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
         std::fs::remove_file(repo_path)?;
+        remove_repo_for_test(repo_name)?;
         Ok(())
     }
 
     #[test]
     fn test_create_many_pr() -> io::Result<()> {
-        std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let root_dir = "tests/pull_request/server";
+        let root_dir = TEST_SERVER_DIR;
         let repo_name = "repo_create_many";
+        create_repo_for_test(repo_name)?;
+        std::fs::create_dir_all(TEST_SERVER_PRS_DIR)?;
         let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
@@ -257,14 +291,16 @@ mod tests {
         assert_eq!(repo.pull_requests.len(), 3);
         let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
         std::fs::remove_file(repo_path)?;
+        remove_repo_for_test(repo_name)?;
         Ok(())
     }
 
     #[test]
     fn test_get_pull_request() -> io::Result<()> {
-        std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let root_dir = "tests/pull_request/server";
+        let root_dir = TEST_SERVER_DIR;
         let repo_name = "repo_get_pr";
+        create_repo_for_test(repo_name)?;
+        std::fs::create_dir_all(TEST_SERVER_PRS_DIR)?;
         let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
@@ -284,14 +320,16 @@ mod tests {
         assert_eq!(pr.pull_number, 1);
         let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
         std::fs::remove_file(repo_path)?;
+        remove_repo_for_test(repo_name)?;
         Ok(())
     }
 
     #[test]
     fn test_get_pull_request_not_found() -> io::Result<()> {
-        std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let root_dir = "tests/pull_request/server";
+        let root_dir = TEST_SERVER_DIR;
         let repo_name = "repo_get_pr_not_found";
+        create_repo_for_test(repo_name)?;
+        std::fs::create_dir_all(TEST_SERVER_PRS_DIR)?;
         let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
@@ -307,14 +345,16 @@ mod tests {
         assert!(repo.is_none());
         let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
         std::fs::remove_file(repo_path)?;
+        remove_repo_for_test(repo_name)?;
         Ok(())
     }
 
     #[test]
     fn test_list_prs() -> io::Result<()> {
-        std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let root_dir = "tests/pull_request/server";
+        let root_dir = TEST_SERVER_DIR;
         let repo_name = "repo_list_prs";
+        create_repo_for_test(repo_name)?;
+        std::fs::create_dir_all(TEST_SERVER_PRS_DIR)?;
         let mut repo = Repository::load(repo_name, root_dir)?;
 
         let prs = repo.list_pull_requests();
@@ -338,14 +378,16 @@ mod tests {
 
         let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
         std::fs::remove_file(repo_path)?;
+        remove_repo_for_test(repo_name)?;
         Ok(())
     }
 
     #[test]
     fn test_patch_pr() -> io::Result<()> {
-        std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let root_dir = "tests/pull_request/server";
+        let root_dir = TEST_SERVER_DIR;
         let repo_name = "repo_patch";
+        create_repo_for_test(repo_name)?;
+        std::fs::create_dir_all(TEST_SERVER_PRS_DIR)?;
         let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
@@ -376,6 +418,7 @@ mod tests {
 
         let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
         std::fs::remove_file(repo_path)?;
+        remove_repo_for_test(repo_name)?;
         Ok(())
     }
 
@@ -539,11 +582,11 @@ mod tests {
 
     #[test]
     fn test_merge_pr_no_conflicts() -> io::Result<()> {
-        if Path::new("tests/pull_request/server/prs").exists() {
-            fs::remove_dir_all("tests/pull_request/server/prs")?;
+        if Path::new(TEST_SERVER_PRS_DIR).exists() {
+            fs::remove_dir_all(TEST_SERVER_PRS_DIR)?;
         }
-        std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let dir = "tests/pull_request/server";
+        std::fs::create_dir_all(TEST_SERVER_PRS_DIR)?;
+        let dir = TEST_SERVER_DIR;
         let repo_name = "merge";
 
         let root_dir = format!("{}/{}", dir, repo_name);
@@ -652,11 +695,11 @@ mod tests {
 
     #[test]
     fn test_merge_pr_conflicts() -> io::Result<()> {
-        if Path::new("tests/pull_request/server/prs").exists() {
-            fs::remove_dir_all("tests/pull_request/server/prs")?;
+        if Path::new(TEST_SERVER_PRS_DIR).exists() {
+            fs::remove_dir_all(TEST_SERVER_PRS_DIR)?;
         }
-        std::fs::create_dir_all("tests/pull_request/server/prs")?;
-        let dir = "tests/pull_request/server";
+        std::fs::create_dir_all(TEST_SERVER_PRS_DIR)?;
+        let dir = TEST_SERVER_DIR;
         let repo_name = "merge_conflicts";
 
         let root_dir = format!("{}/{}", dir, repo_name);

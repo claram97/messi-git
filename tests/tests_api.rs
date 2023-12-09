@@ -9,7 +9,7 @@ use messi::api::utils::{
 #[test]
 #[ignore = "This test is for running the server"]
 fn test_run_server() -> io::Result<()> {
-    let repos_path = "/home/claram97/taller/23C2-messi/tests/test_list_commits";
+    let repos_path = "/home/rgestoso/daemon/server";
     server::run("localhost", "3000", repos_path)
 }
 
