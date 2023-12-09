@@ -47,19 +47,27 @@ fn update_pull_request(
         }
     };
 
-    let mut repo = Repository::load(repo, &root_dir)?;
-    let pr = match repo.get_pull_request(pull_number) {
-        Some(pr) => pr.clone(),
-        None => {
-            let error_message = json!({"error" : "Pull request not found."}).to_string();
+    let mut repo = match Repository::load(repo, &root_dir) {
+        Ok(repo) => repo,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {
+            let error_message = json!({
+                "error": e.to_string()
+            })
+            .to_string();
             return Ok((StatusCode::NotFound, Some(error_message)));
         }
+        Err(e) => return Err(e),
     };
-
-    pr.patch(&mut repo, pr_patch);
-    log(&format!("Pull request updated: {:?}", &pr))?;
+    let pr = match repo.patch_pull_request(pull_number, pr_patch) {
+        Ok(pr) => pr,
+        Err(e) => {
+            let error_message = json!({"error": e.to_string()}).to_string();
+            return Ok((StatusCode::BadRequest, Some(error_message)));
+        }
+    };
     repo.dump(&root_dir)?;
-
+    
+    log(&format!("Pull request updated: {:?}", &pr))?;
     let pr = serde_json::to_string(&pr)?;
     Ok((StatusCode::Ok, Some(pr)))
 }

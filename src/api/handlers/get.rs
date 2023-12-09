@@ -114,20 +114,16 @@ fn list_pull_request_commits(
             return Ok((StatusCode::NotFound, Some(error_message)));
         }
     };
-    let result = pr.list_commits(root_dir, GIT_DIR, &repo);
-
-    let vec = match result {
-        Ok(vec) => {
-            log("Commits succesfully listed.")?;
-            vec
-        }
-        Err(error) => {
+    let result = match pr.list_commits(root_dir, GIT_DIR, &repo) {
+        Ok(vec) => vec,
+        Err(e) => {
             log("Error trying to list commits.")?;
-            return Err(error);
-        }
+            let error_message = json!({"error" : e.to_string()}).to_string();
+            return Ok((StatusCode::BadRequest, Some(error_message)));
+        },
     };
 
-    let result = json!(vec).to_string();
-
+    log("Commits succesfully listed.")?;
+    let result = json!(result).to_string();
     Ok((StatusCode::Ok, Some(result)))
 }

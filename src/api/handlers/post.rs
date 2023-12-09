@@ -4,7 +4,7 @@ use serde_json::json;
 
 use crate::{
     api::utils::{log::log, request::Request, status_code::StatusCode},
-    pull_request::{PullRequest, PullRequestCreate, Repository},
+    pull_request::{PullRequestCreate, Repository},
 };
 
 /// Handle a POST request.
@@ -42,8 +42,7 @@ fn create_pull_request(repo: &str, request: &Request) -> io::Result<(StatusCode,
         }
         Err(e) => return Err(e),
     };
-
-    let pr = PullRequest::new(&mut repo, pr_create)?;
+    let pr = repo.create_pull_request(pr_create);
     repo.dump(&root_dir)?;
 
     log(&format!("Pull request created: {:?}", pr))?;
