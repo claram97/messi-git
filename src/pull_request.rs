@@ -71,7 +71,7 @@ impl PullRequest {
         &self,
         root_dir: &str,
         git_dir_name: &str,
-        repository: &mut Repository,
+        repository: &Repository,
     ) -> io::Result<Vec<String>> {
         let git_dir = format!("{}/{}/{}", root_dir, repository.name, git_dir_name);
         let source_hash = get_branch_commit_hash(&self.source_branch, &git_dir)?;
@@ -116,7 +116,7 @@ impl PullRequest {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Repository {
     name: String,
     pr_count: usize,

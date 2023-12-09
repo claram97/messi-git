@@ -2,7 +2,11 @@ use std::io;
 
 use serde_json::json;
 
-use crate::api::utils::{log::log, request::Request, status_code::StatusCode};
+use crate::{
+    api::utils::{log::log, request::Request, status_code::StatusCode},
+    configuration::GIT_DIR,
+    pull_request::Repository,
+};
 
 /// Handle a PUT request.
 pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
@@ -17,9 +21,46 @@ pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
 }
 
 fn merge_pull_request(repo: &str, pull_number: &str) -> io::Result<String> {
-    log(&format!("Merging pull request {} of {}", pull_number, repo))?;
+    log(&format!(
+        "Merging pull request {} of {}.",
+        pull_number, repo
+    ))?;
+    let current_dir = std::env::current_dir()?;
+    let current_dir = &current_dir.to_string_lossy().to_string();
+    let repository = Repository::load(repo, current_dir)?;
+    let pull_number = match pull_number.parse::<usize>() {
+        Ok(pull_number) => pull_number,
+        Err(_) => {
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "Error trying to parse pull number.\n",
+            ))
+        }
+    };
+    let pr = match repository.get_pull_request(pull_number) {
+        Some(pr) => pr,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Pull request with the specified pull number doesn't exist.\n",
+            ))
+        }
+    };
+    let mut cloned_repo = repository.clone();
+    let result = pr.merge(&current_dir, GIT_DIR, &mut cloned_repo);
+    cloned_repo.dump(&current_dir)?;
+    match result {
+        Ok(_) => {
+            log("Merge was successfull.")?;
+        }
+        Err(error) => {
+            log("Unsuccessfull merge.")?;
+            return Err(error);
+        }
+    }
+
     let result = json!({
-        "message": format!("Mergeando pull request {} de {}", pull_number, repo)
+        "message": format!("Listando commits de pull request {} de {}", pull_number, repo)
     })
     .to_string();
     Ok(result)

@@ -2,9 +2,10 @@ use std::io;
 
 use crate::{
     api::utils::{log::log, request::Request, status_code::StatusCode},
+    configuration::GIT_DIR,
     pull_request::Repository,
 };
-use serde_json::json;
+use serde_json::{error, json};
 
 /// Handle a GET request.
 pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
@@ -16,8 +17,7 @@ pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
         }
         ["repos", repo, "pulls", pull_number] => get_pull_request(repo, pull_number),
         ["repos", repo, "pulls", pull_number, "commits"] => {
-            let body = list_pull_request_commits(repo, pull_number)?;
-            Ok((StatusCode::Ok, Some(body)))
+            list_pull_request_commits(repo, pull_number)
         }
         _ => Ok((StatusCode::BadRequest, None)),
     }
@@ -47,14 +47,46 @@ fn get_pull_request(repo: &str, pull_number: &str) -> io::Result<(StatusCode, Op
     Ok((StatusCode::Ok, Some(pr)))
 }
 
-fn list_pull_request_commits(repo: &str, pull_number: &str) -> io::Result<String> {
+fn list_pull_request_commits(
+    repo: &str,
+    pull_number: &str,
+) -> io::Result<(StatusCode, Option<String>)> {
     log(&format!(
         "Listing commits of pull request {} of {}",
         pull_number, repo
     ))?;
-    let result = json!({
-        "message": format!("Listando commits de pull request {} de {}", pull_number, repo)
-    })
-    .to_string();
-    Ok(result)
+    let current_dir = std::env::current_dir()?;
+    let current_dir = &current_dir.to_string_lossy().to_string();
+    let repository = Repository::load(repo, current_dir)?;
+    let pull_number = match pull_number.parse::<usize>() {
+        Ok(pull_number) => pull_number,
+        Err(_) => {
+            let error_message =
+                json!({"Error" : "Invalid pull number: is not a number."}).to_string();
+            return Ok((StatusCode::BadRequest, Some(error_message)));
+        }
+    };
+    let pr = match repository.get_pull_request(pull_number) {
+        Some(pr) => pr,
+        None => {
+            let error_message = json!({"Error" : "Invalid: pull request not found."}).to_string();
+            return Ok((StatusCode::NotFound, Some(error_message)));
+        }
+    };
+    let result = pr.list_commits(&current_dir, GIT_DIR, &repository);
+
+    let vec = match result {
+        Ok(vec) => {
+            log("Commits succesfully listed.")?;
+            vec
+        }
+        Err(error) => {
+            log("Error trying to list commits.")?;
+            return Err(error);
+        }
+    };
+
+    let result = json!(vec).to_string();
+
+    Ok((StatusCode::Ok, Some(result)))
 }
