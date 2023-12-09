@@ -1,0 +1,1 @@
+Command 'git init': Initialized repository at '/home/claram97/taller/prueba/repo1/.mgit'2023-12-09 00:54:00.581557503 -03:00

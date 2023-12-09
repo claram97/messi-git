@@ -1,6 +1,9 @@
 use std::io;
 
-use crate::{api::utils::{log::log, request::Request, status_code::StatusCode}, pull_request::Repository};
+use crate::{
+    api::utils::{log::log, request::Request, status_code::StatusCode},
+    pull_request::Repository,
+};
 use serde_json::json;
 
 /// Handle a GET request.
@@ -11,9 +14,7 @@ pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
             let body = list_pull_requests(repo)?;
             Ok((StatusCode::Ok, Some(body)))
         }
-        ["repos", repo, "pulls", pull_number] => {
-            get_pull_request(repo, pull_number)
-        }
+        ["repos", repo, "pulls", pull_number] => get_pull_request(repo, pull_number),
         ["repos", repo, "pulls", pull_number, "commits"] => {
             let body = list_pull_request_commits(repo, pull_number)?;
             Ok((StatusCode::Ok, Some(body)))
@@ -40,7 +41,7 @@ fn get_pull_request(repo: &str, pull_number: &str) -> io::Result<(StatusCode, Op
     let repo = Repository::load(repo, &root_dir)?;
     let pr = match repo.get_pull_request(pull_number) {
         Some(pr) => pr,
-        None => return Ok((StatusCode::NotFound, None))
+        None => return Ok((StatusCode::NotFound, None)),
     };
     let pr = serde_json::to_string(&pr)?;
     Ok((StatusCode::Ok, Some(pr)))

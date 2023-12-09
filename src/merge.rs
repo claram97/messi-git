@@ -275,7 +275,6 @@ pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io
     }
 }
 
-
 // A function that merges a pull request into the base branch. It does not update the working directory.
 // It returns the hash of the new commit. The base will take the role of our_branch and the pull request branch will be their_branch.
 // If there are no conflicts, we will create a new commit with the changes of both branches.
@@ -315,7 +314,6 @@ pub fn git_merge_for_pull_request(
         return Ok(commit_hash);
     }
 }
-
 
 #[cfg(test)]
 mod tests {

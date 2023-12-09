@@ -1,5 +1,5 @@
-use crate::branch::get_branch_commit_hash;
 use crate::api::utils::log::log;
+use crate::branch::get_branch_commit_hash;
 use crate::merge::find_common_ancestor;
 use crate::merge::git_merge;
 use crate::merge::git_merge_for_pull_request;
@@ -15,7 +15,8 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]
 enum PRState {
-    #[default] Open,
+    #[default]
+    Open,
     Updated,
     Closed,
 }
@@ -72,7 +73,12 @@ impl PullRequest {
         Ok(pr)
     }
 
-    pub fn list_commits(&self, root_dir : &str, git_dir_name : &str, repository : &mut Repository) -> io::Result<Vec<String>>{
+    pub fn list_commits(
+        &self,
+        root_dir: &str,
+        git_dir_name: &str,
+        repository: &mut Repository,
+    ) -> io::Result<Vec<String>> {
         let git_dir = format!("{}/{}/{}", root_dir, repository.name, git_dir_name);
         let source_hash = get_branch_commit_hash(&self.source_branch, &git_dir)?;
         let target_hash = get_branch_commit_hash(&self.target_branch, &git_dir)?;
@@ -107,7 +113,6 @@ pub struct Repository {
 }
 
 impl Repository {
-
     pub fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
@@ -117,11 +122,14 @@ impl Repository {
     }
 
     pub fn insert_pull_request(&mut self, pull_request: &PullRequest) {
-        match self.pull_requests.insert(pull_request.pull_number, pull_request.clone()) {
+        match self
+            .pull_requests
+            .insert(pull_request.pull_number, pull_request.clone())
+        {
             Some(_) => (),
             None => self.pr_count += 1,
         }
-    } 
+    }
 
     pub fn list_pull_requests(&self) -> Vec<PullRequest> {
         let mut prs: Vec<PullRequest> = self.pull_requests.values().cloned().collect();
@@ -137,7 +145,7 @@ impl Repository {
         let filename = repo.to_string() + ".json";
         let path = Path::new(root_dir).join("prs").join(&filename);
         if !path.exists() {
-            return Ok(Self::new(repo))
+            return Ok(Self::new(repo));
         }
         let repo = std::fs::read_to_string(path)?;
         let repo: Self = serde_json::from_str(&repo)?;
@@ -287,7 +295,7 @@ fn list_commits(repo_name: &str, pull_number: u32, state: Arc<AppState>) -> Resu
                     Ok(ancestor) => ancestor,
                     Err(error) => return Err(error.to_string()),
                 };
-    
+
             let commit_history = match get_branch_commit_history_until(
                 &source_branch_hash,
                 &git_dir,
@@ -591,6 +599,8 @@ fn merge_pull_request(
 
 #[cfg(test)]
 mod tests {
+    use crate::configuration::GIT_DIR_FOR_TEST;
+
     use super::*;
     use std::collections::HashMap;
     // use std::sync::{Arc, Mutex};
@@ -822,17 +832,16 @@ mod tests {
         assert_eq!(loaded_repo.name, repo_name);
         assert_eq!(loaded_repo.pr_count, 0);
         assert_eq!(loaded_repo.pull_requests.len(), 0);
-        
+
         let repo_path = format!("tests/pull_request/server/prs/{}.json", repo_name);
         std::fs::remove_file(repo_path)?;
-        
-        
+
         let repo_name = "not_exist";
         let loaded_repo = Repository::load(repo_name, root_dir)?;
         assert_eq!(loaded_repo.name, repo_name);
         assert_eq!(loaded_repo.pr_count, 0);
         assert_eq!(loaded_repo.pull_requests.len(), 0);
-        
+
         Ok(())
     }
 
@@ -840,7 +849,7 @@ mod tests {
     fn test_create_one_pr() -> io::Result<()> {
         std::fs::create_dir_all("tests/pull_request/server/prs")?;
         let root_dir = "tests/pull_request/server";
-        let repo_name = "repo_create"; 
+        let repo_name = "repo_create";
         let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
@@ -850,7 +859,7 @@ mod tests {
         };
         PullRequest::new(&mut repo, pr)?;
         repo.dump(root_dir)?;
-        
+
         let repo = Repository::load(repo_name, root_dir)?;
         assert_eq!(repo.name, repo_name);
         assert_eq!(repo.pr_count, 1);
@@ -864,7 +873,7 @@ mod tests {
     fn test_create_many_pr() -> io::Result<()> {
         std::fs::create_dir_all("tests/pull_request/server/prs")?;
         let root_dir = "tests/pull_request/server";
-        let repo_name = "repo_create_many"; 
+        let repo_name = "repo_create_many";
         let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
@@ -941,7 +950,7 @@ mod tests {
     fn test_list_prs() -> io::Result<()> {
         std::fs::create_dir_all("tests/pull_request/server/prs")?;
         let root_dir = "tests/pull_request/server";
-        let repo_name = "repo_list_prs"; 
+        let repo_name = "repo_list_prs";
         let mut repo = Repository::load(repo_name, root_dir)?;
 
         let prs = repo.list_pull_requests();
@@ -972,7 +981,7 @@ mod tests {
     fn test_patch_pr() -> io::Result<()> {
         std::fs::create_dir_all("tests/pull_request/server/prs")?;
         let root_dir = "tests/pull_request/server";
-        let repo_name = "repo_patch"; 
+        let repo_name = "repo_patch";
         let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
@@ -982,7 +991,7 @@ mod tests {
         };
         PullRequest::new(&mut repo, pr)?;
         repo.dump(root_dir)?;
-        
+
         let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = repo.get_pull_request(1).unwrap();
         let pr_patch = PullRequestPatch {
@@ -1007,8 +1016,87 @@ mod tests {
     }
 
     #[test]
-    fn test_list_commit() {
-        //Iniciar un repo con load
+    fn test_list_commit() -> io::Result<()> {
+        let root_dir = "tests/test_list_commits";
+        let repo_name = "repo1";
+        let mut repo = Repository::load(repo_name, root_dir)?;
+        let pr = PullRequestCreate {
+            title: "list commit pr".to_string(),
+            description: "pr para testear list commits".to_string(),
+            source_branch: "my_branch".to_string(),
+            target_branch: "master".to_string(),
+        };
+
+        let pr = PullRequest::new(&mut repo, pr)?;
+
+        let commits = pr.list_commits(root_dir, GIT_DIR_FOR_TEST, &mut repo);
+        assert!(commits.is_ok());
+        let commits = commits?;
+        dbg!("{:?}", commits);
+
+        Ok(())
     }
 
+    #[test]
+    fn test_list_commit_fails_due_to_unexisting_branch() -> io::Result<()> {
+        let root_dir = "tests/test_list_commits";
+        let repo_name = "repo1";
+        let mut repo = Repository::load(repo_name, root_dir)?;
+        let pr = PullRequestCreate {
+            title: "list commit pr".to_string(),
+            description: "pr para testear list commits".to_string(),
+            source_branch: "branch".to_string(),
+            target_branch: "master".to_string(),
+        };
+
+        let pr = PullRequest::new(&mut repo, pr);
+        assert!(pr.is_ok());
+        let pr = pr?;
+        let commits = pr.list_commits(root_dir, GIT_DIR_FOR_TEST, &mut repo);
+        assert!(commits.is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_list_commit_fails_due_to_unexisting_repo_name() -> io::Result<()> {
+        let root_dir = "tests/test_list_commits";
+        let repo_name = "repo";
+        let mut repo = Repository::load(repo_name, root_dir)?;
+        let pr = PullRequestCreate {
+            title: "list commit pr".to_string(),
+            description: "pr para testear list commits".to_string(),
+            source_branch: "my_branch".to_string(),
+            target_branch: "master".to_string(),
+        };
+
+        let pr = PullRequest::new(&mut repo, pr);
+        assert!(pr.is_ok());
+        let pr = pr?;
+        let commits = pr.list_commits(root_dir, GIT_DIR_FOR_TEST, &mut repo);
+        assert!(commits.is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_list_commit_fails_due_to_unexisting_root_dir() -> io::Result<()> {
+        let root_dir = "tests/test_list_commitss";
+        let repo_name = "repo1";
+        let mut repo = Repository::load(repo_name, root_dir)?;
+        let pr = PullRequestCreate {
+            title: "list commit pr".to_string(),
+            description: "pr para testear list commits".to_string(),
+            source_branch: "my_branch".to_string(),
+            target_branch: "master".to_string(),
+        };
+
+        let pr = PullRequest::new(&mut repo, pr);
+        assert!(pr.is_ok());
+        let pr = pr?;
+        let commits = pr.list_commits(root_dir, GIT_DIR_FOR_TEST, &mut repo);
+        assert!(commits.is_err());
+
+        Ok(())
+    }
 }

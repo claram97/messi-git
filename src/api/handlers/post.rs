@@ -2,7 +2,14 @@ use std::io;
 
 use serde_json::json;
 
-use crate::{api::utils::{log::log, request::{Request, self}, status_code::StatusCode}, pull_request::{PullRequestCreate, PullRequest, Repository}};
+use crate::{
+    api::utils::{
+        log::log,
+        request::{self, Request},
+        status_code::StatusCode,
+    },
+    pull_request::{PullRequest, PullRequestCreate, Repository},
+};
 
 /// Handle a POST request.
 pub fn handle(request: &Request) -> io::Result<(StatusCode, Option<String>)> {
