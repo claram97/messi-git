@@ -1,3 +1,7 @@
+use std::io;
+
+use serde_json::Value;
+
 use crate::api::utils::headers::Headers;
 use crate::api::utils::method::Method;
 use crate::api::utils::query_string::QueryString;
@@ -55,6 +59,16 @@ impl Request {
                 break;
             }
         }
+
+        // Verifica si el cuerpo es XML y realiza la conversión a JSON
+        if let Some(content_type) = headers.get("Content-Type") {
+            if content_type == "application/xml" {
+                if let Ok(json_body) = Self::parse_xml_to_json(&body) {
+                    body = json_body;
+                }
+            }
+        }
+
         // transformamos el body segun mime type, ahora es siempre json.
         // pero si viene XML hay que pasarlo a json que es lo que entendemos
         Self {
@@ -72,6 +86,17 @@ impl Request {
             .split('/')
             .filter(|s| !s.is_empty())
             .collect::<Vec<&str>>()
+    }
+
+    /// Parsea el cuerpo XML a JSON.
+    fn parse_xml_to_json(xml_str: &str) -> io::Result<String> {
+        // Convierte el XML a JSON usando serde_json::Value
+        let json_value: Value = serde_json::from_str(xml_str)?;
+
+        // Convierte el JSON a una cadena de texto
+        let json_str = serde_json::to_string(&json_value)?;
+
+        Ok(json_str)
     }
 }
 

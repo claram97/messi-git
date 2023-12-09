@@ -87,9 +87,15 @@ impl PullRequest {
         get_branch_commit_history_until(&source_hash, &git_dir, &common_ancestor)
     }
 
-    pub fn merge(&self, root_dir : &str, git_dir_name : &str, repository : &mut Repository) -> io::Result<String>{
+    pub fn merge(
+        &self,
+        root_dir: &str,
+        git_dir_name: &str,
+        repository: &mut Repository,
+    ) -> io::Result<String> {
         let git_dir = format!("{}/{}/{}", root_dir, repository.name, git_dir_name);
-        let hash = merge::git_merge_for_pull_request(&self.target_branch,&self.source_branch, &git_dir)?;
+        let hash =
+            merge::git_merge_for_pull_request(&self.target_branch, &self.source_branch, &git_dir)?;
         let mut pr = self.clone();
         pr.state = PRState::Closed;
         pr.updated_at = get_current_date();
@@ -97,7 +103,6 @@ impl PullRequest {
         repository.insert_pull_request(&pr);
         Ok(hash)
     }
-
 
     /// Returns a new PullRequest with the updated fields
     pub fn patch(&self, repo: &mut Repository, pr_patch: PullRequestPatch) -> Self {
@@ -612,7 +617,7 @@ fn merge_pull_request(
 
 #[cfg(test)]
 mod tests {
-    use crate::{configuration::GIT_DIR_FOR_TEST, branch, commit, add};
+    use crate::{add, branch, commit, configuration::GIT_DIR_FOR_TEST};
 
     use super::*;
     use std::{collections::HashMap, fs, io::Write};
@@ -1169,7 +1174,7 @@ mod tests {
 
         let src_dir = format!("{}/src", root_dir);
         fs::create_dir_all(&src_dir).unwrap();
-        
+
         let file_1_path = format!("{}/src/1.c", root_dir);
         let mut file = fs::File::create(&file_1_path).unwrap();
         file.write_all(b"int main() { return 0; }").unwrap();
@@ -1178,22 +1183,8 @@ mod tests {
         file.write_all(b"int hello() { return 0; }").unwrap();
         let index_file_path = format!("{}/index", git_dir);
         let _ = fs::File::create(&index_file_path).unwrap();
-        add::add(
-            &file_2_path,
-            &index_file_path,
-            git_dir,
-            "",
-            None,
-        )
-        .unwrap();
-        add::add(
-            &file_1_path,
-            &index_file_path,
-            git_dir,
-            "",
-            None,
-        )
-        .unwrap();
+        add::add(&file_2_path, &index_file_path, git_dir, "", None).unwrap();
+        add::add(&file_1_path, &index_file_path, git_dir, "", None).unwrap();
 
         let commit_message = "Initial commit";
         let commit_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
@@ -1213,7 +1204,7 @@ mod tests {
         if Path::new(&root_dir).exists() {
             fs::remove_dir_all(&root_dir)?;
         }
-        
+
         let git_dir = Path::new(&dir).join(&repo_name).join(".mgit");
         if Path::new(&git_dir).exists() {
             fs::remove_dir_all(&git_dir)?;
@@ -1296,7 +1287,7 @@ mod tests {
 
         let mut repo = Repository::load(repo_name, &dir)?;
         let result = pr.merge(&dir, ".mgit", &mut repo);
-        
+
         assert!(result.is_ok());
         let merge_commit_hash = result.unwrap();
         let merge_commit = commit::is_merge_commit(&merge_commit_hash, &git_dir).unwrap();
@@ -1326,7 +1317,7 @@ mod tests {
         if Path::new(&root_dir).exists() {
             fs::remove_dir_all(&root_dir)?;
         }
-        
+
         let git_dir = Path::new(&dir).join(&repo_name).join(".mgit");
         if Path::new(&git_dir).exists() {
             fs::remove_dir_all(&git_dir)?;
@@ -1356,7 +1347,8 @@ mod tests {
             &git_dir,
             "",
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         let commit_message = "Second commit";
         let _ = commit::new_commit(&git_dir, commit_message, "").unwrap();
@@ -1370,8 +1362,9 @@ mod tests {
             &git_dir,
             "",
             None,
-        ).unwrap();
-        
+        )
+        .unwrap();
+
         let commit_message = "Third commit";
         let commit_2_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
 
@@ -1380,7 +1373,7 @@ mod tests {
         head_file
             .write_all(format!("ref: refs/heads/main").as_bytes())
             .unwrap();
-        
+
         let file_5_path = format!("{}/src/5.c", root_dir);
         let mut file = fs::File::create(&file_5_path).unwrap();
         file.write_all(b"int otro() { return 0; }").unwrap();
@@ -1391,7 +1384,8 @@ mod tests {
             &git_dir,
             "",
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         let commit_message = "Fourth commit";
         let commit_3_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
@@ -1406,7 +1400,7 @@ mod tests {
 
         PullRequest::new(&mut repo, pr)?;
         repo.dump(&dir)?;
-        
+
         let repo = Repository::load(repo_name, &dir)?;
         let pr = repo.get_pull_request(1).unwrap();
 
