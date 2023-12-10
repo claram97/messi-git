@@ -37,7 +37,7 @@ fn read_request(stream: &mut TcpStream) -> io::Result<String> {
 /// Handle a client request.
 ///
 /// Parse the request, handle it and send the response.
-fn handle_client(stream: &mut TcpStream, repositories: Arc<HashMap<String, Mutex<Repository>>>) -> io::Result<()> {
+fn handle_client(stream: &mut TcpStream, repositories: Arc<Repositories>) -> io::Result<()> {
     let request = read_request(stream)?;
     log(&format!("HTTP Request: {}", request))?;
     let request = Request::new(&request);
@@ -46,9 +46,9 @@ fn handle_client(stream: &mut TcpStream, repositories: Arc<HashMap<String, Mutex
     // let request_path_splitted = request.get_path_split();
     let (status_code, body) = match request.method {
         Method::GET => handlers::get::handle(&request, repositories)?,
-        Method::POST => handlers::post::handle(&request)?,
+        Method::POST => handlers::post::handle(&request, repositories)?,
         Method::PUT => handlers::put::handle(&request)?,
-        Method::PATCH => handlers::patch::handle(&request)?,
+        Method::PATCH => handlers::patch::handle(&request, repositories)?,
     };
 
     let mime_type = get_mime_type(request.headers.get("Accept"));
@@ -98,12 +98,12 @@ pub fn run(domain: &str, port: &str, path: &str) -> io::Result<()> {
     let listener = TcpListener::bind(&address)?;
 
     log(&format!("Changed working directory to {}", path))?;
+
+    let repositories = Arc::new(Repositories::load()?);
+    log("Loaded repositories.")?;
+
     log(&format!("Server listening at {}...", &address))?;
     println!("Server listening at {}...", &address);
-
-    let repositories = load_repos_with_lock()?;
-    log(&format!("Loaded {} repositories.", repositories.len()))?;
-    let repositories = std::sync::Arc::new(repositories);
 
     let mut handles = vec![];
     while let Ok((mut stream, socket_addr)) = listener.accept() {
@@ -132,23 +132,63 @@ pub fn run(domain: &str, port: &str, path: &str) -> io::Result<()> {
     Ok(())
 }
 
-fn load_repos_with_lock() -> io::Result<HashMap<String, Mutex<Repository>>> {
-    let mut repos = HashMap::new();
-    let curdir = std::env::current_dir()?;
-    let root_dir = curdir.to_string_lossy().to_string();
-    let prs_dir = Path::new(&root_dir).join("prs");
-    for entry in fs::read_dir(prs_dir)? {
-        let entry = entry?;
-        let path = entry.path();
-        let repo_name = path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .and_then(|name| name.strip_suffix(".json"))
-            .map(|name| name.to_string());
-        if let Some(repo_name) = repo_name {
-            let repo = serde_json::from_str(&fs::read_to_string(path)?)?;
-            repos.insert(repo_name.to_string(), Mutex::new(repo));
+pub struct Repositories {
+    repositories: Mutex<HashMap<String, Arc<Mutex<Repository>>>>
+}
+
+impl Repositories {
+    pub fn get(&self, repo: &str) -> Option<Arc<Mutex<Repository>>> {
+        match self.repositories.lock() {
+            Ok(repositories) => match repositories.get(repo) {
+                Some(repo) => Some(repo.clone()),
+                None if repo_exists(repo) => {
+                    self.insert_new(repo);
+                    self.get(repo)
+                },
+                None => None
+            }
+            Err(_) => None
         }
     }
-    Ok(repos)
+
+    pub fn insert_new(&self, repo: &str) {
+        match self.repositories.lock() {
+            Ok(mut repositories) => {
+                repositories.insert(repo.to_string(), Arc::new(Mutex::new(Repository::new(repo))));
+            },
+            Err(_) => {}
+        }
+    }
+
+    fn load() -> io::Result<Self> {
+        let mut repos = HashMap::new();
+        let curdir = std::env::current_dir()?;
+        let root_dir = curdir.to_string_lossy().to_string();
+        let prs_dir = Path::new(&root_dir).join("prs");
+        for entry in fs::read_dir(prs_dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            let repo_name = path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .and_then(|name| name.strip_suffix(".json"))
+                .map(|name| name.to_string());
+            if let Some(repo_name) = repo_name {
+                let repo = serde_json::from_str(&fs::read_to_string(path)?)?;
+                repos.insert(repo_name.to_string(), Arc::new(Mutex::new(repo)));
+            }
+        }
+        Ok(Self {
+            repositories: Mutex::new(repos)
+        })
+    }
+}
+
+fn repo_exists(repo: &str) -> bool {
+    let curdir = match std::env::current_dir() {
+        Ok(curdir) => curdir,
+        Err(_) => return false
+    };
+    let repo_dir = curdir.join(repo);
+    repo_dir.exists() && repo_dir.is_dir()
 }

@@ -1,14 +1,13 @@
-use std::{io, collections::HashMap, sync::{Mutex, Arc}};
+use std::{io, sync::Arc};
 
 use crate::{
-    api::utils::{log::log, request::Request, status_code::StatusCode},
+    api::{utils::{log::log, request::Request, status_code::StatusCode}, server::Repositories},
     configuration::GIT_DIR,
-    pull_request::Repository,
 };
 use serde_json::json;
 
 /// Handle a GET request.
-pub fn handle(request: &Request, repositories: Arc<HashMap<String, Mutex<Repository>>>) -> io::Result<(StatusCode, Option<String>)> {
+pub fn handle(request: &Request, repositories: Arc<Repositories>) -> io::Result<(StatusCode, Option<String>)> {
     let path_splitted = request.get_path_split();
     match path_splitted[..] {
         ["repos", repo, "pulls"] => list_pull_requests(repo, repositories),
@@ -20,7 +19,7 @@ pub fn handle(request: &Request, repositories: Arc<HashMap<String, Mutex<Reposit
     }
 }
 
-fn list_pull_requests(repo: &str, repositories: Arc<HashMap<String, Mutex<Repository>>>) -> io::Result<(StatusCode, Option<String>)> {
+fn list_pull_requests(repo: &str, repositories: Arc<Repositories>) -> io::Result<(StatusCode, Option<String>)> {
     log(&format!("Listing pull requests of {}", repo))?;
     match repositories.get(repo) {
         Some(repo) => {
@@ -48,7 +47,7 @@ fn list_pull_requests(repo: &str, repositories: Arc<HashMap<String, Mutex<Reposi
     }
 }
 
-fn get_pull_request(repo: &str, pull_number: &str, repositories: Arc<HashMap<String, Mutex<Repository>>>) -> io::Result<(StatusCode, Option<String>)> {
+fn get_pull_request(repo: &str, pull_number: &str, repositories: Arc<Repositories>) -> io::Result<(StatusCode, Option<String>)> {
     log(&format!("Showing pull request {} of {}", pull_number, repo))?;
     let pull_number = match pull_number.parse::<usize>() {
         Ok(pull_number) => pull_number,
@@ -96,7 +95,7 @@ fn get_pull_request(repo: &str, pull_number: &str, repositories: Arc<HashMap<Str
 fn list_pull_request_commits(
     repo: &str,
     pull_number: &str,
-    repositories: Arc<HashMap<String, Mutex<Repository>>>,
+    repositories: Arc<Repositories>,
 ) -> io::Result<(StatusCode, Option<String>)> {
     log(&format!(
         "Listing commits of pull request {} of {}",
