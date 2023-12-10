@@ -83,19 +83,14 @@ impl PullRequest {
     ///
     /// * `Ok(String)` - the hash of the merge commit
     pub fn merge(
-        &self,
-        root_dir: &str,
-        git_dir_name: &str,
-        repository: &mut Repository,
+        &mut self,
+        git_dir: &str,
     ) -> io::Result<String> {
-        let git_dir = format!("{}/{}/{}", root_dir, repository.name, git_dir_name);
         let hash =
-            merge::git_merge_for_pull_request(&self.target_branch, &self.source_branch, &git_dir)?;
-        let mut pr = self.clone();
-        pr.state = PRState::Closed;
-        pr.updated_at = get_current_date();
-        pr.closed_at = Some(get_current_date());
-        repository.insert_pull_request(&pr);
+            merge::git_merge_for_pull_request(&self.target_branch, &self.source_branch, git_dir)?;
+        self.state = PRState::Closed;
+        self.updated_at = get_current_date();
+        self.closed_at = Some(get_current_date());
         Ok(hash)
     }
 
@@ -265,6 +260,20 @@ impl Repository {
         get_branch_commit_history_until(&source_hash, &git_dir, &common_ancestor)
     }
 
+
+    pub fn merge_pull_request(&mut self, pull_number: usize, root_dir: &str, git_dir_name: &str) -> io::Result<String> {
+        let pr = match self.pull_requests.get_mut(&pull_number) {
+            Some(pr) => pr,
+            None => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "Pull request with the specified pull number doesn't exist",
+                ))
+            }
+        };
+        let git_dir = format!("{}/{}/{}", root_dir, self.name, git_dir_name);
+        pr.merge(&git_dir)
+    }
     /// Loads a Repository from the specified root directory
     ///
     /// # Arguments
@@ -792,11 +801,8 @@ mod tests {
         repo.create_pull_request(pr);
         repo.dump(&dir)?;
 
-        let repo = Repository::load(repo_name, &dir)?;
-        let pr = repo.get_pull_request(1).unwrap();
-
         let mut repo = Repository::load(repo_name, &dir)?;
-        let result = pr.merge(&dir, ".mgit", &mut repo);
+        let result = repo.merge_pull_request(1, &dir, ".mgit");
 
         assert!(result.is_ok());
         let merge_commit_hash = result.unwrap();
@@ -910,11 +916,8 @@ mod tests {
         repo.create_pull_request(pr);
         repo.dump(&dir)?;
 
-        let repo = Repository::load(repo_name, &dir)?;
-        let pr = repo.get_pull_request(1).unwrap();
-
         let mut repo = Repository::load(repo_name, &dir)?;
-        let result = pr.merge(&dir, ".mgit", &mut repo);
+        let result = repo.merge_pull_request(1, &dir, ".mgit");
 
         assert!(result.is_ok());
         let merge_commit_hash = result.unwrap();

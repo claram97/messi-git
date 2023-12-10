@@ -32,33 +32,28 @@ fn merge_pull_request(repo: &str, pull_number: &str) -> io::Result<(StatusCode, 
         }
     };
     let current_dir = std::env::current_dir()?;
-    let current_dir = &current_dir.to_string_lossy().to_string();
-    let repository = Repository::load(repo, current_dir)?;
-    let pr = match repository.get_pull_request(pull_number) {
-        Some(pr) => pr,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Pull request with the specified pull number doesn't exist.\n",
-            ))
+    let root_dir = &current_dir.to_string_lossy().to_string();
+    let mut repo = match Repository::load(repo, &root_dir) {
+        Ok(repo) => repo,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {
+            let error_message = json!({
+                "error": e.to_string()
+            })
+            .to_string();
+            return Ok((StatusCode::NotFound, Some(error_message)));
         }
+        Err(e) => return Err(e),
     };
-    let mut cloned_repo = repository.clone();
-    let result = pr.merge(current_dir, GIT_DIR, &mut cloned_repo);
-    cloned_repo.dump(current_dir)?;
-    match result {
-        Ok(_) => {
-            log("Merge was successfull.")?;
-        }
-        Err(error) => {
-            log("Unsuccessfull merge.")?;
-            return Err(error);
-        }
-    }
 
-    let result = json!({
-        "message": format!("Listando commits de pull request {} de {}", pull_number, repo)
-    })
-    .to_string();
+    let result = match repo.merge_pull_request(pull_number, root_dir, GIT_DIR) {
+        Ok(hash) => hash,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {
+            let error_message = json!({"error": e.to_string()}).to_string();
+            return Ok((StatusCode::NotFound, Some(error_message)));
+        },
+        Err(e) => return Err(e),
+    };
+    repo.dump(root_dir)?;
+    log(&format!("Pull request {} merged.", pull_number))?;
     Ok((StatusCode::Ok, Some(result)))
 }
