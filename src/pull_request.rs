@@ -71,50 +71,6 @@ impl PullRequest {
         }
     }
 
-    /// Returns the list of commits involved in the PullRequest
-    ///
-    /// # Arguments
-    ///
-    /// * `root_dir` - the root directory of the repository
-    /// * `git_dir_name` - the name of the git directory
-    /// * `repository` - the repository
-    pub fn list_commits(
-        &self,
-        root_dir: &str,
-        git_dir_name: &str,
-        repository: &Repository,
-    ) -> io::Result<Vec<String>> {
-        let git_dir = format!("{}/{}/{}", root_dir, repository.name, git_dir_name);
-        let source_hash = match get_branch_commit_hash(&self.source_branch, &git_dir) {
-            Ok(hash) => hash,
-            Err(_) => {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "Source branch doesn't exist",
-                ))
-            }
-        };
-        let target_hash = match get_branch_commit_hash(&self.target_branch, &git_dir) {
-            Ok(hash) => hash,
-            Err(_) => {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "Target branch doesn't exist",
-                ))
-            }
-        };
-        let common_ancestor = match find_common_ancestor(&source_hash, &target_hash, &git_dir) {
-            Ok(hash) => hash,
-            Err(_) => {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "Common ancestor doesn't exist between the branches",
-                ))
-            }
-        };
-        get_branch_commit_history_until(&source_hash, &git_dir, &common_ancestor)
-    }
-
     /// Merges the PullRequest into the target branch
     ///
     /// # Arguments
@@ -254,6 +210,59 @@ impl Repository {
     /// * `None` - if the PullRequest doesn't exist
     pub fn get_pull_request(&self, pull_number: usize) -> Option<&PullRequest> {
         self.pull_requests.get(&pull_number)
+    }
+
+    /// Returns the list of commits involved in the PullRequest
+    ///
+    /// # Arguments
+    ///
+    /// * `pull_number` - the number of the PullRequest to get
+    /// * `root_dir` - the root directory of the repository
+    /// * `git_dir_name` - the name of the git directory
+    pub fn list_commits_from_pull_request(
+        &self,
+        pull_number: usize,
+        root_dir: &str,
+        git_dir_name: &str,
+    ) -> io::Result<Vec<String>> {
+        let git_dir = format!("{}/{}/{}", root_dir, self.name, git_dir_name);
+        let pr = match self.pull_requests.get(&pull_number) {
+            Some(pr) => pr,
+            None => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "Pull request with the specified pull number doesn't exist",
+                ))
+            }
+        };
+        let source_hash = match get_branch_commit_hash(&pr.source_branch, &git_dir) {
+            Ok(hash) => hash,
+            Err(_) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "Source branch doesn't exist",
+                ))
+            }
+        };
+        let target_hash = match get_branch_commit_hash(&pr.target_branch, &git_dir) {
+            Ok(hash) => hash,
+            Err(_) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "Target branch doesn't exist",
+                ))
+            }
+        };
+        let common_ancestor = match find_common_ancestor(&source_hash, &target_hash, &git_dir) {
+            Ok(hash) => hash,
+            Err(_) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "Common ancestor doesn't exist between the branches",
+                ))
+            }
+        };
+        get_branch_commit_history_until(&source_hash, &git_dir, &common_ancestor)
     }
 
     /// Loads a Repository from the specified root directory
@@ -517,7 +526,6 @@ mod tests {
         repo.dump(root_dir)?;
 
         let mut repo = Repository::load(repo_name, root_dir)?;
-        // let pr = repo.get_pull_request(1).unwrap();
         let pr_patch = PullRequestPatch {
             title: Some("new title".to_string()),
             description: Some("new description".to_string()),
@@ -552,8 +560,7 @@ mod tests {
         };
 
         let pr = repo.create_pull_request(pr);
-
-        let commits = pr.list_commits(root_dir, GIT_DIR_FOR_TEST, &mut repo);
+        let commits = repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
         assert!(commits.is_ok());
         let commits = commits?;
         assert!(commits.len() == 4);
@@ -575,7 +582,7 @@ mod tests {
 
         let pr = repo.create_pull_request(pr);
 
-        let commits = pr.list_commits(root_dir, GIT_DIR_FOR_TEST, &mut repo);
+        let commits = repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
         assert!(commits.is_ok());
         let commits = commits?;
         assert!(commits.len() == 6);
@@ -597,7 +604,7 @@ mod tests {
 
         let pr = repo.create_pull_request(pr);
 
-        let commits = pr.list_commits(root_dir, GIT_DIR_FOR_TEST, &mut repo);
+        let commits = repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
         assert!(commits.is_ok());
         let commits = commits?;
         assert!(commits.len() == 2);
@@ -618,7 +625,7 @@ mod tests {
         };
 
         let pr = repo.create_pull_request(pr);
-        let commits = pr.list_commits(root_dir, GIT_DIR_FOR_TEST, &mut repo);
+        let commits = repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
         assert!(commits.is_err());
 
         Ok(())

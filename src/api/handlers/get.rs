@@ -107,14 +107,7 @@ fn list_pull_request_commits(
         }
         Err(e) => return Err(e),
     };
-    let pr = match repo.get_pull_request(pull_number) {
-        Some(pr) => pr,
-        None => {
-            let error_message = json!({"error" : "Pull request not found."}).to_string();
-            return Ok((StatusCode::NotFound, Some(error_message)));
-        }
-    };
-    let result = match pr.list_commits(root_dir, GIT_DIR, &repo) {
+    let result = match repo.list_commits_from_pull_request(pull_number, root_dir, GIT_DIR) {
         Ok(vec) => vec,
         Err(e) => {
             log("Error trying to list commits.")?;
