@@ -132,11 +132,28 @@ pub fn run(domain: &str, port: &str, path: &str) -> io::Result<()> {
     Ok(())
 }
 
+/// A struct that contains all the repositories.
+/// It is used to share the repositories between threads.
+/// It is also used to load the repositories from the disk.
+///
+/// # Fields
+///
+/// * `repositories` - The repositories.
 pub struct Repositories {
     repositories: Mutex<HashMap<String, Arc<Mutex<Repository>>>>,
 }
 
 impl Repositories {
+    /// Get a repository.
+    /// If the repository is not present in the repositories, it is loaded from the disk if exists.
+    ///
+    /// # Arguments
+    ///
+    /// * `repo` - The name of the repository.
+    ///
+    /// # Returns
+    ///
+    /// A Mutex of the repository if it exists, otherwise None.
     pub fn get(&self, repo: &str) -> Option<Arc<Mutex<Repository>>> {
         match self.repositories.lock() {
             Ok(repositories) => match repositories.get(repo) {
@@ -151,7 +168,8 @@ impl Repositories {
         }
     }
 
-    pub fn insert_new(&self, repo: &str) {
+    /// Insert a new repository.
+    fn insert_new(&self, repo: &str) {
         if let Ok(mut repositories) = self.repositories.lock() {
             repositories.insert(
                 repo.to_string(),
@@ -160,6 +178,7 @@ impl Repositories {
         }
     }
 
+    /// Load the repositories from the disk.
     fn load() -> io::Result<Self> {
         let mut repos = HashMap::new();
         let curdir = std::env::current_dir()?;
@@ -184,6 +203,7 @@ impl Repositories {
     }
 }
 
+/// Check if a repository exists in the server
 fn repo_exists(repo: &str) -> bool {
     let curdir = match std::env::current_dir() {
         Ok(curdir) => curdir,
@@ -193,6 +213,7 @@ fn repo_exists(repo: &str) -> bool {
     repo_dir.exists() && repo_dir.is_dir()
 }
 
+/// Get the root directory of the server.
 pub fn get_root_dir() -> io::Result<String> {
     let curdir = std::env::current_dir()?;
     Ok(curdir.to_string_lossy().to_string())

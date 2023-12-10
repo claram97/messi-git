@@ -5,7 +5,6 @@ use crate::utils::get_branch_commit_history_until;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io;
-use std::path::Path;
 
 /// Enum to represent the state of a Pull Request
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]
@@ -275,6 +274,8 @@ impl Repository {
         let git_dir = format!("{}/{}/{}", root_dir, self.name, git_dir_name);
         pr.merge(&git_dir)
     }
+
+    #[cfg(test)]
     /// Loads a Repository from the specified root directory
     ///
     /// # Arguments
@@ -287,7 +288,7 @@ impl Repository {
     /// * `Ok(Repository)` - the loaded Repository
     /// * `Err(io::Error)` - if the repository doesn't exist
     fn load(repo: &str, root_dir: &str) -> io::Result<Self> {
-        let repo_dir = Path::new(root_dir).join(repo);
+        let repo_dir = std::path::Path::new(root_dir).join(repo);
         if !repo_dir.exists() {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
@@ -295,7 +296,7 @@ impl Repository {
             ));
         }
         let filename = repo.to_string() + ".json";
-        let path = Path::new(root_dir).join("prs").join(filename);
+        let path = std::path::Path::new(root_dir).join("prs").join(filename);
         if !path.exists() {
             return Ok(Self::new(repo));
         }
@@ -330,9 +331,9 @@ fn get_current_date() -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::{add, branch, commit, configuration::GIT_DIR_FOR_TEST};
-
     use super::*;
+    use crate::{add, branch, commit, configuration::GIT_DIR_FOR_TEST};
+    use std::path::Path;
     use std::{fs, io::Write};
     const TEST_SERVER_DIR: &str = "tests/pull_request/server";
     const TEST_SERVER_PRS_DIR: &str = "tests/pull_request/server/prs";
