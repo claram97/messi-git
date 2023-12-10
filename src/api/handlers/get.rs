@@ -51,7 +51,7 @@ fn list_pull_requests(
                 "error": "Repository not found."
             })
             .to_string();
-            return Ok((StatusCode::NotFound, Some(error_message)));
+            Ok((StatusCode::NotFound, Some(error_message)))
         }
     }
 }
@@ -99,7 +99,7 @@ fn get_pull_request(
                 "error": "Repository not found."
             })
             .to_string();
-            return Ok((StatusCode::NotFound, Some(error_message)));
+            Ok((StatusCode::NotFound, Some(error_message)))
         }
     }
 }
@@ -155,7 +155,7 @@ fn list_pull_request_commits(
                 "error": "Repository not found."
             })
             .to_string();
-            return Ok((StatusCode::NotFound, Some(error_message)));
+            Ok((StatusCode::NotFound, Some(error_message)))
         }
     }
 }

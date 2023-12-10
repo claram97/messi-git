@@ -3,15 +3,23 @@ use std::{io, sync::Arc};
 use serde_json::json;
 
 use crate::{
-    api::{utils::{log::log, request::Request, status_code::StatusCode}, server::{Repositories, get_root_dir}},
+    api::{
+        server::{get_root_dir, Repositories},
+        utils::{log::log, request::Request, status_code::StatusCode},
+    },
     pull_request::PullRequestPatch,
 };
 
 /// Handle a PATCH request.
-pub fn handle(request: &Request, repositories: Arc<Repositories>) -> io::Result<(StatusCode, Option<String>)> {
+pub fn handle(
+    request: &Request,
+    repositories: Arc<Repositories>,
+) -> io::Result<(StatusCode, Option<String>)> {
     let path_splitted = request.get_path_split();
     match path_splitted[..] {
-        ["repos", repo, "pulls", pull_number] => update_pull_request(repo, pull_number, request, repositories),
+        ["repos", repo, "pulls", pull_number] => {
+            update_pull_request(repo, pull_number, request, repositories)
+        }
         _ => Ok((StatusCode::BadRequest, None)),
     }
 }
@@ -75,7 +83,7 @@ fn update_pull_request(
                 "error": "Repository not found."
             })
             .to_string();
-            return Ok((StatusCode::NotFound, Some(error_message)));
+            Ok((StatusCode::NotFound, Some(error_message)))
         }
     }
 }

@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
-use std::sync::{Mutex, Arc};
+use std::sync::{Arc, Mutex};
 use std::{fs, thread};
 
 use super::utils::status_code::StatusCode;
@@ -133,7 +133,7 @@ pub fn run(domain: &str, port: &str, path: &str) -> io::Result<()> {
 }
 
 pub struct Repositories {
-    repositories: Mutex<HashMap<String, Arc<Mutex<Repository>>>>
+    repositories: Mutex<HashMap<String, Arc<Mutex<Repository>>>>,
 }
 
 impl Repositories {
@@ -144,19 +144,19 @@ impl Repositories {
                 None if repo_exists(repo) => {
                     self.insert_new(repo);
                     self.get(repo)
-                },
-                None => None
-            }
-            Err(_) => None
+                }
+                None => None,
+            },
+            Err(_) => None,
         }
     }
 
     pub fn insert_new(&self, repo: &str) {
-        match self.repositories.lock() {
-            Ok(mut repositories) => {
-                repositories.insert(repo.to_string(), Arc::new(Mutex::new(Repository::new(repo))));
-            },
-            Err(_) => {}
+        if let Ok(mut repositories) = self.repositories.lock() {
+            repositories.insert(
+                repo.to_string(),
+                Arc::new(Mutex::new(Repository::new(repo))),
+            );
         }
     }
 
@@ -179,7 +179,7 @@ impl Repositories {
             }
         }
         Ok(Self {
-            repositories: Mutex::new(repos)
+            repositories: Mutex::new(repos),
         })
     }
 }
@@ -187,7 +187,7 @@ impl Repositories {
 fn repo_exists(repo: &str) -> bool {
     let curdir = match std::env::current_dir() {
         Ok(curdir) => curdir,
-        Err(_) => return false
+        Err(_) => return false,
     };
     let repo_dir = curdir.join(repo);
     repo_dir.exists() && repo_dir.is_dir()

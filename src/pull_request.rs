@@ -82,10 +82,7 @@ impl PullRequest {
     /// # Returns
     ///
     /// * `Ok(String)` - the hash of the merge commit
-    pub fn merge(
-        &mut self,
-        git_dir: &str,
-    ) -> io::Result<String> {
+    pub fn merge(&mut self, git_dir: &str) -> io::Result<String> {
         let hash =
             merge::git_merge_for_pull_request(&self.target_branch, &self.source_branch, git_dir)?;
         self.state = PRState::Closed;
@@ -260,8 +257,12 @@ impl Repository {
         get_branch_commit_history_until(&source_hash, &git_dir, &common_ancestor)
     }
 
-
-    pub fn merge_pull_request(&mut self, pull_number: usize, root_dir: &str, git_dir_name: &str) -> io::Result<String> {
+    pub fn merge_pull_request(
+        &mut self,
+        pull_number: usize,
+        root_dir: &str,
+        git_dir_name: &str,
+    ) -> io::Result<String> {
         let pr = match self.pull_requests.get_mut(&pull_number) {
             Some(pr) => pr,
             None => {
@@ -569,7 +570,8 @@ mod tests {
         };
 
         let pr = repo.create_pull_request(pr);
-        let commits = repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
+        let commits =
+            repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
         assert!(commits.is_ok());
         let commits = commits?;
         assert!(commits.len() == 4);
@@ -591,7 +593,8 @@ mod tests {
 
         let pr = repo.create_pull_request(pr);
 
-        let commits = repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
+        let commits =
+            repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
         assert!(commits.is_ok());
         let commits = commits?;
         assert!(commits.len() == 6);
@@ -613,7 +616,8 @@ mod tests {
 
         let pr = repo.create_pull_request(pr);
 
-        let commits = repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
+        let commits =
+            repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
         assert!(commits.is_ok());
         let commits = commits?;
         assert!(commits.len() == 2);
@@ -634,7 +638,8 @@ mod tests {
         };
 
         let pr = repo.create_pull_request(pr);
-        let commits = repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
+        let commits =
+            repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
         assert!(commits.is_err());
 
         Ok(())

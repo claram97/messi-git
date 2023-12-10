@@ -3,12 +3,18 @@ use std::{io, sync::Arc};
 use serde_json::json;
 
 use crate::{
-    api::{utils::{log::log, request::Request, status_code::StatusCode}, server::{Repositories, get_root_dir}},
+    api::{
+        server::{get_root_dir, Repositories},
+        utils::{log::log, request::Request, status_code::StatusCode},
+    },
     pull_request::PullRequestCreate,
 };
 
 /// Handle a POST request.
-pub fn handle(request: &Request, repositories: Arc<Repositories>) -> io::Result<(StatusCode, Option<String>)> {
+pub fn handle(
+    request: &Request,
+    repositories: Arc<Repositories>,
+) -> io::Result<(StatusCode, Option<String>)> {
     let path_splitted = request.get_path_split();
     match path_splitted[..] {
         ["repos", repo, "pulls"] => create_pull_request(repo, request, repositories),
@@ -16,7 +22,11 @@ pub fn handle(request: &Request, repositories: Arc<Repositories>) -> io::Result<
     }
 }
 
-fn create_pull_request(repo: &str, request: &Request, repositories: Arc<Repositories>) -> io::Result<(StatusCode, Option<String>)> {
+fn create_pull_request(
+    repo: &str,
+    request: &Request,
+    repositories: Arc<Repositories>,
+) -> io::Result<(StatusCode, Option<String>)> {
     log(&format!("Creating pull request in {}", repo))?;
     let body = &request.body;
     let pr_create: PullRequestCreate = match serde_json::from_str(body) {
@@ -43,12 +53,12 @@ fn create_pull_request(repo: &str, request: &Request, repositories: Arc<Reposito
                 }
             };
             let pr = repo.create_pull_request(pr_create);
-            let root_dir = get_root_dir()?;        
+            let root_dir = get_root_dir()?;
             repo.dump(&root_dir)?;
             log(&format!("Pull request created: {:?}", pr))?;
             let pr = serde_json::to_string(&pr)?;
             Ok((StatusCode::Ok, Some(pr)))
-        },
+        }
         None => {
             let error_message = json!({
                 "error": "Repository not found."
