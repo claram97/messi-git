@@ -47,7 +47,7 @@ fn handle_client(stream: &mut TcpStream, repositories: Arc<Repositories>) -> io:
     let (status_code, body) = match request.method {
         Method::GET => handlers::get::handle(&request, repositories)?,
         Method::POST => handlers::post::handle(&request, repositories)?,
-        Method::PUT => handlers::put::handle(&request)?,
+        Method::PUT => handlers::put::handle(&request, repositories)?,
         Method::PATCH => handlers::patch::handle(&request, repositories)?,
     };
 
@@ -191,4 +191,9 @@ fn repo_exists(repo: &str) -> bool {
     };
     let repo_dir = curdir.join(repo);
     repo_dir.exists() && repo_dir.is_dir()
+}
+
+pub fn get_root_dir() -> io::Result<String> {
+    let curdir = std::env::current_dir()?;
+    Ok(curdir.to_string_lossy().to_string())
 }

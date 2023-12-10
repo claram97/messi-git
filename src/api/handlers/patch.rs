@@ -3,7 +3,7 @@ use std::{io, sync::Arc};
 use serde_json::json;
 
 use crate::{
-    api::{utils::{log::log, request::Request, status_code::StatusCode}, server::Repositories},
+    api::{utils::{log::log, request::Request, status_code::StatusCode}, server::{Repositories, get_root_dir}},
     pull_request::PullRequestPatch,
 };
 
@@ -64,8 +64,7 @@ fn update_pull_request(
                     return Ok((StatusCode::BadRequest, Some(error_message)));
                 }
             };
-            let curdir = std::env::current_dir()?;
-            let root_dir = curdir.to_string_lossy();
+            let root_dir = get_root_dir()?;
             repo.dump(&root_dir)?;
             log(&format!("Pull request updated: {:?}", &pr))?;
             let pr = serde_json::to_string(&pr)?;

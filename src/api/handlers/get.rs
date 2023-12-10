@@ -1,17 +1,23 @@
 use std::{io, sync::Arc};
 
 use crate::{
-    api::{utils::{log::log, request::Request, status_code::StatusCode}, server::Repositories},
+    api::{
+        server::{get_root_dir, Repositories},
+        utils::{log::log, request::Request, status_code::StatusCode},
+    },
     configuration::GIT_DIR,
 };
 use serde_json::json;
 
 /// Handle a GET request.
-pub fn handle(request: &Request, repositories: Arc<Repositories>) -> io::Result<(StatusCode, Option<String>)> {
+pub fn handle(
+    request: &Request,
+    repositories: Arc<Repositories>,
+) -> io::Result<(StatusCode, Option<String>)> {
     let path_splitted = request.get_path_split();
     match path_splitted[..] {
         ["repos", repo, "pulls"] => list_pull_requests(repo, repositories),
-        ["repos", repo, "pulls", pull_number] => get_pull_request(repo, pull_number,repositories),
+        ["repos", repo, "pulls", pull_number] => get_pull_request(repo, pull_number, repositories),
         ["repos", repo, "pulls", pull_number, "commits"] => {
             list_pull_request_commits(repo, pull_number, repositories)
         }
@@ -19,7 +25,10 @@ pub fn handle(request: &Request, repositories: Arc<Repositories>) -> io::Result<
     }
 }
 
-fn list_pull_requests(repo: &str, repositories: Arc<Repositories>) -> io::Result<(StatusCode, Option<String>)> {
+fn list_pull_requests(
+    repo: &str,
+    repositories: Arc<Repositories>,
+) -> io::Result<(StatusCode, Option<String>)> {
     log(&format!("Listing pull requests of {}", repo))?;
     match repositories.get(repo) {
         Some(repo) => {
@@ -47,7 +56,11 @@ fn list_pull_requests(repo: &str, repositories: Arc<Repositories>) -> io::Result
     }
 }
 
-fn get_pull_request(repo: &str, pull_number: &str, repositories: Arc<Repositories>) -> io::Result<(StatusCode, Option<String>)> {
+fn get_pull_request(
+    repo: &str,
+    pull_number: &str,
+    repositories: Arc<Repositories>,
+) -> io::Result<(StatusCode, Option<String>)> {
     log(&format!("Showing pull request {} of {}", pull_number, repo))?;
     let pull_number = match pull_number.parse::<usize>() {
         Ok(pull_number) => pull_number,
@@ -89,7 +102,6 @@ fn get_pull_request(repo: &str, pull_number: &str, repositories: Arc<Repositorie
             return Ok((StatusCode::NotFound, Some(error_message)));
         }
     }
-
 }
 
 fn list_pull_request_commits(
@@ -111,8 +123,6 @@ fn list_pull_request_commits(
             return Ok((StatusCode::BadRequest, Some(error_message)));
         }
     };
-    let current_dir = std::env::current_dir()?;
-    let root_dir = &current_dir.to_string_lossy();
     match repositories.get(repo) {
         Some(repo) => {
             let repo = match repo.lock() {
@@ -125,7 +135,9 @@ fn list_pull_request_commits(
                     return Ok((StatusCode::InternalServerError, Some(error_message)));
                 }
             };
-            let result = match repo.list_commits_from_pull_request(pull_number, &root_dir, GIT_DIR) {
+            let root_dir = get_root_dir()?;
+            let result = match repo.list_commits_from_pull_request(pull_number, &root_dir, GIT_DIR)
+            {
                 Ok(vec) => vec,
                 Err(e) => {
                     log("Error trying to list commits.")?;
