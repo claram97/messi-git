@@ -286,7 +286,7 @@ impl Repository {
     ///
     /// * `Ok(Repository)` - the loaded Repository
     /// * `Err(io::Error)` - if the repository doesn't exist
-    pub fn load(repo: &str, root_dir: &str) -> io::Result<Self> {
+    fn load(repo: &str, root_dir: &str) -> io::Result<Self> {
         let repo_dir = Path::new(root_dir).join(repo);
         if !repo_dir.exists() {
             return Err(io::Error::new(
