@@ -719,9 +719,9 @@ mod tests {
 
     #[test]
     fn test_merge_pr_no_conflicts() -> io::Result<()> {
-        // if Path::new(TEST_SERVER_PRS_DIR).exists() {
-        //     fs::remove_dir_all(TEST_SERVER_PRS_DIR)?;
-        // }
+        if !Path::new(TEST_SERVER_PRS_DIR).exists() {
+            fs::create_dir_all(TEST_SERVER_PRS_DIR)?;
+        }
         let dir = TEST_SERVER_DIR;
         let repo_name = "merge";
 
@@ -796,7 +796,7 @@ mod tests {
         let commit_message = "Fourth commit";
         let commit_3_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
 
-        let mut repo = Repository::load(repo_name, &root_dir)?;
+        let mut repo = Repository::load(repo_name, TEST_SERVER_DIR)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
             description: "description".to_string(),
@@ -807,7 +807,7 @@ mod tests {
         repo.create_pull_request(pr);
         repo.dump(&dir)?;
 
-        let mut repo = Repository::load(repo_name, &dir)?;
+        let mut repo = Repository::load(repo_name, TEST_SERVER_DIR)?;
         let result = repo.merge_pull_request(1, &dir, ".mgit");
 
         assert!(result.is_ok());
@@ -827,10 +827,10 @@ mod tests {
     }
 
     #[test]
-    fn test_merge_pr_conflicts() -> io::Result<()> {
-        // if Path::new(TEST_SERVER_PRS_DIR).exists() {
-        //     fs::remove_dir_all(TEST_SERVER_PRS_DIR)?;
-        // }
+    fn test_merge_diverging_branches_conflicts() -> io::Result<()> {
+        if !Path::new(TEST_SERVER_PRS_DIR).exists() {
+            fs::create_dir_all(TEST_SERVER_PRS_DIR)?;
+        }
         let dir = TEST_SERVER_DIR;
         let repo_name = "merge_conflicts";
 
@@ -859,21 +859,6 @@ mod tests {
 
         let index_file_path = format!("{}/index", &git_dir);
 
-        let file_3_path = format!("{}/src/2.c", root_dir);
-        let mut file = fs::File::create(&file_3_path).unwrap();
-        file.write_all(b"int bye() { return 0; }").unwrap();
-        add::add(
-            "tests/pull_request/server/merge_conflicts/src/2.c",
-            &index_file_path,
-            &git_dir,
-            "",
-            None,
-        )
-        .unwrap();
-
-        let commit_message = "Second commit";
-        let _ = commit::new_commit(&git_dir, commit_message, "").unwrap();
-
         let file_4_path = format!("{}/src/1.c", root_dir);
         let mut file = fs::File::create(&file_4_path).unwrap();
         file.write_all(b"int prueba() { return 0; }").unwrap();
@@ -886,8 +871,8 @@ mod tests {
         )
         .unwrap();
 
-        let commit_message = "Third commit";
-        let commit_2_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+        let commit_message = "Second commit";
+        let _commit_2_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
 
         let head_file_path = format!("{}/HEAD", git_dir);
         let mut head_file = fs::File::create(&head_file_path).unwrap();
@@ -895,12 +880,12 @@ mod tests {
             .write_all(format!("ref: refs/heads/main").as_bytes())
             .unwrap();
 
-        let file_5_path = format!("{}/src/5.c", root_dir);
+        let file_5_path = format!("{}/src/1.c", root_dir);
         let mut file = fs::File::create(&file_5_path).unwrap();
         file.write_all(b"int otro() { return 0; }").unwrap();
         let index_file_path = format!("{}/index", &git_dir);
         add::add(
-            "tests/pull_request/server/merge_conflicts/src/5.c",
+            "tests/pull_request/server/merge_conflicts/src/1.c",
             &index_file_path,
             &git_dir,
             "",
@@ -908,10 +893,10 @@ mod tests {
         )
         .unwrap();
 
-        let commit_message = "Fourth commit";
-        let commit_3_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
+        let commit_message = "Third commit";
+        let _commit_3_hash = commit::new_commit(&git_dir, commit_message, "").unwrap();
 
-        let mut repo = Repository::load(repo_name, &root_dir)?;
+        let mut repo = Repository::load(repo_name, TEST_SERVER_DIR)?;
         let pr = PullRequestCreate {
             title: "title".to_string(),
             description: "description".to_string(),
@@ -922,25 +907,15 @@ mod tests {
         repo.create_pull_request(pr);
         repo.dump(&dir)?;
 
-        let mut repo = Repository::load(repo_name, &dir)?;
+        let mut repo = Repository::load(repo_name, TEST_SERVER_DIR)?;
         let result = repo.merge_pull_request(1, &dir, ".mgit");
 
-        assert!(result.is_ok());
-        let merge_commit_hash = result.unwrap();
-        let merge_commit = commit::is_merge_commit(&merge_commit_hash, &git_dir).unwrap();
-        assert!(merge_commit);
-
-        let merge_commit_parents = commit::get_merge_parents(&merge_commit_hash, &git_dir).unwrap();
-        assert_eq!(merge_commit_parents.len(), 2);
-        assert!(merge_commit_parents.contains(&commit_2_hash));
-        assert!(merge_commit_parents.contains(&commit_3_hash));
-
-        let main_commit_hash = branch::get_branch_commit_hash("main", &git_dir).unwrap();
-        assert_eq!(main_commit_hash, merge_commit_hash);
+        assert!(result.is_err());
 
         let repo_path = format!("tests/pull_request/server/merge_conflicts");
         std::fs::remove_dir_all(repo_path)?;
 
         Ok(())
     }
+
 }
