@@ -13,6 +13,7 @@ fn test_run_server() -> io::Result<()> {
     server::run("localhost", "3000", repos_path)
 }
 
+
 #[test]
 fn test_query_strings() {
     let qs = QueryString::from("id=1&not=2");
