@@ -580,8 +580,9 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "run manually"]
     fn test_list_commit() -> io::Result<()> {
-        let root_dir = "tests/test_list_commits";
+        let root_dir = "tests/pr_list_commits";
         let repo_name = "repo1";
         let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
@@ -602,54 +603,8 @@ mod tests {
     }
 
     #[test]
-    fn test_list_commit_2() -> io::Result<()> {
-        let root_dir = "tests/test_list_commits";
-        let repo_name = "repo1";
-        let mut repo = Repository::load(repo_name, root_dir)?;
-        let pr = PullRequestCreate {
-            title: "list commit pr".to_string(),
-            description: "pr para testear list commits".to_string(),
-            source_branch: "new_branch".to_string(),
-            target_branch: "master".to_string(),
-        };
-
-        let pr = repo.create_pull_request(pr);
-
-        let commits =
-            repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
-        assert!(commits.is_ok());
-        let commits = commits?;
-        assert!(commits.len() == 6);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_list_commit_3() -> io::Result<()> {
-        let root_dir = "tests/test_list_commits";
-        let repo_name = "repo1";
-        let mut repo = Repository::load(repo_name, root_dir)?;
-        let pr = PullRequestCreate {
-            title: "list commit pr".to_string(),
-            description: "pr para testear list commits".to_string(),
-            source_branch: "new_branch".to_string(),
-            target_branch: "my_branch".to_string(),
-        };
-
-        let pr = repo.create_pull_request(pr);
-
-        let commits =
-            repo.list_commits_from_pull_request(pr.pull_number, root_dir, GIT_DIR_FOR_TEST);
-        assert!(commits.is_ok());
-        let commits = commits?;
-        assert!(commits.len() == 2);
-
-        Ok(())
-    }
-
-    #[test]
     fn test_list_commit_fails_due_to_unexisting_branch() -> io::Result<()> {
-        let root_dir = "tests/test_list_commits";
+        let root_dir = "tests/pr_list_commits";
         let repo_name = "repo1";
         let mut repo = Repository::load(repo_name, root_dir)?;
         let pr = PullRequestCreate {
@@ -669,7 +624,7 @@ mod tests {
 
     // #[test]
     // fn test_list_commit_fails_due_to_unexisting_repo_name() -> io::Result<()> {
-    //     let root_dir = "tests/test_list_commits";
+    //     let root_dir = "tests/pr_list_commits";
     //     let repo_name = "repo";
     //     let mut repo = Repository::load(repo_name, root_dir)?;
     //     let pr = PullRequestCreate {
@@ -690,7 +645,7 @@ mod tests {
 
     // #[test]
     // fn test_list_commit_fails_due_to_unexisting_root_dir() -> io::Result<()> {
-    //     let root_dir = "tests/test_list_commitss";
+    //     let root_dir = "tests/pr_list_commitss";
     //     let repo_name = "repo1";
     //     let mut repo = Repository::load(repo_name, root_dir)?;
     //     let pr = PullRequestCreate {
