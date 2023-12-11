@@ -281,6 +281,7 @@ fn merge_pull_request(
     pull_request_commit: &str,
     pull_request_branch: &str,
     git_dir: &str,
+    target_branch: &str,
 ) -> Result<String, io::Error> {
     let base_tree = tree_handler::load_tree_from_commit(&base_commit, git_dir)?;
     let pull_request_tree = tree_handler::load_tree_from_commit(&pull_request_commit, git_dir)?;
@@ -293,6 +294,7 @@ fn merge_pull_request(
             &base_commit,
             &pull_request_commit,
             &new_tree,
+            target_branch,
         )?;
         Ok(commit_hash)
     } else {
@@ -350,10 +352,11 @@ pub fn git_merge_for_pull_request(
             &base_commit,
             &pull_request_commit,
             &pull_request_tree,
+            base_branch
         )?;
         Ok(commit_hash)
     } else {
-        merge_pull_request(&base_commit, &pull_request_commit, pull_request_branch, git_dir)
+        merge_pull_request(&base_commit, &pull_request_commit, pull_request_branch, git_dir, base_branch)
     }
 }
 
