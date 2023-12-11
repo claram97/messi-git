@@ -1,0 +1,206 @@
+{
+	"info": {
+		"_postman_id": "f18b8012-6437-459c-87a7-5b97448c8b50",
+		"name": "Taller PRs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27404503"
+	},
+	"item": [
+		{
+			"name": "Crear PR",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"title\": \"PR Title\",\r\n    \"description\": \"PR Description\",\r\n    \"source_branch\": \"source_branch\",\r\n    \"target_branch\": \"target_branch\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{domain}}:{{port}}/repos/:repo/pulls",
+					"host": [
+						"{{domain}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"repos",
+						":repo",
+						"pulls"
+					],
+					"variable": [
+						{
+							"key": "repo",
+							"value": "prueba"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Listar PR",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}:{{port}}/repos/:repo/pulls",
+					"host": [
+						"{{domain}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"repos",
+						":repo",
+						"pulls"
+					],
+					"variable": [
+						{
+							"key": "repo",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Obtener PR",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}:{{port}}/repos/:repo/pulls/:pull_number",
+					"host": [
+						"{{domain}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"repos",
+						":repo",
+						"pulls",
+						":pull_number"
+					],
+					"variable": [
+						{
+							"key": "repo",
+							"value": null
+						},
+						{
+							"key": "pull_number",
+							"value": null
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Listar commits de PR",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}:{{port}}/repos/:repo/pulls/:pull_number/commits",
+					"host": [
+						"{{domain}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"repos",
+						":repo",
+						"pulls",
+						":pull_number",
+						"commits"
+					],
+					"variable": [
+						{
+							"key": "repo",
+							"value": null
+						},
+						{
+							"key": "pull_number",
+							"value": null
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Merge PR",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{domain}}:{{port}}/repos/:repo/pulls/:pull_number/merge",
+					"host": [
+						"{{domain}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"repos",
+						":repo",
+						"pulls",
+						":pull_number",
+						"merge"
+					],
+					"variable": [
+						{
+							"key": "repo",
+							"value": null
+						},
+						{
+							"key": "pull_number",
+							"value": null
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Modificar PR",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"title\": \"New title\",\r\n    \"description\": \"New description\",\r\n    \"target_branch\": \"target_branch_new\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{domain}}:{{port}}/repos/:repo/pulls/:pull_number",
+					"host": [
+						"{{domain}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"repos",
+						":repo",
+						"pulls",
+						":pull_number"
+					],
+					"variable": [
+						{
+							"key": "repo",
+							"value": "repo"
+						},
+						{
+							"key": "pull_number",
+							"value": "64"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
