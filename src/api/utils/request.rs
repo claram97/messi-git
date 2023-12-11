@@ -1,10 +1,7 @@
-use std::io;
-
-use serde_json::Value;
-
 use crate::api::utils::headers::Headers;
 use crate::api::utils::method::Method;
 use crate::api::utils::query_string::QueryString;
+use std::io;
 
 /// A struct that holds the data of an HTTP request
 ///
