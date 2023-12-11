@@ -302,7 +302,7 @@ fn merge_pull_request(
             conflicting_paths.push_str("\n");
         }
         Err(io::Error::new(
-            io::ErrorKind::Other,
+            io::ErrorKind::Interrupted,
             format!("Conflicts found when trying to merge the Pull Request:\n{}", conflicting_paths),
         ))
     }

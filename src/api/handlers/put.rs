@@ -58,11 +58,30 @@ fn merge_pull_request(
             let root_dir = get_root_dir()?;
             let result = match repo.merge_pull_request(pull_number, &root_dir, GIT_DIR) {
                 Ok(hash) => hash,
-                Err(e) if e.kind() == io::ErrorKind::NotFound => {
-                    let error_message = json!({"error": e.to_string()}).to_string();
-                    return Ok((StatusCode::NotFound, Some(error_message)));
-                }
-                Err(e) => return Err(e),
+                Err(e) => match e.kind() {
+                    io::ErrorKind::NotFound => {
+                        let error_message = json!({
+                            "error": e.to_string()
+                        })
+                        .to_string();
+                        return Ok((StatusCode::NotFound, Some(error_message)));
+                    }
+                    io::ErrorKind::InvalidInput => {
+                        let error_message = json!({
+                            "error": e.to_string()
+                        })
+                        .to_string();
+                        return Ok((StatusCode::BadRequest, Some(error_message)));
+                    }
+                    io::ErrorKind::Interrupted => {
+                        let error_message = json!({
+                            "error": e.to_string()
+                        })
+                        .to_string();
+                        return Ok((StatusCode::Conflict, Some(error_message)));
+                    }
+                    _ => return Err(e),
+                },
             };
             repo.dump(&root_dir)?;
             log(&format!("Pull request {} merged.", pull_number))?;

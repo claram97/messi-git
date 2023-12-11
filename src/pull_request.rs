@@ -271,11 +271,10 @@ impl Repository {
                 ))
             }
         };
-        // If the pull request is already closed, return an error
         match pr.state {
             PRState::Closed => {
                 return Err(io::Error::new(
-                    io::ErrorKind::Other,
+                    io::ErrorKind::InvalidInput,
                     "Pull request is already closed",
                 ))
             }
