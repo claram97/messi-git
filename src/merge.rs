@@ -1,5 +1,6 @@
 use std::{fs, io};
 
+use crate::commit::is_merge_commit;
 use crate::configuration::{GIT_DIR, LOGGER_COMMANDS_FILE};
 use crate::logger::Logger;
 use crate::tree_handler::Tree;
@@ -307,6 +308,28 @@ fn merge_pull_request(
     }
 }
 
+pub fn is_pr_fast_forward(
+    base_commit: &str,
+    pull_request_commit: &str,
+    git_dir: &str,
+) -> io::Result<bool> {
+    let common_ancestor = find_common_ancestor(&base_commit, &pull_request_commit, git_dir)?;
+    if is_fast_forward(&base_commit, &common_ancestor) {
+        Ok(true)
+    } else {
+        if is_merge_commit(&pull_request_commit, git_dir)? {
+            let parents = commit::get_merge_parents(&pull_request_commit, git_dir)?;
+            if parents.contains(&base_commit.to_string()) {
+                Ok(true)
+            } else {
+                Ok(false)
+            }
+        } else {
+            Ok(false)
+        }
+    }
+}
+
 // A function that merges a pull request into the base branch. It does not update the working directory.
 // It returns the hash of the new commit. The base will take the role of our_branch and the pull request branch will be their_branch.
 // If there are no conflicts, we will create a new commit with the changes of both branches.
@@ -317,9 +340,8 @@ pub fn git_merge_for_pull_request(
 ) -> io::Result<String> {
     let base_commit = branch::get_branch_commit_hash(base_branch, git_dir)?;
     let pull_request_commit = branch::get_branch_commit_hash(pull_request_branch, git_dir)?;
-    
-    let common_ancestor = find_common_ancestor(&base_commit, &pull_request_commit, git_dir)?;
-    if is_fast_forward(&base_commit, &common_ancestor) {
+
+    if is_pr_fast_forward(&base_commit, &pull_request_commit, git_dir)? {
         let pull_request_tree = tree_handler::load_tree_from_commit(&pull_request_commit, git_dir)?;
         let commit_message = format!("Merge pull request #{}", pull_request_branch);
         let commit_hash = commit::new_pr_merge_commit(

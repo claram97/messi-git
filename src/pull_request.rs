@@ -271,6 +271,16 @@ impl Repository {
                 ))
             }
         };
+        // If the pull request is already closed, return an error
+        match pr.state {
+            PRState::Closed => {
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "Pull request is already closed",
+                ))
+            }
+            _ => (),
+        }
         let git_dir = format!("{}/{}/{}", root_dir, self.name, git_dir_name);
         pr.merge(&git_dir)
     }
