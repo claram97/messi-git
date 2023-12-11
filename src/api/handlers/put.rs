@@ -1,5 +1,4 @@
 use serde_json::json;
-use std::path::Path;
 use std::{io, sync::Arc};
 
 use crate::{
