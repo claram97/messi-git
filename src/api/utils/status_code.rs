@@ -15,6 +15,7 @@ pub enum StatusCode {
     Created = 201,
     BadRequest = 400,
     NotFound = 404,
+    Conflict = 409,
     InternalServerError = 500,
 }
 
@@ -26,6 +27,7 @@ impl StatusCode {
             Self::Created => "Created",
             Self::BadRequest => "Bad Request",
             Self::NotFound => "Not Found",
+            Self::Conflict => "Conflict",
             Self::InternalServerError => "Internal Server Error",
         }
     }

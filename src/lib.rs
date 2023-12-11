@@ -26,6 +26,7 @@ pub mod merge;
 pub mod packfile;
 pub mod parse_commands;
 pub mod pull;
+pub mod pull_request;
 pub mod push;
 pub mod rebase;
 pub mod remote;

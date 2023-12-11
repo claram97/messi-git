@@ -1,4 +1,4 @@
-pub const GIT_DIR: &str = ".mgit";
+pub const GIT_DIR: &str = ".git";
 pub const GIT_IGNORE: &str = ".mgitignore";
 pub const INDEX: &str = "index";
 pub const REMOTE: &str = "origin";
