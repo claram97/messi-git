@@ -256,6 +256,20 @@ impl Repository {
         get_branch_commit_history_until(&source_hash, &git_dir, &common_ancestor)
     }
 
+    /// Merges a pull request identified by the specified pull number.
+    ///
+    /// # Arguments
+    ///
+    /// * `pull_number` - The unique identifier of the pull request to be merged.
+    /// * `root_dir` - The root directory where repositories are stored.
+    /// * `git_dir_name` - The name of the Git directory within the repository.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` with the commit hash of the new merge commit on success.
+    /// Returns an `io::Error` if the pull request with the specified pull number
+    /// does not exist, is already closed, or if there are issues with the merge operation.
+    ///
     pub fn merge_pull_request(
         &mut self,
         pull_number: usize,

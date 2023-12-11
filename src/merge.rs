@@ -276,6 +276,22 @@ pub fn merge_remote_branch(branch: &str, remote_hash: &str, git_dir: &str) -> io
     }
 }
 
+/// Merges a pull request by combining changes from the pull request commit
+/// with the base commit. Handles conflicts if any and creates a new commit.
+///
+/// # Arguments
+///
+/// * `base_commit` - The commit hash of the base branch.
+/// * `pull_request_commit` - The commit hash of the pull request branch.
+/// * `pull_request_branch` - The name of the pull request branch.
+/// * `git_dir` - The path to the Git directory.
+/// * `target_branch` - The name of the target branch for the merge.
+///
+/// # Returns
+///
+/// Returns a `Result` with either the new commit hash on success or an
+/// `io::Error` containing information about conflicts if any.
+///
 fn merge_pull_request(
     base_commit: &str,
     pull_request_commit: &str,
@@ -310,6 +326,21 @@ fn merge_pull_request(
     }
 }
 
+/// Checks if a pull request can be fast-forwarded into the base branch.
+///
+/// # Arguments
+///
+/// * `base_commit` - The commit hash of the base branch.
+/// * `pull_request_commit` - The commit hash of the pull request branch.
+/// * `git_dir` - The path to the Git directory.
+///
+/// # Returns
+///
+/// Returns a `Result` with a boolean indicating whether the pull request
+/// can be fast-forwarded into the base branch or not. Returns `Ok(true)` if
+/// fast-forward is possible, and `Ok(false)` otherwise. Returns an `io::Error`
+/// if there is an issue with the Git operations.
+///
 pub fn is_pr_fast_forward(
     base_commit: &str,
     pull_request_commit: &str,
