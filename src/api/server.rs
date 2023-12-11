@@ -1,3 +1,5 @@
+use serde_json::json;
+
 use crate::api::handlers;
 use crate::api::utils::log::log;
 use crate::api::utils::method::Method;
@@ -76,8 +78,12 @@ fn get_mime_type(accept: Option<&str>) -> MimeType {
 }
 
 /// Handle an error in the server.
-fn handle_error(stream: &mut TcpStream) -> io::Result<()> {
-    let response = Response::new(StatusCode::InternalServerError, None, MimeType::default());
+fn handle_error(stream: &mut TcpStream, error: &str) -> io::Result<()> {
+    let error_message = json!({
+        "error": error.to_string()
+    }).to_string();
+    
+    let response = Response::new(StatusCode::InternalServerError, Some(error_message), MimeType::default());
     write!(stream, "{}", response)?;
     stream.flush()
 }
@@ -117,7 +123,7 @@ pub fn run(domain: &str, port: &str, path: &str) -> io::Result<()> {
                         "End connection from {}...With error: {}",
                         socket_addr, e
                     ))?;
-                    handle_error(&mut stream)?;
+                    handle_error(&mut stream, &e.to_string())?;
                 }
             }
             Ok(())
