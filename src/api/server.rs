@@ -156,25 +156,19 @@ impl Repositories {
     /// A Mutex of the repository if it exists, otherwise None.
     pub fn get(&self, repo: &str) -> Option<Arc<Mutex<Repository>>> {
         match self.repositories.lock() {
-            Ok(repositories) => match repositories.get(repo) {
+            Ok(mut repositories) => match repositories.get(repo) {
                 Some(repo) => Some(repo.clone()),
                 None if repo_exists(repo) => {
-                    self.insert_new(repo);
-                    self.get(repo)
+                    let repository = Arc::new(Mutex::new(Repository::new(repo)));
+                    repositories.insert(
+                        repo.to_string(),
+                        repository.clone(),
+                    );
+                    Some(repository)
                 }
                 None => None,
             },
             Err(_) => None,
-        }
-    }
-
-    /// Insert a new repository.
-    fn insert_new(&self, repo: &str) {
-        if let Ok(mut repositories) = self.repositories.lock() {
-            repositories.insert(
-                repo.to_string(),
-                Arc::new(Mutex::new(Repository::new(repo))),
-            );
         }
     }
 
