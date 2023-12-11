@@ -362,7 +362,7 @@ mod tests {
     fn create_repo_for_test(repo_name: &str) -> io::Result<()> {
         let repo = Path::new(TEST_SERVER_DIR).join(repo_name);
         if !repo.exists() {
-            fs::create_dir(repo)?;
+            fs::create_dir_all(repo)?;
         }
         Ok(())
     }
