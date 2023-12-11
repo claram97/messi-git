@@ -1,10 +1,7 @@
-use std::io;
-
-use serde_json::Value;
-
 use crate::api::utils::headers::Headers;
 use crate::api::utils::method::Method;
 use crate::api::utils::query_string::QueryString;
+use std::io;
 
 /// A struct that holds the data of an HTTP request
 ///
@@ -60,6 +57,8 @@ impl Request {
             }
         }
 
+        println!("\n{:?}\n", body);
+
         // Verifica si el cuerpo es XML y realiza la conversión a JSON
         if let Some(content_type) = headers.get("Content-Type") {
             if content_type == "application/xml" {
@@ -88,15 +87,48 @@ impl Request {
             .collect::<Vec<&str>>()
     }
 
+    fn obtain_tag_content(html: &str, tag: &str) -> Option<String> {
+        let tag_start = format!("<{}>", tag);
+        let tag_end = format!("</{}>", tag);
+
+        if let Some(start_idx) = html.find(&tag_start) {
+            if let Some(end_idx) = html.find(&tag_end) {
+                let content = &html[(start_idx + tag_start.len())..end_idx];
+                return Some(content.to_string());
+            }
+        }
+
+        None
+    }
+
     /// Parsea el cuerpo XML a JSON.
     fn parse_xml_to_json(xml_str: &str) -> io::Result<String> {
-        // Convierte el XML a JSON usando serde_json::Value
-        let json_value: Value = serde_json::from_str(xml_str)?;
+        let result: Vec<&str> = xml_str.split("   ").collect();
+        let elements = result[1..5].to_vec();
 
-        // Convierte el JSON a una cadena de texto
-        let json_str = serde_json::to_string(&json_value)?;
+        let mut result_string: String = String::new();
+        result_string.push_str("{    \"title\": \"");
+        if let Some(content) = Self::obtain_tag_content(elements[0], "title") {
+            result_string.push_str(&content);
+            result_string.push_str("\",    ");
+        }
+        result_string.push_str("\"description\": \"");
+        if let Some(content) = Self::obtain_tag_content(elements[1], "description") {
+            result_string.push_str(&content);
+            result_string.push_str("\",    ");
+        }
+        result_string.push_str("\"source_branch\": \"");
+        if let Some(content) = Self::obtain_tag_content(elements[2], "source_branch") {
+            result_string.push_str(&content);
+            result_string.push_str("\",    ");
+        }
+        result_string.push_str("\"target_branch\": \"");
+        if let Some(content) = Self::obtain_tag_content(elements[3], "target_branch") {
+            result_string.push_str(&content);
+            result_string.push_str("\"}");
+        }
 
-        Ok(json_str)
+        Ok(result_string)
     }
 }
 

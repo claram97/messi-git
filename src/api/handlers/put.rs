@@ -1,6 +1,5 @@
-use std::{io, sync::Arc};
-
 use serde_json::json;
+use std::{io, sync::Arc};
 
 use crate::{
     api::{
