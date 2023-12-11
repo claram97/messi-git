@@ -285,15 +285,13 @@ impl Repository {
                 ))
             }
         };
-        match pr.state {
-            PRState::Closed => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "Pull request is already closed",
-                ))
-            }
-            _ => (),
+        if let PRState::Closed = pr.state {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Pull request is already closed",
+            ));
         }
+
         let git_dir = format!("{}/{}/{}", root_dir, self.name, git_dir_name);
         pr.merge(&git_dir)
     }
@@ -940,5 +938,4 @@ mod tests {
 
         Ok(())
     }
-
 }

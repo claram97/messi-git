@@ -457,14 +457,14 @@ pub fn new_pr_merge_commit(
     parent_hash: &str,
     parent_hash2: &str,
     tree: &Tree,
-    target_branch: &str
+    target_branch: &str,
 ) -> io::Result<String> {
     let (tree_hash, _) = tree_handler::write_tree(tree, git_dir_path)?;
     let (timestamp, offset) = utils::get_timestamp()?;
     let time = format!("{} {}", timestamp, offset);
     let commit_content = format!("tree {tree_hash}\nparent {parent_hash}\nparent {parent_hash2}\nauthor {} {} {time}\ncommitter {} {} {time}\n\n{message}\0", "user", "email", "user", "email", message = message, time = time, tree_hash = tree_hash, parent_hash = parent_hash, parent_hash2 = parent_hash2);
     let commit_hash = hash_object::store_string_to_file(&commit_content, git_dir_path, "commit")?;
-    let branch_path = git_dir_path.to_string() + "/refs/heads/" + &target_branch;
+    let branch_path = git_dir_path.to_string() + "/refs/heads/" + target_branch;
     let mut branch_file = std::fs::File::create(branch_path)?;
     branch_file.write_all(commit_hash.as_bytes())?;
     Ok(commit_hash)

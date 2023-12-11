@@ -81,9 +81,14 @@ fn get_mime_type(accept: Option<&str>) -> MimeType {
 fn handle_error(stream: &mut TcpStream, error: &str) -> io::Result<()> {
     let error_message = json!({
         "error": error.to_string()
-    }).to_string();
-    
-    let response = Response::new(StatusCode::InternalServerError, Some(error_message), MimeType::default());
+    })
+    .to_string();
+
+    let response = Response::new(
+        StatusCode::InternalServerError,
+        Some(error_message),
+        MimeType::default(),
+    );
     write!(stream, "{}", response)?;
     stream.flush()
 }
@@ -166,10 +171,7 @@ impl Repositories {
                 Some(repo) => Some(repo.clone()),
                 None if repo_exists(repo) => {
                     let repository = Arc::new(Mutex::new(Repository::new(repo)));
-                    repositories.insert(
-                        repo.to_string(),
-                        repository.clone(),
-                    );
+                    repositories.insert(repo.to_string(), repository.clone());
                     Some(repository)
                 }
                 None => None,

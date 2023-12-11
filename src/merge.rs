@@ -299,16 +299,16 @@ fn merge_pull_request(
     git_dir: &str,
     target_branch: &str,
 ) -> Result<String, io::Error> {
-    let base_tree = tree_handler::load_tree_from_commit(&base_commit, git_dir)?;
-    let pull_request_tree = tree_handler::load_tree_from_commit(&pull_request_commit, git_dir)?;
+    let base_tree = tree_handler::load_tree_from_commit(base_commit, git_dir)?;
+    let pull_request_tree = tree_handler::load_tree_from_commit(pull_request_commit, git_dir)?;
     let (new_tree, conflicts) = tree_handler::merge_trees(&base_tree, &pull_request_tree, git_dir)?;
     if conflicts.is_empty() {
         let commit_message = format!("Merge pull request #{}", pull_request_branch);
         let commit_hash = commit::new_pr_merge_commit(
             git_dir,
             &commit_message,
-            &base_commit,
-            &pull_request_commit,
+            base_commit,
+            pull_request_commit,
             &new_tree,
             target_branch,
         )?;
@@ -317,11 +317,14 @@ fn merge_pull_request(
         let mut conflicting_paths = String::new();
         for path in conflicts.iter() {
             conflicting_paths.push_str(path);
-            conflicting_paths.push_str("\n");
+            conflicting_paths.push('\n');
         }
         Err(io::Error::new(
             io::ErrorKind::Interrupted,
-            format!("Conflicts found when trying to merge the Pull Request:\n{}", conflicting_paths),
+            format!(
+                "Conflicts found when trying to merge the Pull Request:\n{}",
+                conflicting_paths
+            ),
         ))
     }
 }
@@ -346,20 +349,18 @@ pub fn is_pr_fast_forward(
     pull_request_commit: &str,
     git_dir: &str,
 ) -> io::Result<bool> {
-    let common_ancestor = find_common_ancestor(&base_commit, &pull_request_commit, git_dir)?;
-    if is_fast_forward(&base_commit, &common_ancestor) {
+    let common_ancestor = find_common_ancestor(base_commit, pull_request_commit, git_dir)?;
+    if is_fast_forward(base_commit, &common_ancestor) {
         Ok(true)
-    } else {
-        if is_merge_commit(&pull_request_commit, git_dir)? {
-            let parents = commit::get_merge_parents(&pull_request_commit, git_dir)?;
-            if parents.contains(&base_commit.to_string()) {
-                Ok(true)
-            } else {
-                Ok(false)
-            }
+    } else if is_merge_commit(pull_request_commit, git_dir)? {
+        let parents = commit::get_merge_parents(pull_request_commit, git_dir)?;
+        if parents.contains(&base_commit.to_string()) {
+            Ok(true)
         } else {
             Ok(false)
         }
+    } else {
+        Ok(false)
     }
 }
 
@@ -383,11 +384,17 @@ pub fn git_merge_for_pull_request(
             &base_commit,
             &pull_request_commit,
             &pull_request_tree,
-            base_branch
+            base_branch,
         )?;
         Ok(commit_hash)
     } else {
-        merge_pull_request(&base_commit, &pull_request_commit, pull_request_branch, git_dir, base_branch)
+        merge_pull_request(
+            &base_commit,
+            &pull_request_commit,
+            pull_request_branch,
+            git_dir,
+            base_branch,
+        )
     }
 }
 
