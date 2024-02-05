@@ -90,13 +90,36 @@ impl Request {
 
     /// Parsea el cuerpo XML a JSON.
     fn parse_xml_to_json(xml_str: &str) -> io::Result<String> {
-        // Convierte el XML a JSON usando serde_json::Value
-        let json_value: Value = serde_json::from_str(xml_str)?;
 
-        // Convierte el JSON a una cadena de texto
-        let json_str = serde_json::to_string(&json_value)?;
+        /*
+        <PullRequestCreate>
+                <title>{}</title>
+                <description>{}</description>
+                <source_branch>{}</source_branch>
+                <target_branch>{}</target_branch>
+            </PullRequestCreate>
+            
+         */
 
-        Ok(json_str)
+        let xml_splitted : Vec<&str> = xml_str.split("\n").collect();
+        if xml_splitted.len() != 6 {
+            //Return error
+        }
+
+        let title = xml_splitted[1];
+        let description = xml_splitted[2];
+        let source_branch = xml_splitted[3];
+        let target_branch = xml_splitted[4];
+
+        
+        let json_str = "Hola";      
+        Ok(json_str.to_string())
+    }
+
+    fn validate_xml(title : &str, description : &str, source_branch : &str, target_branch : &str) {
+        if !title.contains("<title>") || !description.contains("<description>"){
+
+        }
     }
 }
 

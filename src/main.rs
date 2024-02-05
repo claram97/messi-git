@@ -167,28 +167,89 @@ fn process_user_input() -> io::Result<()> {
     Ok(())
 }
 
-fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
-    if args.len() != 1 && args.len() != 2 && args.len() != 5 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "Cantidad inválida de parámetros\n",
-        ));
-    }
+// fn main() -> io::Result<()> {
+//     let args: Vec<String> = env::args().collect();
+//     if args.len() != 1 && args.len() != 2 && args.len() != 5 {
+//         return Err(io::Error::new(
+//             io::ErrorKind::InvalidInput,
+//             "Cantidad inválida de parámetros\n",
+//         ));
+//     }
 
-    if args.len() == 2 {
-        if args[1] != "gui" {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "Comando no reconocido\n",
-            ));
+//     if args.len() == 2 {
+//         if args[1] != "gui" {
+//             return Err(io::Error::new(
+//                 io::ErrorKind::InvalidInput,
+//                 "Comando no reconocido\n",
+//             ));
+//         }
+
+//         run_with_gui()?;
+//     } else if args.len() == 5 && args[1] == "server" {
+//         server::run(&args[2], &args[3], &args[4], GIT_DIR)?;
+//     } else if args.len() == 1 {
+//         run_without_gui()?;
+//     }
+//     Ok(())
+// }
+fn main() {
+    let xml_str = "<PullRequestCreate>\n\t<title>Titulo</title>\n\t<description>Descripcion</description>\n\t<source_branch>BranchSource</source_branch>\n\t\n\t<target_branch>BranchTarget</target_branch>\t</PullRequestCreate>";
+
+    let mut title = String::new();
+    let mut description = String::new();
+    let mut source_branch = String::new();
+    let mut target_branch = String::new();
+
+    let mut in_title = false;
+    let mut in_description = false;
+    let mut in_source_branch = false;
+    let mut in_target_branch = false;
+
+    for c in xml_str.chars() {
+        match c {
+            '<' => {
+                in_title = false;
+                in_description = false;
+                in_source_branch = false;
+                in_target_branch = false;
+            }
+            '>' => {
+                in_title = false;
+                in_description = false;
+                in_source_branch = false;
+                in_target_branch = false;
+            }
+            't' if in_title => {
+                title.push(c);
+            }
+            'd' if in_description => {
+                description.push(c);
+            }
+            's' if in_source_branch => {
+                source_branch.push(c);
+            }
+            't' if in_target_branch => {
+                target_branch.push(c);
+            }
+            't' => {
+                in_title = true;
+            }
+            'd' => {
+                in_description = true;
+            }
+            's' => {
+                in_source_branch = true;
+            }
+            't' => {
+                in_target_branch = true;
+            }
+            _ => (),
         }
-
-        run_with_gui()?;
-    } else if args.len() == 5 && args[1] == "server" {
-        server::run(&args[2], &args[3], &args[4], GIT_DIR)?;
-    } else if args.len() == 1 {
-        run_without_gui()?;
     }
-    Ok(())
+
+    println!("Title: {}", title.trim());
+    println!("Description: {}", description.trim());
+    println!("Source Branch: {}", source_branch.trim());
+    println!("Target Branch: {}", target_branch.trim());
 }
+
